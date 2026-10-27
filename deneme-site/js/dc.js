@@ -1,7 +1,8 @@
 // Forest Club Urla · tasarım sayfalarını (.dc.html) tarayıcıda çalıştıran küçük motor.
 // Sayfalar tasarımdaki haliyle kullanılır: {{ alan }}, <sc-if>, <sc-for>, onClick/onChange, class Component
 // extends DCLogic (state, setState, renderVals, componentDidMount). Her durum değişikliğinde sayfa yeniden üretilir
-// ve canlı sayfaya yalnız farklar işlenir (yazılan kutu odağını kaybetmez).
+// ve canlı sayfaya yalnız farklar işlenir (yazılan kutu odağını kaybetmez). Sayfanın betiği (class Component) ayrı
+// dosyadan gelir: sayfalar/*.dc.js (araclar/dc_derle.mjs üretir); böylece CSP'de 'unsafe-eval' gerekmez.
 (function () {
   'use strict';
 
@@ -227,17 +228,19 @@
     }
   }
 
-  // Sayfa kaynağını okuyup kök öğeye yerleştirir. `degistir(kaynak)` betik metnini değiştirmek için (isteğe bağlı).
+  // Derlenmiş sayfa betikleri: sayfalar/x.dc.js → DC.sinif('/sayfalar/x.dc.html', function (DCLogic) { … })
+  const siniflar = {};
+  function sinif(adres, fabrika) { siniflar[adres] = fabrika; }
+
+  // Sayfa kaynağını okuyup kök öğeye yerleştirir
   async function bagla(adres, kok, secenek = {}) {
+    if (!siniflar[adres]) throw new Error(`${adres} için derlenmiş betik yüklenmedi (sayfalar/*.dc.js; node araclar/dc_derle.mjs)`);
     let html = await (await fetch(adres, { cache: 'no-cache' })).text();
     const ext = secenek.varliklar || {};
     html = html.replace(/\/_blob\/([0-9a-f]{32})/g, (m, id) => `/_blob/${id}${ext[id] || ''}`);
     const govde = html.split(/<x-dc>/)[1].split(/<\/x-dc>/)[0]
       .replace(/<sc-if\b/g, '<template data-sc-if-kaynak').replace(/<\/sc-if>/g, '</template>')
       .replace(/<sc-for\b/g, '<template data-sc-for-kaynak').replace(/<\/sc-for>/g, '</template>');
-    const betikEtiket = /<script type="text\/x-dc"[^>]*data-dc-script[^>]*>/.exec(html);
-    let betik = html.slice(betikEtiket.index + betikEtiket[0].length).split('</script>')[0];
-    if (secenek.degistir) betik = secenek.degistir(betik);
     const sablon = document.createElement('template');
     sablon.innerHTML = govde;
     // <template data-sc-if-kaynak value=".."> → data-sc-if=".."
@@ -254,7 +257,7 @@
       Array.from(helmet.childNodes).forEach((c) => { if (c.nodeType === 1) document.head.appendChild(c.cloneNode(true)); });
       helmet.remove();
     }
-    const Component = new Function('DCLogic', `${betik}\nreturn Component;`)(DCLogic);
+    const Component = siniflar[adres](DCLogic);
     const bilesen = new Component(secenek.props || {});
     bilesen.__sablon = sablon.content;
     bilesen.__kok = kok;
@@ -265,5 +268,5 @@
     return bilesen;
   }
 
-  window.DC = { bagla, DCLogic, durumDegisti: null };
+  window.DC = { bagla, sinif, DCLogic, durumDegisti: null };
 })();

@@ -1,0 +1,66 @@
+# Forest Club Urla · otomatik denetim: her PR ve main'e her gönderimde çalışır. Canlı Supabase'e bağlanmaz; veritabanı
+# testleri GitHub'ın makinesinde açılan geçici yerel Supabase'de (göçler + örnek veri) koşar.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  denetim:
+    name: Sözdizimi, sayfa betikleri, Edge Function'lar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: JS sözdizimi (node --check)
+        run: for f in deneme-site/js/*.js deneme-site/sayfalar/*.dc.js araclar/*.mjs testler/tarayici/*.js; do node --check "$f"; done
+      - name: Sayfa betikleri .dc.html ile aynı mı
+        run: node araclar/dc_derle.mjs --denetle
+      - name: Edge Function tür denetimi
+        run: deno check supabase/functions/*/index.ts
+      - name: iyzico imzası (resmi SDK ile karşılaştırma)
+        run: deno test -A supabase/functions/_ortak/
+
+  veritabani:
+    name: Veritabanı (göçler + pgTAP)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Yerel Supabase (bütün göçler + örnek veri)
+        run: supabase start -x realtime,studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
+      - name: pgTAP testleri
+        run: supabase test db
+
+  tarayici:
+    name: Tarayıcı testleri (site, üye ve yönetim paneli)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: testler
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: testler/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run tarayici
