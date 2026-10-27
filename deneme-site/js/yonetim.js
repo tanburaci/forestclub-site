@@ -1,6 +1,6 @@
 // Forest Club Urla · yönetici paneli (deneme sitesi): Supabase girişi, verinin panele yüklenmesi ve paneldeki
 // değişikliklerin veritabanına yazılması. Panel (sayfalar/yonetim.dc.html) tasarımdaki haliyle çalışır; burada
-// yalnız veri katmanı var.
+// yalnız veri katmanı var. Kapıda karekod kamerayla okunur (BarcodeDetector; yoksa jsQR).
 (function () {
   'use strict';
   const A = window.FC_AYAR;
@@ -40,11 +40,13 @@
       hepsi('tanisma_biletleri'), hepsi('muhasebe_hareketleri'), hepsi('envanter'), hepsi('eposta_sablonlari'),
       hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('sayaclar', ['tarih', 'adim']),
     ]);
-    // Mail kuyruğu (son 200) ve sağlık özeti: göç uygulanmadıysa panel yine açılır
-    const [kuyruk, saglik] = await Promise.all([
+    // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
+    const [kuyruk, saglik, ayarlar, veriTalepleri] = await Promise.all([
       sb.from('eposta_kuyrugu').select('id, sablon, alici, durum, deneme, son_hata, created_at, gonderim_at')
         .order('id', { ascending: false }).limit(200).then((r) => r.data || [], () => []),
       sb.rpc('saglik_ozeti').then((r) => r.data || null, () => null),
+      sb.from('ayarlar').select('anahtar, deger').then((r) => Object.fromEntries((r.data || []).map((a) => [a.anahtar, a.deger])), () => ({})),
+      sb.from('veri_talepleri').select('*').order('id', { ascending: false }).limit(200).then((r) => r.data || [], () => []),
     ]);
     const B = bugun();
     const idSira = new Map();
@@ -80,6 +82,8 @@
         kayitli: rs.filter((r) => r.durum === 'kayitli').map((r) => idSira.get(r.uye_id)),
         bekleme: rs.filter((r) => r.durum === 'bekleme').sort((a, b) => (a.sira || 0) - (b.sira || 0)).map((r) => idSira.get(r.uye_id)),
         gelen: rs.filter((r) => r.durum === 'kayitli' && r.geldi).map((r) => idSira.get(r.uye_id)),
+        // Tanışma biletiyle yer tutanlar da doluluğa sayılır
+        tanisma: biletler.filter((b) => b.etkinlik_id === e.id && (b.durum === 'bekliyor' || b.durum === 'geldi')).length,
       };
       if (e.anket_sayisi) anket[key] = { n: e.anket_sayisi, ort: Number(e.anket_ortalama) };
       const x = { id: e.id, tarih: e.tarih, saat: e.saat || '', tur: e.tur, ad: e.ad, kim: e.kim || '', kontenjan: e.kontenjan };
@@ -91,7 +95,7 @@
       bugun: B, eposta,
       DEMO: {
         kisiler, kayitlar: kayitHarita, anket, aidat: [],
-        biletler: biletler.map((b) => ({ id: b.id, ad: b.ad, eposta: b.eposta, alinis: b.alinis,
+        biletler: biletler.map((b) => ({ id: b.id, ad: b.ad, eposta: b.eposta, alinis: b.alinis, kod: b.kod || '',
           etkinlik: b.etkinlik_id ? etkEtiket(etkById.get(b.etkinlik_id)) : '', durum: b.durum })),
       },
       etkinlikler: etkListe,
@@ -113,7 +117,7 @@
       // Yönetici notları üye numarasıyla (aynı adlı iki üye karışmasın)
       notlar: Object.fromEntries(uyeler.filter((u) => u.yonetici_notu).map((u) => [u.id, u.yonetici_notu])),
       etkDurum,
-      kuyruk, saglik,
+      kuyruk, saglik, ayarlar, veriTalepleri,
       eksik: eksikler,
       _keyEtk: keyEtk,
       basvurular: { dekontlar, cagri, sayaclar, uyeler: new Map(uyeler.map((u) => [u.id, u])) },
@@ -218,6 +222,127 @@
     return window.FC.eposta;
   };
 
+  // Ayar kaydı (ayarlar tablosu; site ve üye paneli herkese açık olanları okur)
+  window.FCAyarKaydet = async (anahtar, deger) => {
+    const { data, error } = await sb.from('ayarlar').update({ deger }).eq('anahtar', anahtar).select('anahtar');
+    if (error) throw new Error(error.message);
+    if (!data.length) throw new Error('Ayar bulunamadı; veritabanı güncellemesi (göç) uygulanmamış olabilir.');
+    window.FC.ayarlar[anahtar] = deger;
+  };
+
+  // --- KVKK talepleri: veri kopyası (JSON) ve silme (anonimleştirme) ------------------------------------------------
+  function jsonIndir(veri, ad) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(veri, null, 2)], { type: 'application/json' }));
+    a.download = ad;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  async function veriKopyasi(t) {
+    const { data, error } = await sb.rpc('veri_kopyasi', { p_uye: t.uye_id });
+    if (error) return bildir(error.message, true);
+    jsonIndir(data, `veri-kopyasi-${t.uye_id}-${bugun()}.json`);
+  }
+  async function veriSil(t) {
+    if (!window.confirm(`${t.ad} (${t.eposta}) anonimleştirilecek: adı, iletişim bilgileri, profili, dekont dosyaları ve giriş hesabı silinir; `
+      + 'muhasebe tutarları kalır. Bu işlem geri alınamaz. Devam edilsin mi?')) return;
+    const { data: dosyalar, error } = await sb.rpc('uye_anonimlestir', { p_uye: t.uye_id });
+    if (error) return bildir(error.message, true);
+    // Depodaki dekont dosyaları (Sheets'ten gelen Drive bağlantıları depoda değil)
+    const yollar = (dosyalar || []).filter((y) => y && !/^https:\/\//.test(y));
+    if (yollar.length) {
+      const { error: dHata } = await sb.storage.from('dekontlar').remove(yollar);
+      if (dHata) bildir(`Kişi silindi ama ${yollar.length} dekont dosyası silinemedi: ${dHata.message}`, true, 15000);
+    }
+    bildir(`${t.ad} anonimleştirildi; sonuç üyeye mailleniyor ✓`);
+    setTimeout(() => { location.hash = 'uyeler'; location.reload(); }, 1200);
+  }
+  window.FCVeriTalepGorunum = () => {
+    const FC = window.FC;
+    if (!FC) return { talepler: [], talepYok: true, talepOzet: '' };
+    const talepler = FC.veriTalepleri.map((t) => ({
+      ad: t.ad, eposta: t.eposta, tarih: zaman(t.created_at),
+      durum: t.durum === 'tamam' ? `Silindi · ${zaman(t.tamam_at)}` : 'Bekliyor',
+      rozet: t.durum === 'tamam' ? pill('#111111', '#FFFFFF') : pill('#F3DCD5', '#82301F'),
+      bekliyor: t.durum === 'bekliyor' && !!t.uye_id,
+      indir: () => veriKopyasi(t), sil: () => veriSil(t),
+    }));
+    const bekleyen = FC.veriTalepleri.filter((t) => t.durum === 'bekliyor').length;
+    return { talepler, talepYok: !talepler.length, talepOzet: bekleyen ? `${bekleyen} talep bekliyor; yasal süre 30 gün.` : 'Bekleyen talep yok.' };
+  };
+
+  // --- Kapıda karekod: kamera ------------------------------------------------------------------------------------
+  // Tarayıcıda BarcodeDetector varsa o; yoksa jsQR yalnız ilk kullanımda (SRI ile) yüklenir.
+  let jsqrSozu = null;
+  function jsqrYukle() {
+    if (window.jsQR) return Promise.resolve(window.jsQR);
+    if (!jsqrSozu) {
+      jsqrSozu = new Promise((ok, red) => {
+        const b = document.createElement('script');
+        b.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+        b.integrity = 'sha384-b5Ya4Bq3qCyz39m2ISh+4DxjAIljdeFwK/BsXLuj9gugaNwAcj/ia15fxNZL9Nlx';
+        b.crossOrigin = 'anonymous';
+        b.onload = () => ok(window.jsQR);
+        b.onerror = () => { jsqrSozu = null; red(new Error('Karekod okuyucu yüklenemedi; kodu elle yazın.')); };
+        document.head.appendChild(b);
+      });
+    }
+    return jsqrSozu;
+  }
+  // video: <video> öğesi; bulundu(kod): okunan FC-U-… / FC-T-… kodu (aynı kod 4 sn içinde tekrar gelmez). Dönüş: durdur()
+  window.FCKameraAc = async (video, bulundu) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Bu tarayıcı kameraya erişemiyor; kodu elle yazın.');
+    const akis = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+      .catch(() => { throw new Error('Kamera açılamadı (izin verilmedi ya da kamera yok); kodu elle yazın.'); });
+    let dur = false;
+    const durdur = () => { dur = true; akis.getTracks().forEach((t) => t.stop()); video.srcObject = null; };
+    try {
+      video.muted = true;
+      video.setAttribute('playsinline', '');
+      video.srcObject = akis;
+      await video.play().catch(() => {});
+      let oku = null;
+      if ('BarcodeDetector' in window) {
+        try {
+          const bd = new window.BarcodeDetector({ formats: ['qr_code'] });
+          oku = async () => { const r = await bd.detect(video); return r.length ? r[0].rawValue : ''; };
+        } catch (h) { oku = null; }
+      }
+      if (!oku) {
+        const jsQR = await jsqrYukle();
+        const tuval = document.createElement('canvas');
+        const ctx = tuval.getContext('2d', { willReadFrequently: true });
+        oku = async () => {
+          const w = video.videoWidth;
+          const y = video.videoHeight;
+          if (!w || !y) return '';
+          tuval.width = w;
+          tuval.height = y;
+          ctx.drawImage(video, 0, 0, w, y);
+          const r = jsQR(ctx.getImageData(0, 0, w, y).data, w, y, { inversionAttempts: 'dontInvert' });
+          return r ? r.data : '';
+        };
+      }
+      let son = '';
+      let sonZaman = 0;
+      const dongu = async () => {
+        if (dur) return;
+        try {
+          const m = /FC-T-[A-Z0-9]{6}|FC-U-\d+/i.exec(await oku());
+          const kod = m ? m[0].toUpperCase() : '';
+          if (kod && (kod !== son || Date.now() - sonZaman > 4000)) { son = kod; sonZaman = Date.now(); bulundu(kod); }
+        } catch (h) { /* kare okunamadı; sonrakini dene */ }
+        if (!dur) setTimeout(dongu, 250);
+      };
+      dongu();
+    } catch (h) {
+      durdur();
+      throw h;
+    }
+    return durdur;
+  };
+
   // Üye listesini CSV indirir (Excel için noktalı virgül ve BOM; formül gibi başlayan hücreler metne çevrilir)
   window.FCUyeCsv = () => {
     const hucre = (x) => {
@@ -282,7 +407,7 @@
     const listeUygula = (key, l) => {
       const sira = kisiSira();
       const cevir = (ids) => ids.map((id) => sira.get(id)).filter((i) => i !== undefined);
-      const yeni = { kontenjan: l.kontenjan, kayitli: cevir(l.kayitli), bekleme: cevir(l.bekleme), gelen: cevir(l.gelen) };
+      const yeni = { kontenjan: l.kontenjan, kayitli: cevir(l.kayitli), bekleme: cevir(l.bekleme), gelen: cevir(l.gelen), tanisma: l.tanisma || 0 };
       sunucudan.add(yeni);
       panel.setState((s) => ({ kayitlar: { ...s.kayitlar, [key]: yeni } }));
     };
@@ -453,11 +578,11 @@
           }
         });
       }
-      // Tanışma biletleri
+      // Tanışma biletleri (kapıda okutulanlar giris_kaydet ile zaten yazıldı: kapida)
       if (once.biletler !== simdi.biletler) {
         simdi.biletler.forEach((b) => {
           const e = once.biletler.find((x) => x.id === b.id);
-          if (e && e.durum !== b.durum) yaz(sb.from('tanisma_biletleri').update({ durum: b.durum }).eq('id', b.id), 'Bilet güncellendi ✓');
+          if (e && e.durum !== b.durum && !b.kapida) yaz(sb.from('tanisma_biletleri').update({ durum: b.durum }).eq('id', b.id), 'Bilet güncellendi ✓');
         });
       }
       // Yönetici notu (anahtar üye numarası)

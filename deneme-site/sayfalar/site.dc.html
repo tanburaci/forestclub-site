@@ -352,10 +352,10 @@ a{color:#111111}a:hover{color:#000000}
               </div>
               <div style="flex: none; width: 120px; background: #111111; color: #FFFFFF; border-left: 2.5px dashed #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px">
                 <span style="font-size: 12px; color: #CFCFCF">KOD</span>
-                <span style="font-size: 18px; font-weight: 700; letter-spacing: .04em">FC-T-4821</span>
+                <span style="font-size: 18px; font-weight: 700; letter-spacing: .04em">{{ tKod }}</span>
               </div>
             </div>
-            <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3A3A3A">Yerin ayrıldı ve biletini e-postana da gönderdik. Girişte kodunu göstermen yeterli.</p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3A3A3A">{{ tVerildiYazi }}</p>
             <a class="fs-btn fs-btn-acik" href="{{ tEtkTakvim }}">Takvime ekle</a>
           </div>
         </sc-if>
@@ -626,6 +626,7 @@ a{color:#111111}a:hover{color:#000000}
         </div>
       </div>
       <div class="fs-dogal fs-dogal-masaustu" style="top: 60px; right: 4%; width: 150px; transform: rotate(-10deg)"><svg viewBox="0 0 170 90" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 52h86" fill="none" stroke-width="10" stroke="#111111"/><path d="M8 52h86" fill="none" stroke-width="5" stroke="#E3A92B"/><path d="M94 40 L150 14 Q162 45 150 78 L94 64 Z" fill="#E3A92B"/><ellipse cx="152" cy="46" rx="9" ry="32" fill="#F4C95D"/><path d="M40 52V30M56 52V30M72 52V30" fill="none"/><rect x="34" y="22" width="12" height="9" rx="3" fill="#E3A92B"/><rect x="50" y="22" width="12" height="9" rx="3" fill="#E3A92B"/><rect x="66" y="22" width="12" height="9" rx="3" fill="#E3A92B"/><path d="M30 52q-4 18 18 20h40" fill="none"/></g></svg></div>
+      <sc-if value="{{ tanismaSunuluyor }}" hint-placeholder-val="{{ true }}">
       <div style="background: #111111; color: #FFFFFF; border-radius: 20px; padding: 20px 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px">
         <div style="min-width: 0; flex: 1 1 320px">
           <div class="fs-baslik" style="font-size: 38px; color: #FFFFFF">İlk kez mi geleceksin?</div>
@@ -633,6 +634,7 @@ a{color:#111111}a:hover{color:#000000}
         </div>
         <button type="button" class="fs-btn fs-btn-acik" onClick="{{ tanismaAc }}" style="background: #FFFFFF; color: #111111">Tanışma biletini al</button>
       </div>
+      </sc-if>
       <h3 style="margin: 8px 0 0; font-size: 22px">Yaklaşan</h3>
       <sc-if value="{{ yaklasanYok }}" hint-placeholder-val="{{ false }}">
         <p style="margin: 0; color: #5E5E5E">{{ yaklasanYokYazi }}</p>
@@ -844,11 +846,11 @@ a{color:#111111}a:hover{color:#000000}
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px">
         <h3 style="margin: 0 0 4px; font-size: 16px">İletişim</h3>
-        <a href="mailto:forestcluburla@gmail.com">forestcluburla@gmail.com</a>
-        <span style="color: #3A3A3A">Pinya, Urla</span>
-        <a href="#">[Instagram]</a>
+        <a href="{{ ilt.epostaLink }}">{{ ilt.eposta }}</a>
+        <span style="color: #3A3A3A">{{ ilt.alan }}</span>
+        <a href="{{ ilt.instagramLink }}">{{ ilt.instagramYazi }}</a>
         <a href="{{ waLink }}">WhatsApp: {{ waYazi }}</a>
-        <a href="#">[WhatsApp topluluğu]</a>
+        <a href="{{ ilt.toplulukLink }}">{{ ilt.toplulukYazi }}</a>
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px">
         <h3 style="margin: 0 0 4px; font-size: 16px">Metinler</h3>
@@ -1000,7 +1002,16 @@ class Component extends DCLogic {
       ] },
     ];
     // WhatsApp numarası (Tweaks › İletişim): 0532… ya da 532… yazılırsa wa.me için 90 eklenir
-    const waHam = String(this.props.whatsapp ?? '').trim();
+    // Deneme sitesi: iletişim bilgileri yönetim panelindeki ayarlardan (ayarlar.iletisim)
+    const IL = (window.FCS && window.FCS.ayar && window.FCS.ayar.iletisim) || {};
+    const waHam = String(IL.whatsapp || this.props.whatsapp || '').trim();
+    const igAd = String(IL.instagram || '').replace(/^@/, '').trim();
+    const ilt = {
+      eposta: IL.eposta || 'forestcluburla@gmail.com', alan: IL.alan || 'Pinya, Urla',
+      instagramLink: igAd ? `https://www.instagram.com/${encodeURIComponent(igAd)}/` : '#', instagramYazi: igAd ? `Instagram: @${igAd}` : '[Instagram]',
+      toplulukLink: /^https:\/\//.test(IL.topluluk || '') ? IL.topluluk : '#', toplulukYazi: /^https:\/\//.test(IL.topluluk || '') ? 'WhatsApp topluluğu' : '[WhatsApp topluluğu]',
+    };
+    ilt.epostaLink = `mailto:${ilt.eposta}`;
     let waNo = waHam.replace(/\D/g, '');
     if (waNo.startsWith('0')) waNo = `90${waNo.slice(1)}`;
     else if (waNo.length === 10) waNo = `90${waNo}`;
@@ -1111,6 +1122,11 @@ class Component extends DCLogic {
       }),
       tEtkYazi: (() => { const b = tumu.find((x) => `${x.tarih}|${x.ad}` === this.state.tEtk); return b ? `${b.ad} · ${b.gun} ${b.ay}` : ''; })(),
       tEtkTakvim: (() => { const b = tumu.find((x) => `${x.tarih}|${x.ad}` === this.state.tEtk); return b ? b.takvim : '#'; })(),
+      ilt, tanismaSunuluyor: !(window.FCS && window.FCS.ayar && window.FCS.ayar.tanisma_acik === false),
+      // Gerçek kod yalnız e-postayla gider (e-posta adresi böylece doğrulanmış olur)
+      tKod: window.FCSTanisma ? 'E-POSTANDA' : 'FC-T-4821',
+      tVerildiYazi: window.FCSTanisma ? 'Yerin ayrıldı; bilet kodunu e-postana gönderdik. Girişte kodunu göstermen yeterli. Mail gelmezse gereksiz klasörüne de bak.'
+        : 'Yerin ayrıldı ve biletini e-postana da gönderdik. Girişte kodunu göstermen yeterli.',
       tanismaAcik: !!t, tForm: t === 'form', tVerildi: t === 'verildi', tUye: t === 'uye', tKullanilmis: t === 'kullanilmis',
       tAd: this.state.tAd, tEposta: this.state.tEposta, tOnay: this.state.tOnay, tHata: this.state.tHata,
       tAdYaz: (e) => this.setState({ tAd: e.target.value, tHata: '' }),
