@@ -283,6 +283,9 @@ a{color:#111111}a:hover{color:#000000}
                 <span style="position: absolute; left: -9999px">Üye ara</span>
                 <input class="fc-input" type="search" placeholder="İsim, telefon, e-posta ya da kod ara" value="{{ arama }}" onChange="{{ aramaYaz }}">
               </label>
+              <sc-if value="{{ csvVar }}" hint-placeholder-val="{{ false }}">
+                <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ csvIndir }}" style="padding: 8px 14px; min-height: 44px; font-size: 14px">Listeyi indir (CSV)</button>
+              </sc-if>
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 8px">
               <sc-for list="{{ filtreler }}" as="f" hint-placeholder-count="4">
@@ -451,7 +454,7 @@ a{color:#111111}a:hover{color:#000000}
                   <div style="display: flex; gap: 8px; flex-wrap: wrap">
                     <button type="button" class="fc-btn" onClick="{{ e.yoklamaAc }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Katılımcılar · yoklama</button>
                     <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ e.iptalAc }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">İptal / ertele</button>
-                    <button type="button" class="fc-btn fc-btn-ikincil" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Duyuruyu düzenle</button>
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ e.duyuruDuzenle }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Duyuruyu düzenle</button>
                   </div>
                 </article>
               </sc-for>
@@ -1062,6 +1065,14 @@ a{color:#111111}a:hover{color:#000000}
               <h2 style="margin: 0; font-family: 'Amatic SC', cursive; font-size: 56px; line-height: 1; color: #111111">E-postalar</h2>
               <p style="margin: 6px 0 0; color: #5E5E5E">Kendiliğinden giden maillerin konusu ve metni. Süslü parantezli alanlar gönderirken kişinin bilgisiyle dolar.</p>
             </div>
+            <sc-if value="{{ ep2.saglikVar }}" hint-placeholder-val="{{ false }}">
+              <section role="alert" style="background: #F3DCD5; color: #82301F; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+                <strong>Otomatik işlerde sorun var (son 24 saat)</strong>
+                <sc-for list="{{ ep2.saglikSatirlari }}" as="m" hint-placeholder-count="2">
+                  <span style="font-size: 14px">{{ m }}</span>
+                </sc-for>
+              </section>
+            </sc-if>
             <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
               <nav aria-label="Şablonlar" style="flex: 1 1 260px; min-width: 0; background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 10px; display: flex; flex-direction: column; gap: 4px">
                 <sc-for list="{{ sListe }}" as="s" hint-placeholder-count="6">
@@ -1129,6 +1140,26 @@ a{color:#111111}a:hover{color:#000000}
                 </section>
               </div>
             </div>
+            <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+              <div>
+                <h3 style="margin: 0; font-size: 20px">Gönderim geçmişi</h3>
+                <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 14px">{{ ep2.kuyrukOzet }}</p>
+              </div>
+              <sc-if value="{{ ep2.kuyrukYok }}" hint-placeholder-val="{{ false }}">
+                <p style="margin: 0; color: #5E5E5E">Henüz mail gönderilmedi.</p>
+              </sc-if>
+              <div style="overflow-x: auto">
+                <table class="fc-tablo">
+                  <thead><tr><th>Zaman</th><th>Şablon</th><th>Alıcı</th><th>Durum</th><th>Not</th><th><span style="position: absolute; left: -9999px">İşlem</span></th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ ep2.kuyruk }}" as="q" hint-placeholder-count="3">
+                      <tr><td>{{ q.zaman }}</td><td>{{ q.sablon }}</td><td style="color: #3A3A3A">{{ q.alici }}</td><td><span style="{{ q.rozet }}">{{ q.durum }}</span></td><td style="color: #5E5E5E; font-size: 13px">{{ q.hata }}</td>
+                        <td><sc-if value="{{ q.tekrarVar }}" hint-placeholder-val="{{ false }}"><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ q.tekrar }}" style="padding: 6px 12px; min-height: 36px; font-size: 13px">Yeniden dene</button></sc-if></td></tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </div>
         </sc-if>
 
@@ -1310,7 +1341,7 @@ class Component extends DCLogic {
         metin: 'Merhaba {ad},\n\n{etkinlik} için geldiğin için teşekkürler! Üye panelinden 1–5 arası puan verip bir cümle yazarsan bir sonrakini daha güzel yaparız. Fotoğraflar da panelde.\n\nForest Club Urla' },
     ];
     this.ORNEK = { ad: 'Deniz', bitis: '23.11.2026', odemeLinki: '[ödeme bağlantısı]', etkinlik: 'Breakfast Club', tarih: '26 Ekim Pazar', saat: '10.00', yer: 'Pinya, Urla', kod: 'FC-4821', ozelGun: 'Evlilik yıldönümün', biletKodu: 'FC-T-4821', duyuru: '26.10.2026 tarihli Breakfast Club, yağmur nedeniyle 02.11.2026 tarihine ertelendi. Kaydın yeni tarihe taşındı.' };
-    this.ALAN_AD = { ad: 'Ad', bitis: 'Üyelik bitişi', odemeLinki: 'Ödeme (dekont) sayfası bağlantısı', etkinlik: 'Etkinlik adı', tarih: 'Etkinlik tarihi', saat: 'Saat', yer: 'Yer', kod: 'Geçici şifre', ozelGun: 'Özel günün adı', biletKodu: 'Tanışma bileti kodu', duyuru: 'İptal / erteleme duyuru metni' };
+    this.ALAN_AD = { neden: 'Red gerekçesi', ozet: 'Sorun özeti', ad: 'Ad', bitis: 'Üyelik bitişi', odemeLinki: 'Ödeme (dekont) sayfası bağlantısı', etkinlik: 'Etkinlik adı', tarih: 'Etkinlik tarihi', saat: 'Saat', yer: 'Yer', kod: 'Geçici şifre', ozelGun: 'Özel günün adı', biletKodu: 'Tanışma bileti kodu', duyuru: 'İptal / erteleme duyuru metni' };
     // Örnek üye profilleri (gerçekte üye kendi panelinden girer)
     this.PROFILLER = {
       'Deniz Yılmaz': { dogum: '1992-11-03', ozel: [{ ad: 'Evlilik yıldönümü', tarih: '2019-06-14' }], ilgi: ['Yoga', 'Kahvaltı buluşmaları'], kutlama: true, foto: true, tanisma: 'Instagram', baslangic: '26.08.2026' },
@@ -1395,12 +1426,16 @@ class Component extends DCLogic {
       const f = this.state.form;
       if (!f.tarih) return this.setState({ formHata: 'Tarih seçin.' });
       if (!f.ad.trim()) return this.setState({ formHata: 'Etkinlik adını yazın.' });
+      if (this.state.etkinlikler.some((x) => x.tarih === f.tarih && x.ad === f.ad.trim())) {
+        return this.setState({ formHata: 'Bu tarihte aynı adla bir etkinlik zaten var; adı biraz değiştirin.' });
+      }
+      if (f.link && !/^https:\/\//.test(f.link.trim())) return this.setState({ formHata: 'Instagram bağlantısı https:// ile başlamalı.' });
       const kontenjan = Math.max(1, Number(f.kontenjan) || 30);
       this.setState((s) => ({
         etkinlikler: [...s.etkinlikler, { ...f, ad: f.ad.trim(), kontenjan, satis: Number(String(f.fiyat).replace(/\./g, '')) > 0 ? { fiyat: Number(String(f.fiyat).replace(/\./g, '')), uye: f.uye, satilan: 0 } : null }],
         kayitlar: { ...s.kayitlar, [`${f.tarih}|${f.ad.trim()}`]: { kontenjan, kayitli: [], bekleme: [], gelen: [] } },
         form: { ...this.BOS }, formAcik: false, formHata: '',
-        eklendiMesaj: `“${f.ad.trim()}” eklendi. Duyurusu hazır olunca üyelere gönderilecek.`,
+        eklendiMesaj: window.FC ? `“${f.ad.trim()}” eklendi; sitede ve üye panelinde görünür.` : `“${f.ad.trim()}” eklendi. Duyurusu hazır olunca üyelere gönderilecek.`,
       }));
     };
     // Muhasebe formu
@@ -1706,8 +1741,8 @@ class Component extends DCLogic {
               degis: () => kGuncelle({ gelen: geldi ? k.gelen.filter((x) => x !== i) : [...k.gelen, i] }),
             };
           }),
-          beklemeListe: k.bekleme.length ? `Bekleme listesi: ${k.bekleme.map((i) => this.KISILER[i]).join(', ')} — biri “gelemeyeceğim” deyince sıradaki kendiliğinden kayda geçer (mail özelliği yakında).` : 'Bekleme listesi boş.',
-          alicilar: `${k.kayitli.length} kayıtlı${k.bekleme.length ? ` + ${k.bekleme.length} bekleme listesindeki` : ''} kişi. Kayıtlılara mail özelliği yakında; duyuru metni şimdilik kaydedilmez.`,
+          beklemeListe: k.bekleme.length ? `Bekleme listesi: ${k.bekleme.map((i) => this.KISILER[i]).join(', ')} — yer açılınca sıradaki aktif üye kendiliğinden kayda geçer ve mail alır.` : 'Bekleme listesi boş.',
+          alicilar: `Duyuru metni ${k.kayitli.length} kayıtlı${k.bekleme.length ? ` ve ${k.bekleme.length} bekleme listesindeki` : ''} kişiye maille gider.`,
         },
         kod: this.state.kod, kodMesaj: this.state.kodMesaj,
         kodYaz: (e) => this.setState({ kod: e.target.value, kodMesaj: '' }),
@@ -1749,15 +1784,14 @@ class Component extends DCLogic {
         iptalDuyur: () => {
           if (ip.tur === 'ertele' && !ip.tarih) return this.setState({ iptalMesaj: 'Yeni tarihi seçin.' });
           const etiket = ip.tur === 'iptal' ? 'İptal edildi' : `Ertelendi → ${tYaz(ip.tarih)}`;
-          const mailNotu = `Kayıtlılara mail özelliği yakında; şimdilik ${k.kayitli.length + k.bekleme.length} kişiye ayrıca haber verin.`;
           if (!window.FCEtkinlikDurum) {
-            return this.setState((s) => ({ etkDurum: { ...s.etkDurum, [p.key]: etiket }, iptalMesaj: `Önizleme: ${etiket}. ${mailNotu}` }));
+            return this.setState((s) => ({ etkDurum: { ...s.etkDurum, [p.key]: etiket }, iptalMesaj: `Önizleme: ${etiket}. ${k.kayitli.length + k.bekleme.length} kişiye mail gider.` }));
           }
           this.setState({ iptalMesaj: 'Kaydediliyor…' });
-          window.FCEtkinlikDurum(p.key, ip.tur, ip.tarih, ip.neden)
-            .then(() => this.setState((s) => ({
+          window.FCEtkinlikDurum(p.key, ip.tur, ip.tarih, ip.neden, ip.mesaj || varsayilan)
+            .then((r) => this.setState((s) => ({
               etkDurum: { ...s.etkDurum, [p.key]: etiket },
-              iptalMesaj: `${ip.tur === 'iptal' ? 'İptal edildi: etkinlik sitedeki listeden kalktı.' : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) görünüyor, kayıtlar taşındı; bu listede sayfa yenilenince güncellenir.`} ${mailNotu}`,
+              iptalMesaj: `${ip.tur === 'iptal' ? 'İptal edildi: etkinlik sitedeki listeden kalktı.' : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) görünüyor, kayıtlar taşındı; bu listede sayfa yenilenince güncellenir.`} Duyuru ${r.mail} kişiye maille gidiyor.`,
             })))
             .catch((h) => this.setState({ iptalMesaj: h.message }));
         },
@@ -1803,7 +1837,7 @@ class Component extends DCLogic {
       const bugun = x.tarih === BUGUN;
       return {
         ...x, gun: d, ay: AYLAR[Number(m) - 1], tarihYazi: `${d}.${m}.${y}`, kim: x.kim || '—',
-        durum: bugun ? 'Bugün' : 'Taslak · duyuru bekliyor',
+        durum: bugun ? 'Bugün' : window.FC ? 'Yayında' : 'Taslak · duyuru bekliyor',
         rozet: bugun ? BEKLER : TASLAK,
         bilgi: x.kim || '',
       };
@@ -1846,8 +1880,8 @@ class Component extends DCLogic {
       .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id).slice(0, 5)
       .map((h) => ({
         ad: h.aciklama.replace('Aidat · ', ''), tutar: TL(h.tutar),
-        detay: h.odeme === 'kart' ? `${tarihYaz(h.tarih)} · üyelik başladı, muhasebeye yazıldı` : `${tarihYaz(h.tarih)} · nakit kasaya yazıldı`,
-        yol: h.odeme === 'kart' ? 'Kart · iyzico' : 'Elden', rozet: h.odeme === 'kart' ? AKTIF : TASLAK,
+        detay: h.odeme === 'elden' ? `${tarihYaz(h.tarih)} · nakit kasaya yazıldı` : `${tarihYaz(h.tarih)} · üyelik uzadı, bankaya yazıldı`,
+        yol: { kart: 'Kart · iyzico', havale: 'Havale · dekont', elden: 'Elden' }[h.odeme] || 'Elden', rozet: h.odeme === 'elden' ? TASLAK : AKTIF,
       }));
     const buAyKart = kartH.filter((h) => h.kategori === 'Aidat' && h.tarih.startsWith(BUGUN.slice(0, 7)));
     const elden = this.state.elden;
@@ -2003,6 +2037,8 @@ class Component extends DCLogic {
     const doldur = (t) => t.replace(/\{(\w+)\}/g, (m, k) => (this.ORNEK[k] !== undefined ? this.ORNEK[k] : m));
     return {
       epostaSekme: sekme === 'eposta',
+      ep2: window.FCEpostaGorunum ? window.FCEpostaGorunum(this) : { saglikVar: false, saglikSatirlari: [], kuyruk: [], kuyrukYok: true, kuyrukOzet: '' },
+      csvVar: !!window.FCUyeCsv, csvIndir: () => window.FCUyeCsv(),
       sListe: sablonlar.map((s) => ({
         ad: s.ad, durum: s.acik ? (s.gun ? `Açık · ${s.gun} ${s.gunYazi.replace(' gönderilsin', '')}` : 'Açık') : 'Kapalı',
         stil: `text-align:left;border:0;border-radius:10px;padding:12px 14px;min-height:44px;font-family:Figtree,sans-serif;${s.id === sSec.id ? 'background:#111111;color:#FFFFFF' : 'background:transparent;color:#111111'}`,
@@ -2017,9 +2053,17 @@ class Component extends DCLogic {
       sGunYaz: (e) => { const v = Math.min(14, Math.max(1, Number(e.target.value) || 1)); this.setState((s) => ({ sablonlar: s.sablonlar.map((x) => (x.id === sSec.id ? { ...x, gun: v } : x)) })); },
       sAcikDegis: () => this.setState((s) => ({ sablonlar: s.sablonlar.map((x) => (x.id === sSec.id ? { ...x, acik: !x.acik } : x)), sMesaj: '' })),
       sKaydet: () => this.setState({ sMesaj: `“${sSec.ad}” şablonu kaydedildi.` }),
-      sDeneme: () => this.setState({ sMesaj: 'Deneme maili forestcluburla@gmail.com adresine gönderildi (önizleme).' }),
+      sDeneme: () => {
+        if (!window.FCEpostaDeneme) return this.setState({ sMesaj: 'Önizlemede mail gönderilmez.' });
+        this.setState({ sMesaj: 'Gönderiliyor…' });
+        window.FCEpostaDeneme(sSec)
+          .then((adres) => this.setState({ sMesaj: `Deneme maili ${adres} adresine sıraya alındı; bir dakika içinde gelir.` }))
+          .catch((h) => this.setState({ sMesaj: h.message }));
+      },
       sSifirla: () => this.setState((s) => ({
-        sablonlar: s.sablonlar.map((x) => (x.id === sSec.id ? { ...this.SABLONLAR.find((o) => o.id === x.id) } : x)),
+        sablonlar: s.sablonlar.map((x) => (x.id !== sSec.id ? x : window.FC
+          ? { ...x, konu: x.varsayilanKonu, metin: x.varsayilanMetin }
+          : { ...this.SABLONLAR.find((o) => o.id === x.id) })),
         sMesaj: 'Şablon ilk hâline döndü.',
       })),
       sOnizKonu: doldur(sSec.konu), sOnizMetin: doldur(sSec.metin),
@@ -2179,6 +2223,7 @@ class Component extends DCLogic {
           // Kontenjan artınca bekleme listesinden sıradakiler kayda geçer (gerçekte "yer açıldı" maili gider)
           kontenjanYaz: (ev) => {
             const yeni = Math.max(1, Number(ev.target.value) || 1);
+            if (window.FC) return this.setState((s) => ({ kayitlar: { ...s.kayitlar, [key]: { ...(s.kayitlar[key] || { kayitli: [], bekleme: [], gelen: [] }), kontenjan: yeni } } }));
             this.setState((s) => {
               const kk = s.kayitlar[key] || { kayitli: [], bekleme: [], gelen: [] };
               const bos = Math.max(0, yeni - kk.kayitli.length);
@@ -2187,6 +2232,7 @@ class Component extends DCLogic {
           },
           yoklamaAc: () => this.setState({ etkPanel: { key, mod: 'yoklama' }, kod: '', kodMesaj: '' }),
           iptalAc: () => this.setState({ etkPanel: { key, mod: 'iptal' }, iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '' }),
+          duyuruDuzenle: () => this.setState({ sekme: 'eposta', sSecili: 'duyuru', sMesaj: '' }),
         };
       }),
       gecmisEtk: etkGorunum.filter((x) => x.tarih < BUGUN).reverse().map((x, i) => ({
@@ -2258,7 +2304,7 @@ class Component extends DCLogic {
         { gun: '09', ay: 'KASIM', ad: 'Seramik atölyesi', saat: 'Cumartesi 14.00 · %50 üye indirimi', durum: 'Hazır', rozet: BEKLER, bilgi: 'Duyuru bugün gidecek' },
         { gun: '16', ay: 'KASIM', ad: 'Yoga ve nefes', saat: 'Pazar 09.30 · Pinya', durum: 'Taslak', rozet: TASLAK, bilgi: 'Duyuru metni bekleniyor' },
       ],
-      mesajlar: [
+      mesajlar: window.FC ? [{ ad: 'Sitede iletişim formu yok', zaman: '', metin: 'Mesajlar WhatsApp ve e-postayla geliyor.' }] : [
         { ad: 'Selin Demir', zaman: 'Bugün 09.12', metin: 'Breakfast Club için yanımda bir arkadaşımı getirebilir miyim?' },
         { ad: 'Can Öztürk', zaman: 'Dün 18.40', metin: 'Üyeliğimi yenilemek istiyorum, dekontu nereden gönderiyorum?' },
         { ad: 'Ece Arslan', zaman: '22 Ekim', metin: 'Seramik atölyesinin kontenjanı doldu mu?' },
