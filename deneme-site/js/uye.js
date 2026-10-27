@@ -70,7 +70,7 @@
       bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket,
       hesap: {
         ad: u.ad, kod: u.kod, bitis: u.bitis || '',
-        odemeler: ods.data.map((o) => ({ tarih: o.tarih, yol: o.yol === 'kart' ? 'Kart · iyzico' : 'Elden' })),
+        odemeler: ods.data.map((o) => ({ tarih: o.tarih, yol: ({ kart: 'Kart', havale: 'Havale · dekont', elden: 'Elden' })[o.yol] || o.yol, tutar: Number(o.tutar) })),
         profil: { telefon: u.tel || '', dogum: u.dogum_gunu || '', kutlama: u.kutlama_izni, foto: u.foto_izni,
           ilgi: u.ilgi_alanlari || [], ozel: u.ozel_gunler || [] },
         katildi: gecmisEtk.map((e) => String(e.id)),

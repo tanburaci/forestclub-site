@@ -54,8 +54,21 @@ a{color:#111111}a:hover{color:#000000}
         <img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="Forest Club Urla" style="width: 120px; align-self: center">
         <div style="text-align: center">
           <h1 class="fu-baslik" style="font-size: 48px">Üye girişi</h1>
-          <p style="margin: 8px 0 0; color: #5E5E5E; font-size: 15px">Başvuruda yazdığın e-posta ve şifrenle gir.</p>
+          <p style="margin: 8px 0 0; color: #5E5E5E; font-size: 15px">{{ girisAlt }}</p>
         </div>
+        <sc-if value="{{ sifreYenile }}" hint-placeholder-val="{{ false }}">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Yeni şifre
+            <input class="fu-input" type="password" autocomplete="new-password" value="{{ yeni1 }}" onChange="{{ yeni1Yaz }}">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Yeni şifre (tekrar)
+            <input class="fu-input" type="password" autocomplete="new-password" value="{{ yeni2 }}" onChange="{{ yeni2Yaz }}">
+          </label>
+          <sc-if value="{{ girisHata }}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ girisHata }}</p>
+          </sc-if>
+          <button type="button" class="fu-btn" onClick="{{ sifreKaydet }}">Şifremi kaydet</button>
+        </sc-if>
+        <sc-if value="{{ girisNormal }}" hint-placeholder-val="{{ true }}">
         <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">E-posta
           <input class="fu-input" type="email" autocomplete="email" value="{{ eposta }}" onChange="{{ epostaYaz }}">
         </label>
@@ -74,6 +87,7 @@ a{color:#111111}a:hover{color:#000000}
         <sc-if value="{{ girisBilgi }}" hint-placeholder-val="{{ false }}">
           <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600">{{ girisBilgi }}</p>
         </sc-if>
+        <sc-if value="{{ ornekGoster }}" hint-placeholder-val="{{ true }}">
         <div style="background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
           <span style="font-size: 13px; font-weight: 700">Deneme hesapları · basınca e-posta dolar, şifreyi sen yaz</span>
           <sc-for list="{{ ornekHesaplar }}" as="h" hint-placeholder-count="3">
@@ -82,6 +96,8 @@ a{color:#111111}a:hover{color:#000000}
             </button>
           </sc-for>
         </div>
+        </sc-if>
+        </sc-if>
         <a href="Site.dc.html" style="align-self: center; font-size: 14px; font-weight: 600">Siteye dön</a>
       </div>
     </div>
@@ -269,7 +285,9 @@ a{color:#111111}a:hover{color:#000000}
             <article class="fu-kart" style="display: flex; flex-direction: column; gap: 12px; padding: 18px">
               <div style="display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center">
                 <div><div style="font-weight: 700; font-size: 18px">{{ g.ad }}</div><div style="color: #5E5E5E; font-size: 14px">{{ g.tarih }}</div></div>
-                <button type="button" class="fu-btn fu-btn-ikincil" onClick="{{ g.galeriDegis }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">{{ g.galeriDugme }}</button>
+                <sc-if value="{{ g.galeriVar }}" hint-placeholder-val="{{ true }}">
+                  <button type="button" class="fu-btn fu-btn-ikincil" onClick="{{ g.galeriDegis }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">{{ g.galeriDugme }}</button>
+                </sc-if>
               </div>
               <sc-if value="{{ g.galeriAcik }}" hint-placeholder-val="{{ false }}">
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px">
@@ -334,7 +352,9 @@ a{color:#111111}a:hover{color:#000000}
                   <button type="button" class="fu-btn" onClick="{{ ode }}">Kartla öde · 3.000 TL</button>
                   <button type="button" class="fu-btn fu-btn-ikincil" onClick="{{ odemeVazgec }}">Vazgeç</button>
                 </div>
-                <button type="button" class="fu-sade" onClick="{{ odeHata }}" style="align-self: flex-start; font-size: 13px; text-decoration: underline; padding: 8px 4px">Önizleme: başarısız ödemeyi göster</button>
+                <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
+                  <button type="button" class="fu-sade" onClick="{{ odeHata }}" style="align-self: flex-start; font-size: 13px; text-decoration: underline; padding: 8px 4px">Önizleme: başarısız ödemeyi göster</button>
+                </sc-if>
               </div>
             </sc-if>
             <sc-if value="{{ odemeBasarili }}" hint-placeholder-val="{{ false }}">
@@ -448,7 +468,7 @@ a{color:#111111}a:hover{color:#000000}
           </sc-if>
           <div style="display: flex; gap: 10px; flex-wrap: wrap">
             <button type="button" class="fu-btn" onClick="{{ profilKaydet }}">Profili kaydet</button>
-            <button type="button" class="fu-btn fu-btn-ikincil">Şifremi değiştir</button>
+            <button type="button" class="fu-btn fu-btn-ikincil" onClick="{{ sifreDegistir }}">Şifremi değiştir</button>
           </div>
         </div>
       </sc-if>
@@ -499,7 +519,9 @@ class Component extends DCLogic {
         katildi: [] },
     };
     this.state = {
-      girildi: false, eposta: window.FCU ? window.FCU.eposta : '', sifre: '', hatirla: true, girisHata: '', girisBilgi: '', hesap: 'deniz@ornek.com', sekme: 'ana',
+      girildi: false, eposta: window.FCU ? window.FCU.eposta : '', sifre: '', hatirla: true, girisHata: '', girisBilgi: '',
+      sifreYenile: !!window.FCU_SIFRE_YENILE, yeni1: '', yeni2: '',
+      hesap: window.FCU ? window.FCU.eposta : 'deniz@ornek.com', sekme: 'ana',  // ilk çizimde de üyenin kendi hesabı
       bitis: '', odemeler: [], odeme: 'yok', profil: null, katildi: [],
       kayit: {}, sepet: {}, sepetAdim: 'yok', satinAlinan: [],
       secili: '', bilet: null, kodHata: '',
@@ -609,9 +631,9 @@ class Component extends DCLogic {
         // Üyeye kendi fiyatı büyük: üyelik kapsamındakilerde “Sana ücretsiz”, bilet yalnız misafir için
         fiyatYazi: !aktif ? `Bilet ${TL(e.fiyat)}` : e.uye === 'ucretsiz' ? 'Sana ücretsiz' : e.uye === 'yuzde50' ? `Sana ${TL(e.fiyat / 2)}` : `Bilet ${TL(e.fiyat)}`,
         benimFiyat: !aktif ? 'Üyelik aktif değil: tam fiyat' : e.uye === 'ucretsiz' ? `Üyelik kapsamında · misafir bileti ${TL(e.fiyat)}` : e.uye === 'yuzde50' ? `Normal fiyat ${TL(e.fiyat)} · üyelere %50` : 'Üyelere de aynı fiyat',
-        sepetDugme: kalan <= sepette ? 'Yer kalmadı' : sepette ? `Sepette ${sepette} · bir tane daha` : aktif && !ucretli ? 'Misafir bileti ekle' : 'Sepete ekle',
+        sepetDugme: canli ? 'Bilet satışı yakında' : kalan <= sepette ? 'Yer kalmadı' : sepette ? `Sepette ${sepette} · bir tane daha` : aktif && !ucretli ? 'Misafir bileti ekle' : 'Sepete ekle',
         sepetSinif: aktif && !ucretli ? 'fu-btn fu-btn-ikincil' : 'fu-btn',
-        sepetKapali: kalan <= sepette,
+        sepetKapali: canli || kalan <= sepette,  // bilet satışı kartla ödemeyle gelecek
         sepeteEkle: () => { if (kalan > sepette) this.setState((s) => ({ sepet: { ...s.sepet, [id]: (s.sepet[id] || 0) + 1 }, sepetAdim: 'sepet' })); },
       };
     });
@@ -688,7 +710,7 @@ class Component extends DCLogic {
       const acik = this.state.galeri === id;
       const anketGuncelle = (deg) => this.setState((s) => ({ anket: { ...s.anket, [id]: { ...s.anket[id], ...deg } } }));
       return {
-        ...g, galeriAcik: acik, galeriDugme: acik ? 'Fotoğrafları kapat' : 'Fotoğraflar',
+        ...g, galeriAcik: acik, galeriDugme: acik ? 'Fotoğrafları kapat' : 'Fotoğraflar', galeriVar: !canli,  // galeri henüz yok
         galeriDegis: () => this.setState((s) => ({ galeri: s.galeri === id ? '' : id })),
         fotolar: ['[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]'],
         anketBekliyor: !a.bitti, anketBitti: a.bitti, puanYazi: `${a.puan} / 5`, yorum: a.yorum,
@@ -710,6 +732,26 @@ class Component extends DCLogic {
 
     return {
       girisEkrani: !girildi, panel: girildi,
+      // Şifre sıfırlama bağlantısıyla gelindiyse yeni şifre formu; deneme hesapları yalnız deneme sitesinde
+      sifreYenile: this.state.sifreYenile, girisNormal: !this.state.sifreYenile,
+      girisAlt: this.state.sifreYenile ? 'Yeni şifreni belirle.' : 'E-postana gelen giriş bağlantısıyla ya da şifrenle gir.',
+      ornekGoster: !window.FC_AYAR || window.FC_AYAR.deneme !== false, onizleme: !canli,
+      yeni1: this.state.yeni1, yeni2: this.state.yeni2,
+      yeni1Yaz: (e) => this.setState({ yeni1: e.target.value, girisHata: '' }),
+      yeni2Yaz: (e) => this.setState({ yeni2: e.target.value, girisHata: '' }),
+      sifreKaydet: () => {
+        const { yeni1, yeni2 } = this.state;
+        if (yeni1.length < 8 || !/\d/.test(yeni1)) return this.setState({ girisHata: 'Şifre en az 8 karakter olmalı ve bir rakam içermeli.' });
+        if (yeni1 !== yeni2) return this.setState({ girisHata: 'İki şifre aynı değil.' });
+        window.FCSifreKaydet(yeni1).catch((h) => this.setState({ girisHata: h.message }));
+      },
+      sifreDegistir: () => {
+        if (!window.FCSifreBaglantisi) return this.setState({ profilMesaj: 'Önizlemede şifre bağlantısı gönderilmez.' });
+        this.setState({ profilMesaj: 'Gönderiliyor…' });
+        window.FCSifreBaglantisi(this.state.hesap)
+          .then(() => this.setState({ profilMesaj: `${this.state.hesap} adresine şifre belirleme bağlantısı gönderdik.` }))
+          .catch((h) => this.setState({ profilMesaj: h.message }));
+      },
       eposta: this.state.eposta, sifre: this.state.sifre, hatirla: this.state.hatirla, girisHata: this.state.girisHata,
       epostaYaz: (e) => this.setState({ eposta: e.target.value, girisHata: '', girisBilgi: '' }),
       sifreYaz: (e) => this.setState({ sifre: e.target.value, girisHata: '' }),
@@ -741,7 +783,8 @@ class Component extends DCLogic {
       sAna: sekme === 'ana', sEtkinlikler: sekme === 'etkinlikler', sKatildiklarim: sekme === 'katildiklarim',
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
       ben, aktif, pasif: !aktif, uyari,
-      odemeyeGit: () => this.setState({ sekme: 'uyelik', odeme: 'ozet' }),
+      // Canlıda (kartla ödeme gelene kadar) ödeme havale + dekont sayfasından
+      odemeyeGit: () => (canli ? location.assign('/dekont') : this.setState({ sekme: 'uyelik', odeme: 'ozet' })),
       anaSayfayaGit: () => this.setState({ sekme: 'ana', odeme: 'yok' }),
       secimEtk, kodOlustur, kodHata: this.state.kodHata, bilet: this.state.bilet || { karekod: [] }, biletVar: !!this.state.bilet,
       yaklasan,
@@ -787,10 +830,10 @@ class Component extends DCLogic {
       // Ödeme (ilk üyelik, yeniden başlatma ya da yenileme)
       odemeYok: odeme === 'yok', odemeOzet: odeme === 'ozet', odemeBasarili: odeme === 'basarili', odemeHata: odeme === 'hata',
       odemeTuru: aktif ? 'Üyelik yenileme' : durumTur === 'doldu' ? 'Üyeliği yeniden başlatma' : 'İlk üyelik',
-      odemeDugme: aktif ? 'Kartla yenile · 3.000 TL' : uyari.dugme,
+      odemeDugme: aktif ? (canli ? 'Yenile · havale / EFT' : 'Kartla yenile · 3.000 TL') : uyari.dugme,
       odemeAciklama: aktif ? 'Erken yenilersen kalan günlerin kaybolmaz; yeni 30 gün mevcut bitişinden sonra başlar. Otomatik ücret çekilmez.' : 'Ödemen geçtiği anda üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.',
       yeniBitisYazi: tarihYaz(yeniBitis),
-      odemeBasla: () => this.setState({ odeme: 'ozet' }),
+      odemeBasla: () => (canli ? location.assign('/dekont') : this.setState({ odeme: 'ozet' })),
       odemeVazgec: () => this.setState({ odeme: 'yok' }),
       odeHata: () => this.setState({ odeme: 'hata' }),
       // Gerçek sitede: iyzico penceresi → bildirim gelince üyelik başlar/uzar, muhasebeye yazılır, onay maili gider
@@ -798,7 +841,7 @@ class Component extends DCLogic {
         odeme: 'basarili', bitis: yeniBitis,
         odemeler: [{ tarih: BUGUN, yol: 'Kart · iyzico' }, ...s.odemeler],
       }))),
-      odemeler: this.state.odemeler.map((o) => ({ ad: 'Üyelik · 30 gün', detay: `${tarihYaz(o.tarih)} · ${o.yol}`, tutar: '3.000 TL' })),
+      odemeler: this.state.odemeler.map((o) => ({ ad: 'Üyelik · 30 gün', detay: `${tarihYaz(o.tarih)} · ${o.yol}`, tutar: o.tutar ? TL(o.tutar) : '3.000 TL' })),
       odemeGecmisiYok: !this.state.odemeler.length,
       // Dondurma
       dondurulmus: !!dond, dondurmaSecimde: !dond && this.state.dondurmaSecim, dondurmaDugme: !dond && !this.state.dondurmaSecim,
