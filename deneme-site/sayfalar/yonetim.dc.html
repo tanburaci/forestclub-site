@@ -350,6 +350,9 @@ a{color:#111111}a:hover{color:#000000}
                 </tbody>
               </table>
             </div>
+            <sc-if value="{{ uyeDahaVar }}" hint-placeholder-val="{{ false }}">
+              <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ uyeDaha }}" style="align-self: flex-start">{{ uyeDahaYazi }}</button>
+            </sc-if>
 
             <!-- KVKK: üyelerin veri silme talepleri (kopyayı üye kendi panelinden indirir) -->
             <sc-if value="{{ veriTalepVar }}" hint-placeholder-val="{{ true }}">
@@ -1437,7 +1440,7 @@ class Component extends DCLogic {
       hareketler: window.FC ? window.FC.hareketler : this.ornekHareketler(this.DEMO.aidat),
       // Muhasebedeki katılımcı sayısı = yoklamada gelenler (geçmiş etkinlikler)
       katilimci: Object.fromEntries(Object.entries(this.DEMO.kayitlar).filter(([k]) => k.split('|')[0] <= this.BUGUN).map(([k, v]) => [k, v.gelen.length])),
-      arama: '',
+      arama: '', uyeSayisi: 100,
       mAy: '2026-10', mEtk: '', mGorunum: 'hareketler', mFiltre: 'tumu', mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mMesaj: '',
       // Envanter (örnek kalemler; satın alınanların gideri muhasebede ayrıca kayıtlı)
       envanter: window.FC ? window.FC.envanter : [
@@ -1913,15 +1916,19 @@ class Component extends DCLogic {
       };
     });
     // Üye listesi: filtre + arama (ad, e-posta, telefon, karekod); aktifler bitişe göre, diğerleri son tarihe göre
+    // Yalnız Üyeler sekmesinde hesaplanır; ekrana ilk 100 (sonra 100'er) satır çizilir
     const ara = this.state.arama.trim().toLocaleLowerCase('tr');
     const SIRA = { aktif: 0, doldu: 1, basvuru: 2 };
-    const uyeListesi = tumUyeler
+    const adSira = this.adSira || (this.adSira = new Intl.Collator('tr').compare);
+    const uyeListesi = sekme !== 'uyeler' ? [] : tumUyeler
       .filter((u) => filtre === 'tumu' || u.tur === filtre)
       .filter((u) => !ara || `${u.ad} ${u.eposta} ${u.tel} ${u.kod}`.toLocaleLowerCase('tr').includes(ara))
-      .sort((a, b) => SIRA[a.tur] - SIRA[b.tur] || (a.tur === 'aktif' ? a.bitisSira.localeCompare(b.bitisSira) : b.bitisSira.localeCompare(a.bitisSira)) || a.ad.localeCompare(b.ad, 'tr'));
+      .sort((a, b) => SIRA[a.tur] - SIRA[b.tur] || (a.tur === 'aktif' ? (a.bitisSira < b.bitisSira ? -1 : a.bitisSira > b.bitisSira ? 1 : 0)
+        : (a.bitisSira > b.bitisSira ? -1 : a.bitisSira < b.bitisSira ? 1 : 0)) || adSira(a.ad, b.ad));
+    const uyeGoster = uyeListesi.slice(0, this.state.uyeSayisi);
     const filtreler = [
       { id: 'tumu', ad: `Tümü · ${tumUyeler.length}` }, { id: 'aktif', ad: `Aktif · ${sayac.aktif}` }, { id: 'doldu', ad: `Süresi doldu · ${sayac.doldu}` }, { id: 'basvuru', ad: `Hiç ödemedi · ${sayac.basvuru}` },
-    ].map((f) => ({ ...f, sinif: f.id === filtre ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ filtre: f.id }) }));
+    ].map((f) => ({ ...f, sinif: f.id === filtre ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ filtre: f.id, uyeSayisi: 100 }) }));
     const secimler = (liste, secili, alan) => liste.map((x) => ({
       ...x, sinif: x.id === secili ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ [alan]: x.id }),
     }));
@@ -2157,7 +2164,11 @@ class Component extends DCLogic {
       eldenAc: () => this.setState((s) => ({ elden: { ...s.elden, acik: true, hata: '' }, anaMesaj: '' })),
       eldenKapat: () => this.setState({ elden: { acik: false, ad: '', tutar: '3.000', tarih: BUGUN, hata: '' } }),
       // Üye listeden seçilir ("Ad Soyad · FC-U-0001"); kod yoksa ad tek bir üyeye denk gelmeli
-      uyeSecenekleri: elden.acik ? this.DEMO.kisiler.map((k) => `${k.ad} · ${k.kod}`) : [],
+      uyeSecenekleri: elden.acik ? (() => {
+        const q = elden.ad.trim().toLocaleLowerCase('tr');
+        const hepsi = this.DEMO.kisiler.map((k) => `${k.ad} · ${k.kod}`);
+        return (q ? hepsi.filter((x) => x.toLocaleLowerCase('tr').includes(q)) : hepsi).slice(0, 50);
+      })() : [],
       eldenKaydet: (e) => {
         if (e && e.preventDefault) e.preventDefault();
         if (this.eldenYaziliyor) return;
@@ -2333,8 +2344,11 @@ class Component extends DCLogic {
       filtreler,
       uyeOzet: `${sayac.aktif} aktif · ${sayac.doldu} süresi dolmuş · ${sayac.basvuru} hiç ödememiş · toplam ${tumUyeler.length} kayıt`,
       arama: this.state.arama,
-      aramaYaz: (e) => this.setState({ arama: e.target.value }),
-      uyeler: uyeListesi.map((u) => ({
+      aramaYaz: (e) => this.setState({ arama: e.target.value, uyeSayisi: 100 }),
+      uyeDahaVar: uyeListesi.length > uyeGoster.length,
+      uyeDahaYazi: `${uyeGoster.length} / ${uyeListesi.length} kişi gösteriliyor · ${Math.min(100, uyeListesi.length - uyeGoster.length)} kişi daha göster`,
+      uyeDaha: () => this.setState((s) => ({ uyeSayisi: s.uyeSayisi + 100 })),
+      uyeler: uyeGoster.map((u) => ({
         ...u, elden: () => this.setState((s) => ({ sekme: 'ana', anaMesaj: '', elden: { ...s.elden, acik: true, ad: `${u.ad} · ${u.kod}`, hata: '' } })),
         profilAc: () => this.setState({ profilSecili: u.id }),
       })),
