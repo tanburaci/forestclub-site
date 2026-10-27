@@ -12,7 +12,9 @@
   const sb = window.supabase.createClient(A.supabaseUrl, A.supabaseAnahtar, { auth: { storage: depo, persistSession: true } });
   const sayfa = location.pathname.replace(/\/$/, '') || '/';
 
-  const bugun = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  // Bugün İstanbul saatiyle (sunucudaki istanbul_bugun ile aynı; tarayıcının saat dilimi ne olursa olsun)
+  const IST_TARIH = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const bugun = () => IST_TARIH.format(new Date());
 
   let bildirimZaman;
   function bildir(metin, hata, sure) {

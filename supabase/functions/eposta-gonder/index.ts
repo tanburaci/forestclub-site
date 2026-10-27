@@ -1,6 +1,7 @@
 // Forest Club Urla · e-posta kuyruğunu Resend ile gönderir. pg_cron her dakika çağırır (x-zamanlayici başlığıyla).
 // Her çağrıda en çok 40 mail; Resend'in saniyede 2 istek sınırı için aralarında 600 ms beklenir. Demo adreslerine
-// (ornek.com, example.*) hiçbir zaman gönderilmez. Şablon kapatıldıysa mail atlanır.
+// (ornek.com, example.*) hiçbir zaman gönderilmez. Şablon kapatıldıysa mail atlanır. Aynı kuyruk satırı hep aynı
+// Idempotency-Key ile gider: sonucu yazılamayıp yeniden sıraya giren mail Resend'de ikinci kez gönderilmez.
 //
 // Secrets: RESEND_API_KEY, EPOSTA_GONDEREN ("Forest Club Urla <merhaba@alanadi>"), ZAMANLAYICI_ANAHTARI,
 //          SITE_ADRESI (https://… , {odemeLinki} = SITE_ADRESI/dekont),
@@ -9,6 +10,7 @@ import { json, servisIstemcisi, zamanlayiciMi } from '../_ortak/ortak.ts';
 import { demoAdresMi, iletiYap } from '../_ortak/sablon.ts';
 
 const ADET = 40;
+const ZAMAN_ASIMI = 10_000;  // Resend 10 saniyede yanıt vermezse bu mail sonraki turda yeniden denenir
 const bekle = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 interface Sira { id: number; sablon: string; alici: string; veri: Record<string, unknown>; deneme: number; konu: string; metin: string; acik: boolean }
@@ -42,7 +44,8 @@ Deno.serve(async (istek) => {
     try {
       const yanit = await fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${anahtar}`, 'Content-Type': 'application/json', 'Idempotency-Key': `fc-eposta-${s.id}-${s.deneme}` },
+        headers: { Authorization: `Bearer ${anahtar}`, 'Content-Type': 'application/json', 'Idempotency-Key': `fc-eposta-${s.id}` },
+        signal: AbortSignal.timeout(ZAMAN_ASIMI),
         body: JSON.stringify({
           from: gonderen, to: [alici], subject: testAlici ? `[TEST → ${s.alici}] ${ileti.konu}` : ileti.konu,
           text: ileti.metin, html: ileti.html, ...(yanitAdresi ? { reply_to: yanitAdresi } : {}),
@@ -52,12 +55,15 @@ Deno.serve(async (istek) => {
       const govde = await yanit.json().catch(() => ({}));
       if (yanit.ok) { await sonuc(s.id, 'gonderildi', null, govde.id || null); sayi.gonderildi++; }
       else {
-        await sonuc(s.id, 'hata', `Resend ${yanit.status}: ${govde.message || govde.name || ''}`);
-        sayi.hata++;
-        if (yanit.status === 429) {  // sınıra takıldı: kalanlar bir sonraki dakikaya
-          for (const k of sira.slice(i + 1)) await sonuc(k.id, 'hata', 'Resend 429: sonraki turda');
+        const ileti = `Resend ${yanit.status}: ${govde.message || govde.name || ''}`;
+        if (yanit.status === 429) {  // sınıra takıldı: bu ve kalanlar deneme hakkı yemeden bir sonraki dakikaya
+          for (const k of sira.slice(i)) await sonuc(k.id, 'ertele', 'Resend 429: sonraki turda');
+          sayi.hata++;
           break;
         }
+        // Geçersiz adres, doğrulanmamış gönderen gibi istekler yeniden denense de geçmez
+        await sonuc(s.id, [400, 403, 422].includes(yanit.status) ? 'kalici' : 'hata', ileti);
+        sayi.hata++;
       }
     } catch (h) {
       await sonuc(s.id, 'hata', `Bağlantı: ${h instanceof Error ? h.message : h}`);

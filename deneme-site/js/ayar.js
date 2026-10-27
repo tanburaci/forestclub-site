@@ -4,6 +4,8 @@ window.FC_AYAR = {
   supabaseUrl: 'https://gflabqnazkstsyafzdmn.supabase.co',
   supabaseAnahtar: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmbGFicW5hemtzdHN5YWZ6ZG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNDg4MzUsImV4cCI6MjEwODYyNDgzNX0.bcPcUPsLdtZlYfL5ryRxcIGOzHa7GDEKyCkB1KH5upo',
   // Üyelik ödemesi (iyzico gelene kadar havale / EFT; Sheets'teki AYAR.ODEME_BILGISI ile aynı)
+  // Deneme sitesi: üye girişinde demo hesap düğmeleri görünür (gerçek yayında false)
+  deneme: true,
   // Cloudflare Turnstile site anahtarı (herkese açık). Bu değer Cloudflare'in TEST anahtarıdır: her zaman geçer ve
   // yalnız test gizli anahtarıyla (1x0000000000000000000000000000000AA) çalışır. Gerçek anahtar Cloudflare panelinden alınır.
   turnstile: '1x00000000000000000000AA',
