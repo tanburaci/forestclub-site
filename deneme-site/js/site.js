@@ -1,5 +1,6 @@
-// Forest Club Urla · ana site (deneme sitesi): etkinlikler ve kalan yerler Supabase'den; üyelik başvurusu ve tanışma
-// bileti sunucudaki işlevlerle (basvuru_yap, tanisma_bileti_al) yazılır. Ziyaretçi tablolara doğrudan yazamaz.
+// Forest Club Urla · ana site (deneme sitesi): etkinlikler ve kalan yerler Supabase'den; üyelik başvurusu, tanışma
+// bileti ve Açık Çağrı spam korumalı form-gonder Edge Function'dan sunucudaki işlevlere gider. Ziyaretçi tablolara
+// doğrudan yazamaz.
 // Sepet / kartla ödeme ve Açık Çağrı şimdilik yalnız ekranda (iyzico sonra).
 (function () {
   'use strict';
@@ -35,22 +36,18 @@
   }
 
   const sayac = (adim) => { sb.rpc('sayac_artir', { p_adim: adim }).then(() => {}, () => {}); };  // kişisel veri yok, yalnız günlük toplam
+  // Anonim formlar spam korumalı Edge Function'dan geçer (Turnstile + IP başına saatlik sınır)
+  const { formGonder } = window.FC_ORTAK;
   window.FCSBasvuru = async (ad, eposta, tel, kosul, dogal, kvkk, foto) => {
-    const { data, error } = await sb.rpc('basvuru_yap', { p_ad: ad, p_eposta: eposta, p_tel: tel, p_kosul: kosul, p_dogal: dogal, p_kvkk: kvkk, p_foto: !!foto });
-    if (error) throw new Error(error.message);
-    if (data === 'tamam') sayac('gonderildi');
-    return data;
+    const sonuc = await formGonder('basvuru', { ad, eposta, tel, kosul: !!kosul, dogal: !!dogal, kvkk: !!kvkk, foto: !!foto });
+    if (sonuc === 'tamam') sayac('gonderildi');
+    return sonuc;
   };
-  window.FCSCagri = async (alanlar) => {
-    const { error } = await sb.rpc('cagri_gonder', { p: alanlar });
-    if (error) throw new Error(error.message);
-  };
+  window.FCSCagri = (alanlar) => formGonder('cagri', alanlar);
   window.FCSTanisma = async (ad, eposta, etkAnahtar) => {
     const id = window.FCS && window.FCS.anahtar[etkAnahtar];
     if (!id) throw new Error('Geleceğin buluşmayı seç.');
-    const { data, error } = await sb.rpc('tanisma_bileti_al', { p_ad: ad, p_eposta: eposta, p_etkinlik: id });
-    if (error) throw new Error(error.message);
-    return data;
+    return formGonder('tanisma', { ad, eposta, etkinlik: id });
   };
 
   async function basla() {

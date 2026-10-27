@@ -1,4 +1,5 @@
-// Forest Club Urla · deneme sitesi: panellerin ortak Supabase bağlantısı, giriş / çıkış ve küçük bildirim.
+// Forest Club Urla · deneme sitesi: panellerin ortak Supabase bağlantısı, giriş / çıkış, küçük bildirim ve anonim
+// formların spam korumalı gönderimi (Turnstile + form-gonder).
 (function () {
   'use strict';
   const A = window.FC_AYAR;
@@ -62,7 +63,64 @@
     location.replace(sayfa);
   };
 
-  // Dekont: dosya gizli depoya "yeni/" altına yüklenir, sonra kayıt sunucuda açılır (yalnız başvurusu olan e-posta)
+  // Spam koruması (Cloudflare Turnstile): her gönderimde yeni bir jeton alınır. Kutu çoğunlukla görünmez; Cloudflare
+  // emin olamazsa sayfanın altında küçük bir doğrulama kutusu çıkar.
+  let turnstileYukleniyor = null;
+  let turnstileKutu = null;
+  let turnstileNo = null;
+  function turnstileYukle() {
+    if (!turnstileYukleniyor) {
+      turnstileYukleniyor = new Promise((tamam, red) => {
+        const s = document.createElement('script');
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        s.async = true;
+        s.onload = () => tamam();
+        s.onerror = () => { turnstileYukleniyor = null; red(new Error('Form koruması yüklenemedi; bağlantını kontrol edip tekrar dene.')); };
+        document.head.appendChild(s);
+      });
+    }
+    return turnstileYukleniyor;
+  }
+  async function insanJetonu() {
+    await turnstileYukle();
+    return new Promise((tamam, red) => {
+      if (!turnstileKutu) {
+        turnstileKutu = document.createElement('div');
+        turnstileKutu.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:100';
+        document.body.appendChild(turnstileKutu);
+      }
+      const sure = setTimeout(() => red(new Error('Doğrulama zaman aşımına uğradı; tekrar dene.')), 90000);
+      const bitir = (f) => (x) => { clearTimeout(sure); f(x); };
+      if (turnstileNo !== null) window.turnstile.remove(turnstileNo);
+      turnstileNo = window.turnstile.render(turnstileKutu, {
+        sitekey: A.turnstile, appearance: 'interaction-only', language: 'tr',
+        callback: bitir(tamam),
+        'error-callback': bitir(() => red(new Error('Doğrulama yapılamadı; sayfayı yenileyip tekrar dene.'))),
+        'expired-callback': bitir(() => red(new Error('Doğrulamanın süresi doldu; tekrar dene.'))),
+      });
+    });
+  }
+
+  // Anonim formlar "form-gonder" Edge Function'a gider (Turnstile + IP başına saatlik sınır). Dönüş: sunucunun sonucu
+  async function formGonder(tur, veri) {
+    const jeton = tur === 'dekont_kaydet' ? null : await insanJetonu();
+    let yanit;
+    try {
+      yanit = await fetch(`${A.supabaseUrl}/functions/v1/form-gonder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: A.supabaseAnahtar, Authorization: `Bearer ${A.supabaseAnahtar}` },
+        body: JSON.stringify({ tur, jeton, veri }),
+      });
+    } catch (h) {
+      throw new Error('Bağlantı kurulamadı; internetini kontrol edip tekrar dene.');
+    }
+    const govde = await yanit.json().catch(() => ({}));
+    if (!yanit.ok) throw new Error(govde.hata || 'Gönderilemedi; biraz sonra tekrar dene.');
+    return govde.sonuc;
+  }
+
+  // Dekont: sunucu yükleme hakkı ve tek kullanımlık imzalı adres verir (yalnız başvurusu olan e-posta), dosya gizli
+  // depoya bu adresle yüklenir, sonra kayıt sunucuda açılır
   const DEKONT_TURLERI = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
   window.FCSDekont = async (eposta, dosya) => {
     const ep = String(eposta || '').trim().toLowerCase();
@@ -72,14 +130,13 @@
     const tur = dosya.type || ({ '.heic': 'image/heic', '.heif': 'image/heif', '.pdf': 'application/pdf' })[uzanti0] || '';
     if (!DEKONT_TURLERI.includes(tur)) throw new Error('Dekont yalnız PDF ya da fotoğraf (JPG, PNG, HEIC) olabilir.');
     if (dosya.size > 10 * 1024 * 1024) throw new Error('Dosya 10 MB\'tan büyük.');
-    const uzanti = (dosya.name.match(/\.[a-z0-9]{2,5}$/i) || [''])[0].toLowerCase();
-    const yol = `yeni/${Date.now()}-${Math.random().toString(36).slice(2, 10)}${uzanti}`;
-    const { error: yHata } = await sb.storage.from('dekontlar').upload(yol, dosya, { contentType: tur, upsert: false });
+    const uzanti = uzanti0 || { 'application/pdf': '.pdf', 'image/jpeg': '.jpg', 'image/png': '.png', 'image/heic': '.heic', 'image/heif': '.heif', 'image/webp': '.webp' }[tur];
+    const hak = await formGonder('dekont_adres', { eposta: ep, uzanti });
+    const { error: yHata } = await sb.storage.from('dekontlar').uploadToSignedUrl(hak.yol, hak.jeton, dosya, { contentType: tur });
     if (yHata) throw new Error(`Dosya yüklenemedi: ${yHata.message}`);
-    const { error } = await sb.rpc('dekont_kaydet', { p_eposta: ep, p_dosya: yol });
-    if (error) throw new Error(error.message);
+    await formGonder('dekont_kaydet', { eposta: ep, yol: hak.yol });
     sb.rpc('sayac_artir', { p_adim: 'dekont' }).then(() => {}, () => {});
   };
 
-  window.FC_ORTAK = { sb, bugun, bildir, kurtarma: /type=recovery/.test(location.hash) };
+  window.FC_ORTAK = { sb, bugun, bildir, formGonder, kurtarma: /type=recovery/.test(location.hash) };
 })();
