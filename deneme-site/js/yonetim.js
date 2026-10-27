@@ -116,6 +116,8 @@
   const tl = (n) => `${Math.round(Number(n)).toLocaleString('tr-TR')} TL`;
   const zaman = (t) => new Date(t).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   async function dekontAc(yol) {
+    // Sheets'ten taşınan dekontlar Google Drive bağlantısıdır; doğrudan açılır
+    if (/^https:\/\//.test(yol)) { window.open(yol, '_blank', 'noopener'); return; }
     const pencere = window.open('', '_blank');  // tıklama anında açılır (açılır pencere engeline takılmasın)
     const { data, error } = await sb.storage.from('dekontlar').createSignedUrl(yol, 60);
     if (error) { if (pencere) pencere.close(); return bildir(`Dekont açılamadı: ${error.message}`, true); }
