@@ -977,7 +977,7 @@ Başvurun bize ulaştı, teşekkürler!
 Üyeliğin ödemenle başlar. Ödemeyi tamamlamadıysan şu bağlantıdan kartla ödeyebilirsin: {odemeLinki}
 
 Ormanda görüşmek üzere,
-Forest Club Urla', array['ad','odemeLinki']::text[]);
+Forest Club Urla', array['ad','odemeLinki']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('onay', 'Ödeme alındı', 'Kartla ödeme geçince ya da yönetici elden ödeme girince gider.', true, null, 'Welcome to Forest Club Urla 🌲', 'WELCOME TO FOREST CLUB URLA.
 
 Merhaba,
@@ -1008,14 +1008,14 @@ To the trees. To the music. To each other.
 
 Sevgiler,
 Forest Club Urla
-Gatherings in Nature. 🌲', array['ad','bitis']::text[]);
+Gatherings in Nature. 🌲', array['ad','bitis']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('yenileme', 'Üyelik yenileme hatırlatması', 'Üyelik bitmeden önce gider.', true, 3, 'Üyeliğin {bitis} tarihinde bitiyor', 'Merhaba {ad},
 
 Üyeliğin {bitis} tarihinde bitiyor. Devam etmek istersen şu bağlantıdan kartla yenileyebilirsin: {odemeLinki}
 
 Erken yenilersen kalan günlerin kaybolmaz.
 
-Forest Club Urla', array['ad','bitis','odemeLinki']::text[]);
+Forest Club Urla', array['ad','bitis','odemeLinki']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('duyuru', 'Etkinlik duyurusu', 'Etkinlik “Hazır” olunca aktif üyelere gider.', true, null, 'Yeni etkinlik: {etkinlik}', 'Merhaba {ad},
 
 {etkinlik} için seni bekliyoruz!
@@ -1024,14 +1024,14 @@ insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar
 🕘 {saat}
 📍 {yer}
 
-Forest Club Urla', array['ad','etkinlik','tarih','saat','yer']::text[]);
+Forest Club Urla', array['ad','etkinlik','tarih','saat','yer']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('hatirlatma', 'Etkinlik hatırlatması', 'Etkinlikten önce aktif üyelere gider.', true, 3, 'Hatırlatma: {etkinlik} yaklaşıyor', 'Merhaba {ad},
 
 {etkinlik} çok yakında: {tarih}, {saat}.
 
 📍 {yer}
 
-Forest Club Urla', array['ad','etkinlik','tarih','saat','yer']::text[]);
+Forest Club Urla', array['ad','etkinlik','tarih','saat','yer']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('sifre', 'Geçici şifre', 'Üye “İlk girişim / şifremi unuttum” deyince gider.', true, null, 'Forest Club Urla geçici şifren', 'Merhaba {ad},
 
 Geçici şifren: {kod}
@@ -1040,17 +1040,17 @@ Geçici şifren: {kod}
 
 Bu isteği sen yapmadıysan bu maili yok sayabilirsin.
 
-Forest Club Urla', array['ad','kod']::text[]);
+Forest Club Urla', array['ad','kod']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('dogumgunu', 'Doğum günü kutlaması', 'Üyenin doğum günü sabahı gider (üye izin verdiyse).', true, null, 'Doğum günün kutlu olsun {ad}! 🎂', 'Merhaba {ad},
 
 Bugün senin günün! Forest Club ailesi olarak doğum gününü kutluyoruz. Nice ağaçlı, müzikli, güzel yıllara 🌲
 
-Forest Club Urla', array['ad']::text[]);
+Forest Club Urla', array['ad']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('ozelgun', 'Özel gün kutlaması', 'Üyenin profilindeki özel günlerde gider (üye izin verdiyse).', true, null, 'Kutlu olsun {ad} 🌿', 'Merhaba {ad},
 
 {ozelGun} kutlu olsun! Bu güzel gününde seni düşündük.
 
-Forest Club Urla', array['ad','ozelGun']::text[]);
+Forest Club Urla', array['ad','ozelGun']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('tanisma', 'Tanışma bileti', 'Biri sitede tanışma biletini alınca gider.', true, null, 'İlk buluşman bizden: biletin hazır 🎟️', 'Merhaba {ad},
 
 Forest Club Urla’ya hoş geldin! Tanışma biletin: {biletKodu}
@@ -1058,24 +1058,24 @@ Forest Club Urla’ya hoş geldin! Tanışma biletin: {biletKodu}
 {etkinlik} ({tarih}, {saat}) için yerin ayrıldı. Bilet ücretsiz, tek kullanımlık ve yalnız bu buluşmada geçerli; girişte kodunu göstermen yeterli.
 
 Ormanda görüşmek üzere,
-Forest Club Urla', array['ad','biletKodu','etkinlik','tarih','saat']::text[]);
+Forest Club Urla', array['ad','biletKodu','etkinlik','tarih','saat']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('iptal', 'Etkinlik iptal / erteleme', 'Yönetici “İptal / ertele” ile duyurunca kayıtlılara ve bekleme listesine gider.', true, null, '{etkinlik}: önemli değişiklik', 'Merhaba {ad},
 
 {duyuru}
 
 Sorun olursa WhatsApp’tan yazabilirsin.
 
-Forest Club Urla', array['ad','etkinlik','duyuru']::text[]);
+Forest Club Urla', array['ad','etkinlik','duyuru']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('bekleme', 'Bekleme listesinden yer açıldı', 'Kayıtlı biri vazgeçince sıradaki kişiye gider.', true, null, 'Yer açıldı: {etkinlik} 🎉', 'Merhaba {ad},
 
 Müjde! {etkinlik} ({tarih}, {saat}) için yer açıldı ve kaydın yapıldı. Gelemeyeceksen üye panelinden “Gelemeyeceğim” de ki yer sıradakine geçsin.
 
-Forest Club Urla', array['ad','etkinlik','tarih','saat']::text[]);
+Forest Club Urla', array['ad','etkinlik','tarih','saat']::text[]) on conflict (id) do nothing;
 insert into eposta_sablonlari (id, ad, ne_zaman, acik, gun, konu, metin, alanlar) values ('anket', 'Etkinlik sonrası anket', 'Etkinlikten sonra gelenlere gider.', true, 1, '{etkinlik} nasıldı?', 'Merhaba {ad},
 
 {etkinlik} için geldiğin için teşekkürler! Üye panelinden 1–5 arası puan verip bir cümle yazarsan bir sonrakini daha güzel yaparız. Fotoğraflar da panelde.
 
-Forest Club Urla', array['ad','etkinlik']::text[]);
+Forest Club Urla', array['ad','etkinlik']::text[]) on conflict (id) do nothing;
 select setval(pg_get_serial_sequence('uyeler','id'), (select max(id) from uyeler));
 select setval(pg_get_serial_sequence('etkinlikler','id'), (select max(id) from etkinlikler));
 -- Üye kodu sayacı örnek kodların arkasından devam etsin (20261028000000_uye_kodu_ve_bagla.sql; sayaç yoksa atlanır)

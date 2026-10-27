@@ -13,3 +13,8 @@ supabase/.temp/
 .supabase_*
 .deneme_*
 *.pem
+
+# Sheets aktarımı: CSV'ler ve üretilen SQL gerçek kişisel veri içerir (asla depoya girmez)
+supabase/aktarim/cikti/
+*.csv
+supabase/functions/deno.lock
