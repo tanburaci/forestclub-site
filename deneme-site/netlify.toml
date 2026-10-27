@@ -8,8 +8,8 @@
     X-Robots-Tag = "noindex, nofollow"
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # Tasarım sayfalarının betiği dc.js'te new Function ile çalıştığı için 'unsafe-eval' gerekli (derleme adımı gelince kalkar)
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://gflabqnazkstsyafzdmn.supabase.co wss://gflabqnazkstsyafzdmn.supabase.co; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
+    # Sayfa betikleri derlenmiş dosyalardan (sayfalar/*.dc.js) gelir: eval yok, satır içi betik yok
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://gflabqnazkstsyafzdmn.supabase.co wss://gflabqnazkstsyafzdmn.supabase.co; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
     X-Content-Type-Options = "nosniff"
     Permissions-Policy = "camera=(self), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"

@@ -1,6 +1,7 @@
 // Forest Club Urla · yönetici paneli (deneme sitesi): Supabase girişi, verinin panele yüklenmesi ve paneldeki
 // değişikliklerin veritabanına yazılması. Panel (sayfalar/yonetim.dc.html) tasarımdaki haliyle çalışır; burada
-// yalnız veri katmanı var. Kapıda karekod kamerayla okunur (BarcodeDetector; yoksa jsQR).
+// yalnız veri katmanı var. Kapıda karekod kamerayla okunur (BarcodeDetector; yoksa jsQR). Yönetici girişi iki adımlı
+// (doğrulama uygulaması kodu); kod girilmeden veritabanı yönetici yetkisi vermez.
 (function () {
   'use strict';
   const A = window.FC_AYAR;
@@ -49,10 +50,18 @@
       sb.from('veri_talepleri').select('*').order('id', { ascending: false }).limit(200).then((r) => r.data || [], () => []),
     ]);
     const B = bugun();
+    const grupla = (xs, alan) => {
+      const m = new Map();
+      xs.forEach((x) => { const k = x[alan]; if (!m.has(k)) m.set(k, []); m.get(k).push(x); });
+      return m;
+    };
+    const odemeGrup = grupla(odemeler, 'uye_id');
+    const kayitGrup = grupla(kayitlar, 'etkinlik_id');
+    const biletGrup = grupla(biletler, 'etkinlik_id');
     const idSira = new Map();
     const kisiler = uyeler.map((u, i) => {
       idSira.set(u.id, i);
-      const ods = odemeler.filter((o) => o.uye_id === u.id).sort((a, b) => a.tarih.localeCompare(b.tarih));
+      const ods = (odemeGrup.get(u.id) || []).sort((a, b) => (a.tarih < b.tarih ? -1 : a.tarih > b.tarih ? 1 : 0));
       const durum = u.bitis ? (u.bitis > B ? 'aktif' : 'doldu') : 'basvuru';
       return {
         i, id: u.id, ad: u.ad, eposta: u.eposta, tel: u.tel || '', kod: u.kod, durum, bas: u.baslangic, bitis: u.bitis,
@@ -76,14 +85,14 @@
       keyEtk[key] = e.id;
       if (e.durum === 'iptal') etkDurum[key] = 'İptal edildi';
       else if (e.eski_tarih) etkDurum[key] = `Ertelendi (önceki tarih ${trTarih(e.eski_tarih)})`;
-      const rs = kayitlar.filter((r) => r.etkinlik_id === e.id);
+      const rs = kayitGrup.get(e.id) || [];
       kayitHarita[key] = {
         kontenjan: e.kontenjan,
         kayitli: rs.filter((r) => r.durum === 'kayitli').map((r) => idSira.get(r.uye_id)),
         bekleme: rs.filter((r) => r.durum === 'bekleme').sort((a, b) => (a.sira || 0) - (b.sira || 0)).map((r) => idSira.get(r.uye_id)),
         gelen: rs.filter((r) => r.durum === 'kayitli' && r.geldi).map((r) => idSira.get(r.uye_id)),
         // Tanışma biletiyle yer tutanlar da doluluğa sayılır
-        tanisma: biletler.filter((b) => b.etkinlik_id === e.id && (b.durum === 'bekliyor' || b.durum === 'geldi')).length,
+        tanisma: (biletGrup.get(e.id) || []).filter((b) => b.durum === 'bekliyor' || b.durum === 'geldi').length,
       };
       if (e.anket_sayisi) anket[key] = { n: e.anket_sayisi, ort: Number(e.anket_ortalama) };
       const x = { id: e.id, tarih: e.tarih, saat: e.saat || '', tur: e.tur, ad: e.ad, kim: e.kim || '', kontenjan: e.kontenjan };
@@ -595,6 +604,86 @@
     };
   }
 
+  // --- İki adımlı giriş (TOTP): veritabanı yöneticiyi yalnız aal2 oturumunda tanır (yonetici_mi) ----------------
+  // İlk girişte doğrulama uygulaması kurulur (karekod), sonraki girişlerde 6 haneli kod istenir. Ekran tasarım
+  // sayfasından önce, kök öğeye düz DOM ile çizilir.
+  const MFA_STIL = {
+    kart: 'max-width:440px;margin:48px auto;padding:28px;border:2.5px solid #111111;border-radius:14px;box-shadow:5px 5px 0 #111111;background:#FFFFFF;font:16px Figtree,sans-serif;color:#111111;display:flex;flex-direction:column;gap:14px',
+    dugme: 'font:700 15px Figtree,sans-serif;border-radius:10px;padding:11px 18px;min-height:44px;cursor:pointer;border:2.5px solid #111111;background:#111111;color:#FFFFFF',
+    ikincil: 'font:700 15px Figtree,sans-serif;border-radius:10px;padding:11px 18px;min-height:44px;cursor:pointer;border:2.5px solid #111111;background:#FFFFFF;color:#111111',
+    kutu: 'font:400 22px Figtree,sans-serif;letter-spacing:.3em;width:100%;box-sizing:border-box;padding:12px 14px;border:2px solid #111111;border-radius:12px;text-align:center',
+  };
+  function ogeYap(etiket, stil, metin) {
+    const e = document.createElement(etiket);
+    if (stil) e.style.cssText = stil;
+    if (metin) e.textContent = metin;
+    return e;
+  }
+  // kurulum: ilk kez kuruluyorsa {qr, gizli}, yoksa null
+  function ikinciAdim(kok, faktorId, kurulum) {
+    return new Promise((tamam) => {
+      kok.removeAttribute('style');
+      kok.textContent = '';
+      const kart = ogeYap('form', MFA_STIL.kart);
+      kart.appendChild(ogeYap('h1', 'margin:0;font-size:24px', kurulum ? 'İki adımlı girişi kur' : 'Doğrulama kodu'));
+      kart.appendChild(ogeYap('p', 'margin:0;line-height:1.5;color:#3A3A3A', kurulum
+        ? 'Yönetim paneli üye bilgilerine eriştiği için şifrenin yanında telefonundaki bir kod da gerekiyor. Google Authenticator, Microsoft Authenticator ya da 1Password ile aşağıdaki karekodu okut, sonra uygulamanın gösterdiği 6 haneli kodu yaz.'
+        : 'Telefonundaki doğrulama uygulamasında (Forest Club yönetim) görünen 6 haneli kodu yaz.'));
+      if (kurulum) {
+        const qr = ogeYap('img', 'width:200px;height:200px;align-self:center;border:2px solid #111111;border-radius:10px;padding:6px;background:#FFFFFF');
+        qr.alt = 'İki adımlı giriş karekodu';
+        qr.src = /^data:image\/svg\+xml/.test(kurulum.qr) ? kurulum.qr : '';
+        kart.appendChild(qr);
+        kart.appendChild(ogeYap('p', 'margin:0;font-size:13px;color:#5E5E5E;word-break:break-all', `Karekod okutamıyorsan uygulamaya bu anahtarı elle gir: ${kurulum.gizli}`));
+      }
+      const kutu = ogeYap('input', MFA_STIL.kutu);
+      Object.assign(kutu, { inputMode: 'numeric', autocomplete: 'one-time-code', maxLength: 7, required: true });  // "123 456" de olur
+      kutu.setAttribute('aria-label', '6 haneli kod');
+      kart.appendChild(kutu);
+      const mesaj = ogeYap('p', 'margin:0;min-height:20px;font-size:14px;color:#82301F');
+      mesaj.setAttribute('role', 'status');
+      kart.appendChild(mesaj);
+      const dugme = ogeYap('button', MFA_STIL.dugme, kurulum ? 'Kur ve gir' : 'Doğrula');
+      dugme.type = 'submit';
+      const cikis = ogeYap('button', MFA_STIL.ikincil, 'Çıkış yap');
+      cikis.type = 'button';
+      cikis.addEventListener('click', () => window.FCCikis());
+      kart.appendChild(dugme);
+      kart.appendChild(cikis);
+      kart.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const kod = kutu.value.replace(/\s/g, '');
+        if (!/^\d{6}$/.test(kod)) { mesaj.textContent = 'Kod 6 haneli olmalı.'; return; }
+        dugme.disabled = true;
+        mesaj.textContent = '';
+        const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: faktorId, code: kod });
+        dugme.disabled = false;
+        if (error) { mesaj.textContent = /invalid|expired/i.test(error.message) ? 'Kod tutmadı; uygulamadaki güncel kodu yaz.' : error.message; kutu.select(); return; }
+        tamam();
+      });
+      kok.appendChild(kart);
+      kutu.focus();
+    });
+  }
+  // Oturum aal2 değilse kodu ister; hesapta doğrulama uygulaması yoksa önce kurdurur
+  async function ikinciAdimGerekirse(kok) {
+    const { data: seviye, error } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (error) throw error;
+    if (seviye.currentLevel === 'aal2') return;
+    const { data: f, error: fHata } = await sb.auth.mfa.listFactors();
+    if (fHata) throw fHata;
+    const dogrulanmis = (f.totp || []).find((x) => x.status === 'verified');
+    if (dogrulanmis) {
+      await ikinciAdim(kok, dogrulanmis.id, null);
+      return;
+    }
+    // Yarım kalmış kurulumlar silinir (en fazla faktör sınırına takılmasın)
+    for (const x of (f.all || []).filter((y) => y.status !== 'verified')) await sb.auth.mfa.unenroll({ factorId: x.id });
+    const { data: yeni, error: kHata } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Forest Club yönetim' });
+    if (kHata) throw kHata;
+    await ikinciAdim(kok, yeni.id, { qr: yeni.totp.qr_code, gizli: yeni.totp.secret });
+  }
+
   async function basla() {
     const kok = document.getElementById('kok');
     const kurtarma = window.FC_ORTAK.kurtarma;
@@ -605,6 +694,7 @@
       const { data: yon } = await sb.from('yoneticiler').select('ad').eq('user_id', session.user.id).maybeSingle();
       if (yon) {
         try {
+          await ikinciAdimGerekirse(kok);
           window.FC = await veriYukle(session.user.email);
         } catch (h) {
           hata = `Veriler yüklenemedi: ${h.message}`;
