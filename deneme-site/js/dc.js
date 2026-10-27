@@ -43,6 +43,14 @@
     return (SAYFA[m[1]] || '/') + (m[2] || '');
   }
 
+  // Bağlantı ve kaynak adresleri: yalnız https:, mailto:, tel:, site içi (/…) ve sayfa içi (#…). Veritabanından gelen
+  // "javascript:" gibi değerler çalışmasın; başka siteye götüren "//alan.com" da site içi sayılmaz. Kalanı "#" olur.
+  const ADRES_OZELLIK = ['href', 'src', 'action', 'formaction'];
+  function guvenliAdres(a) {
+    const s = String(a).trim();
+    return /^(https:|mailto:|tel:|#|\/(?![\/\\]))/i.test(s) ? s : '#';
+  }
+
   function olayAdi(el, ad) {
     const tur = ad.slice(2).toLowerCase();
     if (tur !== 'change') return tur;
@@ -91,6 +99,7 @@
       let deger = yol !== null ? bak(kapsam, yol) : (a.value.includes('{{') ? yerlestir(a.value, kapsam) : a.value);
       const kucuk = ad.toLowerCase();
       if (kucuk === 'href' && typeof deger === 'string') deger = hrefCevir(deger);
+      if (ADRES_OZELLIK.includes(kucuk) && deger != null && deger !== false) deger = guvenliAdres(deger);
       if (OZELLIK.includes(kucuk)) el.__ozellik[kucuk] = kucuk === 'value' ? (deger == null ? '' : deger) : !!(deger === '' || deger);
       if (BOS_DEGER.includes(kucuk)) {
         if (deger === false || deger == null || deger === 'false') continue;

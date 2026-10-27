@@ -6,24 +6,38 @@
   const A = window.FC_AYAR;
   const { sb, bildir } = window.FC_ORTAK;
   const bugun = window.FC_ORTAK.bugun;
-  const gunEkle = (t, n) => { const d = new Date(`${t}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const trTarih = (t) => (t ? t.split('-').reverse().join('.') : '—');
   const etkEtiket = (e) => `${e.tarih.slice(8)}.${e.tarih.slice(5, 7)} ${e.ad}`;
   const SABLON_SIRA = ['basvuru', 'onay', 'yenileme', 'duyuru', 'hatirlatma', 'sifre', 'dogumgunu', 'ozelgun', 'tanisma', 'iptal', 'bekleme', 'anket'];
   const GUN_YAZI = { yenileme: 'gün kala gönderilsin', hatirlatma: 'gün önce gönderilsin', anket: 'gün sonra gönderilsin' };
 
+  // Sunucu bir istekte en çok 1000 satır verir (max_rows); tablo sayfa sayfa, sabit bir sırayla çekilir. Gelen satır
+  // sayısı tablodakinden azsa (çekerken silinen satır vb.) eksikler listesine yazılır, panel açılınca uyarı çıkar.
+  const SAYFA_BOYU = 1000;
+  const eksikler = [];
   async function hepsi(tablo, sira) {
-    const { data, error } = await sb.from(tablo).select('*').order(sira || 'id').range(0, 9999);
-    if (error) throw error;
-    return data;
+    const sutunlar = sira || ['id'];
+    const satirlar = [];
+    let toplam = null;
+    for (;;) {
+      let istek = sb.from(tablo).select('*', satirlar.length ? {} : { count: 'exact' });
+      sutunlar.forEach((s) => { istek = istek.order(s); });
+      const { data, error, count } = await istek.range(satirlar.length, satirlar.length + SAYFA_BOYU - 1);
+      if (error) throw error;
+      if (toplam === null) toplam = count;
+      satirlar.push(...data);
+      if (!data.length || toplam === null || satirlar.length >= toplam) break;
+    }
+    if (toplam !== null && satirlar.length < toplam) eksikler.push(`${tablo} ${satirlar.length}/${toplam}`);
+    return satirlar;
   }
 
   // --- Veritabanı → panelin beklediği biçim ------------------------------------------------------------------
   async function veriYukle(eposta) {
     const [uyeler, odemeler, etkinlikler, kayitlar, biletler, hareketler, envanter, sablonlar, dekontlar, cagri, sayaclar] = await Promise.all([
-      hepsi('uyeler'), hepsi('odemeler'), hepsi('etkinlikler'), hepsi('etkinlik_kayitlari', 'etkinlik_id'),
+      hepsi('uyeler'), hepsi('odemeler'), hepsi('etkinlikler'), hepsi('etkinlik_kayitlari', ['etkinlik_id', 'uye_id']),
       hepsi('tanisma_biletleri'), hepsi('muhasebe_hareketleri'), hepsi('envanter'), hepsi('eposta_sablonlari'),
-      hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('sayaclar', 'tarih'),
+      hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('sayaclar', ['tarih', 'adim']),
     ]);
     const B = bugun();
     const idSira = new Map();
@@ -45,10 +59,13 @@
     const keyEtk = {};
     const kayitHarita = {};
     const anket = {};
+    const etkDurum = {};  // iptal / erteleme (etkinlik_durum_degistir) panelde rozet olarak görünsün
     const etkListe = etkinlikler.map((e) => {
       const key = `${e.tarih}|${e.ad}`;
       etkKey.set(e.id, key);
       keyEtk[key] = e.id;
+      if (e.durum === 'iptal') etkDurum[key] = 'İptal edildi';
+      else if (e.eski_tarih) etkDurum[key] = `Ertelendi (önceki tarih ${trTarih(e.eski_tarih)})`;
       const rs = kayitlar.filter((r) => r.etkinlik_id === e.id);
       kayitHarita[key] = {
         kontenjan: e.kontenjan,
@@ -84,7 +101,10 @@
         id: s.id, ad: s.ad, ne: s.ne_zaman, acik: s.acik, konu: s.konu, metin: s.metin, alanlar: s.alanlar,
         ...(s.gun ? { gun: s.gun, gunYazi: GUN_YAZI[s.id] || 'gün' } : {}),
       })),
-      notlar: Object.fromEntries(uyeler.filter((u) => u.yonetici_notu).map((u) => [u.ad, u.yonetici_notu])),
+      // Yönetici notları üye numarasıyla (aynı adlı iki üye karışmasın)
+      notlar: Object.fromEntries(uyeler.filter((u) => u.yonetici_notu).map((u) => [u.id, u.yonetici_notu])),
+      etkDurum,
+      eksik: eksikler,
       _keyEtk: keyEtk,
       basvurular: { dekontlar, cagri, sayaclar, uyeler: new Map(uyeler.map((u) => [u.id, u])) },
     };
@@ -158,7 +178,6 @@
   function senkronKur(panel) {
     const FC = window.FC;
     const keyEtk = FC._keyEtk;
-    const uyeAd = new Map(FC.DEMO.kisiler.map((k) => [k.ad, k]));
     const hareketSatiri = (h) => ({
       tarih: h.tarih, tur: h.tur, tutar: h.tutar, kasa: h.kasa, hedef_kasa: h.tur === 'aktarim' ? h.hedef || null : null,
       kategori: h.kategori || null, etkinlik_id: h.etk ? keyEtk[h.etk] || null : null, aciklama: h.aciklama,
@@ -175,18 +194,43 @@
     const bilinenH = new Set(FC.hareketler.map((h) => h.id));
     const bilinenE = new Set(FC.envanter.map((e) => e.id));
 
-    async function eldenOdeme(h) { // "Aidat · Ad" elden: üyeye ödeme + üyelik 30 gün uzar
-      const ad = (h.aciklama || '').replace(/^Aidat · /, '').trim();
-      const k = uyeAd.get(ad);
-      if (!k) return bildir(`“${ad}” adlı üye bulunamadı; ödeme yalnız muhasebeye yazıldı.`, true);
-      const temel = k.bitis && k.bitis > h.tarih ? k.bitis : h.tarih;
-      const bitis = gunEkle(temel, 30);
-      await yaz(sb.from('odemeler').insert({ uye_id: k.id, tarih: h.tarih, tutar: h.tutar, yol: 'elden', aciklama: 'Elden ödeme' }));
-      await yaz(sb.from('uyeler').update({ bitis, baslangic: k.bas || h.tarih, durum: 'aktif' }).eq('id', k.id));
-      Object.assign(k, { bitis, bas: k.bas || h.tarih, durum: 'aktif' });
-      k.odemeler.push({ tarih: h.tarih, yol: 'elden' });
-      panel.forceUpdate();
-    }
+    // Elden aidat: ödeme, üyelik uzatma ve muhasebe kaydı sunucuda tek işlemde (elden_odeme). Dönen muhasebe satırı
+    // panelin listesine eklenir; numarası bilindiği için ikinci kez yazılmaz. Dönüş: {ad, bitis, hareket}
+    window.FCEldenOdeme = async (uyeId, tutar, tarih) => {
+      const { data, error } = await sb.rpc('elden_odeme', { p_uye: uyeId, p_tutar: tutar, p_tarih: tarih });
+      if (error) throw new Error(error.message);
+      const k = FC.DEMO.kisiler.find((x) => x.id === uyeId);
+      if (k) {
+        Object.assign(k, { bitis: data.bitis, bas: k.bas || tarih, durum: 'aktif', yol: 'elden' });
+        k.odemeler.push({ tarih, yol: 'elden' });
+      }
+      bilinenH.add(data.hareket_id);
+      return {
+        ad: data.ad, bitis: data.bitis,
+        hareket: { id: data.hareket_id, tarih, tur: 'gelir', tutar, kasa: 'nakit', hedef: '', kategori: 'Aidat', etk: '',
+          aciklama: `Aidat · ${data.ad}`, belge: data.ref, otomatik: true, odeme: 'elden' },
+      };
+    };
+
+    // Kapıda karekod: kod sunucuda uyeler.kod ile eşleşir (giris_kaydet). Dönüş: {ad, uye_id, zaten}
+    window.FCGirisKaydet = async (key, kod) => {
+      const etkId = keyEtk[key];
+      if (!etkId || etkId === 'yaziliyor') throw new Error('Etkinlik henüz kaydedilmedi; biraz sonra tekrar deneyin.');
+      const { data, error } = await sb.rpc('giris_kaydet', { p_etkinlik: etkId, p_kod: kod });
+      if (error) throw new Error(error.message);
+      return data;
+    };
+
+    // İptal / erteleme (etkinlik_durum_degistir). tur: 'iptal' | 'ertele'. Dönüş: {durum, tarih, eski_tarih, kisi}
+    window.FCEtkinlikDurum = async (key, tur, yeniTarih, neden) => {
+      const etkId = keyEtk[key];
+      if (!etkId || etkId === 'yaziliyor') throw new Error('Etkinlik henüz kaydedilmedi; biraz sonra tekrar deneyin.');
+      const { data, error } = await sb.rpc('etkinlik_durum_degistir', {
+        p_id: etkId, p_durum: tur === 'iptal' ? 'iptal' : 'ertelendi', p_yeni_tarih: yeniTarih || null, p_neden: neden || null,
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    };
 
     window.DC.durumDegisti = (bilesen, once, simdi) => {
       if (bilesen !== panel) return;
@@ -202,8 +246,9 @@
               if (error) return bildir(`Kaydedilemedi: ${error.message}`, true);
               bilinenH.add(data.id);
               panel.setState((s) => ({ hareketler: yeniId(s.hareketler, h.id, data.id) }));
-              bildir('Muhasebeye kaydedildi ✓');
-              if (h.kategori === 'Aidat' && h.odeme === 'elden' && !h.otomatik) eldenOdeme(h);
+              if (h.kategori === 'Aidat' && !h.otomatik) {
+                bildir('Muhasebeye kaydedildi. Üyeliği uzatmak için Ana sayfadaki “Elden ödeme gir”i kullanın; bu kayıt üyeliği uzatmaz.', true);
+              } else bildir('Muhasebeye kaydedildi ✓');
             });
           } else if (eski && !esit(hareketSatiri(eski), hareketSatiri(h))) {
             yaz(sb.from('muhasebe_hareketleri').update(hareketSatiri(h)).eq('id', h.id), 'Güncellendi ✓');
@@ -289,12 +334,11 @@
           if (e && e.durum !== b.durum) yaz(sb.from('tanisma_biletleri').update({ durum: b.durum }).eq('id', b.id), 'Bilet güncellendi ✓');
         });
       }
-      // Yönetici notu
+      // Yönetici notu (anahtar üye numarası)
       if (once.notlar !== simdi.notlar) {
-        Object.keys(simdi.notlar).forEach((ad) => {
-          if (once.notlar[ad] === simdi.notlar[ad]) return;
-          const k = uyeAd.get(ad);
-          if (k) ertele(`not${k.id}`, () => yaz(sb.from('uyeler').update({ yonetici_notu: simdi.notlar[ad] || null }).eq('id', k.id), 'Not kaydedildi ✓'));
+        Object.keys(simdi.notlar).forEach((id) => {
+          if (once.notlar[id] === simdi.notlar[id]) return;
+          ertele(`not${id}`, () => yaz(sb.from('uyeler').update({ yonetici_notu: simdi.notlar[id] || null }).eq('id', Number(id)), 'Not kaydedildi ✓'));
         });
       }
     };
@@ -322,6 +366,9 @@
     const panel = await window.DC.bagla('/sayfalar/yonetim.dc.html', kok, { varliklar: A.varliklar });
     if (hata) panel.setState({ girisHata: hata });
     if (window.FC) senkronKur(panel);
+    if (window.FC && window.FC.eksik.length) {
+      bildir(`Uyarı: bazı kayıtlar eksik yüklendi (${window.FC.eksik.join(', ')}). Sayfayı yenileyin; sürerse bize haber verin.`, true, 30000);
+    }
   }
   basla().catch((h) => { document.getElementById('kok').textContent = `Sayfa açılamadı: ${h.message}`; console.error(h); });
 })();

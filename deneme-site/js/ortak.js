@@ -14,7 +14,7 @@
   const bugun = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
   let bildirimZaman;
-  function bildir(metin, hata) {
+  function bildir(metin, hata, sure) {
     let el = document.getElementById('fc-kayit');
     if (!el) {
       el = document.createElement('div');
@@ -28,7 +28,7 @@
     el.style.color = hata ? '#82301F' : '#111111';
     el.style.display = 'block';
     clearTimeout(bildirimZaman);
-    bildirimZaman = setTimeout(() => { el.style.display = 'none'; }, hata ? 8000 : 1800);
+    bildirimZaman = setTimeout(() => { el.style.display = 'none'; }, sure || (hata ? 8000 : 1800));
   }
 
   // Paneller bu işlevleri çağırır
@@ -37,6 +37,12 @@
     const { error } = await sb.auth.signInWithPassword({ email: eposta, password: sifre });
     if (error) throw new Error(/invalid/i.test(error.message) ? 'E-posta ya da şifre hatalı.' : error.message);
     location.reload();
+  };
+  // Şifresiz giriş: e-postaya tek kullanımlık bağlantı gider; bağlantı bu sayfaya oturumla geri döner
+  window.FCGirisBaglantisi = async (eposta, hatirla) => {
+    localStorage.setItem(HATIRLA, hatirla ? '1' : '0');
+    const { error } = await sb.auth.signInWithOtp({ email: eposta, options: { emailRedirectTo: `${location.origin}${sayfa}` } });
+    if (error) throw new Error(/rate|seconds/i.test(error.message) ? 'Az önce bir bağlantı gönderildi; biraz bekleyip tekrar dene.' : error.message);
   };
   window.FCCikis = async () => { await sb.auth.signOut(); location.replace(sayfa); };
   window.FCSifreBaglantisi = async (eposta) => {
