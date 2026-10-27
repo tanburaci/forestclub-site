@@ -4,6 +4,10 @@
 !/README.md
 !/deneme-site/
 !/supabase/
+!/araclar/
+!/testler/
+!/.github/
+testler/node_modules/
 
 # Gizli / yerel dosyalar (asla depoya girmez)
 .env*

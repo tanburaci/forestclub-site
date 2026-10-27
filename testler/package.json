@@ -1,0 +1,14 @@
+{
+  "name": "forestclub-testler",
+  "private": true,
+  "description": "Forest Club Urla deneme sitesi: tarayıcı testleri (Supabase sahte, CSP uygulanmış)",
+  "scripts": {
+    "tarayici": "node tarayici/hepsi.js"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "2.45.4",
+    "jsqr": "1.4.0",
+    "playwright": "1.63.0",
+    "qrcode-generator": "1.4.4"
+  }
+}
