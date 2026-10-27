@@ -425,3 +425,11 @@ verify_jwt = false
 
 [functions.dekont-temizle]
 verify_jwt = false
+
+# Kartla ödeme: odeme-baslat giriş yapmış üyenin oturumunu kendisi doğrular; odeme-donus'u iyzico çağırır (sonuç
+# iyzico'dan yeniden sorgulanır)
+[functions.odeme-baslat]
+verify_jwt = false
+
+[functions.odeme-donus]
+verify_jwt = false

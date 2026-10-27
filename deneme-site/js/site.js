@@ -11,10 +11,11 @@
 
   async function veriYukle() {
     const B = window.FC_ORTAK.bugun();
-    const [etk, dol, oturum] = await Promise.all([
+    const [etk, dol, oturum, ayr] = await Promise.all([
       sb.from('etkinlikler').select('*').eq('durum', 'yayinda').order('tarih').order('saat'),
       sb.rpc('etkinlik_doluluk'),
       sb.auth.getSession(),
+      sb.from('ayarlar').select('anahtar, deger'),  // yalnız herkese açık ayarlar gelir
     ]);
     if (etk.error) throw etk.error;
     const d = new Map((dol.data || []).map((x) => [x.etkinlik_id, x]));
@@ -32,7 +33,8 @@
         ...(satis ? { satis } : {}),
       };
     });
-    return { bugun: B, etkinlikler, anahtar, oturum: !!(oturum.data && oturum.data.session) };
+    const ayar = Object.fromEntries((ayr.data || []).map((a) => [a.anahtar, a.deger]));
+    return { bugun: B, etkinlikler, anahtar, ayar, oturum: !!(oturum.data && oturum.data.session) };
   }
 
   const sayac = (adim) => { sb.rpc('sayac_artir', { p_adim: adim }).then(() => {}, () => {}); };  // kişisel veri yok, yalnız günlük toplam

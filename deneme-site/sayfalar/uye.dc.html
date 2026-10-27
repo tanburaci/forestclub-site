@@ -170,7 +170,7 @@ a{color:#111111}a:hover{color:#000000}
 
                 <sc-if value="{{ biletVar }}" hint-placeholder-val="{{ false }}">
                   <div role="status" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center; border: 2.5px dashed #111111; border-radius: 16px; padding: 20px">
-                    <div role="img" aria-label="Giriş karekodu" style="display: grid; grid-template-columns: repeat(21, 9px); grid-auto-rows: 9px; padding: 12px; background: #FFFFFF; border: 2px solid #111111; border-radius: 10px">
+                    <div role="img" aria-label="Giriş karekodu" style="{{ bilet.izgara }}">
                       <sc-for list="{{ bilet.karekod }}" as="k" hint-placeholder-count="441">
                         <span style="{{ k }}"></span>
                       </sc-for>
@@ -181,7 +181,7 @@ a{color:#111111}a:hover{color:#000000}
                       <span style="font-size: 15px">{{ bilet.zaman }} · Pinya, Urla</span>
                       <span style="font-size: 15px">{{ ben.ad }}</span>
                       <strong style="font-size: 16px; letter-spacing: .06em">{{ bilet.kod }}</strong>
-                      <span style="color: #5E5E5E; font-size: 13px">Önizleme: desen örnektir, gerçek karekod sitede üretilir.</span>
+                      <span style="color: #5E5E5E; font-size: 13px">{{ bilet.not }}</span>
                       <a href="{{ bilet.takvim }}" style="font-weight: 600; font-size: 14px">Takvime ekle</a>
                     </div>
                   </div>
@@ -392,7 +392,7 @@ a{color:#111111}a:hover{color:#000000}
                       </sc-for>
                       <button type="button" class="fu-sade" onClick="{{ dondurmaVazgec }}">Vazgeç</button>
                     </div>
-                    <span style="color: #5E5E5E; font-size: 13px">Bugünden başlar; dondurduğun günler bitiş tarihine eklenir. [Kulüp kuralı: en fazla kaç gün, kaç kez]</span>
+                    <span style="color: #5E5E5E; font-size: 13px">{{ dondurmaKural }}</span>
                   </div>
                 </sc-if>
                 <sc-if value="{{ dondurmaDugme }}" hint-placeholder-val="{{ true }}">
@@ -555,12 +555,18 @@ class Component extends DCLogic {
         b2: { ad: 'Breakfast Club', tarih: '2026-11-30', saat: '10.00', bitisSaat: '12.00', bilgi: 'Pazar 10.00', kontenjan: 35, kayitli: 13, ben: 'yok', sira: 0, fiyat: 600, uye: 'ucretsiz' },
       },
       ...(window.FCU ? { anket: window.FCU.anket } : {}),
-      sepet: {}, sepetAdim: 'yok', satinAlinan: [], secili: '', bilet: null, kodHata: '', dondurma: null, dondurmaSecim: false, silmeSoru: false, silmeIstendi: false, veriMesaj: '', profilMesaj: '',
+      sepet: {}, sepetAdim: 'yok', satinAlinan: [], secili: '', bilet: null, kodHata: '', dondurma: h.dondurma || null, dondurmaSecim: false, silmeSoru: false, silmeIstendi: false, veriMesaj: '', profilMesaj: '',
     });
   }
   componentDidMount() {
     // Deneme sitesi: oturum Supabase'de; giriş yapılmışsa panel kendi verisiyle açılır
     if (window.FCU) this.hesapAc(window.FCU.eposta);
+    // iyzico ödeme sayfasından dönüş
+    const donus = /^#odeme-(tamam|hata)$/.exec(location.hash);
+    if (window.FCU && donus) {
+      this.setState({ sekme: 'uyelik', odeme: donus[1] === 'tamam' ? 'basarili' : 'hata' });
+      history.replaceState(null, '', location.pathname);
+    }
   }
   renderVals() {
     const { girildi, bitis, odeme, sekme } = this.state;
@@ -568,6 +574,8 @@ class Component extends DCLogic {
     // Deneme sitesinde (gerçek veriyle) kartla ödeme, bilet sepeti, dondurma, anket ve veri talepleri henüz kaydedilmez:
     // ekranda başarı göstermek yerine "yakında" denir. Tasarım önizlemesinde eskisi gibi çalışır.
     const canli = !!window.FCU;
+    const kartla = canli && window.FCU.kartOdeme;  // iyzico açık mı (ayarlar.kart_odeme)
+    const kural = canli ? window.FCU.dondurmaKurali : { gunler: [7, 14], yillik: 2 };
     const yakinda = (metin) => { if (window.FC_ORTAK) window.FC_ORTAK.bildir(metin, false, 8000); };
     const h = this.HESAPLAR[this.state.hesap];
     const gunEkle = (t, n) => { const d = new Date(`${t}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -688,12 +696,20 @@ class Component extends DCLogic {
         return this.setState({ kodHata: `${e.ad} dolu. “Etkinlikler” sekmesinden bekleme listesine yazılabilirsin; yer açılınca karekodunu oluşturursun.` });
       }
       const [, m, d] = e.tarih.split('-');
+      const kod = `${h.kod}-${m}${d}`;
+      // Gerçek karekod: kenarda 4 hücre boşluk (okuyucular için); kütüphane yoksa önizleme deseni
+      const qr = window.FCKarekod ? window.FCKarekod(kod) : null;
+      const hucre = qr && qr.n > 25 ? 6 : 8;
+      const izgara = (n, h2) => `display:grid;grid-template-columns:repeat(${n},${h2}px);grid-auto-rows:${h2}px;padding:${qr ? h2 * 4 : 12}px;background:#FFFFFF;border:2px solid #111111;border-radius:10px`;
       this.setState((s) => ({
         kodHata: '',
         kayit: e.ben === 'kayitli' ? s.kayit : { ...s.kayit, [secili]: { ...e, ben: 'kayitli', kayitli: e.kayitli + 1 } },
         bilet: {
-          etkinlik: e.ad, zaman: `${Number(d)} ${AY_UZUN[Number(m) - 1]} · ${e.saat}`,
-          kod: `${h.kod}-${m}${d}`, karekod: karekodDesen(`${h.kod}|${secili}`), takvim: takvimLink(e.ad, e.tarih, e.saat, e.bitisSaat),
+          etkinlik: e.ad, zaman: `${Number(d)} ${AY_UZUN[Number(m) - 1]} · ${e.saat}`, kod,
+          karekod: qr ? qr.hucreler.map((k) => `display:block;background:${k ? '#111111' : '#FFFFFF'}`) : karekodDesen(`${h.kod}|${secili}`),
+          izgara: qr ? izgara(qr.n, hucre) : izgara(21, 9),
+          not: qr ? 'Girişte bu karekodu okut; okunmazsa kodu söylemen yeterli.' : 'Önizleme: desen örnektir, gerçek karekod sitede üretilir.',
+          takvim: takvimLink(e.ad, e.tarih, e.saat, e.bitisSaat),
         },
       }));
     };
@@ -715,7 +731,11 @@ class Component extends DCLogic {
         fotolar: ['[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]'],
         anketBekliyor: !a.bitti, anketBitti: a.bitti, puanYazi: `${a.puan} / 5`, yorum: a.yorum,
         yorumYaz: (e) => anketGuncelle({ yorum: e.target.value }),
-        gonder: () => { if (canli) return yakinda('Anket yakında açılacak; puanın şimdilik kaydedilmiyor.'); if (a.puan) anketGuncelle({ bitti: true }); },
+        gonder: () => {
+          if (!a.puan) return;
+          if (!canli) return anketGuncelle({ bitti: true });
+          window.FCUAnket(id, a.puan, a.yorum).then(() => anketGuncelle({ bitti: true }), (h) => window.FC_ORTAK.bildir(h.message, true));
+        },
         puanlar: [1, 2, 3, 4, 5].map((p) => ({
           yazi: String(p), etiket: `${p} puan`, basili: a.puan === p ? 'true' : 'false',
           stil: `font:700 15px Figtree,sans-serif;width:44px;height:44px;border-radius:50%;cursor:pointer;border:2px solid #111111;${a.puan >= p ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}`,
@@ -784,9 +804,9 @@ class Component extends DCLogic {
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
       ben, aktif, pasif: !aktif, uyari,
       // Canlıda (kartla ödeme gelene kadar) ödeme havale + dekont sayfasından
-      odemeyeGit: () => (canli ? location.assign('/dekont') : this.setState({ sekme: 'uyelik', odeme: 'ozet' })),
+      odemeyeGit: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ sekme: 'uyelik', odeme: 'ozet' })),
       anaSayfayaGit: () => this.setState({ sekme: 'ana', odeme: 'yok' }),
-      secimEtk, kodOlustur, kodHata: this.state.kodHata, bilet: this.state.bilet || { karekod: [] }, biletVar: !!this.state.bilet,
+      secimEtk, kodOlustur, kodHata: this.state.kodHata, bilet: this.state.bilet || { karekod: [], izgara: '', not: '' }, biletVar: !!this.state.bilet,
       yaklasan,
       sepetVar: sepetIdler.length > 0, sepetOdemede: this.state.sepetAdim === 'odeme', satinTamam: this.state.sepetAdim === 'tamam' && !sepetIdler.length,
       satinAlinan: this.state.satinAlinan,
@@ -830,14 +850,14 @@ class Component extends DCLogic {
       // Ödeme (ilk üyelik, yeniden başlatma ya da yenileme)
       odemeYok: odeme === 'yok', odemeOzet: odeme === 'ozet', odemeBasarili: odeme === 'basarili', odemeHata: odeme === 'hata',
       odemeTuru: aktif ? 'Üyelik yenileme' : durumTur === 'doldu' ? 'Üyeliği yeniden başlatma' : 'İlk üyelik',
-      odemeDugme: aktif ? (canli ? 'Yenile · havale / EFT' : 'Kartla yenile · 3.000 TL') : uyari.dugme,
+      odemeDugme: aktif ? (canli && !kartla ? 'Yenile · havale / EFT' : 'Kartla yenile · 3.000 TL') : uyari.dugme,
       odemeAciklama: aktif ? 'Erken yenilersen kalan günlerin kaybolmaz; yeni 30 gün mevcut bitişinden sonra başlar. Otomatik ücret çekilmez.' : 'Ödemen geçtiği anda üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.',
       yeniBitisYazi: tarihYaz(yeniBitis),
-      odemeBasla: () => (canli ? location.assign('/dekont') : this.setState({ odeme: 'ozet' })),
+      odemeBasla: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ odeme: 'ozet' })),
       odemeVazgec: () => this.setState({ odeme: 'yok' }),
       odeHata: () => this.setState({ odeme: 'hata' }),
-      // Gerçek sitede: iyzico penceresi → bildirim gelince üyelik başlar/uzar, muhasebeye yazılır, onay maili gider
-      ode: () => (canli ? yakinda('Kartla ödeme yakında. Şimdilik havale/EFT ile ödeyip dekontunu sitedeki dekont sayfasından (/dekont) yükleyebilirsin.') : this.setState((s) => ({
+      // Deneme sitesi: iyzico ödeme sayfası → dönüşte üyelik uzamış, muhasebeye yazılmış, onay maili kuyrukta
+      ode: () => (canli ? window.FCOdemeBaslat().catch((h) => { window.FC_ORTAK.bildir(h.message, true); this.setState({ odeme: 'hata' }); }) : this.setState((s) => ({
         odeme: 'basarili', bitis: yeniBitis,
         odemeler: [{ tarih: BUGUN, yol: 'Kart · iyzico' }, ...s.odemeler],
       }))),
@@ -848,11 +868,17 @@ class Component extends DCLogic {
       dondurmaYazi: dond ? `${tarihYaz(dond.bas)} – ${tarihYaz(gunEkle(dond.bas, dond.gun - 1))}; yeni bitiş ${tarihYaz(bitis)}` : '',
       dondurmaAc: () => this.setState({ dondurmaSecim: true }),
       dondurmaVazgec: () => this.setState({ dondurmaSecim: false }),
-      dondurmaSecenek: [7, 14].map((n) => ({
+      dondurmaKural: `Bugünden başlar; dondurduğun günler bitiş tarihine eklenir. Yılda en çok ${kural.yillik} kez dondurabilirsin; istediğin zaman erken dönebilirsin.`,
+      dondurmaSecenek: kural.gunler.map((n) => ({
         ad: `${n} gün`,
-        sec: () => (canli ? yakinda('Üyelik dondurma yakında. Şimdilik bize WhatsApp\'tan yaz.') : this.setState((s) => ({ dondurma: { bas: BUGUN, gun: n }, dondurmaSecim: false, bitis: gunEkle(s.bitis, n), odeme: 'yok' }))),
+        sec: () => (canli
+          ? window.FCUDondur(n).then((r) => this.setState({ dondurma: { bas: r.bas, gun: r.gun }, dondurmaSecim: false, bitis: r.bitis, odeme: 'yok' }),
+            (h) => window.FC_ORTAK.bildir(h.message, true))
+          : this.setState((s) => ({ dondurma: { bas: BUGUN, gun: n }, dondurmaSecim: false, bitis: gunEkle(s.bitis, n), odeme: 'yok' }))),
       })),
-      dondurmaBitir: () => this.setState((s) => ({ dondurma: null, bitis: gunEkle(s.bitis, -s.dondurma.gun) })),
+      dondurmaBitir: () => (canli
+        ? window.FCUDondurmaBitir().then((r) => this.setState({ dondurma: null, bitis: r.bitis }), (h) => window.FC_ORTAK.bildir(h.message, true))
+        : this.setState((s) => ({ dondurma: null, bitis: gunEkle(s.bitis, -s.dondurma.gun) }))),
       // Profil
       profil, pAlan: this.pAlan, yeniOzel: this.state.yeniOzel, profilMesaj: this.state.profilMesaj,
       ozelGunler: profil.ozel.map((g, i) => ({
@@ -884,12 +910,14 @@ class Component extends DCLogic {
       silmeSoru: this.state.silmeSoru, silmeDugme: !this.state.silmeSoru && !this.state.silmeIstendi, veriMesaj: this.state.veriMesaj,
       silmeAc: () => this.setState({ silmeSoru: true, veriMesaj: '' }),
       silmeVazgec: () => this.setState({ silmeSoru: false }),
-      silmeOnay: () => this.setState(canli
-        ? { silmeSoru: false, veriMesaj: 'Silme talebini panelden gönderme yakında. Şimdilik bize WhatsApp\'tan ya da e-postayla yaz.' }
-        : { silmeSoru: false, silmeIstendi: true, veriMesaj: 'Silme talebin alındı. En geç 30 gün içinde sonuçlandırıp e-postayla haber vereceğiz.' }),
-      kopyaIste: () => this.setState({ veriMesaj: canli
-        ? 'Veri kopyası talebini panelden gönderme yakında. Şimdilik bize WhatsApp\'tan ya da e-postayla yaz.'
-        : 'Talebin alındı; verilerinin kopyası e-postana gönderilecek.' }),
+      silmeOnay: () => (canli
+        ? window.FCUSilmeTalebi().then((r) => this.setState({ silmeSoru: false, silmeIstendi: true, veriMesaj: r === 'zaten'
+          ? 'Silme talebin zaten alınmış; en geç 30 gün içinde sonuçlandırıp e-postayla haber vereceğiz.'
+          : 'Silme talebin alındı. En geç 30 gün içinde sonuçlandırıp e-postayla haber vereceğiz.' }), (h) => this.setState({ silmeSoru: false, veriMesaj: h.message }))
+        : this.setState({ silmeSoru: false, silmeIstendi: true, veriMesaj: 'Silme talebin alındı. En geç 30 gün içinde sonuçlandırıp e-postayla haber vereceğiz.' })),
+      kopyaIste: () => (canli
+        ? window.FCUVeriKopyasi().then(() => this.setState({ veriMesaj: 'Verilerinin kopyası indirildi (JSON dosyası).' }), (h) => this.setState({ veriMesaj: h.message }))
+        : this.setState({ veriMesaj: 'Talebin alındı; verilerinin kopyası e-postana gönderilecek.' })),
     };
   }
 }

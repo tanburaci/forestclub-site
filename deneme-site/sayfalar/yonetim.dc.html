@@ -350,6 +350,28 @@ a{color:#111111}a:hover{color:#000000}
                 </tbody>
               </table>
             </div>
+
+            <!-- KVKK: üyelerin veri silme talepleri (kopyayı üye kendi panelinden indirir) -->
+            <sc-if value="{{ veriTalepVar }}" hint-placeholder-val="{{ true }}">
+              <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+                <div>
+                  <h3 style="margin: 0; font-size: 20px">Veri talepleri (KVKK)</h3>
+                  <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 14px">{{ veriTalepOzet }} Silmede ad, iletişim, profil, dekont dosyaları ve giriş hesabı silinir; muhasebe tutarları kalır.</p>
+                </div>
+                <sc-for list="{{ veriTalepleri }}" as="v" hint-placeholder-count="2">
+                  <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid #ECECEA">
+                    <div style="flex: 1 1 220px"><div style="font-weight: 600">{{ v.ad }}</div><div style="color: #5E5E5E; font-size: 13px">{{ v.tur }} · {{ v.tarih }}</div></div>
+                    <span style="{{ v.rozet }}">{{ v.durum }}</span>
+                    <sc-if value="{{ v.bekliyor }}" hint-placeholder-val="{{ true }}">
+                      <div style="display: inline-flex; gap: 8px">
+                        <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ v.indir }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Kopyasını indir</button>
+                        <button type="button" class="fc-btn" onClick="{{ v.sil }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Verilerini sil</button>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </section>
+            </sc-if>
           </div>
         </sc-if>
 
@@ -483,7 +505,11 @@ a{color:#111111}a:hover{color:#000000}
                         <input class="fc-input" type="text" placeholder="FC-U-0001" value="{{ kod }}" onChange="{{ kodYaz }}">
                       </label>
                       <button type="button" onClick="{{ kodOkut }}" class="fc-btn">Giriş yaptı</button>
-                      <span style="flex: 1 1 100%; color: #5E5E5E; font-size: 13px">Gerçek sitede telefon kamerasıyla üyenin karekodu okutulur; önizlemede kodu elle yazın.</span>
+                      <button type="button" onClick="{{ kameraDegis }}" class="fc-btn fc-btn-ikincil">{{ kameraYazi }}</button>
+                      <sc-if value="{{ kameraAcik }}" hint-placeholder-val="{{ false }}">
+                        <video id="fc-kamera" muted playsinline aria-label="Kamera görüntüsü" style="flex: 1 1 100%; width: 100%; max-width: 420px; aspect-ratio: 4 / 3; object-fit: cover; background: #111111; border-radius: 10px"></video>
+                      </sc-if>
+                      <span style="flex: 1 1 100%; color: #5E5E5E; font-size: 13px">Üyenin (FC-U-…) ya da tanışma biletinin (FC-T-…) karekodunu kameraya gösterin; okunan kod kendiliğinden işlenir. Kamera yoksa kodu elle yazın.</span>
                     </form>
                     <sc-if value="{{ kodMesaj }}" hint-placeholder-val="{{ false }}">
                       <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px">{{ kodMesaj }}</p>
@@ -545,7 +571,7 @@ a{color:#111111}a:hover{color:#000000}
                   <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 14px">Üyeliği hiç aktif olmamış her e-postaya bir kez, ücretsiz. Sitedeki “Tanışma biletini al” ile verilir.</p>
                 </div>
                 <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
-                  <input type="checkbox" checked="{{ tanismaSunuluyor }}" onChange="{{ tanismaDegis }}" disabled="{{ yakindaKapali }}" title="{{ yakindaIpucu }}" style="width: 20px; height: 20px">
+                  <input type="checkbox" checked="{{ tanismaSunuluyor }}" onChange="{{ tanismaDegis }}" style="width: 20px; height: 20px">
                   Sitede sunulsun
                 </label>
               </div>
@@ -611,7 +637,12 @@ a{color:#111111}a:hover{color:#000000}
             <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 14px">Tasarım önizlemesi: tutarlar ve kayıtlar örnektir.</p>
             <label style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 600; font-size: 14px">Kart komisyonu (iyzico) %
               <input class="fc-input" type="text" inputmode="decimal" placeholder="örn. 2,99" value="{{ komisyonOran }}" onChange="{{ komisyonYaz }}" disabled="{{ yakindaKapali }}" title="{{ yakindaIpucu }}" style="width: 110px">
-              <span style="font-weight: 400; color: #5E5E5E">Sözleşmedeki oranı yazın; her ayın kart ödemelerinden kendiliğinden gider olarak düşülür. Boşsa hesaplanmaz.</span>
+              <span style="font-weight: 400; color: #5E5E5E">{{ komisyonNot }}</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
+              <input type="checkbox" checked="{{ kartOdeme }}" onChange="{{ kartOdemeDegis }}" style="width: 20px; height: 20px">
+              Üyeler aidatı kartla ödeyebilsin (iyzico)
+              <span style="font-weight: 400; color: #5E5E5E">Kapalıyken üye paneli havale + dekont sayfasına yönlendirir.</span>
             </label>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
@@ -1256,21 +1287,24 @@ a{color:#111111}a:hover{color:#000000}
               <section style="flex: 1 1 360px; min-width: 0; background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 14px">
                 <h3 style="margin: 0; font-size: 18px">Kulüp bilgileri</h3>
                 <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">E-posta
-                  <input class="fc-input" type="email" value="forestcluburla@gmail.com">
+                  <input class="fc-input" type="email" value="{{ ilt.eposta }}" onChange="{{ iltAlan.eposta }}">
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Etkinlik alanı
-                  <input class="fc-input" type="text" value="Pinya, Urla">
+                  <input class="fc-input" type="text" value="{{ ilt.alan }}" onChange="{{ iltAlan.alan }}">
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">WhatsApp numarası (sitedeki “WhatsApp'tan yaz” düğmesi)
-                  <input class="fc-input" type="tel" placeholder="[WHATSAPP NUMARASI]">
+                  <input class="fc-input" type="tel" placeholder="[WHATSAPP NUMARASI]" value="{{ ilt.whatsapp }}" onChange="{{ iltAlan.whatsapp }}">
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">WhatsApp topluluğu
-                  <input class="fc-input" type="url" placeholder="[WHATSAPP BAĞLANTISI]">
+                  <input class="fc-input" type="url" placeholder="[WHATSAPP BAĞLANTISI]" value="{{ ilt.topluluk }}" onChange="{{ iltAlan.topluluk }}">
                 </label>
                 <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Instagram
-                  <input class="fc-input" type="text" placeholder="[INSTAGRAM HESABI]">
+                  <input class="fc-input" type="text" placeholder="[INSTAGRAM HESABI]" value="{{ ilt.instagram }}" onChange="{{ iltAlan.instagram }}">
                 </label>
-                <button type="button" class="fc-btn" style="align-self: flex-start">Kaydet</button>
+                <sc-if value="{{ iltMesaj }}" hint-placeholder-val="{{ false }}">
+                  <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px">{{ iltMesaj }}</p>
+                </sc-if>
+                <button type="button" class="fc-btn" onClick="{{ iltKaydet }}" style="align-self: flex-start">Kaydet</button>
               </section>
               <section style="flex: 999 1 480px; min-width: 0; background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px">
                 <h3 style="margin: 0 0 8px; font-size: 18px">Gelen mesajlar</h3>
@@ -1381,7 +1415,7 @@ class Component extends DCLogic {
     this.EBOS = { giris: 'satin', ad: '', kategori: 'Yoga / hareket', adet: '1', birim: 'adet', tarih: this.BUGUN, konum: '', tutar: '', kasa: 'banka', muhasebe: true, firma: '', karsilik: '', kaynak: '', not: '' };
     this.state = {
       adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
-      girildi: !!window.FC, sekme: location.hash === '#basvurular' ? 'basvurular' : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
+      girildi: !!window.FC, sekme: ['#basvurular', '#uyeler'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
       elden: { acik: false, ad: '', tutar: '3.000', tarih: this.BUGUN, hata: '' },
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
@@ -1391,7 +1425,11 @@ class Component extends DCLogic {
         { id: 2, ad: 'Selin Demir', tur: 'Veri kopyası', tarih: '2026-10-20', tamam: true },
       ],
       profilSecili: null, notlar: window.FC ? window.FC.notlar : { 2: 'Seramik atölyesinde gönüllü yardım etmek istiyor.' },  // anahtar: üye numarası
-      tanismaSunuluyor: true,
+      // Ayarlar (deneme sitesinde ayarlar tablosundan)
+      tanismaSunuluyor: window.FC ? window.FC.ayarlar.tanisma_acik !== false : true,
+      kartOdeme: window.FC ? window.FC.ayarlar.kart_odeme === true : false,
+      ilt: { eposta: 'forestcluburla@gmail.com', alan: 'Pinya, Urla', whatsapp: '', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}) },
+      iltMesaj: '', kameraAcik: false,
       biletler: this.DEMO.biletler,
       komisyonOran: '',
       anaMesaj: '',
@@ -1506,6 +1544,33 @@ class Component extends DCLogic {
   // Beni hatırla: bu tarayıcıda oturum açık kalır (tarayıcı depolaması kapalıysa sessizce çalışmaz)
   componentDidMount() {
     // Deneme sitesi: oturum Supabase'de tutulur (Beni hatırla kapalıysa tarayıcı kapanınca biter)
+  }
+  componentWillUnmount() { this.kameraKapat(); }
+  // Açık / kapalı ayar: ekranda hemen değişir, kaydedilemezse geri alınır
+  ayarDegis(alan, anahtar, etiket) {
+    const yeni = !this.state[alan];
+    this.setState({ [alan]: yeni });
+    if (!window.FCAyarKaydet) return;
+    window.FCAyarKaydet(anahtar, yeni).then(() => window.FC_ORTAK.bildir(`${etiket} ${yeni ? 'açık' : 'kapalı'} ✓`),
+      (h) => { this.setState({ [alan]: !yeni }); window.FC_ORTAK.bildir(h.message, true); });
+  }
+  // Kapıda kamera: okunan kod yoklama kutusuna yazılır ve hemen işlenir
+  kameraKapat() {
+    if (this.kameraDur) { this.kameraDur(); this.kameraDur = null; }
+    if (this.state.kameraAcik) this.setState({ kameraAcik: false });
+  }
+  kameraAc() {
+    if (!window.FCKameraAc) return this.setState({ kodMesaj: 'Önizlemede kamera yok; kodu elle yazın.' });
+    this.setState({ kameraAcik: true, kodMesaj: 'Kamera açılıyor…' }, () => {
+      const video = document.getElementById('fc-kamera');
+      if (!video) return this.setState({ kameraAcik: false });
+      window.FCKameraAc(video, (kod) => this.setState({ kod }, () => this.okut && this.okut()))
+        .then((dur) => {
+          if (!this.state.kameraAcik) return dur();
+          this.kameraDur = dur;
+          this.setState({ kodMesaj: 'Kamera açık: karekodu gösterin.' });
+        }, (h) => this.setState({ kameraAcik: false, kodMesaj: h.message }));
+    });
   }
 
   // DEMO VERİSİ: 200 kişi (30 aktif, 50 süresi dolmuş, 120 hiç ödememiş), sistemdeki etkinliklere kayıt/yoklama/anket,
@@ -1725,11 +1790,11 @@ class Component extends DCLogic {
       });
       return {
         epAcik: true, epYoklama: p.mod === 'yoklama', epIptal: p.mod === 'iptal',
-        epKapat: () => this.setState({ etkPanel: null }),
+        epKapat: () => { this.kameraKapat(); this.setState({ etkPanel: null }); },
         ep: {
           baslik: `${ad} · ${tYaz(t)}${p.mod === 'iptal' ? ' · iptal / ertele' : ''}`,
           sayilar: [
-            { baslik: 'Kayıtlı', sayi: `${k.kayitli.length}/${k.kontenjan}` },
+            { baslik: 'Kayıtlı', sayi: `${k.kayitli.length}${k.tanisma ? ` + ${k.tanisma} tanışma` : ''}/${k.kontenjan}` },
             { baslik: 'Gelen', sayi: String(k.gelen.length) },
             { baslik: 'Bekleme listesi', sayi: String(k.bekleme.length) },
           ],
@@ -1746,6 +1811,8 @@ class Component extends DCLogic {
         },
         kod: this.state.kod, kodMesaj: this.state.kodMesaj,
         kodYaz: (e) => this.setState({ kod: e.target.value, kodMesaj: '' }),
+        kameraAcik: this.state.kameraAcik, kameraYazi: this.state.kameraAcik ? 'Kamerayı kapat' : 'Kamerayla okut',
+        kameraDegis: () => (this.state.kameraAcik ? this.kameraKapat() : this.kameraAc()),
         kodOkut: (e) => {
           if (e && e.preventDefault) e.preventDefault();
           const kod = this.state.kod.trim();
@@ -1754,8 +1821,10 @@ class Component extends DCLogic {
           if (window.FCGirisKaydet) {
             this.setState({ kodMesaj: 'Kontrol ediliyor…' });
             window.FCGirisKaydet(p.key, kod).then((r) => this.setState((s) => {
+              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : ''}`;
+              // Tanışma bileti: sunucuda "geldi" yazıldı; liste yalnız ekranda güncellenir (kapida: ikinci kez yazılmasın)
+              if (r.tanisma) return { kodMesaj: mesaj, kod: '', biletler: s.biletler.map((b) => (b.id === r.bilet_id ? { ...b, durum: 'geldi', kapida: true } : b)) };
               const i = this.DEMO.kisiler.findIndex((x) => x.id === r.uye_id);
-              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.`;
               if (i < 0) return { kodMesaj: `${mesaj} (Liste sayfa yenilenince güncellenir.)`, kod: '' };
               const kk = s.kayitlar[p.key] || { kontenjan: 0, kayitli: [], bekleme: [], gelen: [] };
               return {
@@ -1797,6 +1866,7 @@ class Component extends DCLogic {
         },
       };
     })();
+    this.okut = secilenEtkinlik.kodOkut;  // kameradan okunan kod da aynı yoldan işlenir
     // Üye profilleri ve yaklaşan özel günler (doğum günü + profildeki özel günler, ay-gün üzerinden)
     const AY_KISA = ['OCA', 'ŞUB', 'MAR', 'NİS', 'MAY', 'HAZ', 'TEM', 'AĞU', 'EYL', 'EKİ', 'KAS', 'ARA'];
     const AY_UZUN = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
@@ -2212,8 +2282,9 @@ class Component extends DCLogic {
           durum: ozelDurum || x.durum, rozet: ozelDurum ? DOLDU : x.rozet,
           kayitYazi: k ? (() => {
             const sat = x.satis ? x.satis.satilan : 0;
-            const bos = k.kontenjan - k.kayitli.length - sat;
-            return `${k.kayitli.length} üye${sat ? ` + ${sat} bilet` : ''}${bos <= 0 ? ' · dolu' : ` · ${bos} yer var`}`;
+            const tn = k.tanisma || 0;
+            const bos = k.kontenjan - k.kayitli.length - sat - tn;
+            return `${k.kayitli.length} üye${sat ? ` + ${sat} bilet` : ''}${tn ? ` + ${tn} tanışma` : ''}${bos <= 0 ? ' · dolu' : ` · ${bos} yer var`}`;
           })() : 'Kayıt açılmadı',
           biletYazi: x.satis
             ? `Bilet ${x.satis.fiyat.toLocaleString('tr-TR')} TL · ${{ ucretsiz: 'üyelere ücretsiz', yuzde50: 'üyelere %50', tam: 'üyelere tam fiyat' }[x.satis.uye]} · ${x.satis.satilan} satıldı (${(x.satis.fiyat * x.satis.satilan).toLocaleString('tr-TR')} TL)`
@@ -2268,23 +2339,49 @@ class Component extends DCLogic {
         profilAc: () => this.setState({ profilSecili: u.id }),
       })),
       profilAcik: !!profilUye, profil: profilGorunum,
-      veriTalepVar: this.state.veriTalepleri.length > 0,
-      veriTalepleri: this.state.veriTalepleri.map((v) => {
+      ...(window.FCVeriTalepGorunum ? (() => {
+        const g = window.FCVeriTalepGorunum();
+        return { veriTalepVar: true, veriTalepOzet: g.talepOzet, veriTalepleri: g.talepler.map((t) => ({ ...t, tur: `Silme talebi · ${t.eposta}` })) };
+      })() : {
+        veriTalepVar: this.state.veriTalepleri.length > 0,
+        veriTalepOzet: 'Önizleme: örnek talepler.',
+        veriTalepleri: this.state.veriTalepleri.map((v) => {
         const son = new Date(`${v.tarih}T12:00:00Z`); son.setUTCDate(son.getUTCDate() + 30);
         return {
           ad: v.ad, tur: v.tur, tarih: v.tarih.split('-').reverse().join('.'), bekliyor: !v.tamam,
           durum: v.tamam ? 'Tamamlandı' : `Son gün ${son.toISOString().slice(0, 10).split('-').reverse().join('.')}`,
           rozet: v.tamam ? TASLAK : DOLDU,
           tamamla: () => this.setState((s) => ({ veriTalepleri: s.veriTalepleri.map((x) => (x.id === v.id ? { ...x, tamam: true } : x)) })),
+          indir: () => window.alert('Önizleme: üyenin bütün verisi JSON dosyası olarak iner.'),
+          sil: () => this.setState((s) => ({ veriTalepleri: s.veriTalepleri.map((x) => (x.id === v.id ? { ...x, tamam: true } : x)) })),
         };
+        }),
       }),
       profilKapat: () => this.setState({ profilSecili: null }),
       profilNotYaz: (e) => { const v = e.target.value; this.setState((s) => ({ notlar: { ...s.notlar, [s.profilSecili]: v } })); },
       ozelGunler,
       tanismaSunuluyor: this.state.tanismaSunuluyor,
-      // Deneme sitesinde kaydı olmayan ayarlar (tanışma bileti sunumu, komisyon oranı) kapalı: yakında
-      yakindaKapali: !!window.FC, yakindaIpucu: window.FC ? 'Yakında' : '',
-      tanismaDegis: () => this.setState((s) => ({ tanismaSunuluyor: !s.tanismaSunuluyor })),
+      // Deneme sitesinde kart komisyonu iyzico'nun bildirdiği tutarla her ödemede gider olarak yazılır (oran girilmez)
+      yakindaKapali: !!window.FC, yakindaIpucu: window.FC ? 'iyzico komisyonu her kart ödemesinde kendiliğinden gider olarak yazılır' : '',
+      komisyonNot: window.FC ? 'Gerek yok: iyzico komisyonu her kart ödemesinde muhasebeye kendiliğinden gider olarak yazılır.'
+        : 'Sözleşmedeki oranı yazın; her ayın kart ödemelerinden kendiliğinden gider olarak düşülür. Boşsa hesaplanmaz.',
+      tanismaDegis: () => this.ayarDegis('tanismaSunuluyor', 'tanisma_acik', 'Tanışma bileti sitede'),
+      kartOdeme: this.state.kartOdeme,
+      kartOdemeDegis: () => this.ayarDegis('kartOdeme', 'kart_odeme', 'Kartla ödeme'),
+      ilt: this.state.ilt, iltMesaj: this.state.iltMesaj,
+      iltAlan: Object.fromEntries(['eposta', 'alan', 'whatsapp', 'topluluk', 'instagram'].map((a) => [a, (e) => {
+        const v = e.target.value;
+        this.setState((s) => ({ ilt: { ...s.ilt, [a]: v }, iltMesaj: '' }));
+      }])),
+      iltKaydet: () => {
+        const ilt = Object.fromEntries(Object.entries(this.state.ilt).map(([a, v]) => [a, String(v || '').trim()]));
+        if (ilt.topluluk && !/^https:\/\//.test(ilt.topluluk)) return this.setState({ iltMesaj: 'WhatsApp topluluğu bağlantısı https:// ile başlamalı.' });
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ilt.eposta)) return this.setState({ iltMesaj: 'Geçerli bir e-posta yazın.' });
+        if (!window.FCAyarKaydet) return this.setState({ ilt, iltMesaj: 'Önizleme: kaydedildi (sitede görünür).' });
+        this.setState({ iltMesaj: 'Kaydediliyor…' });
+        window.FCAyarKaydet('iletisim', ilt).then(() => this.setState({ ilt, iltMesaj: 'Kaydedildi ✓ Sitede bir sonraki açılışta görünür.' }),
+          (h) => this.setState({ iltMesaj: h.message }));
+      },
       tOzet: [
         { baslik: 'Verilen bilet', sayi: String(this.state.biletler.length) },
         { baslik: 'Gelen', sayi: String(this.state.biletler.filter((b) => b.durum !== 'bekliyor').length) },
