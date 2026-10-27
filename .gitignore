@@ -1,0 +1,15 @@
+# Forest Club Urla deposu: yalnız deneme sitesi ve veritabanı (Supabase) dosyaları. Diğer her şey dışarıda.
+/*
+!/.gitignore
+!/README.md
+!/deneme-site/
+!/supabase/
+
+# Gizli / yerel dosyalar (asla depoya girmez)
+.env*
+.vercel/
+.netlify/
+supabase/.temp/
+.supabase_*
+.deneme_*
+*.pem

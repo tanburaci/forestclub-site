@@ -1,0 +1,10 @@
+# Forest Club Urla · deneme sitesi (yayında değil; arama motorlarına kapalı)
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
