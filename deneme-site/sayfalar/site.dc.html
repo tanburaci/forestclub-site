@@ -635,7 +635,7 @@ a{color:#111111}a:hover{color:#000000}
       </div>
       <h3 style="margin: 8px 0 0; font-size: 22px">Yaklaşan</h3>
       <sc-if value="{{ yaklasanYok }}" hint-placeholder-val="{{ false }}">
-        <p style="margin: 0; color: #5E5E5E">Yeni etkinlikler yakında duyurulacak. Instagram ve WhatsApp topluluğunu takipte kal.</p>
+        <p style="margin: 0; color: #5E5E5E">{{ yaklasanYokYazi }}</p>
       </sc-if>
       <!-- Etkinlik = ürün: fiyat, üye fiyatı, kalan yer, sepete ekle (ödeme iyzico) -->
       <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px">
@@ -900,8 +900,9 @@ class Component extends DCLogic {
     const pill = (bg, fg) => `background:${bg};color:${fg};font-size:12px;font-weight:700;border-radius:999px;padding:4px 10px`;
     // Instagram @forestcluburla gönderilerinden (eskiden yeniye); bugün: 24.10.2026
     const IG = 'https://www.instagram.com/p/';
-    const BUGUN = window.FCS ? window.FCS.bugun : '2026-10-24';  // deneme sitesinde gerçek bugün
-    const tumu = (window.FCS ? window.FCS.etkinlikler : [
+    const BUGUN = window.FCS ? window.FCS.bugun : window.FCS_HATA ? window.FC_ORTAK.bugun() : '2026-10-24';  // deneme sitesinde gerçek bugün
+    // Deneme sitesinde veri gelmezse örnek liste gösterilmez (site.js FCS_HATA); tasarım önizlemesinde örnekler kalır
+    const tumu = (window.FCS ? window.FCS.etkinlikler : window.FCS_HATA ? [] : [
       { tarih: '2026-09-11', gun: '11', ay: 'EYLÜL', haftaGunu: 'Cuma', ad: 'Sunset Club', saat: '18.30', tur: 'bulusma', metin: 'Fruma Table ile fine casual sunset bites, Taylan Aktuğ ile Rhythm Lab ve drum circle, DJ Jamie S.', link: 'https://www.instagram.com/forestcluburla/' },
       { tarih: '2026-09-12', gun: '12–13', ay: 'EYLÜL', haftaGunu: 'Cmt–Paz', ad: 'Tai Chi Günleri', saat: '2 gün', tur: 'hareket', metin: 'Om Yoga Stüdyo × Forest Club, Urla.', link: 'https://www.instagram.com/forestcluburla/' },
       { tarih: '2026-09-27', gun: '27', ay: 'EYLÜL', haftaGunu: 'Pazar', ad: 'Sunset Club', saat: '17.30', tur: 'bulusma', metin: 'Fruma Table ile fine casual sunset bites, Tayga Live Set (Mehmet Denizci), Elif Bilgen ile orman banyosu.', link: IG + 'DeMtTC7D_9H/' },
@@ -937,7 +938,7 @@ class Component extends DCLogic {
       }
       const takvim = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Forest Club · ${b.ad}`)}&dates=${tarihler}&ctz=Europe/Istanbul&location=${encodeURIComponent('Pinya, Urla')}`;
       // Satış (örnek): fiyat TL, üye: ucretsiz | yuzde50 | tam; kontenjan ve kayıtlı (üye + satılan bilet)
-      const sat = !gecti ? (b.satis || (b.ad === 'The Common Table' ? { fiyat: 750, uye: 'ucretsiz', kontenjan: 35, kayitli: 20 } : null)) : null;
+      const sat = !gecti ? (b.satis || (!window.FCS && b.ad === 'The Common Table' ? { fiyat: 750, uye: 'ucretsiz', kontenjan: 35, kayitli: 20 } : null)) : null;
       return {
         ...b, takvim, satis: sat ? { ...sat } : null,
         etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : 'Yaklaşan',
@@ -1241,6 +1242,8 @@ class Component extends DCLogic {
       gecmisDugme: `Tüm geçmiş etkinlikler (${(tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih < BUGUN).length})`,
       gecmisAc: () => this.setState({ gecmisTumu: true }),
       yaklasanYok: !(tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).some((b) => b.tarih >= BUGUN),
+      yaklasanYokYazi: window.FCS_HATA ? 'Etkinlikler şu an yüklenemiyor. Biraz sonra sayfayı yenile; Instagram ve WhatsApp topluluğundan da takip edebilirsin.'
+        : 'Yeni etkinlikler yakında duyurulacak. Instagram ve WhatsApp topluluğunu takipte kal.',
       haklar: [
         'Aylık Breakfast Club buluşmaları',
         'Aylık Sunset Club etkinlikleri',
