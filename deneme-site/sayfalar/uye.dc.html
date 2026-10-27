@@ -70,6 +70,10 @@ a{color:#111111}a:hover{color:#000000}
           <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ girisHata }}</p>
         </sc-if>
         <button type="button" class="fu-btn" onClick="{{ girisYap }}">Giriş yap</button>
+        <button type="button" class="fu-btn fu-btn-ikincil" onClick="{{ baglantiGonder }}">Şifresiz gir: e-postama giriş bağlantısı gönder</button>
+        <sc-if value="{{ girisBilgi }}" hint-placeholder-val="{{ false }}">
+          <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600">{{ girisBilgi }}</p>
+        </sc-if>
         <div style="background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
           <span style="font-size: 13px; font-weight: 700">Deneme hesapları · basınca e-posta dolar, şifreyi sen yaz</span>
           <sc-for list="{{ ornekHesaplar }}" as="h" hint-placeholder-count="3">
@@ -495,7 +499,7 @@ class Component extends DCLogic {
         katildi: [] },
     };
     this.state = {
-      girildi: false, eposta: window.FCU ? window.FCU.eposta : '', sifre: '', hatirla: true, girisHata: '', hesap: 'deniz@ornek.com', sekme: 'ana',
+      girildi: false, eposta: window.FCU ? window.FCU.eposta : '', sifre: '', hatirla: true, girisHata: '', girisBilgi: '', hesap: 'deniz@ornek.com', sekme: 'ana',
       bitis: '', odemeler: [], odeme: 'yok', profil: null, katildi: [],
       kayit: {}, sepet: {}, sepetAdim: 'yok', satinAlinan: [],
       secili: '', bilet: null, kodHata: '',
@@ -512,10 +516,6 @@ class Component extends DCLogic {
   // Seçilen hesabın verisiyle paneli açar (her girişte temiz başlar)
   hesapAc(eposta) {
     const h = this.HESAPLAR[eposta];
-    try {
-      if (this.state.hatirla) localStorage.setItem('fc_uye', eposta);
-      else localStorage.removeItem('fc_uye');
-    } catch (err) { /* depolama yok */ }
     const benKayitli = h.bitis > this.BUGUN;
     this.setState({
       girildi: true, girisHata: '', sifre: '', hesap: eposta, sekme: 'ana',
@@ -543,6 +543,10 @@ class Component extends DCLogic {
   renderVals() {
     const { girildi, bitis, odeme, sekme } = this.state;
     const BUGUN = this.BUGUN;
+    // Deneme sitesinde (gerçek veriyle) kartla ödeme, bilet sepeti, dondurma, anket ve veri talepleri henüz kaydedilmez:
+    // ekranda başarı göstermek yerine "yakında" denir. Tasarım önizlemesinde eskisi gibi çalışır.
+    const canli = !!window.FCU;
+    const yakinda = (metin) => { if (window.FC_ORTAK) window.FC_ORTAK.bildir(metin, false, 8000); };
     const h = this.HESAPLAR[this.state.hesap];
     const gunEkle = (t, n) => { const d = new Date(`${t}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
     const gunFark = (a, b) => Math.round((new Date(`${a}T12:00:00Z`) - new Date(`${b}T12:00:00Z`)) / 86400000);
@@ -689,7 +693,7 @@ class Component extends DCLogic {
         fotolar: ['[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]', '[Fotoğraf]'],
         anketBekliyor: !a.bitti, anketBitti: a.bitti, puanYazi: `${a.puan} / 5`, yorum: a.yorum,
         yorumYaz: (e) => anketGuncelle({ yorum: e.target.value }),
-        gonder: () => { if (a.puan) anketGuncelle({ bitti: true }); },
+        gonder: () => { if (canli) return yakinda('Anket yakında açılacak; puanın şimdilik kaydedilmiyor.'); if (a.puan) anketGuncelle({ bitti: true }); },
         puanlar: [1, 2, 3, 4, 5].map((p) => ({
           yazi: String(p), etiket: `${p} puan`, basili: a.puan === p ? 'true' : 'false',
           stil: `font:700 15px Figtree,sans-serif;width:44px;height:44px;border-radius:50%;cursor:pointer;border:2px solid #111111;${a.puan >= p ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}`,
@@ -707,7 +711,7 @@ class Component extends DCLogic {
     return {
       girisEkrani: !girildi, panel: girildi,
       eposta: this.state.eposta, sifre: this.state.sifre, hatirla: this.state.hatirla, girisHata: this.state.girisHata,
-      epostaYaz: (e) => this.setState({ eposta: e.target.value, girisHata: '' }),
+      epostaYaz: (e) => this.setState({ eposta: e.target.value, girisHata: '', girisBilgi: '' }),
       sifreYaz: (e) => this.setState({ sifre: e.target.value, girisHata: '' }),
       hatirlaDegis: () => this.setState((s) => ({ hatirla: !s.hatirla })),
       girisYap: () => {
@@ -715,6 +719,17 @@ class Component extends DCLogic {
         if (!ep || !this.state.sifre) return this.setState({ girisHata: 'E-posta ve şifreni yaz.' });
         this.setState({ girisHata: 'Giriş yapılıyor…' });
         window.FCGiris(ep, this.state.sifre, this.state.hatirla).catch((h) => this.setState({ girisHata: h.message }));
+      },
+      girisBilgi: this.state.girisBilgi,
+      // Şifresiz giriş: e-postaya tek kullanımlık bağlantı; bağlantıyla dönünce başvuru hesaba bağlanır (uye_bagla)
+      baglantiGonder: () => {
+        const ep = this.state.eposta.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ep)) return this.setState({ girisHata: 'Başvuruda yazdığın e-postayı yaz.', girisBilgi: '' });
+        if (!window.FCGirisBaglantisi) return this.setState({ girisHata: 'Önizlemede bağlantı gönderilmez.', girisBilgi: '' });
+        this.setState({ girisHata: '', girisBilgi: 'Gönderiliyor…' });
+        window.FCGirisBaglantisi(ep, this.state.hatirla)
+          .then(() => this.setState({ girisBilgi: `${ep} adresine giriş bağlantısı gönderdik. E-postandaki bağlantıya bu cihazda tıkla.` }))
+          .catch((h) => this.setState({ girisBilgi: '', girisHata: h.message }));
       },
       ornekHesaplar: [
         { ad: 'Deniz Yılmaz', durum: 'aktif üye', ep: 'deniz@ornek.com' },
@@ -754,6 +769,7 @@ class Component extends DCLogic {
       // Gerçek sitede iyzico; başarılı ödemede biletler kesinleşir, üye bileti alınan etkinlikte yerin ayrılır
       sepetOde: () => {
         if (this.state.sepetAdim !== 'odeme') return this.setState({ sepetAdim: 'odeme' });
+        if (canli) return yakinda('Bilet satın alma (kartla ödeme) yakında. Şimdilik bilet için bize WhatsApp\'tan yaz.');
         let no = 7301;
         const biletler = [];
         sepetIdler.forEach((id) => { for (let i = 0; i < this.state.sepet[id]; i++) biletler.push({ ad: kayit[id].ad, zaman: tarihYaz(kayit[id].tarih), kod: `FC-B-${no++}` }); });
@@ -778,10 +794,10 @@ class Component extends DCLogic {
       odemeVazgec: () => this.setState({ odeme: 'yok' }),
       odeHata: () => this.setState({ odeme: 'hata' }),
       // Gerçek sitede: iyzico penceresi → bildirim gelince üyelik başlar/uzar, muhasebeye yazılır, onay maili gider
-      ode: () => this.setState((s) => ({
+      ode: () => (canli ? yakinda('Kartla ödeme yakında. Şimdilik havale/EFT ile ödeyip dekontunu sitedeki dekont sayfasından (/dekont) yükleyebilirsin.') : this.setState((s) => ({
         odeme: 'basarili', bitis: yeniBitis,
         odemeler: [{ tarih: BUGUN, yol: 'Kart · iyzico' }, ...s.odemeler],
-      })),
+      }))),
       odemeler: this.state.odemeler.map((o) => ({ ad: 'Üyelik · 30 gün', detay: `${tarihYaz(o.tarih)} · ${o.yol}`, tutar: '3.000 TL' })),
       odemeGecmisiYok: !this.state.odemeler.length,
       // Dondurma
@@ -790,7 +806,8 @@ class Component extends DCLogic {
       dondurmaAc: () => this.setState({ dondurmaSecim: true }),
       dondurmaVazgec: () => this.setState({ dondurmaSecim: false }),
       dondurmaSecenek: [7, 14].map((n) => ({
-        ad: `${n} gün`, sec: () => this.setState((s) => ({ dondurma: { bas: BUGUN, gun: n }, dondurmaSecim: false, bitis: gunEkle(s.bitis, n), odeme: 'yok' })),
+        ad: `${n} gün`,
+        sec: () => (canli ? yakinda('Üyelik dondurma yakında. Şimdilik bize WhatsApp\'tan yaz.') : this.setState((s) => ({ dondurma: { bas: BUGUN, gun: n }, dondurmaSecim: false, bitis: gunEkle(s.bitis, n), odeme: 'yok' }))),
       })),
       dondurmaBitir: () => this.setState((s) => ({ dondurma: null, bitis: gunEkle(s.bitis, -s.dondurma.gun) })),
       // Profil
@@ -824,8 +841,12 @@ class Component extends DCLogic {
       silmeSoru: this.state.silmeSoru, silmeDugme: !this.state.silmeSoru && !this.state.silmeIstendi, veriMesaj: this.state.veriMesaj,
       silmeAc: () => this.setState({ silmeSoru: true, veriMesaj: '' }),
       silmeVazgec: () => this.setState({ silmeSoru: false }),
-      silmeOnay: () => this.setState({ silmeSoru: false, silmeIstendi: true, veriMesaj: 'Silme talebin alındı. En geç 30 gün içinde sonuçlandırıp e-postayla haber vereceğiz.' }),
-      kopyaIste: () => this.setState({ veriMesaj: 'Talebin alındı; verilerinin kopyası e-postana gönderilecek.' }),
+      silmeOnay: () => this.setState(canli
+        ? { silmeSoru: false, veriMesaj: 'Silme talebini panelden gönderme yakında. Şimdilik bize WhatsApp\'tan ya da e-postayla yaz.' }
+        : { silmeSoru: false, silmeIstendi: true, veriMesaj: 'Silme talebin alındı. En geç 30 gün içinde sonuçlandırıp e-postayla haber vereceğiz.' }),
+      kopyaIste: () => this.setState({ veriMesaj: canli
+        ? 'Veri kopyası talebini panelden gönderme yakında. Şimdilik bize WhatsApp\'tan ya da e-postayla yaz.'
+        : 'Talebin alındı; verilerinin kopyası e-postana gönderilecek.' }),
     };
   }
 }

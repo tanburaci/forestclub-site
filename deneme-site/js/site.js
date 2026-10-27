@@ -58,7 +58,8 @@
     try {
       window.FCS = await veriYukle();
     } catch (h) {
-      console.error(h); // veri gelmezse site tasarımdaki örnek listeyle açılır
+      console.error(h); // veri gelmezse örnek liste değil "Etkinlikler şu an yüklenemiyor" görünür
+      window.FCS_HATA = true;
       window.FCSBasvuru = null;
       window.FCSTanisma = null;
       window.FCSCagri = null;

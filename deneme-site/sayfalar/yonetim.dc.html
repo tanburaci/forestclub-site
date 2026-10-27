@@ -196,7 +196,8 @@ a{color:#111111}a:hover{color:#000000}
                   <form style="border: 2px solid #111111; border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 12px">
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px">
                       <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Üye *
-                        <input class="fc-input" type="text" placeholder="Ad soyad" value="{{ elden.ad }}" onChange="{{ eldenAlan.ad }}">
+                        <input class="fc-input" type="text" list="fc-uye-secim" autocomplete="off" placeholder="Ad soyad" value="{{ elden.ad }}" onChange="{{ eldenAlan.ad }}">
+                        <datalist id="fc-uye-secim"><sc-for list="{{ uyeSecenekleri }}" as="u" hint-placeholder-count="3"><option value="{{ u }}"></option></sc-for></datalist>
                       </label>
                       <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Tutar (TL)
                         <input class="fc-input" type="text" inputmode="decimal" value="{{ elden.tutar }}" onChange="{{ eldenAlan.tutar }}">
@@ -541,7 +542,7 @@ a{color:#111111}a:hover{color:#000000}
                   <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 14px">Üyeliği hiç aktif olmamış her e-postaya bir kez, ücretsiz. Sitedeki “Tanışma biletini al” ile verilir.</p>
                 </div>
                 <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
-                  <input type="checkbox" checked="{{ tanismaSunuluyor }}" onChange="{{ tanismaDegis }}" style="width: 20px; height: 20px">
+                  <input type="checkbox" checked="{{ tanismaSunuluyor }}" onChange="{{ tanismaDegis }}" disabled="{{ yakindaKapali }}" title="{{ yakindaIpucu }}" style="width: 20px; height: 20px">
                   Sitede sunulsun
                 </label>
               </div>
@@ -606,7 +607,7 @@ a{color:#111111}a:hover{color:#000000}
             </div>
             <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 14px">Tasarım önizlemesi: tutarlar ve kayıtlar örnektir.</p>
             <label style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 600; font-size: 14px">Kart komisyonu (iyzico) %
-              <input class="fc-input" type="text" inputmode="decimal" placeholder="örn. 2,99" value="{{ komisyonOran }}" onChange="{{ komisyonYaz }}" style="width: 110px">
+              <input class="fc-input" type="text" inputmode="decimal" placeholder="örn. 2,99" value="{{ komisyonOran }}" onChange="{{ komisyonYaz }}" disabled="{{ yakindaKapali }}" title="{{ yakindaIpucu }}" style="width: 110px">
               <span style="font-weight: 400; color: #5E5E5E">Sözleşmedeki oranı yazın; her ayın kart ödemelerinden kendiliğinden gider olarak düşülür. Boşsa hesaplanmaz.</span>
             </label>
 
@@ -1348,17 +1349,17 @@ class Component extends DCLogic {
     this.KISILER = this.DEMO.kisiler.map((k) => k.ad);
     this.EBOS = { giris: 'satin', ad: '', kategori: 'Yoga / hareket', adet: '1', birim: 'adet', tarih: this.BUGUN, konum: '', tutar: '', kasa: 'banka', muhasebe: true, firma: '', karsilik: '', kaynak: '', not: '' };
     this.state = {
-      adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', adminSifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
+      adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
       girildi: !!window.FC, sekme: location.hash === '#basvurular' ? 'basvurular' : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
-      elden: { acik: false, ad: '', tutar: '3.000', tarih: '2026-10-24', hata: '' },
+      elden: { acik: false, ad: '', tutar: '3.000', tarih: this.BUGUN, hata: '' },
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
-      etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: {},
+      etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: window.FC ? window.FC.etkDurum : {},
       veriTalepleri: window.FC ? [] : [
         { id: 1, ad: 'Can Öztürk', tur: 'Hesap silme', tarih: '2026-10-23', tamam: false },
         { id: 2, ad: 'Selin Demir', tur: 'Veri kopyası', tarih: '2026-10-20', tamam: true },
       ],
-      profilSecili: '', notlar: window.FC ? window.FC.notlar : { 'Ece Arslan': 'Seramik atölyesinde gönüllü yardım etmek istiyor.' },
+      profilSecili: null, notlar: window.FC ? window.FC.notlar : { 2: 'Seramik atölyesinde gönüllü yardım etmek istiyor.' },  // anahtar: üye numarası
       tanismaSunuluyor: true,
       biletler: this.DEMO.biletler,
       komisyonOran: '',
@@ -1471,12 +1472,6 @@ class Component extends DCLogic {
   componentDidMount() {
     // Deneme sitesi: oturum Supabase'de tutulur (Beni hatırla kapalıysa tarayıcı kapanınca biter)
   }
-  hatirlaYaz(eposta, adminSifre) {
-    try {
-      if (this.state.hatirla) localStorage.setItem('fc_yonetici', JSON.stringify({ eposta, adminSifre }));
-      else localStorage.removeItem('fc_yonetici');
-    } catch (e) { /* depolama yok */ }
-  }
 
   // DEMO VERİSİ: 200 kişi (30 aktif, 50 süresi dolmuş, 120 hiç ödememiş), sistemdeki etkinliklere kayıt/yoklama/anket,
   // aidat ödemeleri ve tanışma biletleri. Sabit tohumla üretilir: her açılışta aynı veri.
@@ -1535,6 +1530,7 @@ class Component extends DCLogic {
     // Ödemeler: başlangıçtan bugüne her 30 günde bir; süresi dolanlar bir dönem ödemiş
     kisiler.forEach((k, i) => {
       k.i = i;
+      k.id = i + 1;
       k.kod = `FC-U-${String(i + 1).padStart(4, '0')}`;
       k.tel = `05${['32', '33', '35', '36', '42', '44', '53', '55'][i % 8]} 000 ${String(Math.floor(i / 100)).padStart(2, '0')} ${String(i % 100).padStart(2, '0')}`;
       k.odemeler = [];
@@ -1666,7 +1662,7 @@ class Component extends DCLogic {
       const kalan = k.bitis ? kalanGun(k.bitis) : null;
       const tur = k.durum;
       return {
-        ad: k.ad, tel: k.tel, eposta: k.eposta, kod: k.kod, profil: k.profil, basvuru: tYaz(k.basvuru), odemeSayisi: String(k.odemeler.length),
+        id: k.id, ad: k.ad, tel: k.tel, eposta: k.eposta, kod: k.kod, profil: k.profil, basvuru: tYaz(k.basvuru), odemeSayisi: String(k.odemeler.length),
         bitis: tYaz(k.bitis), tur, bitisSira: k.bitis || '0',
         durum: tur === 'aktif' ? (kalan <= 3 ? `Aktif · ${kalan} gün kaldı` : 'Aktif') : tur === 'doldu' ? 'Süresi doldu' : 'Hiç ödemedi',
         rozet: tur === 'aktif' ? (kalan <= 3 ? BEKLER : AKTIF) : tur === 'doldu' ? DOLDU : TASLAK,
@@ -1682,7 +1678,7 @@ class Component extends DCLogic {
       const k = this.state.kayitlar[p.key] || { kontenjan: 0, kayitli: [], bekleme: [], gelen: [] };
       const [t, ad] = p.key.split('|');
       const tYaz = (x) => x.split('-').reverse().join('.');
-      const KOD = (i) => `FC-U-${String(i + 1).padStart(4, '0')}`;
+      const KOD = (i) => (this.DEMO.kisiler[i] || {}).kod || '';
       const kGuncelle = (deg) => this.setState((s) => ({ kayitlar: { ...s.kayitlar, [p.key]: { ...s.kayitlar[p.key], ...deg } } }));
       const ip = this.state.iptal;
       const varsayilan = ip.tur === 'iptal'
@@ -1710,21 +1706,40 @@ class Component extends DCLogic {
               degis: () => kGuncelle({ gelen: geldi ? k.gelen.filter((x) => x !== i) : [...k.gelen, i] }),
             };
           }),
-          beklemeListe: k.bekleme.length ? `Bekleme listesi: ${k.bekleme.map((i) => this.KISILER[i]).join(', ')} — biri “gelemeyeceğim” deyince sıradakine kendiliğinden mail gider.` : 'Bekleme listesi boş.',
-          alicilar: `Duyuru sitenin üstünde görünür ve ${k.kayitli.length} kayıtlı${k.bekleme.length ? ` + ${k.bekleme.length} bekleme listesindeki` : ''} kişiye mail gider.`,
+          beklemeListe: k.bekleme.length ? `Bekleme listesi: ${k.bekleme.map((i) => this.KISILER[i]).join(', ')} — biri “gelemeyeceğim” deyince sıradaki kendiliğinden kayda geçer (mail özelliği yakında).` : 'Bekleme listesi boş.',
+          alicilar: `${k.kayitli.length} kayıtlı${k.bekleme.length ? ` + ${k.bekleme.length} bekleme listesindeki` : ''} kişi. Kayıtlılara mail özelliği yakında; duyuru metni şimdilik kaydedilmez.`,
         },
         kod: this.state.kod, kodMesaj: this.state.kodMesaj,
         kodYaz: (e) => this.setState({ kod: e.target.value, kodMesaj: '' }),
         kodOkut: (e) => {
           if (e && e.preventDefault) e.preventDefault();
-          const m = /FC-U-(\d{4})/i.exec(this.state.kod.trim());
-          const i = m ? Number(m[1]) - 1 : -1;
+          const kod = this.state.kod.trim();
+          if (!kod) return this.setState({ kodMesaj: 'Kodu yazın ya da okutun.' });
+          // Deneme sitesi: kod sunucuda uyeler.kod ile eşleşir ve "geldi" orada yazılır (giris_kaydet)
+          if (window.FCGirisKaydet) {
+            this.setState({ kodMesaj: 'Kontrol ediliyor…' });
+            window.FCGirisKaydet(p.key, kod).then((r) => this.setState((s) => {
+              const i = this.DEMO.kisiler.findIndex((x) => x.id === r.uye_id);
+              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.`;
+              if (i < 0) return { kodMesaj: `${mesaj} (Liste sayfa yenilenince güncellenir.)`, kod: '' };
+              const kk = s.kayitlar[p.key] || { kontenjan: 0, kayitli: [], bekleme: [], gelen: [] };
+              return {
+                kayitlar: { ...s.kayitlar, [p.key]: { ...kk, kayitli: kk.kayitli.includes(i) ? kk.kayitli : [...kk.kayitli, i],
+                  bekleme: kk.bekleme.filter((x) => x !== i), gelen: kk.gelen.includes(i) ? kk.gelen : [...kk.gelen, i] } },
+                kodMesaj: mesaj, kod: '',
+              };
+            })).catch((h) => this.setState({ kodMesaj: h.message }));
+            return;
+          }
+          const m = /FC-U-\d+/i.exec(kod);
+          const i = m ? this.DEMO.kisiler.findIndex((x) => x.kod === m[0].toUpperCase()) : -1;
           if (i < 0 || !k.kayitli.includes(i)) return this.setState({ kodMesaj: 'Bu kod bu etkinliğe kayıtlı değil.' });
           if (k.gelen.includes(i)) return this.setState({ kodMesaj: `${this.KISILER[i]} zaten giriş yapmış.`, kod: '' });
           kGuncelle({ gelen: [...k.gelen, i] });
           this.setState({ kodMesaj: `Hoş geldin ${this.KISILER[i]}! Giriş işlendi.`, kod: '' });
         },
-        muhasebeyeAktar: () => this.setState((s) => ({ katilimci: { ...s.katilimci, [p.key]: k.gelen.length }, kodMesaj: `Muhasebede katılımcı sayısı ${k.gelen.length} oldu; kişi başı maliyet buna göre hesaplanır.` })),
+        // Katılımcı sayısı kaydedilmez: muhasebe ekranı sayfa açılışında yoklamadan sayar
+        muhasebeyeAktar: () => this.setState((s) => ({ katilimci: { ...s.katilimci, [p.key]: k.gelen.length }, kodMesaj: `Kişi başı maliyet bu ekranda ${k.gelen.length} kişiye göre hesaplanıyor. Bu sayı kaydedilmez; sayfa açılışında yoklamadan yeniden sayılır.` })),
         iptalTurler: [{ id: 'ertele', ad: 'Ertele' }, { id: 'iptal', ad: 'İptal et' }].map((x) => ({
           ...x, sinif: x.id === ip.tur ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme',
           sec: () => this.setState((s) => ({ iptal: { ...s.iptal, tur: x.id }, iptalMesaj: '' })),
@@ -1733,10 +1748,18 @@ class Component extends DCLogic {
         iptalMetin: ip.mesaj || varsayilan, iptalMesaj: this.state.iptalMesaj,
         iptalDuyur: () => {
           if (ip.tur === 'ertele' && !ip.tarih) return this.setState({ iptalMesaj: 'Yeni tarihi seçin.' });
-          this.setState((s) => ({
-            etkDurum: { ...s.etkDurum, [p.key]: ip.tur === 'iptal' ? 'İptal edildi' : `Ertelendi → ${tYaz(ip.tarih)}` },
-            iptalMesaj: `Duyuruldu: sitenin üstünde görünüyor, ${k.kayitli.length + k.bekleme.length} kişiye mail gitti.`,
-          }));
+          const etiket = ip.tur === 'iptal' ? 'İptal edildi' : `Ertelendi → ${tYaz(ip.tarih)}`;
+          const mailNotu = `Kayıtlılara mail özelliği yakında; şimdilik ${k.kayitli.length + k.bekleme.length} kişiye ayrıca haber verin.`;
+          if (!window.FCEtkinlikDurum) {
+            return this.setState((s) => ({ etkDurum: { ...s.etkDurum, [p.key]: etiket }, iptalMesaj: `Önizleme: ${etiket}. ${mailNotu}` }));
+          }
+          this.setState({ iptalMesaj: 'Kaydediliyor…' });
+          window.FCEtkinlikDurum(p.key, ip.tur, ip.tarih, ip.neden)
+            .then(() => this.setState((s) => ({
+              etkDurum: { ...s.etkDurum, [p.key]: etiket },
+              iptalMesaj: `${ip.tur === 'iptal' ? 'İptal edildi: etkinlik sitedeki listeden kalktı.' : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) görünüyor, kayıtlar taşındı; bu listede sayfa yenilenince güncellenir.`} ${mailNotu}`,
+            })))
+            .catch((h) => this.setState({ iptalMesaj: h.message }));
         },
       };
     })();
@@ -1744,13 +1767,13 @@ class Component extends DCLogic {
     const AY_KISA = ['OCA', 'ŞUB', 'MAR', 'NİS', 'MAY', 'HAZ', 'TEM', 'AĞU', 'EYL', 'EKİ', 'KAS', 'ARA'];
     const AY_UZUN = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
     const gunAy = (t) => { const [, m, d] = t.split('-'); return `${Number(d)} ${AY_UZUN[Number(m) - 1]}`; };
-    const profilUye = tumUyeler.find((u) => u.ad === this.state.profilSecili);
+    const profilUye = tumUyeler.find((u) => u.id === this.state.profilSecili);
     const pr = profilUye ? profilUye.profil : null;
     const profilGorunum = pr ? {
       ad: profilUye.ad, harf: profilUye.ad[0], eposta: profilUye.eposta, tel: profilUye.tel, durum: profilUye.durum, rozet: profilUye.rozet,
       dogum: pr.dogum ? gunAy(pr.dogum) : 'Girilmedi', ozel: pr.ozel.length ? pr.ozel.map((g) => `${g.ad} · ${gunAy(g.tarih)}`).join(', ') : 'Yok',
       kutlama: pr.kutlama ? 'Gönderilsin' : 'Gönderilmesin', foto: pr.foto ? 'Var' : 'Yok', tanisma: pr.tanisma, baslangic: pr.baslangic,
-      ilgi: pr.ilgi, not: this.state.notlar[profilUye.ad] || '',
+      ilgi: pr.ilgi, not: this.state.notlar[profilUye.id] || '',
     } : {};
     const bugunT = new Date(`${BUGUN_SABIT}T12:00:00Z`);
     const ozelGunler = [];
@@ -2019,18 +2042,42 @@ class Component extends DCLogic {
       elden, eldenAlan, eldenAcik: elden.acik,
       eldenAc: () => this.setState((s) => ({ elden: { ...s.elden, acik: true, hata: '' }, anaMesaj: '' })),
       eldenKapat: () => this.setState({ elden: { acik: false, ad: '', tutar: '3.000', tarih: BUGUN, hata: '' } }),
+      // Üye listeden seçilir ("Ad Soyad · FC-U-0001"); kod yoksa ad tek bir üyeye denk gelmeli
+      uyeSecenekleri: elden.acik ? this.DEMO.kisiler.map((k) => `${k.ad} · ${k.kod}`) : [],
       eldenKaydet: (e) => {
         if (e && e.preventDefault) e.preventDefault();
+        if (this.eldenYaziliyor) return;
+        const hata = (metin) => this.setState((s) => ({ elden: { ...s.elden, hata: metin } }));
         const tutar = Number(String(elden.tutar).trim().replace(/\./g, '').replace(',', '.'));
-        if (!elden.ad.trim()) return this.setState((s) => ({ elden: { ...s.elden, hata: 'Üyenin adını yazın.' } }));
-        if (!(tutar > 0)) return this.setState((s) => ({ elden: { ...s.elden, hata: 'Tutarı yazın.' } }));
+        const yazi = elden.ad.trim();
+        if (!yazi) return hata('Üyeyi listeden seçin.');
+        const kodu = /FC-U-\d+/i.exec(yazi);
+        const adlar = this.DEMO.kisiler.filter((k) => k.ad.toLocaleLowerCase('tr') === yazi.toLocaleLowerCase('tr'));
+        const uye = kodu ? this.DEMO.kisiler.find((k) => k.kod === kodu[0].toUpperCase()) : adlar.length === 1 ? adlar[0] : null;
+        if (!uye) return hata(adlar.length > 1 ? 'Bu adla birden çok üye var; listeden kodlu olanı seçin.' : 'Üye bulunamadı; listeden seçin.');
+        if (!(tutar > 0)) return hata('Tutarı yazın.');
+        const tarih = elden.tarih || BUGUN;
+        const kapali = { acik: false, ad: '', tutar: '3.000', tarih: BUGUN, hata: '' };
+        if (window.FCEldenOdeme) {
+          this.eldenYaziliyor = true;
+          hata('Kaydediliyor…');
+          window.FCEldenOdeme(uye.id, tutar, tarih)
+            .then((r) => this.setState((s) => ({
+              hareketler: [...s.hareketler, r.hareket], elden: kapali,
+              anaMesaj: `${r.ad} için ${tutar.toLocaleString('tr-TR')} TL elden ödeme nakit kasaya yazıldı; üyelik ${tYaz(r.bitis)} tarihine kadar uzadı.`,
+            })))
+            .catch((h) => hata(h.message))
+            .finally(() => { this.eldenYaziliyor = false; });
+          return;
+        }
+        // Tasarım önizlemesi: yalnız ekranda
         this.setState((s) => ({
           hareketler: [...s.hareketler, {
-            id: Date.now(), tarih: elden.tarih || BUGUN, tur: 'gelir', kategori: 'Aidat', kasa: 'nakit', hedef: '', etk: '', tutar,
-            aciklama: `Aidat · ${elden.ad.trim()}`, otomatik: false, odeme: 'elden', belge: '',
+            id: Date.now(), tarih, tur: 'gelir', kategori: 'Aidat', kasa: 'nakit', hedef: '', etk: '', tutar,
+            aciklama: `Aidat · ${uye.ad}`, otomatik: false, odeme: 'elden', belge: '',
           }],
-          elden: { acik: false, ad: '', tutar: '3.000', tarih: BUGUN, hata: '' },
-          anaMesaj: `${elden.ad.trim()} için ${tutar.toLocaleString('tr-TR')} TL elden ödeme nakit kasaya yazıldı; üyelik 30 gün uzadı.`,
+          elden: kapali,
+          anaMesaj: `${uye.ad} için ${tutar.toLocaleString('tr-TR')} TL elden ödeme nakit kasaya yazıldı; üyelik 30 gün uzadı.`,
         }));
       },
       komisyonOran: this.state.komisyonOran,
@@ -2171,8 +2218,8 @@ class Component extends DCLogic {
       arama: this.state.arama,
       aramaYaz: (e) => this.setState({ arama: e.target.value }),
       uyeler: uyeListesi.map((u) => ({
-        ...u, elden: () => this.setState((s) => ({ sekme: 'ana', anaMesaj: '', elden: { ...s.elden, acik: true, ad: u.ad, hata: '' } })),
-        profilAc: () => this.setState({ profilSecili: u.ad }),
+        ...u, elden: () => this.setState((s) => ({ sekme: 'ana', anaMesaj: '', elden: { ...s.elden, acik: true, ad: `${u.ad} · ${u.kod}`, hata: '' } })),
+        profilAc: () => this.setState({ profilSecili: u.id }),
       })),
       profilAcik: !!profilUye, profil: profilGorunum,
       veriTalepVar: this.state.veriTalepleri.length > 0,
@@ -2185,10 +2232,12 @@ class Component extends DCLogic {
           tamamla: () => this.setState((s) => ({ veriTalepleri: s.veriTalepleri.map((x) => (x.id === v.id ? { ...x, tamam: true } : x)) })),
         };
       }),
-      profilKapat: () => this.setState({ profilSecili: '' }),
+      profilKapat: () => this.setState({ profilSecili: null }),
       profilNotYaz: (e) => { const v = e.target.value; this.setState((s) => ({ notlar: { ...s.notlar, [s.profilSecili]: v } })); },
       ozelGunler,
       tanismaSunuluyor: this.state.tanismaSunuluyor,
+      // Deneme sitesinde kaydı olmayan ayarlar (tanışma bileti sunumu, komisyon oranı) kapalı: yakında
+      yakindaKapali: !!window.FC, yakindaIpucu: window.FC ? 'Yakında' : '',
       tanismaDegis: () => this.setState((s) => ({ tanismaSunuluyor: !s.tanismaSunuluyor })),
       tOzet: [
         { baslik: 'Verilen bilet', sayi: String(this.state.biletler.length) },
@@ -2201,7 +2250,7 @@ class Component extends DCLogic {
         durum: { uye: 'Üye oldu', geldi: 'Geldi', bekliyor: 'Henüz gelmedi' }[b.durum],
         rozet: b.durum === 'uye' ? AKTIF : b.durum === 'geldi' ? BEKLER : TASLAK,
         bekliyor: b.durum === 'bekliyor',
-        geldi: () => this.setState((s) => ({ biletler: s.biletler.map((x) => (x.id === b.id ? { ...x, durum: 'geldi', etkinlik: '24.10 The Common Table' } : x)) })),
+        geldi: () => this.setState((s) => ({ biletler: s.biletler.map((x) => (x.id === b.id ? { ...x, durum: 'geldi' } : x)) })),
       })),
       etkinlikler: [
         { gun: '26', ay: 'EKİM', ad: 'Breakfast Club', saat: 'Pazar 10.00 · Pinya', durum: 'Duyuruldu', rozet: AKTIF, bilgi: 'Hatırlatma 23 Ekim’de gitti' },

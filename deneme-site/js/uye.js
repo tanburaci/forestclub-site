@@ -1,6 +1,7 @@
 // Forest Club Urla · üye paneli (deneme sitesi): üyenin kendi verisini Supabase'den yükler; "Geliyorum / Gelemeyeceğim /
-// bekleme listesi" ve profil kaydı sunucudaki kurallarla (etkinlik_kaydi, profil_kaydet) yazılır. Kartla ödeme, sepet,
-// dondurma ve anket şimdilik yalnız ekranda (iyzico ve ilgili tablolar sonra).
+// bekleme listesi" ve profil kaydı sunucudaki kurallarla (etkinlik_kaydi, profil_kaydet) yazılır. Giriş e-postaya gelen
+// tek kullanımlık bağlantıyla da olur; ilk girişte başvuru hesaba bağlanır (uye_bagla). Kartla ödeme, sepet, dondurma
+// ve anket henüz yok: panel bunlara "yakında" der (iyzico ve ilgili tablolar sonra).
 (function () {
   'use strict';
   const A = window.FC_AYAR;
@@ -20,9 +21,20 @@
     return new Map(data.map((d) => [d.etkinlik_id, d]));
   }
 
-  async function veriYukle(user) {
-    const { data: u, error } = await sb.from('uyeler').select('*').eq('user_id', user.id).maybeSingle();
+  async function uyeKaydi(user) {
+    const { data, error } = await sb.from('uyeler').select('*').eq('user_id', user.id).maybeSingle();
     if (error) throw error;
+    return data;
+  }
+
+  async function veriYukle(user) {
+    let u = await uyeKaydi(user);
+    if (!u) {
+      // İlk giriş: bu e-postayla açılmış başvuru hesaba bağlanır (yalnız kendi, doğrulanmış e-postası)
+      const { data: kod, error } = await sb.rpc('uye_bagla');
+      if (error) throw error;
+      if (kod) u = await uyeKaydi(user);
+    }
     if (!u) return null;
     const B = window.FC_ORTAK.bugun();
     const [ods, kys, etks, dol] = await Promise.all([
@@ -107,7 +119,7 @@
     else if (session) {
       try {
         window.FCU = await veriYukle(session.user);
-        if (!window.FCU) hata = `${session.user.email} bir üye hesabı değil (yönetici olabilir). Üye e-postanla gir.`;
+        if (!window.FCU) hata = `${session.user.email} ile bir üyelik başvurusu bulamadık. Başvuruda yazdığın e-postayla gir.`;
       } catch (h) {
         hata = `Bilgilerin yüklenemedi: ${h.message}`;
       }
