@@ -1,7 +1,8 @@
 // Forest Club Urla · üye paneli (deneme sitesi): üyenin kendi verisini Supabase'den yükler; "Geliyorum / Gelemeyeceğim /
 // bekleme listesi" ve profil kaydı sunucudaki kurallarla (etkinlik_kaydi, profil_kaydet) yazılır. Giriş e-postaya gelen
-// tek kullanımlık bağlantıyla da olur; ilk girişte başvuru hesaba bağlanır (uye_bagla). Kartla ödeme, sepet, dondurma
-// ve anket henüz yok: panel bunlara "yakında" der (iyzico ve ilgili tablolar sonra).
+// tek kullanımlık bağlantıyla da olur; ilk girişte başvuru hesaba bağlanır (uye_bagla). Dondurma, anket ve KVKK
+// talepleri sunucu işlevleriyle; kartla ödeme iyzico ile (odeme-baslat), kapalıysa havale + dekont sayfası. Bilet sepeti
+// henüz yok.
 (function () {
   'use strict';
   const A = window.FC_AYAR;
@@ -37,13 +38,18 @@
     }
     if (!u) return null;
     const B = window.FC_ORTAK.bugun();
-    const [ods, kys, etks, dol] = await Promise.all([
+    const [ods, kys, etks, dol, ank, don, ayr] = await Promise.all([
       sb.from('odemeler').select('*').eq('uye_id', u.id).order('tarih', { ascending: false }),
       sb.from('etkinlik_kayitlari').select('*').eq('uye_id', u.id),
       sb.from('etkinlikler').select('*').order('tarih'),
       doluluk(),
+      sb.from('anket_yanitlari').select('etkinlik_id, puan, yorum').eq('uye_id', u.id),
+      sb.from('uyelik_dondurmalari').select('bas, gun').eq('uye_id', u.id).is('bitti', null).order('id', { ascending: false }).limit(1),
+      sb.from('ayarlar').select('anahtar, deger'),
     ]);
-    [ods, kys, etks].forEach((r) => { if (r.error) throw r.error; });
+    [ods, kys, etks, ank, don, ayr].forEach((r) => { if (r.error) throw r.error; });
+    const ayar = Object.fromEntries(ayr.data.map((a) => [a.anahtar, a.deger]));
+    const yanit = new Map(ank.data.map((a) => [a.etkinlik_id, a]));
     const benim = new Map(kys.data.map((k) => [k.etkinlik_id, k]));
     const kayit = {};
     etks.data.filter((e) => e.tarih >= B && e.durum === 'yayinda').forEach((e) => {
@@ -64,19 +70,64 @@
     const anket = {};
     gecmisEtk.forEach((e) => {
       gecmis[String(e.id)] = { ad: e.ad, tarih: trTarih(e.tarih) };
-      anket[String(e.id)] = { puan: 0, yorum: '', bitti: false };
+      const a = yanit.get(e.id);
+      anket[String(e.id)] = a ? { puan: a.puan, yorum: a.yorum || '', bitti: true } : { puan: 0, yorum: '', bitti: false };
     });
     return {
       bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket,
+      kartOdeme: ayar.kart_odeme === true, dondurmaKurali: ayar.dondurma || { gunler: [7, 14], yillik: 2 },
       hesap: {
         ad: u.ad, kod: u.kod, bitis: u.bitis || '',
         odemeler: ods.data.map((o) => ({ tarih: o.tarih, yol: ({ kart: 'Kart', havale: 'Havale · dekont', elden: 'Elden' })[o.yol] || o.yol, tutar: Number(o.tutar) })),
         profil: { telefon: u.tel || '', dogum: u.dogum_gunu || '', kutlama: u.kutlama_izni, foto: u.foto_izni,
           ilgi: u.ilgi_alanlari || [], ozel: u.ozel_gunler || [] },
         katildi: gecmisEtk.map((e) => String(e.id)),
+        dondurma: don.data.length ? { bas: don.data[0].bas, gun: don.data[0].gun } : null,
       },
     };
   }
+
+  // Sunucu işlevi: hata mesajı kullanıcıya gider
+  async function islev(ad, parametre) {
+    const { data, error } = await sb.rpc(ad, parametre);
+    if (error) throw new Error(error.message);
+    return data;
+  }
+  window.FCUDondur = (gun) => islev('uyelik_dondur', { p_gun: gun });
+  window.FCUDondurmaBitir = () => islev('dondurma_bitir', {});
+  window.FCUAnket = (etkinlik, puan, yorum) => islev('anket_gonder', { p_etkinlik: Number(etkinlik), p_puan: puan, p_yorum: yorum || null });
+  window.FCUSilmeTalebi = () => islev('veri_talebi_ac', { p_tur: 'silme' });
+  // KVKK: verilerin kopyası hemen indirilir (JSON)
+  window.FCUVeriKopyasi = async () => {
+    const veri = await islev('veri_kopyasi', {});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(veri, null, 2)], { type: 'application/json' }));
+    a.download = `forest-club-verilerim-${window.FC_ORTAK.bugun()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  };
+  // Kartla ödeme (iyzico): ödeme sayfasına gider; dönüşte panel #odeme-tamam / #odeme-hata ile açılır
+  window.FCOdemeBaslat = async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    const yanit = await fetch(`${A.supabaseUrl}/functions/v1/odeme-baslat`, {
+      method: 'POST', headers: { apikey: A.supabaseAnahtar, Authorization: `Bearer ${session ? session.access_token : ''}` },
+    }).catch(() => null);
+    const govde = yanit ? await yanit.json().catch(() => ({})) : {};
+    if (!yanit || !yanit.ok || !govde.sayfa) throw new Error(govde.hata || 'Ödeme sayfası açılamadı; biraz sonra tekrar dene.');
+    location.assign(govde.sayfa);
+  };
+  // Giriş karekodu (qrcode-generator): {n, hucreler[]} — kütüphane yüklenmediyse null
+  window.FCKarekod = (metin) => {
+    if (!window.qrcode) return null;
+    const qr = window.qrcode(0, 'M');
+    qr.addData(metin);
+    qr.make();
+    const n = qr.getModuleCount();
+    const hucreler = [];
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) hucreler.push(qr.isDark(r, c));
+    return { n, hucreler };
+  };
 
   function senkronKur(panel) {
     window.FCUProfil = async (p) => {

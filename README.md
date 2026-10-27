@@ -10,7 +10,8 @@ Yayında değil. Tasarım demosundaki (claude.ai Design) sayfaların gerçek ver
 - `supabase/migrations/` veritabanı şeması, satır bazlı yetki (RLS) kuralları ve sunucu işlevleri
 - `supabase/seed_demo.sql` yalnız deneme projesine yüklenen ÖRNEK veri (gerçek kişi yok)
 - `supabase/functions/` Edge Function'lar: `form-gonder` (anonim formlar: Turnstile + IP başına sınır, dekont için imzalı
-  yükleme adresi), `eposta-gonder` (e-posta kuyruğunu Resend ile gönderir), `dekont-temizle` (kayda bağlanmamış dosyalar)
+  yükleme adresi), `eposta-gonder` (e-posta kuyruğunu Resend ile gönderir), `dekont-temizle` (kayda bağlanmamış dosyalar),
+  `odeme-baslat` / `odeme-donus` (iyzico ile kartla aidat; `ayarlar.kart_odeme` açıkken)
 - `supabase/aktarim/` Google Sheets → veritabanı aktarımı: `csv_sql.mjs` (CSV → SQL), `02_aktar.sql`, `03_dogrula.sql`
 
-Ödeme: iyzico gelene kadar IBAN + dekont. Gerçek veri (Google Sheets) yayın günü boş veritabanına aktarılacak.
+Ödeme: IBAN + dekont; iyzico (kartla aidat) yönetim panelinden açılınca kart da. Gerçek veri (Google Sheets) yayın günü boş veritabanına aktarılacak.
