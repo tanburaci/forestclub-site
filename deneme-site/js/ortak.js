@@ -38,14 +38,21 @@
     if (error) throw new Error(/invalid/i.test(error.message) ? 'E-posta ya da şifre hatalı.' : error.message);
     location.reload();
   };
+  // Demo verisindeki uydurma adreslere (ornek.com) mail gönderilmez: geri dönen mailler (bounce) Supabase'in mail
+  // gönderimini kısıtlatıyor (Supabase uyarısı 27.10.2026). Gerçek adres deneyin.
+  const uydurmaAdres = (e) => /@(ornek\.com|example\.(com|org|net))$/i.test(String(e || '').trim());
+  const uydurmaHata = () => new Error('Bu bir demo adresi; mail gönderilmez. Şifreyle gir ya da kendi e-postanla dene.');
+
   // Şifresiz giriş: e-postaya tek kullanımlık bağlantı gider; bağlantı bu sayfaya oturumla geri döner
   window.FCGirisBaglantisi = async (eposta, hatirla) => {
+    if (uydurmaAdres(eposta)) throw uydurmaHata();
     localStorage.setItem(HATIRLA, hatirla ? '1' : '0');
     const { error } = await sb.auth.signInWithOtp({ email: eposta, options: { emailRedirectTo: `${location.origin}${sayfa}` } });
     if (error) throw new Error(/rate|seconds/i.test(error.message) ? 'Az önce bir bağlantı gönderildi; biraz bekleyip tekrar dene.' : error.message);
   };
   window.FCCikis = async () => { await sb.auth.signOut(); location.replace(sayfa); };
   window.FCSifreBaglantisi = async (eposta) => {
+    if (uydurmaAdres(eposta)) throw uydurmaHata();
     const { error } = await sb.auth.resetPasswordForEmail(eposta, { redirectTo: `${location.origin}${sayfa}` });
     if (error) throw new Error(error.message);
   };
