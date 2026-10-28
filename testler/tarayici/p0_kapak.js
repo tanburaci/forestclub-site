@@ -1,5 +1,6 @@
 // Ana sayfadaki "Yakında yayındayız" kapağı: site arkada görünür ve kaydırılır, ama hiçbir yeri tıklanmaz ve
-// klavyeyle ulaşılmaz. Üye ve yönetim paneli kapaktan etkilenmez.
+// klavyeyle ulaşılmaz. Üye ve yönetim paneli kapaktan etkilenmez. Yönetimde "Yakında" modu kapatılınca kapak kalkar;
+// ayar okunamazsa kalır.
 const { sayfaAc, gun, SITE } = require('./yardim.js');
 const path = require('path');
 const DENEME = path.join(__dirname, '../../deneme-site');  // statik site klasörü
@@ -54,6 +55,24 @@ const veri = {
       dogru(await page.evaluate(() => document.getElementById('kok').hasAttribute('inert')), `${ad}: site inert kaldı (çizimden sonra da)`);
       dogru(!konsol.some((x) => /pageerror|Content Security Policy/.test(x)), `${ad}: sayfa / CSP hatası yok`);
     }
+    // Açılış: "Yakında" modu kapalı → kapak kalkar, site tıklanır, bölümler görünür
+    const acik = { ...veri, tablolar: { ...veri.tablolar, ayarlar: [{ anahtar: 'yakinda', deger: false }] } };
+    const s2 = await sayfaAc(tarayici, acik, null);
+    await s2.page.goto(`${SITE}/`);
+    await s2.page.getByText('Kahvaltı Testi').first().waitFor({ timeout: 15000 });
+    dogru(await s2.page.locator('#fc-yakinda, #fc-yakinda-stil').count() === 0 && !(await s2.page.evaluate(() => document.getElementById('kok').hasAttribute('inert'))),
+      'yakında kapalı: kapak kalktı, site inert değil');
+    dogru(await s2.page.getByText('Kahvaltı Testi').first().isVisible() && await s2.page.getByRole('button', { name: 'Sepete ekle' }).first().isEnabled(),
+      'yakında kapalı: etkinlikler görünüyor, bilet tıklanır');
+    dogru(!s2.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'yakında kapalı: sayfa / CSP hatası yok');
+    // Ayar okunamazsa (sunucu hatası) kapak kalır
+    const hatali = { ...acik, hata: { ayarlar: true } };
+    const s3 = await sayfaAc(tarayici, hatali, null);
+    await s3.page.goto(`${SITE}/`);
+    await s3.page.waitForFunction(() => document.querySelectorAll('#kok *').length > 100, null, { timeout: 15000 });
+    await s3.page.waitForTimeout(500);
+    dogru(await s3.page.getByRole('heading', { name: /Yakında yayındayız/ }).isVisible()
+      && await s3.page.evaluate(() => document.getElementById('kok').hasAttribute('inert')), 'ayar okunamazsa kapak kalır');
     // Paneller etkilenmiyor
     const { page } = await sayfaAc(tarayici, veri, null);
     await page.goto(`${SITE}/uye/`);
