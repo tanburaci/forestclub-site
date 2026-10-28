@@ -44,9 +44,9 @@ async function biletSahte(page, tutar) {
     const s = await sayfaAc(tarayici, sv);
     const sf = await biletSahte(s.page, 2000);
     await s.page.goto(`${SITE}/`);
-    await s.page.getByRole('button', { name: 'Sepete ekle' }).first().click();
-    await s.page.getByRole('button', { name: 'Sepete ekle' }).first().waitFor({ state: 'detached', timeout: 3000 }).catch(() => {});
-    await s.page.getByRole('button', { name: /Sepette 1/ }).first().click();
+    await s.page.getByRole('button', { name: 'Randevu oluştur' }).first().click();
+    await s.page.getByRole('button', { name: 'Randevu oluştur' }).first().waitFor({ state: 'detached', timeout: 3000 }).catch(() => {});
+    await s.page.getByRole('button', { name: /Randevuda 1 kişi/ }).first().click();
     await s.page.locator('.fs-sepet-dugme').click();
     const modal = s.page.locator('.fs-modal');
     await modal.getByRole('button', { name: 'Devam et' }).click();
@@ -81,7 +81,7 @@ async function biletSahte(page, tutar) {
     await u.page.getByText('Merhaba Deniz').waitFor({ timeout: 15000 });
     dogru(await u.page.locator('[aria-label="Etkinlik seç"] button').count() === 0, 'üye: ücretli etkinlik için üye karekodu yok (girişte bilet kodu)');
     await sekme(u.page, 'Etkinlikler');
-    await u.page.getByRole('button', { name: 'Sepete ekle' }).first().click();
+    await u.page.getByRole('button', { name: 'Randevu oluştur' }).first().click();
     await u.page.getByRole('button', { name: 'Ödemeye geç' }).click();
     await u.page.getByRole('button', { name: 'Devam · havale / EFT' }).click();
     await u.page.getByText('Ödenecek').waitFor({ timeout: 5000 });
