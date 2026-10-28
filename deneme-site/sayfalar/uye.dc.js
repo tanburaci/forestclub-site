@@ -265,11 +265,16 @@ class Component extends DCLogic {
         if (yeni1 !== yeni2) return this.setState({ girisHata: 'İki şifre aynı değil.' });
         window.FCSifreKaydet(yeni1).catch((h) => this.setState({ girisHata: h.message }));
       },
-      sifreDegistir: () => {
-        if (!window.FCSifreBaglantisi) return this.setState({ profilMesaj: 'Önizlemede şifre bağlantısı gönderilmez.' });
-        this.setState({ profilMesaj: 'Gönderiliyor…' });
-        window.FCSifreBaglantisi(this.state.hesap)
-          .then(() => this.setState({ profilMesaj: `${this.state.hesap} adresine şifre belirleme bağlantısı gönderdik.` }))
+      sifreFormu: !!this.state.sifreFormu,
+      sifreDegistir: () => this.setState((s) => ({ sifreFormu: !s.sifreFormu, yeni1: '', yeni2: '', profilMesaj: '' })),
+      panelSifreKaydet: () => {
+        const { yeni1, yeni2 } = this.state;
+        if (yeni1.length < 8 || !/\d/.test(yeni1)) return this.setState({ profilMesaj: 'Şifre en az 8 karakter olmalı ve bir rakam içermeli.' });
+        if (yeni1 !== yeni2) return this.setState({ profilMesaj: 'İki şifre aynı değil.' });
+        if (!window.FCSifreGuncelle) return this.setState({ profilMesaj: 'Önizlemede şifre kaydedilmez.' });
+        this.setState({ profilMesaj: 'Kaydediliyor…' });
+        window.FCSifreGuncelle(yeni1)
+          .then(() => this.setState({ profilMesaj: 'Şifren kaydedildi ✓ Sonraki girişte e-posta ve şifrenle girebilirsin.', sifreFormu: false, yeni1: '', yeni2: '' }))
           .catch((h) => this.setState({ profilMesaj: h.message }));
       },
       eposta: this.state.eposta, sifre: this.state.sifre, hatirla: this.state.hatirla, girisHata: this.state.girisHata,
@@ -290,7 +295,7 @@ class Component extends DCLogic {
         if (!window.FCGirisBaglantisi) return this.setState({ girisHata: 'Önizlemede bağlantı gönderilmez.', girisBilgi: '' });
         this.setState({ girisHata: '', girisBilgi: 'Gönderiliyor…' });
         window.FCGirisBaglantisi(ep, this.state.hatirla)
-          .then(() => this.setState({ girisBilgi: `${ep} adresine giriş bağlantısı gönderdik. E-postandaki bağlantıya bu cihazda tıkla.` }))
+          .then(() => this.setState({ girisBilgi: `${ep} adresine giriş bağlantısı gönderdik. Bağlantıyı bu tarayıcıda aç (mail uygulamasının içinde açılırsa oturum orada kalır). Girince Profilim'den şifre belirle; sonra hep şifreyle girersin.` }))
           .catch((h) => this.setState({ girisBilgi: '', girisHata: h.message }));
       },
       ornekHesaplar: [
