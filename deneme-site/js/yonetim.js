@@ -36,10 +36,10 @@
 
   // --- Veritabanı → panelin beklediği biçim ------------------------------------------------------------------
   async function veriYukle(eposta) {
-    const [uyeler, odemeler, etkinlikler, kayitlar, biletler, hareketler, envanter, sablonlar, dekontlar, cagri, biletIstekleri] = await Promise.all([
+    const [uyeler, odemeler, etkinlikler, kayitlar, biletler, hareketler, envanter, sablonlar, dekontlar, cagri, biletIstekleri, formlar, formYanitlari] = await Promise.all([
       hepsi('uyeler'), hepsi('odemeler'), hepsi('etkinlikler'), hepsi('etkinlik_kayitlari', ['etkinlik_id', 'uye_id']),
       hepsi('tanisma_biletleri'), hepsi('muhasebe_hareketleri'), hepsi('envanter'), hepsi('eposta_sablonlari'),
-      hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'),
+      hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'), hepsi('formlar'), hepsi('form_yanitlari', ['form_id', 'uye_id']),
     ]);
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
     const [kuyruk, saglik, ayarlar, veriTalepleri] = await Promise.all([
@@ -127,6 +127,14 @@
       // Yönetici notları üye numarasıyla (aynı adlı iki üye karışmasın)
       notlar: Object.fromEntries(uyeler.filter((u) => u.yonetici_notu).map((u) => [u.id, u.yonetici_notu])),
       muaflar: Object.fromEntries(uyeler.filter((u) => u.aidat_muaf).map((u) => [u.id, true])),
+      // Formlar ve cevapları (üye adıyla)
+      formlar: [...formlar].sort((a, b) => b.created_at.localeCompare(a.created_at)).map((f) => ({
+        id: f.id, baslik: f.baslik, aciklama: f.aciklama || '', sorular: f.sorular || [], acik: f.acik,
+        yanitlar: formYanitlari.filter((y) => y.form_id === f.id).map((y) => {
+          const u = uyeler.find((x) => x.id === y.uye_id);
+          return { ad: u ? u.ad : `Üye #${y.uye_id}`, tarih: zaman(y.updated_at || y.created_at), cevaplar: y.cevaplar || {} };
+        }),
+      })),
       etkDurum,
       kuyruk, saglik, ayarlar, veriTalepleri,
       eksik: eksikler,
@@ -170,6 +178,18 @@
     bildir(onay ? `${i.ad}: ${data.adet} bilet onaylandı, kodlar e-postayla gidiyor ✓` : 'Bilet dekontu reddedildi; gerekçeli mail gidecek');
     setTimeout(() => { location.hash = 'basvurular'; location.reload(); }, 900);
   }
+  // Formlar: kaydet (yeni → insert, var → update) ve aç / kapat. Dönüş: form id
+  window.FCFormKaydet = async (f) => {
+    const satir = { baslik: f.baslik, aciklama: f.aciklama || null, sorular: f.sorular };
+    const is = f.id ? sb.from('formlar').update(satir).eq('id', f.id).select('id').single() : sb.from('formlar').insert(satir).select('id').single();
+    const { data, error } = await is;
+    if (error) throw new Error(error.message);
+    return data.id;
+  };
+  window.FCFormAcKapa = async (id, acik) => {
+    const { error } = await sb.from('formlar').update({ acik }).eq('id', id).select('id').single();
+    if (error) throw new Error(error.message);
+  };
   window.FCBasvuruGorunum = (panel) => {
     const b = window.FC && window.FC.basvurular;
     if (!b) return { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' };

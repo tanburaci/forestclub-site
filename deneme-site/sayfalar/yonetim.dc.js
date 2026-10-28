@@ -97,6 +97,7 @@ class Component extends DCLogic {
         { id: 1, ad: 'Can Öztürk', tur: 'Hesap silme', tarih: '2026-10-23', tamam: false },
         { id: 2, ad: 'Selin Demir', tur: 'Veri kopyası', tarih: '2026-10-20', tamam: true },
       ],
+      formlar: window.FC ? window.FC.formlar || [] : [], fmDuz: null, fmCevap: null, fmMesaj: '', fmHata: '', fmKopya: null,
       profilSecili: null, notlar: window.FC ? window.FC.notlar : { 2: 'Seramik atölyesinde gönüllü yardım etmek istiyor.' },  // anahtar: üye numarası
       muaflar: window.FC ? window.FC.muaflar : {},  // aidattan muaf üyeler (anahtar: üye numarası)
       // Ayarlar (deneme sitesinde ayarlar tablosundan)
@@ -209,6 +210,90 @@ class Component extends DCLogic {
           satis: fiyat > 0 ? { fiyat, uye, satilan: 0 } : null,
         } };
       }) };
+    };
+    // Formlar: liste, düzenleyici (sorular), cevaplar. Canlıda yazma yonetim.js'teki FCFormKaydet / FCFormAcKapa ile
+    this.formlarGorunum = () => {
+      const st = this.state;
+      const liste = st.formlar || [];
+      const yeniSoru = () => ({ id: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, metin: '', tur: 'kisa', secenekler: [], zorunlu: false });
+      const duz = st.fmDuz;
+      const sDegis = (i, deg) => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: s.fmDuz.sorular.map((x, j) => (j === i ? { ...x, ...deg } : x)) }, fmHata: '' }));
+      const acik = liste.find((f) => f.id === st.fmCevap);
+      const PILL = (bg, fg) => `background:${bg};color:${fg};font-size:13px;font-weight:700;border-radius:999px;padding:5px 11px;display:inline-block`;
+      const cevapYazi = (s, v) => (Array.isArray(v) ? v.join(', ') : v || '');
+      return {
+        fmYok: !liste.length && !duz, fmMesaj: st.fmMesaj || '', fmHata: st.fmHata || '',
+        fmYeni: () => this.setState({ fmDuz: { id: null, baslik: '', aciklama: '', sorular: [yeniSoru()] }, fmHata: '', fmMesaj: '' }),
+        fmDuzVar: !!duz, fmDuz: duz || { baslik: '', aciklama: '' }, fmDuzBaslik: duz && duz.id ? 'Formu düzenle' : 'Yeni form',
+        fmBaslikYaz: (e) => { const v = e.target.value; this.setState((s) => ({ fmDuz: { ...s.fmDuz, baslik: v }, fmHata: '' })); },
+        fmAciklamaYaz: (e) => { const v = e.target.value; this.setState((s) => ({ fmDuz: { ...s.fmDuz, aciklama: v } })); },
+        fmSorular: duz ? duz.sorular.map((x, i) => ({
+          ...x, etiket: `Soru ${i + 1}`, secimli: x.tur === 'tek' || x.tur === 'coklu', seceneklerYazi: (x.secenekler || []).join('\n'),
+          metinYaz: (e) => sDegis(i, { metin: e.target.value }),
+          turYaz: (e) => sDegis(i, { tur: e.target.value }),
+          secenekYaz: (e) => sDegis(i, { secenekler: e.target.value.split('\n') }),
+          zorunluDegis: () => sDegis(i, { zorunlu: !x.zorunlu }),
+          sil: () => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: s.fmDuz.sorular.filter((_, j) => j !== i) } })),
+        })) : [],
+        fmSoruEkle: () => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: [...s.fmDuz.sorular, yeniSoru()] } })),
+        fmVazgec: () => this.setState({ fmDuz: null, fmHata: '' }),
+        fmKaydet: () => {
+          const f = this.state.fmDuz;
+          const sorular = f.sorular.map((x) => ({ id: x.id, metin: x.metin.trim(), tur: x.tur, zorunlu: !!x.zorunlu,
+            ...(x.tur === 'tek' || x.tur === 'coklu' ? { secenekler: [...new Set((x.secenekler || []).map((o) => o.trim()).filter(Boolean))] } : {}) }));
+          if (!f.baslik.trim()) return this.setState({ fmHata: 'Başlık yazın.' });
+          if (!sorular.length) return this.setState({ fmHata: 'En az bir soru ekleyin.' });
+          const bos = sorular.findIndex((x) => !x.metin);
+          if (bos >= 0) return this.setState({ fmHata: `Soru ${bos + 1}: soru metnini yazın.` });
+          const azSecenek = sorular.findIndex((x) => x.secenekler && x.secenekler.length < 2);
+          if (azSecenek >= 0) return this.setState({ fmHata: `Soru ${azSecenek + 1}: en az iki seçenek yazın.` });
+          const kayit = { id: f.id, baslik: f.baslik.trim(), aciklama: f.aciklama.trim(), sorular };
+          const bitir = (id) => this.setState((s) => {
+            const eski = (s.formlar || []).find((x) => x.id === id);
+            const yeni = { ...(eski || { acik: false, yanitlar: [] }), ...kayit, id };
+            return { formlar: eski ? s.formlar.map((x) => (x.id === id ? yeni : x)) : [yeni, ...(s.formlar || [])], fmDuz: null, fmHata: '',
+              fmMesaj: eski ? `“${kayit.baslik}” güncellendi.` : `“${kayit.baslik}” kaydedildi. Üyelere açmak için “Aç”a basın.` };
+          });
+          if (!window.FCFormKaydet) return bitir(f.id || Date.now());
+          this.setState({ fmHata: 'Kaydediliyor…' });
+          window.FCFormKaydet(kayit).then(bitir, (h) => this.setState({ fmHata: h.message }));
+        },
+        fmListe: liste.map((f) => ({
+          baslik: f.baslik, durum: f.acik ? 'Açık' : 'Kapalı', rozet: f.acik ? PILL('#111111', '#FFFFFF') : PILL('#E4E4E2', '#111111'),
+          ozet: `${f.sorular.length} soru · ${f.yanitlar.length} cevap`,
+          acKapaYazi: f.acik ? 'Kapat' : 'Aç',
+          acKapa: () => {
+            const yap = () => this.setState((s) => ({ formlar: s.formlar.map((x) => (x.id === f.id ? { ...x, acik: !f.acik } : x)),
+              fmMesaj: f.acik ? `“${f.baslik}” kapandı; üyeler artık cevap veremez.` : `“${f.baslik}” açıldı; üye panelinde görünüyor.` }));
+            if (!window.FCFormAcKapa) return yap();
+            window.FCFormAcKapa(f.id, !f.acik).then(yap, (h) => this.setState({ fmMesaj: `Kaydedilemedi: ${h.message}` }));
+          },
+          duzenle: () => this.setState({ fmDuz: { id: f.id, baslik: f.baslik, aciklama: f.aciklama || '', sorular: f.sorular.map((x) => ({ ...x, secenekler: x.secenekler || [] })) }, fmHata: '', fmMesaj: '' }),
+          cevaplar: () => this.setState({ fmCevap: f.id }),
+          kopyalaYazi: st.fmKopya === f.id ? 'Kopyalandı ✓' : 'Bağlantıyı kopyala',
+          kopyala: () => {
+            const u = `${location.origin}/form/?id=${f.id}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(() => this.setState({ fmKopya: f.id }), () => this.setState({ fmMesaj: u }));
+            else this.setState({ fmMesaj: u });
+          },
+        })),
+        fmCevapVar: !!acik,
+        fmCevapBaslik: acik ? `${acik.baslik} · ${acik.yanitlar.length} cevap` : '',
+        fmCevapBaslar: acik ? ['Üye', 'Tarih', ...acik.sorular.map((s) => s.metin)] : [],
+        fmCevapSatirlar: acik ? acik.yanitlar.map((y) => ({ hucreler: [y.ad, y.tarih, ...acik.sorular.map((s) => cevapYazi(s, y.cevaplar[s.id]))] })) : [],
+        fmCevapKapat: () => this.setState({ fmCevap: null }),
+        fmCsv: () => {
+          if (!acik) return;
+          const hucre = (x) => { let v = x == null ? '' : String(x); if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`; return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+          const satirlar = [['Üye', 'Tarih', ...acik.sorular.map((s) => s.metin)], ...acik.yanitlar.map((y) => [y.ad, y.tarih, ...acik.sorular.map((s) => cevapYazi(s, y.cevaplar[s.id]))])];
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([`\uFEFF${satirlar.map((r) => r.map(hucre).join(';')).join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' }));
+          a.download = `forest-club-form-${acik.id}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+        },
+      };
     };
     // Muhasebe formu
     this.mAlan = {};
@@ -496,7 +581,7 @@ class Component extends DCLogic {
     const TASLAK = pill('#F0F0EE', '#3A3A3A');
     const sekmeler = [
       { id: 'ana', ad: 'Ana sayfa' }, { id: 'uyeler', ad: 'Üyeler' },
-      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'iletisim', ad: 'İletişim' },
+      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'formlar', ad: 'Formlar' }, { id: 'iletisim', ad: 'İletişim' },
     ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ sekme: s.id }) }));
     const BUGUN_SABIT = this.BUGUN;
     const tYaz = (t) => (t ? t.split('-').reverse().join('.') : '—');
@@ -1145,6 +1230,8 @@ class Component extends DCLogic {
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
       iletisimSekme: sekme === 'iletisim',
+      formlarSekme: sekme === 'formlar',
+      ...this.formlarGorunum(),
       basvuruSekme: sekme === 'basvurular',
       bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' },
       ozet: [
