@@ -1052,7 +1052,7 @@ class Component extends DCLogic {
       etkinliklerSekme: sekme === 'etkinlikler',
       iletisimSekme: sekme === 'iletisim',
       basvuruSekme: sekme === 'basvurular',
-      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], sayaclar: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' },
+      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' },
       ozet: [
         { baslik: 'Aktif üye', sayi: String(sayac.aktif), alt: `${this.DEMO.kisiler.filter((k) => k.bas && k.bas >= `${BUGUN_SABIT.slice(0, 7)}-01`).length} kişi bu ay katıldı · ${tumUyeler.length} kayıt` },
         { baslik: 'Bu ay kart ödemesi', sayi: String(buAyKart.length), alt: `${TL(topla(buAyKart))} · kendiliğinden işlendi` },

@@ -36,10 +36,10 @@
 
   // --- Veritabanı → panelin beklediği biçim ------------------------------------------------------------------
   async function veriYukle(eposta) {
-    const [uyeler, odemeler, etkinlikler, kayitlar, biletler, hareketler, envanter, sablonlar, dekontlar, cagri, sayaclar] = await Promise.all([
+    const [uyeler, odemeler, etkinlikler, kayitlar, biletler, hareketler, envanter, sablonlar, dekontlar, cagri] = await Promise.all([
       hepsi('uyeler'), hepsi('odemeler'), hepsi('etkinlikler'), hepsi('etkinlik_kayitlari', ['etkinlik_id', 'uye_id']),
       hepsi('tanisma_biletleri'), hepsi('muhasebe_hareketleri'), hepsi('envanter'), hepsi('eposta_sablonlari'),
-      hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('sayaclar', ['tarih', 'adim']),
+      hepsi('dekontlar'), hepsi('acik_cagri'),
     ]);
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
     const [kuyruk, saglik, ayarlar, veriTalepleri] = await Promise.all([
@@ -131,7 +131,7 @@
       kuyruk, saglik, ayarlar, veriTalepleri,
       eksik: eksikler,
       _keyEtk: keyEtk,
-      basvurular: { dekontlar, cagri, sayaclar, uyeler: new Map(uyeler.map((u) => [u.id, u])) },
+      basvurular: { dekontlar, cagri, uyeler: new Map(uyeler.map((u) => [u.id, u])) },
     };
     return FC;
   }
@@ -161,7 +161,7 @@
   }
   window.FCBasvuruGorunum = (panel) => {
     const b = window.FC && window.FC.basvurular;
-    if (!b) return { bekleyen: [], kararlar: [], cagri: [], sayaclar: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' };
+    if (!b) return { bekleyen: [], kararlar: [], cagri: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' };
     const B = window.FC.bugun;
     const uyelikYazi = (u) => (!u ? '—' : u.bitis && u.bitis > B ? `aktif, bitiş ${trTarih(u.bitis)}` : u.bitis ? `süresi doldu (${trTarih(u.bitis)})` : 'hiç ödememiş');
     const sirali = [...b.dekontlar].sort((x, y) => y.created_at.localeCompare(x.created_at));
@@ -181,14 +181,9 @@
         c.gunler && `Günler: ${c.gunler}`, c.ihtiyac && `İhtiyaç: ${c.ihtiyac}`].filter(Boolean).join(' · '),
       notlar: c.notlar || '',
     }));
-    const gunler = {};
-    b.sayaclar.forEach((x) => { (gunler[x.tarih] = gunler[x.tarih] || {})[x.adim] = x.adet; });
-    const sayaclar = Object.keys(gunler).sort().reverse().map((t) => ({
-      tarih: trTarih(t), ...Object.fromEntries(['acildi', 'bilgiler', 'onaylar', 'dekont', 'gonderildi'].map((a) => [a, String(gunler[t][a] || 0)])),
-    }));
     return {
       bekleyen, bekleyenYok: !bekleyen.length, bekleyenSayi: String(bekleyen.length), kararlar, kararVar: kararlar.length > 0,
-      cagri, cagriYok: !cagri.length, cagriSayi: String(cagri.length), sayaclar, mesaj: '',
+      cagri, cagriYok: !cagri.length, cagriSayi: String(cagri.length), mesaj: '',
     };
   };
 
