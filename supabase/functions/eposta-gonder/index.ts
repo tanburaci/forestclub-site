@@ -5,6 +5,8 @@
 //
 // Secrets: RESEND_API_KEY, EPOSTA_GONDEREN ("Forest Club Urla <merhaba@alanadi>"), ZAMANLAYICI_ANAHTARI,
 //          SITE_ADRESI (https://… , {odemeLinki} = SITE_ADRESI/dekont),
+//          {sifreLinki}: metinde geçiyorsa alıcıya tek kullanımlık şifre belirleme bağlantısı üretilir (hesabı yoksa davet,
+//          varsa şifre sıfırlama; ikisi de SITE_ADRESI/uye'ye döner ve orada yeni şifre sorulur)
 //          isteğe bağlı EPOSTA_YANIT (yanıt adresi), EPOSTA_TEST_ALICI (doluysa bütün mailler yalnız bu adrese gider)
 import { json, servisIstemcisi, zamanlayiciMi } from '../_ortak/ortak.ts';
 import { demoAdresMi, iletiYap } from '../_ortak/sablon.ts';
@@ -12,6 +14,18 @@ import { demoAdresMi, iletiYap } from '../_ortak/sablon.ts';
 const ADET = 40;
 const ZAMAN_ASIMI = 10_000;  // Resend 10 saniyede yanıt vermezse bu mail sonraki turda yeniden denenir
 const bekle = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Şifre belirleme bağlantısı: önce davet (hesap yoksa açar), hesap varsa şifre sıfırlama. Olmazsa üye girişi sayfası.
+async function sifreLinki(sb: ReturnType<typeof servisIstemcisi>, eposta: string, site: string): Promise<string> {
+  const redirectTo = `${site}/uye`;
+  let { data, error } = await sb.auth.admin.generateLink({ type: 'invite', email: eposta, options: { redirectTo } });
+  if (error) ({ data, error } = await sb.auth.admin.generateLink({ type: 'recovery', email: eposta, options: { redirectTo } }));
+  if (error || !data?.properties?.action_link) {
+    console.error('sifreLinki', error);
+    return redirectTo;
+  }
+  return data.properties.action_link;
+}
 
 interface Sira { id: number; sablon: string; alici: string; veri: Record<string, unknown>; deneme: number; konu: string; metin: string; acik: boolean }
 
@@ -39,7 +53,9 @@ Deno.serve(async (istek) => {
     const s = sira[i];
     if (demoAdresMi(s.alici)) { await sonuc(s.id, 'atlandi', 'Demo adresi: gönderilmez.'); sayi.atlandi++; continue; }
     if (!s.acik) { await sonuc(s.id, 'atlandi', 'Şablon kapalı.'); sayi.atlandi++; continue; }
-    const ileti = iletiYap(s.konu, s.metin, { odemeLinki: `${site}/dekont`, ...s.veri });
+    const ek: Record<string, unknown> = { odemeLinki: `${site}/dekont` };
+    if (s.metin.includes('{sifreLinki}')) ek.sifreLinki = await sifreLinki(sb, s.alici, site);
+    const ileti = iletiYap(s.konu, s.metin, { ...ek, ...s.veri });
     const alici = testAlici || s.alici;
     try {
       const yanit = await fetch('https://api.resend.com/emails', {
