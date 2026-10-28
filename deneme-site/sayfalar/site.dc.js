@@ -147,7 +147,12 @@ class Component extends DCLogic {
     const UYE_EPOSTA = ['deniz@ornek.com', 'ece@ornek.com', 'selin@ornek.com', 'can@ornek.com'];
     const BILETLI = ['misafir@ornek.com'];
     const t = this.state.tanisma;
-    const duyuruMetni = String(this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.').trim();
+    // Deneme sitesi: duyuru ve yakında modu ayarlardan (veri gelmediyse duyuru yok); önizlemede Tweaks › Duyuru
+    const canli = !!(window.FCS || window.FCS_HATA);
+    const AYAR = (window.FCS && window.FCS.ayar) || {};
+    const yakinda = AYAR.yakinda === true;
+    const YAKINDA_MESAJ = 'Üyelik başvuruları açılışla birlikte başlıyor. Instagram\'dan takipte kal!';
+    const duyuruMetni = String(canli ? (AYAR.site_duyurusu || '') : (this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.')).trim();
     // SEPET: etkinlik biletleri. Gerçek sitede ödeme iyzico'da; başarılı ödeme biletleri kesinleştirir, muhasebeye "Etkinlik katılım ücreti" geliri yazar
     const TL = (n) => (n ? `${n.toLocaleString('tr-TR')} TL` : 'Ücretsiz');
     const AKTIF_UYELER = ['deniz@ornek.com', 'ece@ornek.com', 'selin@ornek.com'];
@@ -228,17 +233,22 @@ class Component extends DCLogic {
       biletlerim: this.state.biletler,
       duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali,
       duyuruKapat: () => this.setState({ duyuruKapali: true }),
-      // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde
+      // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde (deneme sitesinde onlar görünmez)
+      galeriVar: !canli, metinlerVar: !canli,
       sss: [
-        { soru: 'Üyelik ne kadar, nasıl ödeniyor?', cevap: '30 günlük üyelik 3.000 TL. Kartla ödersin, üyeliğin hemen başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.' },
+        { soru: 'Üyelik ne kadar, nasıl ödeniyor?', cevap: canli && AYAR.kart_odeme !== true
+          ? `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Havale / EFT ile ödersin, dekontunu sitedeki dekont sayfasından yüklersin; onaylanınca üyeliğin başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.`
+          : `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Kartla ödersin, üyeliğin hemen başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.` },
         { soru: 'Üye olmadan gelebilir miyim?', cevap: 'İlk buluşman bizden: sitedeki “Tanışma biletini al” ile bir etkinliğe ücretsiz gelebilirsin. Her e-posta için bir kez geçerli.' },
         { soru: 'Etkinliklere nasıl kayıt oluyorum?', cevap: 'Üye panelinde “Geliyorum” de. Kontenjan doluysa bekleme listesine yazılırsın; yer açılınca e-postayla haber veririz.' },
         { soru: 'Yağmur yağarsa ne olur?', cevap: 'Etkinlik iptal edilir ya da ertelenirse sitenin en üstünde duyuru çıkar ve kayıtlı herkese e-posta göndeririz.' },
-        { soru: 'Üyeliğimi dondurabilir miyim?', cevap: 'Evet, üye panelinden. Dondurduğun günler üyelik sürenden düşmez. [DONDURMA KURALI: en fazla kaç gün, kaç kez]' },
+        { soru: 'Üyeliğimi dondurabilir miyim?', cevap: canli
+          ? `Evet, üye panelinden. Bir seferde ${((AYAR.dondurma && AYAR.dondurma.gunler) || [7, 14]).join(' ya da ')} gün dondurabilirsin, yılda en çok ${(AYAR.dondurma && AYAR.dondurma.yillik) || 2} kez. Dondurduğun günler üyelik sürenden düşmez, bitiş tarihine eklenir.`
+          : 'Evet, üye panelinden. Dondurduğun günler üyelik sürenden düşmez. [DONDURMA KURALI: en fazla kaç gün, kaç kez]' },
         { soru: 'Ne giymeli, yanımda ne getirmeliyim?', cevap: '[KULÜBÜN CEVABI]' },
         { soru: 'Arkadaşımı, çocuğumu ya da köpeğimi getirebilir miyim?', cevap: '[KULÜBÜN CEVABI]' },
         { soru: 'Kişisel verilerim ne olacak?', cevap: 'Bilgilerin yalnız kulüp işleri için kullanılır. Üye panelinden verilerinin kopyasını isteyebilir ya da hesabının silinmesini talep edebilirsin.' },
-      ],
+      ].filter((x) => !canli || !/\[[A-ZÇĞİÖŞÜ ]+/.test(x.cevap)),
       // Tanışma bileti yalnız seçilen yaklaşan buluşmada geçerli
       tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN).map((b) => {
         const on = `${b.tarih}|${b.ad}` === this.state.tEtk;
@@ -250,7 +260,7 @@ class Component extends DCLogic {
       }),
       tEtkYazi: (() => { const b = tumu.find((x) => `${x.tarih}|${x.ad}` === this.state.tEtk); return b ? `${b.ad} · ${b.gun} ${b.ay}` : ''; })(),
       tEtkTakvim: (() => { const b = tumu.find((x) => `${x.tarih}|${x.ad}` === this.state.tEtk); return b ? b.takvim : '#'; })(),
-      ilt, tanismaSunuluyor: !(window.FCS && window.FCS.ayar && window.FCS.ayar.tanisma_acik === false),
+      ilt, yakindaVar: yakinda, tanismaSunuluyor: !yakinda && AYAR.tanisma_acik !== false,
       // Gerçek kod yalnız e-postayla gider (e-posta adresi böylece doğrulanmış olur)
       tKod: window.FCSTanisma ? 'E-POSTANDA' : 'FC-T-4821',
       tVerildiYazi: window.FCSTanisma ? 'Yerin ayrıldı; bilet kodunu e-postana gönderdik. Girişte kodunu göstermen yeterli. Mail gelmezse gereksiz klasörüne de bak.'
@@ -312,6 +322,7 @@ class Component extends DCLogic {
       bKvkkDegis: () => this.setState((s) => ({ bKvkk: !s.bKvkk, bHata: '' })),
       uyeOdemeye: (e) => {
         if (e && e.preventDefault) e.preventDefault();
+        if (yakinda) return this.setState({ bHata: YAKINDA_MESAJ });
         if (!window.FCSBasvuru) return this.setState({ uyeAdim: 'odeme' });
         const { bAd, bTel, bEposta, bKosul, bDogal, bKvkk } = this.state;
         this.setState({ bHata: 'Gönderiliyor…' });
@@ -365,6 +376,7 @@ class Component extends DCLogic {
       filtreler,
       yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map((b) => {
         if (!b.satis) return { ...b, fiyatYazi: '', uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
         const key = `${b.tarih}|${b.ad}`;
         const kalan = kalanYer(b);
         const sepette = sepet[key] || 0;

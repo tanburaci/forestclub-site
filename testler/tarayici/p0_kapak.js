@@ -9,7 +9,7 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
 
 const veri = {
   kapak: true,
-  tablolar: { etkinlikler: [{ id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Kahvaltı Testi', kim: null, kontenjan: 30, bilet_fiyati: 600,
+  tablolar: { ayarlar: [{ anahtar: 'yakinda', deger: true }], etkinlikler: [{ id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Kahvaltı Testi', kim: null, kontenjan: 30, bilet_fiyati: 600,
     uyelere: null, satilan_bilet: 0, durum: 'yayinda', aciklama: 'Kahvaltı', link: null }] },
   rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null] },
 };
