@@ -1,0 +1,102 @@
+# Forest Club Urla · canlı güvenlik denetimi: ziyaretçi gözüyle (yalnız herkese açık anon anahtarıyla) canlı siteye ve
+# Supabase'e istek atar; gizli tabloların okunamadığını, yönetici işlevlerinin çağrılamadığını, Edge Function'ların
+# yetkisiz isteği reddettiğini ve sitenin güvenlik başlıklarını denetler. Veri yazmaz, kişisel veri yazdırmaz (yalnız
+# HTTP kodu ve satır sayısı). Elle (Actions › Canlı denetim › Run workflow) ya da bu dosya değişince çalışır.
+name: Canlı denetim
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['.github/workflows/canli_denetim.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  denetim:
+    runs-on: ubuntu-latest
+    env:
+      SB: https://gflabqnazkstsyafzdmn.supabase.co
+      SITE: https://www.forestcluburla.com
+    steps:
+      - uses: actions/checkout@v4
+      - name: Denetim
+        run: |
+          K=$(grep -o "eyJ[^']*" deneme-site/js/ayar.js)
+          kalan=0
+          sonuc() { if [ "$1" = ok ]; then echo "GEÇTİ  $2"; else echo "KALDI  $2"; kalan=$((kalan+1)); fi; }
+          kod() { curl -s -o /tmp/govde -w '%{http_code}' -m 20 "$@"; }
+
+          echo "== Gizli tablolar (ziyaretçi 0 satır görmeli)"
+          for t in uyeler odemeler dekontlar dekont_yuklemeleri destekler muhasebe_hareketleri eposta_kuyrugu eposta_sablonlari \
+                   denetim_kaydi yoneticiler acik_cagri tanisma_biletleri veri_talepleri envanter etkinlik_kayitlari \
+                   uyelik_dondurmalari anket_yanitlari odeme_istekleri sayaclar istek_sayaci; do
+            c=$(kod "$SB/rest/v1/$t?select=*&limit=5" -H "apikey: $K" -H "Authorization: Bearer $K")
+            n=$(python3 -c "import json;d=json.load(open('/tmp/govde'));print(len(d) if isinstance(d,list) else -1)" 2>/dev/null || echo -1)
+            if [ "$n" = 0 ] || [ "$c" = 401 ] || [ "$c" = 403 ] || [ "$c" = 404 ]; then sonuc ok "$t okunamıyor ($c, $n satır)"; else sonuc x "$t: $c, $n satır döndü"; fi
+          done
+          c=$(kod "$SB/rest/v1/ayarlar?select=anahtar&herkese_acik=eq.false" -H "apikey: $K" -H "Authorization: Bearer $K")
+          n=$(python3 -c "import json;print(len(json.load(open('/tmp/govde'))))" 2>/dev/null || echo -1)
+          [ "$n" = 0 ] && sonuc ok "gizli ayarlar görünmüyor" || sonuc x "gizli ayar döndü ($c, $n)"
+          c=$(kod "$SB/rest/v1/etkinlikler?select=id&durum=eq.taslak" -H "apikey: $K" -H "Authorization: Bearer $K")
+          n=$(python3 -c "import json;print(len(json.load(open('/tmp/govde'))))" 2>/dev/null || echo -1)
+          [ "$n" = 0 ] && sonuc ok "taslak etkinlikler görünmüyor" || sonuc x "taslak etkinlik döndü ($c, $n)"
+
+          echo "== Ziyaretçi yazamaz"
+          c=$(kod -X POST "$SB/rest/v1/uyeler" -H "apikey: $K" -H "Authorization: Bearer $K" -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d '{"ad":"denetim","eposta":"denetim@denetim.invalid"}')
+          case $c in 401|403) sonuc ok "uyeler'e ekleme reddedildi ($c)";; *) sonuc x "uyeler'e ekleme: $c";; esac
+          c=$(kod -X PATCH "$SB/rest/v1/ayarlar?anahtar=eq.yakinda" -H "apikey: $K" -H "Authorization: Bearer $K" -H 'Content-Type: application/json' -H 'Prefer: return=representation' -d '{"deger":true}')
+          n=$(python3 -c "import json;d=json.load(open('/tmp/govde'));print(len(d) if isinstance(d,list) else -1)" 2>/dev/null || echo -1)
+          { [ "$n" = 0 ] || [ "$c" = 401 ] || [ "$c" = 403 ]; } && sonuc ok "ayar değiştirilemiyor ($c)" || sonuc x "ayar değişti! ($c)"
+
+          echo "== Yönetici / sunucu işlevleri ziyaretçiye kapalı"
+          for f in saglik_ozeti veri_kopyasi uye_anonimlestir dekont_karar elden_odeme destek_istegi_ac destek_tamamla odeme_tamamla \
+                   odeme_istegi_ac tanisma_bileti_al basvuru_yap cagri_gonder eposta_sirasi_al dekont_artiklari istek_sinir; do
+            c=$(kod -X POST "$SB/rest/v1/rpc/$f" -H "apikey: $K" -H "Authorization: Bearer $K" -H 'Content-Type: application/json' -d '{}')
+            case $c in 401|403|404) sonuc ok "$f çağrılamıyor ($c)";; *) sonuc x "$f: $c $(head -c 150 /tmp/govde)";; esac
+          done
+
+          echo "== Edge Function'lar"
+          c=$(kod -X POST "$SB/functions/v1/eposta-gonder"); [ "$c" = 401 ] && sonuc ok "eposta-gonder anahtarsız 401" || sonuc x "eposta-gonder: $c"
+          c=$(kod -X POST "$SB/functions/v1/eposta-gonder" -H 'x-zamanlayici: yanlis-anahtar-yanlis-anahtar'); [ "$c" = 401 ] && sonuc ok "eposta-gonder yanlış anahtar 401" || sonuc x "eposta-gonder yanlış anahtar: $c"
+          c=$(kod -X POST "$SB/functions/v1/dekont-temizle"); [ "$c" = 401 ] && sonuc ok "dekont-temizle anahtarsız 401" || sonuc x "dekont-temizle: $c"
+          c=$(kod -X POST "$SB/functions/v1/odeme-baslat" -H "Authorization: Bearer $K"); [ "$c" = 401 ] && sonuc ok "odeme-baslat girişsiz 401" || sonuc x "odeme-baslat: $c"
+          c=$(kod -X POST "$SB/functions/v1/form-gonder" -H 'Content-Type: application/json' -d '{"tur":"destek","veri":{"tutar":1000}}')
+          case $c in 400|403|429|503) sonuc ok "form-gonder doğrulamasız reddedildi ($c: $(head -c 80 /tmp/govde))";; *) sonuc x "form-gonder doğrulamasız: $c";; esac
+          c=$(kod -X POST "$SB/functions/v1/odeme-donus?tur=destek" -d 'token=sahte-token-1234567'); l=$(curl -s -o /dev/null -w '%{redirect_url}' -m 20 -X POST "$SB/functions/v1/odeme-donus?tur=destek" -d 'token=sahte-token-1234567')
+          [ "$c" = 303 ] && case "$l" in "$SITE"/*destek-hata*|https://forestcluburla.com/*destek-hata*) sonuc ok "odeme-donus sahte token → $l";; *) sonuc x "odeme-donus yönlendirme: $l";; esac || sonuc x "odeme-donus: $c"
+
+          echo "== Dosya deposu"
+          c=$(kod -X POST "$SB/storage/v1/object/list/dekontlar" -H "apikey: $K" -H "Authorization: Bearer $K" -H 'Content-Type: application/json' -d '{"prefix":"","limit":5}')
+          n=$(python3 -c "import json;d=json.load(open('/tmp/govde'));print(len(d) if isinstance(d,list) else -1)" 2>/dev/null || echo -1)
+          { [ "$n" = 0 ] || [ "$n" = -1 ]; } && sonuc ok "dekont deposu listelenemiyor ($c)" || sonuc x "dekont deposu listelendi ($n)"
+          c=$(kod "$SB/storage/v1/object/public/dekontlar/yeni/x.pdf"); [ "$c" != 200 ] && sonuc ok "dekont deposu herkese açık değil ($c)" || sonuc x "dekont deposu herkese açık"
+          c=$(kod -X POST "$SB/storage/v1/object/dekontlar/yeni/denetim.pdf" -H "apikey: $K" -H "Authorization: Bearer $K" -H 'Content-Type: application/pdf' --data-binary 'x')
+          case $c in 400|401|403) sonuc ok "dekont deposuna doğrudan yükleme reddedildi ($c)";; *) sonuc x "dekont deposuna doğrudan yükleme: $c";; esac
+
+          echo "== Giriş (Auth) ayarları"
+          kod "$SB/auth/v1/settings" -H "apikey: $K" >/dev/null
+          python3 - <<'PY'
+          import json
+          s = json.load(open('/tmp/govde'))
+          ext = [k for k, v in (s.get('external') or {}).items() if v and k not in ('email',)]
+          print('BİLGİ  kayıt kapalı mı (disable_signup):', s.get('disable_signup'))
+          print('BİLGİ  e-posta onayı otomatik mi (mailer_autoconfirm):', s.get('mailer_autoconfirm'))
+          print('BİLGİ  telefonla giriş:', s.get('external', {}).get('phone'))
+          print('BİLGİ  açık sosyal girişler:', ext or 'yok')
+          PY
+
+          echo "== Site başlıkları"
+          curl -sI -m 20 "$SITE/" > /tmp/baslik
+          for b in content-security-policy strict-transport-security x-frame-options x-content-type-options referrer-policy permissions-policy; do
+            grep -qi "^$b:" /tmp/baslik && sonuc ok "başlık: $b" || sonuc x "başlık eksik: $b"
+          done
+          c=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -m 20 "http://forestcluburla.com/"); case "$c" in 30*https://*) sonuc ok "http → https ($c)";; *) sonuc x "http yönlendirmesi: $c";; esac
+          for y in /.git/config /.env /supabase/config.toml /supabase/seed_demo.sql; do
+            c=$(kod "$SITE$y"); grep -q '\[\|=' /tmp/govde && [ "$c" = 200 ] && ! grep -qi '<html' /tmp/govde && sonuc x "$y açık ($c)" || sonuc ok "$y açık değil ($c)"
+          done
+          for y in /uye/ /yonetim/ /dekont/; do
+            curl -sI -m 20 "$SITE$y" | grep -qi '^x-robots-tag: noindex' && sonuc ok "$y arama motoruna kapalı" || sonuc x "$y noindex yok"
+          done
+
+          echo; [ $kalan = 0 ] && echo "Hepsi geçti" || { echo "$kalan denetim kaldı"; exit 1; }

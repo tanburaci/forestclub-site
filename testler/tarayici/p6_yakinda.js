@@ -59,6 +59,8 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     await s2.page.goto(`${SITE}/`);
     await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').waitFor({ timeout: 15000 });
     dogru(await s2.page.getByText('Yakında açılıyoruz 🌲').count() === 0, 'açılışta şerit yok');
+    const s2Metin = await s2.page.locator('body').textContent();
+    dogru(!/Önizleme|önizlemesi|ornek\.com/.test(s2Metin), 'canlıda tasarım önizlemesi notları ve örnek e-postalar yok');
     dogru(await s2.page.getByRole('button', { name: 'Tanışma biletini al' }).count() === 1 && await s2.page.getByRole('button', { name: 'Sepete ekle' }).count() === 1,
       'açılışta tanışma bileti ve bilet satışı açık');
     await s2.page.getByRole('button', { name: 'Tamam' }).first().click();
