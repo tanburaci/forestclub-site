@@ -47,9 +47,8 @@ select throws_ok($$ insert into form_yanitlari (form_id, uye_id) values ((select
 reset role;
 
 -- KVKK: anonimleştirmede cevaplar silinir; veri kopyasında görünür
-select is(jsonb_array_length(veri_kopyasi_test.k -> 'formlar'), 1, 'veri kopyasında form cevabı var')
-  from (select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-4000-8000-0000000000c1', 'role', 'authenticated')::text, true),
-               veri_kopyasi() as k) veri_kopyasi_test;
+select pg_temp.ol('00000000-0000-4000-8000-0000000000c1');
+select is(jsonb_array_length(veri_kopyasi() -> 'formlar'), 1, 'veri kopyasında form cevabı var');
 update uyeler set eposta = 'silindi-' || id || '@silindi.invalid' where eposta = 'form1@test.invalid';
 select is((select count(*) from form_yanitlari)::int, 0, 'anonimleştirilen üyenin cevapları silindi');
 
