@@ -1239,7 +1239,7 @@ a{color:#111111}a:hover{color:#000000}
           <div style="display: flex; flex-direction: column; gap: 20px">
             <div>
               <h2 style="margin: 0; font-family: 'Amatic SC', cursive; font-size: 56px; line-height: 1; color: #111111">Başvurular</h2>
-              <p style="margin: 6px 0 0; color: #5E5E5E">Havale dekontları, Açık Çağrı başvuruları ve başvuru sayfasının sayıları</p>
+              <p style="margin: 6px 0 0; color: #5E5E5E">Havale dekontları ve Açık Çağrı başvuruları</p>
             </div>
 
             <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
@@ -1299,20 +1299,6 @@ a{color:#111111}a:hover{color:#000000}
               </sc-for>
             </section>
 
-            <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
-              <h3 style="margin: 0; font-size: 18px">Başvuru sayfası sayıları</h3>
-              <p style="margin: 0; color: #5E5E5E; font-size: 14px">Günlük toplamlar; kimin olduğu kaydedilmez.</p>
-              <div style="overflow: auto; border: 1px solid #DADAD8; border-radius: 10px">
-                <table class="fc-tablo">
-                  <thead><tr><th>Tarih</th><th>Sayfayı açan</th><th>Bilgileri dolduran</th><th>Onayları işaretleyen</th><th>Dekont gönderen</th><th>Başvuran</th></tr></thead>
-                  <tbody>
-                    <sc-for list="{{ bvr.sayaclar }}" as="g" hint-placeholder-count="3">
-                      <tr><td>{{ g.tarih }}</td><td>{{ g.acildi }}</td><td>{{ g.bilgiler }}</td><td>{{ g.onaylar }}</td><td>{{ g.dekont }}</td><td>{{ g.gonderildi }}</td></tr>
-                    </sc-for>
-                  </tbody>
-                </table>
-              </div>
-            </section>
           </div>
         </sc-if>
 
@@ -2437,7 +2423,7 @@ class Component extends DCLogic {
       etkinliklerSekme: sekme === 'etkinlikler',
       iletisimSekme: sekme === 'iletisim',
       basvuruSekme: sekme === 'basvurular',
-      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], sayaclar: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' },
+      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' },
       ozet: [
         { baslik: 'Aktif üye', sayi: String(sayac.aktif), alt: `${this.DEMO.kisiler.filter((k) => k.bas && k.bas >= `${BUGUN_SABIT.slice(0, 7)}-01`).length} kişi bu ay katıldı · ${tumUyeler.length} kayıt` },
         { baslik: 'Bu ay kart ödemesi', sayi: String(buAyKart.length), alt: `${TL(topla(buAyKart))} · kendiliğinden işlendi` },
