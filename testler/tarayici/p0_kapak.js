@@ -71,7 +71,7 @@ const veri = {
     await s2.page.getByText('Kahvaltı Testi').first().waitFor({ timeout: 15000 });
     dogru(await s2.page.locator('#fc-yakinda, #fc-yakinda-stil').count() === 0 && !(await s2.page.evaluate(() => document.getElementById('kok').hasAttribute('inert'))),
       'yakında kapalı: kapak kalktı, site inert değil');
-    dogru(await s2.page.getByText('Kahvaltı Testi').first().isVisible() && await s2.page.getByRole('button', { name: 'Sepete ekle' }).first().isEnabled(),
+    dogru(await s2.page.getByText('Kahvaltı Testi').first().isVisible() && await s2.page.getByRole('button', { name: 'Randevu oluştur' }).first().isEnabled(),
       'yakında kapalı: etkinlikler görünüyor, bilet tıklanır');
     dogru(!s2.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'yakında kapalı: sayfa / CSP hatası yok');
     // Ayar okunamazsa (sunucu hatası) kapak kalır
