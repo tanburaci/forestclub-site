@@ -31,7 +31,8 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     dogru(ana.includes('<link rel="canonical" href="https://www.forestcluburla.com/">') && /<meta name="description" content="[^"]{60,}">/.test(ana), 'kanonik adres ve açıklama');
 
     // ---------- Yakında açık ----------
-    const s1 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: true }, { anahtar: 'site_duyurusu', deger: '' }]), null);
+    const s1 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: true }, { anahtar: 'site_duyurusu', deger: '' },
+      { anahtar: 'dondurma', deger: { gunler: [10, 20], yillik: 3 } }, { anahtar: 'aidat', deger: 3500 }]), null);
     const formlar = [];
     await s1.page.route(`${SB}/functions/v1/form-gonder`, (r) => { formlar.push(r.request().postData()); r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{"sonuc":"tamam"}' }); });
     await s1.page.goto(`${SITE}/`);
@@ -44,6 +45,13 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     await s1.page.getByRole('button', { name: 'Ödemeye geç' }).click();
     await s1.page.getByText('Üyelik başvuruları açılışla birlikte başlıyor. Instagram\'dan takipte kal!').waitFor({ timeout: 3000 });
     dogru(formlar.length === 0, 'yakında: başvuru sunucuya gönderilmedi');
+    // İçerik: hazır olmayanlar görünmez, SSS ayarlardan
+    const metin = await s1.page.locator('body').innerText();
+    dogru(!/\[(Fotoğraf|Reels|KULÜBÜN|DONDURMA)/.test(await s1.page.locator('body').textContent()) && !metin.includes('Ağaçların altından'), 'boş galeri ve cevapsız SSS görünmüyor');
+    dogru(await s1.page.getByRole('link', { name: 'KVKK aydınlatma metni' }).count() === 0, 'boş metin bağlantıları görünmüyor');
+    const tumMetin = await s1.page.locator('body').textContent();  // SSS cevapları kapalı <details> içinde
+    dogru(tumMetin.includes('Bir seferde 10 ya da 20 gün dondurabilirsin, yılda en çok 3 kez'), 'SSS: dondurma kuralı ayarlardan');
+    dogru(tumMetin.includes('30 günlük üyelik 3.500 TL. Havale / EFT ile ödersin') && !tumMetin.includes('Kartla ödersin'), 'SSS: kart kapalıyken havale / EFT, aidat ayarlardan');
     dogru(!s1.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), `site: sayfa / CSP hatası yok ${s1.konsol.filter((x) => /pageerror|Content Security/.test(x)).join(' | ')}`);
 
     // ---------- Açılış: yakında kapalı, duyuru var ----------

@@ -4,8 +4,8 @@ window.FC_AYAR = {
   supabaseUrl: 'https://gflabqnazkstsyafzdmn.supabase.co',
   supabaseAnahtar: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmbGFicW5hemtzdHN5YWZ6ZG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNDg4MzUsImV4cCI6MjEwODYyNDgzNX0.bcPcUPsLdtZlYfL5ryRxcIGOzHa7GDEKyCkB1KH5upo',
   // Üyelik ödemesi (iyzico gelene kadar havale / EFT; Sheets'teki AYAR.ODEME_BILGISI ile aynı)
-  // Deneme sitesi: üye girişinde demo hesap düğmeleri görünür (gerçek yayında false)
-  deneme: true,
+  // true: üye girişinde demo hesap düğmeleri görünür (yalnız tasarım denemesi için; yayında false)
+  deneme: false,
   // Cloudflare Turnstile site anahtarı (herkese açık; widget "Forest Club site": forestcluburla.com, www, netlify.app).
   // Eşi olan gizli anahtar yalnız Supabase secret TURNSTILE_SECRET'ta durur.
   turnstile: '0x4AAAAAAFpdoJpz9qwNv9_6',

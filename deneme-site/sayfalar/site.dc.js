@@ -233,17 +233,22 @@ class Component extends DCLogic {
       biletlerim: this.state.biletler,
       duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali,
       duyuruKapat: () => this.setState({ duyuruKapali: true }),
-      // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde
+      // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde (deneme sitesinde onlar görünmez)
+      galeriVar: !canli, metinlerVar: !canli,
       sss: [
-        { soru: 'Üyelik ne kadar, nasıl ödeniyor?', cevap: '30 günlük üyelik 3.000 TL. Kartla ödersin, üyeliğin hemen başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.' },
+        { soru: 'Üyelik ne kadar, nasıl ödeniyor?', cevap: canli && AYAR.kart_odeme !== true
+          ? `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Havale / EFT ile ödersin, dekontunu sitedeki dekont sayfasından yüklersin; onaylanınca üyeliğin başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.`
+          : `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Kartla ödersin, üyeliğin hemen başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.` },
         { soru: 'Üye olmadan gelebilir miyim?', cevap: 'İlk buluşman bizden: sitedeki “Tanışma biletini al” ile bir etkinliğe ücretsiz gelebilirsin. Her e-posta için bir kez geçerli.' },
         { soru: 'Etkinliklere nasıl kayıt oluyorum?', cevap: 'Üye panelinde “Geliyorum” de. Kontenjan doluysa bekleme listesine yazılırsın; yer açılınca e-postayla haber veririz.' },
         { soru: 'Yağmur yağarsa ne olur?', cevap: 'Etkinlik iptal edilir ya da ertelenirse sitenin en üstünde duyuru çıkar ve kayıtlı herkese e-posta göndeririz.' },
-        { soru: 'Üyeliğimi dondurabilir miyim?', cevap: 'Evet, üye panelinden. Dondurduğun günler üyelik sürenden düşmez. [DONDURMA KURALI: en fazla kaç gün, kaç kez]' },
+        { soru: 'Üyeliğimi dondurabilir miyim?', cevap: canli
+          ? `Evet, üye panelinden. Bir seferde ${((AYAR.dondurma && AYAR.dondurma.gunler) || [7, 14]).join(' ya da ')} gün dondurabilirsin, yılda en çok ${(AYAR.dondurma && AYAR.dondurma.yillik) || 2} kez. Dondurduğun günler üyelik sürenden düşmez, bitiş tarihine eklenir.`
+          : 'Evet, üye panelinden. Dondurduğun günler üyelik sürenden düşmez. [DONDURMA KURALI: en fazla kaç gün, kaç kez]' },
         { soru: 'Ne giymeli, yanımda ne getirmeliyim?', cevap: '[KULÜBÜN CEVABI]' },
         { soru: 'Arkadaşımı, çocuğumu ya da köpeğimi getirebilir miyim?', cevap: '[KULÜBÜN CEVABI]' },
         { soru: 'Kişisel verilerim ne olacak?', cevap: 'Bilgilerin yalnız kulüp işleri için kullanılır. Üye panelinden verilerinin kopyasını isteyebilir ya da hesabının silinmesini talep edebilirsin.' },
-      ],
+      ].filter((x) => !canli || !/\[[A-ZÇĞİÖŞÜ ]+/.test(x.cevap)),
       // Tanışma bileti yalnız seçilen yaklaşan buluşmada geçerli
       tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN).map((b) => {
         const on = `${b.tarih}|${b.ad}` === this.state.tEtk;
