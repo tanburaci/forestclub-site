@@ -71,7 +71,7 @@ begin
       if s ->> 'tur' = 'tek' and metin <> '' and not (coalesce(s -> 'secenekler', '[]') ? metin) then
         raise exception '"%" için geçersiz seçim.', s ->> 'metin';
       end if;
-      if length(metin) > case when s ->> 'tur' = 'uzun' then 2000 else 200 end then
+      if length(metin) > (case when s ->> 'tur' = 'uzun' then 2000 else 200 end) then
         raise exception '"%" cevabı çok uzun.', s ->> 'metin';
       end if;
       if metin <> '' then temiz := temiz || jsonb_build_object(s ->> 'id', metin); end if;
