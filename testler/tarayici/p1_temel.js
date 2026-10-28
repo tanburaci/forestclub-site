@@ -148,7 +148,7 @@ function yonetimVerisi() {
       await page.getByRole('button', { name: 'İptal / ertele' }).first().click();
       await page.getByRole('button', { name: 'İptal et' }).click();
       await page.getByRole('button', { name: 'Duyur', exact: true }).click();
-      await page.getByText(/İptal edildi: etkinlik sitedeki listeden kalktı\. Duyuru 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
+      await page.getByText(/İptal edildi: etkinlik sitedeki listeden kalktı\. Duyuru sitenin en üstünde yayında .* ve 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
       const d = v.rpcler.find((x) => x[0] === 'etkinlik_durum_degistir');
       dogru(d && d[1].p_id === 10 && d[1].p_durum === 'iptal', `D5: etkinlik_durum_degistir (${JSON.stringify(d && d[1])})`);
       dogru(!(await page.content()).includes('mail gitti'), 'D5: "mail gitti" yazısı yok');

@@ -68,7 +68,7 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     await page.getByRole('button', { name: 'İptal / ertele' }).first().click();
     await page.getByRole('button', { name: 'İptal et' }).click();
     await page.getByRole('button', { name: 'Duyur', exact: true }).click();
-    await page.getByText(/Duyuru 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
+    await page.getByText(/ve 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
     const ip = v.rpcler.find((x) => x[0] === 'etkinlik_durum_degistir');
     dogru(ip && /iptal edildi/.test(ip[1].p_duyuru), `iptal duyuru metni sunucuya gitti (${ip && ip[1].p_duyuru})`);
     await page.getByRole('button', { name: 'Duyuruyu düzenle' }).first().click();

@@ -1,5 +1,9 @@
 # Forest Club Urla · deneme sitesi
 
+Adres: https://www.forestcluburla.com (forestcluburla.com ve forestclub-deneme.netlify.app oraya yönlenir).
+Açılışa kadar "Yakında" modu açık: sitede şerit var, üyelik başvurusu / tanışma bileti / bilet satışı kapalı.
+Açılış günü Yönetim › İletişim › Site durumu'ndan tek tıkla kapatılır. Ana sayfa arama motorlarına açık; paneller kapalı.
+
 Yayında değil. Tasarım demosundaki (claude.ai Design) sayfaların gerçek veriye bağlanmış hali.
 
 - `deneme-site/` statik site (Netlify): `index.html` site, `/uye` üye paneli, `/yonetim` yönetici paneli, `/dekont` dekont yükleme.
