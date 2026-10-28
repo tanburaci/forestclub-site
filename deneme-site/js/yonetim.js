@@ -112,6 +112,7 @@
         id: h.id, tarih: h.tarih, tur: h.tur, tutar: Number(h.tutar), kasa: h.kasa, hedef: h.hedef_kasa || '',
         kategori: h.kategori || '', etk: h.etkinlik_id ? etkKey.get(h.etkinlik_id) || '' : '', aciklama: h.aciklama,
         belge: h.belge || '', otomatik: h.otomatik, ...(h.odeme ? { odeme: h.odeme } : {}),
+        fatura: h.fatura_durum || '', faturaNo: h.fatura_no || '', faturaTarih: h.fatura_tarih || '',
       })),
       envanter: envanter.map((e) => ({
         id: e.id, ad: e.ad, kategori: e.kategori, adet: Number(e.adet), birim: e.birim, giris: e.giris, tarih: e.tarih,
@@ -396,6 +397,7 @@
       tarih: h.tarih, tur: h.tur, tutar: h.tutar, kasa: h.kasa, hedef_kasa: h.tur === 'aktarim' ? h.hedef || null : null,
       kategori: h.kategori || null, etkinlik_id: h.etk ? keyEtk[h.etk] || null : null, aciklama: h.aciklama,
       belge: h.belge || null, otomatik: !!h.otomatik, odeme: h.odeme || null,
+      fatura_durum: h.fatura || null, fatura_no: h.faturaNo || null, fatura_tarih: h.faturaTarih || null,
     });
     const envanterSatiri = (e) => ({
       ad: e.ad, kategori: e.kategori, adet: e.adet, birim: e.birim, giris: e.giris, tarih: e.tarih,
