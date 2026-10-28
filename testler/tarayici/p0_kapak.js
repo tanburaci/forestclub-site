@@ -37,8 +37,9 @@ const veri = {
       dogru(hepsiKapakta, `${ad}: ekranın her yeri kapakta (tıklama siteye gitmez)`);
       // Tıklanan tek şey Instagram bağlantısı (WhatsApp numaraları kapakta yok); Tab ile siteye ulaşılamaz
       const baglantilar = await page.locator('#fc-yakinda a, #fc-yakinda button').evaluateAll((l) => l.map((a) => `${a.getAttribute('href')}|${a.target}`));
-      dogru(JSON.stringify(baglantilar) === JSON.stringify(['https://www.instagram.com/forestcluburla/|_blank']),
-        `${ad}: kapakta yalnız Instagram bağlantısı var, yeni sekmede (${baglantilar})`);
+      dogru(JSON.stringify(baglantilar) === JSON.stringify(['https://www.instagram.com/forestcluburla/|_blank', '/hakkimizda/|', '/teslimat-iade/|', '/gizlilik/|', '/mesafeli-satis/|']),
+        `${ad}: kapakta yalnız Instagram (yeni sekmede) ve sözleşme bağlantıları var (${baglantilar})`);
+      dogru(await page.locator('#fc-yakinda .logo').innerText() === 'VISA\nMastercard\niyzico ile Öde' || /VISA\s*Mastercard\s*iyzico ile Öde/.test(await page.locator('#fc-yakinda .logo').innerText()), `${ad}: kapakta ödeme logoları`);
       const ig = page.locator('#fc-yakinda a.ig');
       await page.context().route('https://www.instagram.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>instagram</p>' }));
       const [sekme] = await Promise.all([page.context().waitForEvent('page'), ig.click()]);
@@ -55,6 +56,13 @@ const veri = {
       dogru(await page.evaluate(() => !document.getElementById('kok').contains(document.activeElement)), `${ad}: Tab ile siteye odaklanılamıyor`);
       dogru(await page.evaluate(() => document.getElementById('kok').hasAttribute('inert')), `${ad}: site inert kaldı (çizimden sonra da)`);
       dogru(!konsol.some((x) => /pageerror|Content Security Policy/.test(x)), `${ad}: sayfa / CSP hatası yok`);
+    }
+    // Sözleşme sayfaları (iyzico şartı): kapaktan bağımsız açılır, CSP hatası yok
+    for (const [yol, baslik] of [['hakkimizda', 'Hakkımızda'], ['teslimat-iade', 'Teslimat ve İade Şartları'], ['gizlilik', 'Gizlilik Sözleşmesi ve KVKK Aydınlatma Metni'], ['mesafeli-satis', 'Mesafeli Satış Sözleşmesi']]) {
+      const { page, konsol } = await sayfaAc(tarayici, veri);
+      const y = await page.goto(`${SITE}/${yol}/`);
+      dogru(y.status() === 200 && await page.locator('h1').innerText() === baslik && await page.locator('nav[aria-label="Sözleşmeler"] a').count() === 5
+        && !konsol.some((x) => /pageerror|Content Security Policy/.test(x)), `${yol}: sayfa açılıyor, başlık ve bağlantılar var`);
     }
     // Açılış: "Yakında" modu kapalı → kapak kalkar, site tıklanır, bölümler görünür
     const acik = { ...veri, tablolar: { ...veri.tablolar, ayarlar: [{ anahtar: 'yakinda', deger: false }] } };
