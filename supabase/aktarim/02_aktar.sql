@@ -90,7 +90,8 @@ end $$;
 
 -- ---------------------------------------------------------------------------------------------------------------
 -- Üyeler
-create temp table k_uye on commit drop as
+drop table if exists aktarim.k_uye;
+create table aktarim.k_uye as
 select h.satir,
        aktarim.al(h.veri, 'ad_soyad', 'ad_soyadi', 'adi_soyadi', 'isim', 'ad') as ad,
        lower(aktarim.al(h.veri, 'e_posta', 'eposta', 'e_posta_adresi', 'email', 'e_mail', 'mail')) as eposta,
@@ -103,31 +104,31 @@ select h.satir,
        aktarim.al(h.veri, 'fotograf_video_izinleri', 'fotograf_video_izni', 'fotograf_izni', 'foto_izni') as foto_ham
 from aktarim.ham h where h.sayfa = 'uyeler';
 
-alter table k_uye add column basvuru date, add column onay date, add column bitis date, add column hatirlatma date,
+alter table aktarim.k_uye add column basvuru date, add column onay date, add column bitis date, add column hatirlatma date,
                   add column foto boolean, add column gecerli boolean not null default true;
-update k_uye set basvuru = aktarim.tarih(basvuru_ham), onay = aktarim.tarih(onay_ham), bitis = aktarim.tarih(bitis_ham),
+update aktarim.k_uye set basvuru = aktarim.tarih(basvuru_ham), onay = aktarim.tarih(onay_ham), bitis = aktarim.tarih(bitis_ham),
                  hatirlatma = aktarim.tarih(hatirlatma_ham), foto = aktarim.evet(foto_ham);
 
 insert into aktarim.sorunlar
-select 'uyeler', satir, 'e_posta', eposta, 'E-posta yok ya da geçersiz: satır aktarılmadı' from k_uye
+select 'uyeler', satir, 'e_posta', eposta, 'E-posta yok ya da geçersiz: satır aktarılmadı' from aktarim.k_uye
   where eposta is null or eposta !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$'
-union all select 'uyeler', satir, 'ad_soyad', ad, 'Ad yok: e-posta ad olarak yazıldı' from k_uye where ad is null
-union all select 'uyeler', satir, 'basvuru_tarihi', basvuru_ham, 'Tarih okunamadı' from k_uye where basvuru_ham is not null and basvuru is null
-union all select 'uyeler', satir, 'odeme_onay_tarihi', onay_ham, 'Tarih okunamadı' from k_uye where onay_ham is not null and onay is null
-union all select 'uyeler', satir, 'uyelik_bitisi', bitis_ham, 'Tarih okunamadı' from k_uye where bitis_ham is not null and bitis is null
-union all select 'uyeler', satir, 'son_hatirlatma', hatirlatma_ham, 'Tarih okunamadı' from k_uye where hatirlatma_ham is not null and hatirlatma is null
-union all select 'uyeler', satir, 'fotograf_video_izinleri', foto_ham, 'Anlaşılamadı: izin yok sayıldı' from k_uye where foto is null;
-update k_uye set gecerli = false where eposta is null or eposta !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$';
-update k_uye set foto = false where foto is null;
+union all select 'uyeler', satir, 'ad_soyad', ad, 'Ad yok: e-posta ad olarak yazıldı' from aktarim.k_uye where ad is null
+union all select 'uyeler', satir, 'basvuru_tarihi', basvuru_ham, 'Tarih okunamadı' from aktarim.k_uye where basvuru_ham is not null and basvuru is null
+union all select 'uyeler', satir, 'odeme_onay_tarihi', onay_ham, 'Tarih okunamadı' from aktarim.k_uye where onay_ham is not null and onay is null
+union all select 'uyeler', satir, 'uyelik_bitisi', bitis_ham, 'Tarih okunamadı' from aktarim.k_uye where bitis_ham is not null and bitis is null
+union all select 'uyeler', satir, 'son_hatirlatma', hatirlatma_ham, 'Tarih okunamadı' from aktarim.k_uye where hatirlatma_ham is not null and hatirlatma is null
+union all select 'uyeler', satir, 'fotograf_video_izinleri', foto_ham, 'Anlaşılamadı: izin yok sayıldı' from aktarim.k_uye where foto is null;
+update aktarim.k_uye set gecerli = false where eposta is null or eposta !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$';
+update aktarim.k_uye set foto = false where foto is null;
 
 -- Aynı e-posta birden çok satırda: bitişi en ileri olan (eşitse en alttaki) kalır
 insert into aktarim.sorunlar
 select 'uyeler', k.satir, 'e_posta', k.eposta, 'Aynı e-posta başka satırda da var: bu satır atlandı (satır ' || s.satir || ' kaldı)'
-from k_uye k
-join lateral (select x.satir from k_uye x where x.eposta = k.eposta and x.gecerli
+from aktarim.k_uye k
+join lateral (select x.satir from aktarim.k_uye x where x.eposta = k.eposta and x.gecerli
               order by x.bitis desc nulls last, x.satir desc limit 1) s on true
 where k.gecerli and s.satir <> k.satir;
-update k_uye k set gecerli = false
+update aktarim.k_uye k set gecerli = false
 where k.gecerli and exists (select 1 from aktarim.sorunlar s where s.sayfa = 'uyeler' and s.satir = k.satir and s.aciklama like 'Aynı e-posta%');
 
 -- Var olanlar: Sheets'e göre güncellenir; bitiş yalnız ileri gider (yeni sistemde uzatılan geri alınmaz)
@@ -137,18 +138,19 @@ update public.uyeler u set
   basvuru_tarihi = coalesce(u.basvuru_tarihi, k.basvuru),
   bitis = greatest(u.bitis, k.bitis),
   foto_izni = k.foto
-from k_uye k where k.gecerli and u.eposta = k.eposta;
+from aktarim.k_uye k where k.gecerli and u.eposta = k.eposta;
 
 -- Yeniler: kod sayaçtan, başvuru sırasıyla
 insert into public.uyeler (ad, eposta, tel, durum, basvuru_tarihi, bitis, foto_izni, nereden_duydu)
 select coalesce(k.ad, k.eposta), k.eposta, k.tel, 'basvuru', coalesce(k.basvuru, k.onay), k.bitis, k.foto, 'Sheets aktarımı'
-from k_uye k
+from aktarim.k_uye k
 where k.gecerli and not exists (select 1 from public.uyeler u where u.eposta = k.eposta)
 order by coalesce(k.basvuru, k.onay, k.bitis - 30), k.satir;
 
 -- ---------------------------------------------------------------------------------------------------------------
 -- Dekontlar
-create temp table k_dekont on commit drop as
+drop table if exists aktarim.k_dekont;
+create table aktarim.k_dekont as
 select h.satir,
        lower(aktarim.al(h.veri, 'e_posta', 'eposta', 'e_posta_adresi', 'email', 'e_mail', 'mail')) as eposta,
        aktarim.al(h.veri, 'ad_soyad', 'ad_soyadi', 'adi_soyadi', 'isim', 'ad') as ad,
@@ -161,8 +163,8 @@ select h.satir,
        aktarim.al(h.veri, 'sonuc', 'islendi', 'not', 'notlar', 'aciklama', 'red_gerekcesi') as sonuc
 from aktarim.ham h where h.sayfa = 'dekontlar';
 
-alter table k_dekont add column uye_id bigint, add column durum dekont_durum, add column kaynak text;
-update k_dekont k set
+alter table aktarim.k_dekont add column uye_id bigint, add column durum dekont_durum, add column kaynak text;
+update aktarim.k_dekont k set
   uye_id = (select id from public.uyeler u where u.eposta = k.eposta),
   -- "Onay" onay kutusu ise TRUE / FALSE gelir
   durum = case when lower(coalesce(k.durum_ham, '')) ~ 'red' then 'reddedildi'
@@ -172,10 +174,10 @@ update k_dekont k set
   kaynak = 'sheets:dekont:' || md5(coalesce(k.eposta, '') || '|' || coalesce(k.dosya, '') || '|' || coalesce(k.zaman_ham, ''));
 
 insert into aktarim.sorunlar
-select 'dekontlar', satir, 'e_posta', eposta, 'Bu e-postayla üye yok: dekont aktarılmadı' from k_dekont where uye_id is null
-union all select 'dekontlar', satir, 'dekont', dosya, 'Dosya bağlantısı https değil ya da yok' from k_dekont
+select 'dekontlar', satir, 'e_posta', eposta, 'Bu e-postayla üye yok: dekont aktarılmadı' from aktarim.k_dekont where uye_id is null
+union all select 'dekontlar', satir, 'dekont', dosya, 'Dosya bağlantısı https değil ya da yok' from aktarim.k_dekont
   where uye_id is not null and coalesce(dosya, '') !~ '^https://'
-union all select 'dekontlar', satir, 'tutar', tutar_ham, 'Tutar okunamadı: ' || aktarim.aidat() || ' yazıldı' from k_dekont
+union all select 'dekontlar', satir, 'tutar', tutar_ham, 'Tutar okunamadı: ' || aktarim.aidat() || ' yazıldı' from aktarim.k_dekont
   where uye_id is not null and tutar_ham is not null and aktarim.tutar(tutar_ham) is null;
 
 -- Yeni sistemde henüz karar verilmemiş olanlar Sheets'e göre güncellenir
@@ -185,7 +187,7 @@ select k.uye_id, k.eposta, coalesce(k.ad, u.ad), coalesce(aktarim.tarih(k.odeme_
        -- karar zamanı: ayrı sütun, yoksa Sonuç'un başındaki tarih ("03.09.2026 · bitiş 03.10.2026"), yoksa gönderim
        case when k.durum <> 'bekliyor' then coalesce(aktarim.zaman(k.karar_ham), aktarim.zaman(k.sonuc), aktarim.zaman(k.zaman_ham)) end,
        coalesce(aktarim.zaman(k.zaman_ham), now()), k.kaynak
-from k_dekont k join public.uyeler u on u.id = k.uye_id
+from aktarim.k_dekont k join public.uyeler u on u.id = k.uye_id
 on conflict (kaynak) do update set
   durum = excluded.durum, sonuc = excluded.sonuc, karar_at = excluded.karar_at, tutar = excluded.tutar
   where public.dekontlar.durum = 'bekliyor' and public.dekontlar.karar_veren is null;
@@ -200,26 +202,26 @@ on conflict (ref) do nothing;
 
 insert into public.odemeler (uye_id, tarih, tutar, yol, aciklama, ref)
 select u.id, k.onay, aktarim.aidat(), 'havale', 'Sheets · ödeme onayı', 'sheets:uye:' || u.id || ':' || k.onay
-from k_uye k join public.uyeler u on u.eposta = k.eposta
+from aktarim.k_uye k join public.uyeler u on u.eposta = k.eposta
 where k.gecerli and k.onay is not null
   and not exists (select 1 from public.odemeler o where o.uye_id = u.id and o.tarih between k.onay - 7 and k.onay + 7)
 on conflict (ref) do nothing;
 
 -- Başlangıç = ilk ödeme; durum bitişten (Sheets'te "dondur" yazıyorsa donduruldu)
 update public.uyeler u set baslangic = least(u.baslangic, (select min(o.tarih) from public.odemeler o where o.uye_id = u.id))
-from k_uye k where k.gecerli and u.eposta = k.eposta;
+from aktarim.k_uye k where k.gecerli and u.eposta = k.eposta;
 update public.uyeler u set durum = case
     when lower(coalesce(k.durum_ham, '')) ~ 'dondur' then 'donduruldu'
     when u.bitis > public.istanbul_bugun() then 'aktif'
     when u.bitis is not null then 'doldu'
     else 'basvuru' end::uye_durum
-from k_uye k where k.gecerli and u.eposta = k.eposta;
+from aktarim.k_uye k where k.gecerli and u.eposta = k.eposta;
 
 -- Sheets'te yenileme hatırlatması bu bitiş için zaten gittiyse yeni sistem ikinci kez göndermez
 insert into public.eposta_kuyrugu (sablon, alici, uye_id, veri, tekil, durum, son_hata, gonderim_at)
 select 'yenileme', u.eposta, u.id, jsonb_build_object('ad', u.ad, 'bitis', to_char(u.bitis, 'DD.MM.YYYY')),
        'yenileme:' || u.id || ':' || u.bitis, 'gonderildi', 'Sheets''ten gönderilmiş (aktarım)', k.hatirlatma::timestamptz
-from k_uye k join public.uyeler u on u.eposta = k.eposta
+from aktarim.k_uye k join public.uyeler u on u.eposta = k.eposta
 where k.gecerli and k.hatirlatma is not null and u.bitis is not null and k.hatirlatma >= u.bitis - 7
 on conflict (tekil) do nothing;
 
@@ -254,6 +256,9 @@ insert into aktarim.sorunlar
 select 'acik_cagri', h.satir, 'iletisim', null, 'İletişim bilgisi yok'
 from aktarim.ham h where h.sayfa = 'acik_cagri'
   and aktarim.al(h.veri, 'e_posta_veya_telefon_numaran', 'iletisim', 'e_posta', 'telefon') is null;
+
+-- Ara tablolar (SQL Editor geçici tabloları ifadeler arasında tutmadığı için aktarim şemasında)
+drop table aktarim.k_uye, aktarim.k_dekont;
 
 commit;
 
