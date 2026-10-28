@@ -52,10 +52,18 @@
     return formGonder('tanisma', { ad, eposta, etkinlik: id });
   };
 
+  // "Yakında yayındayız" kapağı (index.html) yalnız yönetimde "Yakında" modu kapatılınca kalkar; ayar okunamazsa kapak
+  // kalır (açılmamış bölümler, fiyatlar görünmesin)
+  function kapagiKaldir() {
+    ['fc-yakinda', 'fc-yakinda-stil'].forEach((id) => { const k = document.getElementById(id); if (k) k.remove(); });
+    document.getElementById('kok').removeAttribute('inert');
+  }
+
   async function basla() {
     const kok = document.getElementById('kok');
     try {
       window.FCS = await veriYukle();
+      if (window.FCS.ayar.yakinda === false) kapagiKaldir();
     } catch (h) {
       console.error(h); // veri gelmezse örnek liste değil "Etkinlikler şu an yüklenemiyor" görünür
       window.FCS_HATA = true;
