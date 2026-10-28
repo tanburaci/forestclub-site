@@ -808,6 +808,24 @@ a{color:#111111}a:hover{color:#000000}
                     </div>
                   </div>
                 </sc-if>
+                <!-- Fatura kesme rehberi: GİB e-Arşiv portalında elle; "Faturası kesilecek" süzgecinde görünür -->
+                <sc-if value="{{ faturaRehberi }}" hint-placeholder-val="{{ false }}">
+                  <details open style="background: #FFFFFF; border: 2.5px solid #111111; border-radius: 14px; box-shadow: 5px 5px 0 #111111; padding: 16px 20px; font-size: 15px; line-height: 1.55">
+                    <summary style="font-weight: 700; font-size: 17px; cursor: pointer">Fatura nasıl kesilir? (GİB e-Arşiv portalı, ücretsiz)</summary>
+                    <ol style="margin: 12px 0 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px">
+                      <li><strong>Giriş:</strong> <a href="https://earsivportal.efatura.gov.tr" target="_blank" rel="noopener">earsivportal.efatura.gov.tr</a>. Kullanıcı kodu ve şifre İnternet Vergi Dairesi'nden ya da mali müşavirden alınır.</li>
+                      <li><strong>Fatura oluştur:</strong> Belge İşlemleri › 5000/30000 Fatura Oluştur. Aşağıdaki listede satırdaki <em>Bilgileri kopyala</em> düğmesi alıcıyı, hizmeti ve tutarı panoya alır.
+                        <ul style="margin: 6px 0 0; padding-left: 18px">
+                          <li><strong>Alıcı:</strong> üyenin adı soyadı. TCKN bilinmiyorsa 11111111111; adres olarak Urla / İzmir yeterli.</li>
+                          <li><strong>Hizmet:</strong> “Forest Club Urla üyeliği – 30 gün” (destek için “Forest Club Urla topluluk desteği”); miktar 1. Birim fiyatı KDV hariç gir, KDV oranını mali müşavir söyler; fatura toplamı listedeki tutarla aynı olmalı.</li>
+                        </ul>
+                      </li>
+                      <li><strong>Onayla:</strong> Düzenlenen Belgeler'de faturayı seç › Onayla; telefona gelen SMS koduyla. Onaydan sonra değiştirilemez, yalnız iptal edilir.</li>
+                      <li><strong>Gönder:</strong> Portal faturayı müşteriye göndermez; PDF'i indirip üyeye e-postayla ya da WhatsApp'tan yolla.</li>
+                      <li><strong>İşaretle:</strong> Burada o satırda <em>Kesildi</em>'ye bas, fatura numarasını yaz (örn. GIB2026000000001). Fatura gerekmeyen gelirde <em>Gerekmez</em>.</li>
+                    </ol>
+                  </details>
+                </sc-if>
                 <div role="group" aria-label="Kayıt türü filtresi" style="display: flex; flex-wrap: wrap; gap: 8px">
                   <sc-for list="{{ mFiltreler }}" as="f" hint-placeholder-count="4">
                     <button type="button" class="{{ f.sinif }}" onClick="{{ f.sec }}">{{ f.ad }}</button>
@@ -828,7 +846,7 @@ a{color:#111111}a:hover{color:#000000}
                           <td style="color: #5E5E5E; font-size: 14px">{{ h.belge }}</td>
                           <td style="white-space: nowrap">
                             <sc-if value="{{ h.faturaBekliyor }}" hint-placeholder-val="{{ false }}">
-                              <span style="display: inline-flex; gap: 6px"><button type="button" class="fc-btn" onClick="{{ h.faturaKes }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">Kesildi</button><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ h.faturaGerekmez }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">Gerekmez</button></span>
+                              <span style="display: inline-flex; gap: 6px"><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ h.faturaKopyala }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">{{ h.faturaKopyaYazi }}</button><button type="button" class="fc-btn" onClick="{{ h.faturaKes }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">Kesildi</button><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ h.faturaGerekmez }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">Gerekmez</button></span>
                             </sc-if>
                             <sc-if value="{{ h.faturaVar }}" hint-placeholder-val="{{ false }}">
                               <span style="{{ h.faturaRozet }}">{{ h.faturaYazi }}</span>
@@ -1475,7 +1493,7 @@ class Component extends DCLogic {
       // Muhasebedeki katılımcı sayısı = yoklamada gelenler (geçmiş etkinlikler)
       katilimci: Object.fromEntries(Object.entries(this.DEMO.kayitlar).filter(([k]) => k.split('|')[0] <= this.BUGUN).map(([k, v]) => [k, v.gelen.length])),
       arama: '', uyeSayisi: 100,
-      mAy: '2026-10', mEtk: '', mGorunum: 'hareketler', mFiltre: 'tumu', mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mMesaj: '',
+      mAy: '2026-10', mEtk: '', mGorunum: 'hareketler', mFiltre: 'tumu', faturaKopya: null, mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mMesaj: '',
       // Envanter (örnek kalemler; satın alınanların gideri muhasebede ayrıca kayıtlı)
       envanter: window.FC ? window.FC.envanter : [
         { id: 1, ad: 'Yoga matı', kategori: 'Yoga / hareket', adet: 6, birim: 'adet', giris: 'satin', tarih: '2026-09-03', tutar: 4800, kasa: 'banka', konum: 'Depo' },
@@ -2080,6 +2098,16 @@ class Component extends DCLogic {
           faturaYaz(h.id, { fatura: 'kesildi', faturaNo: no.trim().slice(0, 60), faturaTarih: this.BUGUN });
         },
         faturaGerekmez: () => faturaYaz(h.id, { fatura: 'gerekmez', faturaNo: '', faturaTarih: '' }),
+        // Portala yapıştırmak için: alıcı (açıklamadaki "· " sonrası), hizmet, tutar
+        faturaKopyaYazi: this.state.faturaKopya === h.id ? 'Kopyalandı ✓' : 'Bilgileri kopyala',
+        faturaKopyala: () => {
+          const alici = h.kategori === 'Aidat' && h.aciklama.includes('·') ? h.aciklama.split('·').pop().trim() : '';
+          const hizmet = h.kategori === 'Destek' ? 'Forest Club Urla topluluk desteği' : h.kategori === 'Aidat' ? 'Forest Club Urla üyeliği – 30 gün' : h.aciklama;
+          const metin = `Alıcı: ${alici || '(adı yaz)'}\nTCKN: 11111111111\nAdres: Urla / İzmir\nHizmet: ${hizmet}\nMiktar: 1\nToplam (KDV dahil): ${String(h.tutar).replace('.', ',')} TL\nTarih: ${tarihYaz(h.tarih)}`;
+          const bitti = () => this.setState({ faturaKopya: h.id });
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(metin).then(bitti, () => window.prompt('Kopyala:', metin));
+          else window.prompt('Kopyala:', metin);
+        },
         faturaGeriAl: () => faturaYaz(h.id, { fatura: '', faturaNo: '', faturaTarih: '' }),
       }));
 
@@ -2274,6 +2302,7 @@ class Component extends DCLogic {
       muhasebeSekme: sekme === 'muhasebe',
       kasalar, aylar, ayOzet, hareketSatirlari, etkMaliyet, etkOzetMetin, kasaTablo,
       hareketYok: !hareketSatirlari.length,
+      faturaRehberi: mFiltre === 'fatura',
       hareketYokMetin: mFiltre === 'fatura' ? 'Faturası kesilecek gelir yok ✓' : mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
       mEtkFiltre: [{ id: '', ad: 'Tüm kayıtlar' }, ...etkGorunum.filter((x) => x.tarih.startsWith(mAy) || `${x.tarih}|${x.ad}` === mEtk)
         .map((x) => ({ id: `${x.tarih}|${x.ad}`, ad: `${x.gun}.${x.tarih.slice(5, 7)} ${x.ad}` }))]
