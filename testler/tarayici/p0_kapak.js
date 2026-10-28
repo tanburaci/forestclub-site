@@ -25,6 +25,7 @@ const veri = {
       await page.goto(`${SITE}/`);
       await page.getByText('Breakfast Club').first().waitFor({ timeout: 15000 });
       dogru(await page.getByRole('heading', { name: /Yakında yayındayız/ }).isVisible(), `${ad}: kapak görünüyor`);
+      dogru(!(await page.getByText(/Örnek duyuru/).isVisible().catch(() => false)), `${ad}: sahte "Örnek duyuru" şeridi görünmüyor`);
       dogru(await page.getByText('Ağaçların altında').first().count() > 0 || await page.locator('#kok *').count() > 50, `${ad}: site arkada çizildi`);
       await page.mouse.wheel(0, 900);
       await page.waitForTimeout(400);
