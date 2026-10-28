@@ -15,11 +15,11 @@
 <meta property="og:locale" content="tr_TR">
 <link rel="icon" href="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
-<script src="/js/dc.js?v=202611161200"></script>
-<script src="/sayfalar/site.dc.js?v=202611161200"></script>
-<script src="/js/ayar.js?v=202611161200"></script>
-<script src="/js/ortak.js?v=202611161200"></script>
-<script src="/js/site.js?v=202611161200" defer></script>
+<script src="/js/dc.js?v=202611171200"></script>
+<script src="/sayfalar/site.dc.js?v=202611171200"></script>
+<script src="/js/ayar.js?v=202611171200"></script>
+<script src="/js/ortak.js?v=202611171200"></script>
+<script src="/js/site.js?v=202611171200" defer></script>
 <!-- YAKINDA KAPAĞI: site görünür ve kaydırılır ama hiçbir yeri tıklanmaz, klavyeyle de ulaşılmaz (#kok inert);
      tıklananlar karttaki Instagram ve sözleşme bağlantıları (WhatsApp numaraları açılışa kadar görünmez).
      Yönetim › İletişim › Site durumu'nda "Yakında" modu kapatılınca site.js kapağı kaldırır; ayar okunamazsa kapak kalır. -->
@@ -30,11 +30,13 @@
 #fc-yakinda p{margin:0 0 16px;line-height:1.5;color:#3A3A3A}
 #fc-yakinda .ig{display:inline-block;font:700 15px Figtree,sans-serif;color:#FFFFFF;background:#111111;border:2.5px solid #111111;border-radius:999px;padding:10px 18px;text-decoration:none}
 #fc-yakinda .ig:hover{background:#FFFFFF;color:#111111}
-#fc-yakinda .yasal{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;margin-top:16px;font-size:13px}
-#fc-yakinda .yasal a{color:#3A3A3A}
+#fc-yakinda .yasal{display:flex;flex-wrap:wrap;gap:0 10px;justify-content:center;margin-top:16px;font-size:13px}
+#fc-yakinda .yasal a{color:#3A3A3A;display:inline-block;padding:6px 2px}
 #fc-yakinda .logo{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px;font:700 12px Figtree,sans-serif}
 #fc-yakinda .logo span{border:2px solid #111111;border-radius:7px;padding:3px 8px}
 @media (max-width:480px){#fc-yakinda h1{font-size:44px}}
+/* Yatay telefonda kart ekrana sığmıyordu: kapak kendi içinde kayar, kart üstten başlar */
+@media (max-height:520px){#fc-yakinda{align-items:flex-start;overflow-y:auto}}
 /* Tasarımdan kalan "Örnek duyuru" şeridi açılışa kadar gizli (gerçek duyuru yönetim panelinden gelecek) */
 #kok [role="alert"][style*="F6C945"]{display:none !important}
 /* Açılışa kadar yalnız ilk ekran ve "Biz Kimiz?" görünür: etkinlikler, fiyatlar, üyelik, başvuru, SSS ve alt bilgi gizli */

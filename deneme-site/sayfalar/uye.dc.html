@@ -30,13 +30,16 @@ a{color:#111111}a:hover{color:#000000}
   .fu-ust a img{width:32px !important}
   .fu-ad{display:none}
   .fu-ust a span{display:none}
-  .fu-siteye{font-size:13px;padding:6px 10px}
+  .fu-siteye{font-size:13px;padding:6px 10px;min-height:40px;display:inline-flex;align-items:center;box-sizing:border-box}
+  .fu-ust a:first-child{min-width:40px;min-height:40px}
   .fu-menu{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px !important}
-  .fu-sekme{padding:6px 4px;font-size:13px;min-height:36px;border-radius:10px;background:#F0F0EE;text-align:center}
+  .fu-sekme{padding:6px 4px;font-size:13px;min-height:40px;border-radius:10px;background:#F0F0EE;text-align:center}
   .fu-sekme-aktif{background:#111111}
 }
 /* Telefonda üst kısım sabit kalınca ekranın üçte birini kaplıyordu */
 @media (max-width: 760px){.fu-ust{position:static !important}}
+/* Telefonda ekranın altına yapışan sepet ödeme adımında ekranın çoğunu kaplıyordu: en fazla %70, içi kayar */
+@media (max-width: 760px){.fu-sepet{max-height:70vh;overflow-y:auto;overscroll-behavior:contain}}
 .fu-input{font:400 16px Figtree,sans-serif;width:100%;box-sizing:border-box;padding:12px 14px;border:2px solid #111111;border-radius:12px;background:#FFFFFF;color:#000000;min-height:46px}
 .fu-kart{background:#FFFFFF;border-radius:14px;border:2.5px solid #111111;box-shadow:5px 5px 0 #111111;padding:24px;box-sizing:border-box}
 .fu-siteye{font:600 14px Figtree,sans-serif;color:#111111;text-decoration:none;border:2px solid #111111;border-radius:999px;padding:7px 12px;white-space:nowrap}
@@ -262,7 +265,7 @@ a{color:#111111}a:hover{color:#000000}
 
           <!-- Sepet: üye girişli olduğu için bilgi sorulmaz; canlıda havale / EFT + dekont, onaylanınca biletler e-postayla -->
           <sc-if value="{{ sepetVar }}" hint-placeholder-val="{{ false }}">
-            <section class="fu-kart" style="position: sticky; bottom: 12px; display: flex; flex-direction: column; gap: 12px; padding: 18px">
+            <section class="fu-kart fu-sepet" style="position: sticky; bottom: 12px; display: flex; flex-direction: column; gap: 12px; padding: 18px">
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap">
                 <h2 style="margin: 0; font-size: 20px">Randevuların</h2>
                 <span style="font-size: 20px; font-weight: 700">{{ sepetToplam }}</span>

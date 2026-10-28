@@ -39,6 +39,13 @@ a{color:#111111}a:hover{color:#000000}
 .fc-tablo th{text-align:left;font-weight:600;color:#5E5E5E;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:12px 14px;border-bottom:1px solid #DADAD8;white-space:nowrap}
 .fc-tablo td{padding:14px;border-bottom:1px solid #ECECEA;white-space:nowrap}
 .fc-tablo tr:last-child td{border-bottom:0}
+/* Telefonda: menü 3 sütunlu küçük düğmeler (dokuz sekme dört satır tutuyordu), form sorusunda metin ve tür alt alta */
+@media (max-width: 640px){
+  .fc-menu{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px !important;flex:1 1 100% !important}
+  .fc-menu .fc-sekme{padding:6px 4px;font-size:14px;min-height:40px;border-radius:10px;background:#F0F0EE;text-align:center}
+  .fc-menu .fc-sekme-aktif{background:#111111}
+}
+@media (max-width: 560px){.fc-soru-izgara{grid-template-columns:minmax(0, 1fr) !important}}
 </style>
 </helmet>
 
@@ -143,7 +150,7 @@ a{color:#111111}a:hover{color:#000000}
             <img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="" style="width: 44px">
             <span style="font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 32px; color: #111111; line-height: 1">Forest Club Urla</span>
           </div>
-          <nav aria-label="Ana menü" style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto">
+          <nav class="fc-menu" aria-label="Ana menü" style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1 1 auto">
             <sc-for list="{{ sekmeler }}" as="s" hint-placeholder-count="4">
               <button type="button" class="{{ s.sinif }}" onClick="{{ s.sec }}">{{ s.ad }}</button>
             </sc-for>
@@ -693,7 +700,7 @@ a{color:#111111}a:hover{color:#000000}
               <input class="fc-input" type="text" inputmode="decimal" placeholder="örn. 2,99" value="{{ komisyonOran }}" onChange="{{ komisyonYaz }}" disabled="{{ yakindaKapali }}" title="{{ yakindaIpucu }}" style="width: 110px">
               <span style="font-weight: 400; color: #5E5E5E">{{ komisyonNot }}</span>
             </label>
-            <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
+            <label style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
               <input type="checkbox" checked="{{ kartOdeme }}" onChange="{{ kartOdemeDegis }}" style="width: 20px; height: 20px">
               Üyeler aidatı kartla ödeyebilsin (iyzico)
               <span style="font-weight: 400; color: #5E5E5E">Sitedeki “Destek ol” penceresinde de kartla ödeme açılır. Kapalıyken üye paneli havale + dekont sayfasına yönlendirir, destek yalnız IBAN ile gelir.</span>
@@ -1403,7 +1410,7 @@ a{color:#111111}a:hover{color:#000000}
                 </label>
                 <sc-for list="{{ fmSorular }}" as="s" hint-placeholder-count="2">
                   <div style="border: 2px solid #111111; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
-                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 10px">
+                    <div class="fc-soru-izgara" style="display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 10px">
                       <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">{{ s.etiket }}
                         <input class="fc-input" type="text" maxlength="200" value="{{ s.metin }}" onChange="{{ s.metinYaz }}">
                       </label>
