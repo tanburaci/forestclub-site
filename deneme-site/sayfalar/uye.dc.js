@@ -126,7 +126,7 @@ class Component extends DCLogic {
       const [, m, d] = e.tarih.split('-');
       let durum, rozet, dugme, islem, dugmeSinif = 'fu-btn';
       if (e.ben === 'kayitli') {
-        durum = 'Yerin ayrıldı ✓'; rozet = pill('#C9E33A', '#111111'); dugme = 'Randevumu iptal et'; dugmeSinif = 'fu-btn fu-btn-ikincil';
+        durum = 'Yerin ayrıldı ✓'; rozet = pill('#C9E33A', '#111111'); dugme = 'Gelemeyeceğim'; dugmeSinif = 'fu-btn fu-btn-ikincil';
         islem = () => kGuncelle(id, { ben: 'yok', kayitli: e.kayitli - 1 });
       } else if (e.ben === 'bekleme') {
         durum = `Bekleme listesinde ${e.sira}. sıradasın`; rozet = pill('#F6C945', '#111111'); dugme = 'Listeden çık'; dugmeSinif = 'fu-btn fu-btn-ikincil';

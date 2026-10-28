@@ -975,8 +975,8 @@ class Component extends DCLogic {
     const faturasiz = hareketler.filter((h) => h.tur === 'gelir' && !h.fatura);
     const faturaYaz = (id, degisiklik) => this.setState((s) => ({ hareketler: s.hareketler.map((x) => (x.id === id ? { ...x, ...degisiklik } : x)) }));
     const hareketSatirlari = (mFiltre === 'fatura' ? faturasiz : (mEtk ? etkH : ayH).filter((h) => mFiltre === 'tumu' || h.tur === mFiltre))
-      .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id)
-      .map((h) => ({
+      .sort((a, b) => a.tarih.localeCompare(b.tarih) || a.id - b.id)
+      .map((h) => ({ tur: h.tur, tutar: h.tutar,
         tarihYazi: tarihYaz(h.tarih), turAd: TUR_AD[h.tur], rozet: TUR_ROZET[h.tur], aciklama: h.aciklama, otomatik: h.otomatik,
         baglam: h.tur === 'aktarim' ? 'Kasalar arası' : [h.kategori, h.etk ? etkAdi[h.etk] : (h.tur === 'gider' ? 'Genel' : '')].filter(Boolean).join(' · '),
         kasaAd: h.tur === 'aktarim' ? `${KASA[h.kasa]} → ${KASA[h.hedef]}` : KASA[h.kasa],
@@ -1003,6 +1003,18 @@ class Component extends DCLogic {
         },
         faturaGeriAl: () => faturaYaz(h.id, { fatura: '', faturaNo: '', faturaTarih: '' }),
       }));
+
+    // Ayrı tablolar: gelirler, giderler, kasalar arası aktarımlar (boş olan gösterilmez)
+    const GRUP = [
+      { tur: 'gelir', baslik: mFiltre === 'fatura' ? 'Faturası kesilecek gelirler' : 'Gelirler', isaret: '+', stil: 'background:#EEF6E6' },
+      { tur: 'gider', baslik: 'Giderler', isaret: '−', stil: 'background:#F8ECE8' },
+      { tur: 'aktarim', baslik: 'Kasalar arası aktarımlar', isaret: '', stil: 'background:#F0F0EE' },
+    ];
+    const hareketGruplari = GRUP.map((g) => {
+      const satirlar = hareketSatirlari.filter((h) => h.tur === g.tur);
+      return { baslik: g.baslik, baslikStil: g.stil, satirlar, adet: `· ${satirlar.length} kayıt`, faturaSutun: g.tur === 'gelir',
+        toplamYazi: `Toplam ${g.isaret}${TL(satirlar.reduce((t, h) => t + h.tutar, 0))}` };
+    }).filter((g) => g.satirlar.length);
 
     // Etkinlik maliyeti: giderler − katılım geliri = kulübe maliyeti; katılımcıya bölünür
     const kat = this.state.katilimci;
@@ -1213,7 +1225,7 @@ class Component extends DCLogic {
       komisyonOran: this.state.komisyonOran,
       komisyonYaz: (e) => this.setState({ komisyonOran: e.target.value }),
       muhasebeSekme: sekme === 'muhasebe',
-      kasalar, aylar, ayOzet, hareketSatirlari, etkMaliyet, etkOzetMetin, kasaTablo,
+      kasalar, aylar, ayOzet, hareketSatirlari, hareketGruplari, etkMaliyet, etkOzetMetin, kasaTablo,
       hareketYok: !hareketSatirlari.length,
       faturaRehberi: mFiltre === 'fatura',
       hareketYokMetin: mFiltre === 'fatura' ? 'Faturası kesilecek gelir yok ✓' : mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
