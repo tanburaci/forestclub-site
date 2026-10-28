@@ -68,7 +68,7 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     await page.getByRole('button', { name: 'İptal / ertele' }).first().click();
     await page.getByRole('button', { name: 'İptal et' }).click();
     await page.getByRole('button', { name: 'Duyur', exact: true }).click();
-    await page.getByText(/Duyuru 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
+    await page.getByText(/ve 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
     const ip = v.rpcler.find((x) => x[0] === 'etkinlik_durum_degistir');
     dogru(ip && /iptal edildi/.test(ip[1].p_duyuru), `iptal duyuru metni sunucuya gitti (${ip && ip[1].p_duyuru})`);
     await page.getByRole('button', { name: 'Duyuruyu düzenle' }).first().click();
@@ -154,16 +154,16 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     await s2.page.waitForTimeout(1200);
     dogru(s2.istekler.some((x) => x.yol === 'user' && x.yontem === 'PUT' && x.govde.password === 'ormanda2026'), 'sıfırlama bağlantısıyla yeni şifre kaydedildi');
 
-    // Deneme hesapları: deneme sitesinde görünür, gerçek yayında (deneme: false) gizli
+    // Deneme hesapları: yayında (deneme: false) gizli; yalnız deneme: true iken görünür
     const g1 = await sayfaAc(tarayici, uv, null);
     await g1.page.goto(`${SITE}/uye/`);
     await g1.page.getByText('E-postana gelen giriş bağlantısıyla ya da şifrenle gir.').waitFor({ timeout: 15000 });
-    dogru(await g1.page.getByText('Deneme hesapları').count() === 1, 'deneme sitesinde deneme hesapları görünüyor');
+    dogru(await g1.page.getByText('Deneme hesapları').count() === 0, 'yayında deneme hesapları gizli');
     const g2 = await sayfaAc(tarayici, uv, null);
-    await g2.page.route(`${SITE}/js/ayar.js**`, async (r) => { const y = await r.fetch(); r.fulfill({ response: y, body: (await y.text()).replace('deneme: true', 'deneme: false') }); });
+    await g2.page.route(`${SITE}/js/ayar.js**`, async (r) => { const y = await r.fetch(); r.fulfill({ response: y, body: (await y.text()).replace('deneme: false', 'deneme: true') }); });
     await g2.page.goto(`${SITE}/uye/`);
     await g2.page.getByText('E-postana gelen giriş bağlantısıyla ya da şifrenle gir.').waitFor({ timeout: 15000 });
-    dogru(await g2.page.getByText('Deneme hesapları').count() === 0, 'gerçek yayında deneme hesapları gizli');
+    dogru(await g2.page.getByText('Deneme hesapları').count() === 1, 'deneme: true iken deneme hesapları görünüyor');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
   } finally {

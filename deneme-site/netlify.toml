@@ -1,11 +1,11 @@
-# Forest Club Urla · deneme sitesi (yayında değil; arama motorlarına kapalı)
+# Forest Club Urla · www.forestcluburla.com. Ana sayfa arama motorlarına açık; paneller, dekont sayfası ve tasarım
+# parçaları (sayfalar/) kapalı (X-Robots-Tag aşağıda).
 [build]
   publish = "."
 
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Robots-Tag = "noindex, nofollow"
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
     # Sayfa betikleri derlenmiş dosyalardan (sayfalar/*.dc.js) gelir: eval yok, satır içi betik yok
@@ -13,3 +13,38 @@
     X-Content-Type-Options = "nosniff"
     Permissions-Policy = "camera=(self), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+[[headers]]
+  for = "/uye"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/uye/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/yonetim"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/yonetim/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/dekont"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/dekont/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/sayfalar/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

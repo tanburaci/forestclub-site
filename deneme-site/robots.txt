@@ -1,2 +1,6 @@
+# Forest Club Urla: ana sayfa arama motorlarına açık. Üye / yönetim paneli ve dekont sayfası "noindex"
+# başlığıyla kapalı (netlify.toml); taranmaları engellenmez ki o başlığı görebilsinler.
 User-agent: *
-Disallow: /
+Allow: /
+
+Sitemap: https://www.forestcluburla.com/sitemap.xml
