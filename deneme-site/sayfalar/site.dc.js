@@ -4,7 +4,7 @@ window.DC.sinif('/sayfalar/site.dc.html', function (DCLogic) {
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis', destek: '', dsTutar: 1000, dsElle: false, dsTutarYazi: '', dsHata: '', dsKopya: '', waSecAcik: false };
+    this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', hak: null, sDosya: null, satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis', destek: '', dsTutar: 1000, dsElle: false, dsTutarYazi: '', dsHata: '', dsKopya: '', waSecAcik: false };
     this.bekle = null;
     this.kaydir = () => {
       if (this.bekle) return;
@@ -188,7 +188,9 @@ class Component extends DCLogic {
       return { sepet: s2, sHata: '' };
     });
     const sAdim = this.state.sAdim;
-    const ADIMLAR = [{ id: 'sepet', ad: '1 · Sepet' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
+    const ADIMLAR = canli ? [{ id: 'sepet', ad: '1 · Sepet' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'dekont', ad: '3 · Ödeme' }]
+      : [{ id: 'sepet', ad: '1 · Sepet' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
+    const hak = this.state.hak;
     const sepetToplamAdet = Object.values(sepet).reduce((t, n) => t + n, 0);
     return {
       uyeDugme: this.state.uyeGirisli ? 'Panelim' : 'Üye girişi',
@@ -198,13 +200,23 @@ class Component extends DCLogic {
       sepetAdet: String(sepetToplamAdet), sepetEtiket: `Sepeti aç, ${sepetToplamAdet} bilet`,
       sepetAcik: this.state.sepetAcik,
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
-      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(st.sAdim === 'tamam' ? { sAdim: 'sepet' } : {}) })),
+      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
       sAdimlar: ADIMLAR.map((a) => {
-        const sira = ADIMLAR.findIndex((x) => x.id === (sAdim === 'hata' ? 'bilgi' : sAdim));
+        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont' }[sAdim] || sAdim));
         const i = ADIMLAR.indexOf(a);
         return { ad: a.ad, stil: `border-radius:999px;padding:5px 10px;border:2px solid #111111;${i <= sira ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
       }),
       sSepette: sAdim === 'sepet', sBilgide: sAdim === 'bilgi', sTamam: sAdim === 'tamam', sHatali: sAdim === 'hata',
+      sDekontta: sAdim === 'dekont', sGonderildi: sAdim === 'gonderildi',
+      hakTutarYazi: hak ? TL(Number(hak.tutar)) : '', hakAdetYazi: hak ? `${hak.adet} bilet` : '', hakIndirimli: !!hak && Number(hak.tutar) < hak.araToplam,
+      odemeAlici: odemeBilgi.alici, odemeIban: odemeBilgi.iban,
+      sDekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ sDosya: f || null, sHata: '' }); },
+      sDekontGonder: () => {
+        this.setState({ sHata: 'Yükleniyor…' });
+        window.FCSBiletDekont(hak, this.state.sEposta, this.state.sDosya)
+          .then(() => this.setState({ sAdim: 'gonderildi', sepet: {}, hak: null, sDosya: null, sHata: '' }))
+          .catch((h) => this.setState({ sHata: h.message }));
+      },
       sepetSatirlar: sepetteKi.map((b) => {
         const key = `${b.tarih}|${b.ad}`;
         const n = sepet[key];
@@ -216,8 +228,10 @@ class Component extends DCLogic {
         };
       }),
       araToplamYazi: TL(araToplam), indirimYazi: indirim ? `−${TL(indirim)}` : '—', toplamYazi: toplam ? TL(toplam) : '0 TL',
-      uyeIndirimi: uyeMi && indirim > 0,
-      odemeDugme: toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)',
+      uyeIndirimi: !canli && uyeMi && indirim > 0,
+      uyeFiyatNotu: canli ? 'Aktif üyeysen önce üye girişi yap; üye fiyatı ödeme adımında uygulanır (her etkinlikte 1 kişi için).'
+        : 'Aktif üyeysen, üye fiyatı bir sonraki adımda e-postanla kontrol edilip uygulanır (her etkinlikte 1 kişi için).',
+      odemeDugme: canli ? 'Ödemeye geç · havale / EFT' : toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)',
       sAd: this.state.sAd, sEposta: this.state.sEposta, sTel: this.state.sTel, sOnay: this.state.sOnay, sHata: this.state.sHata,
       sAdYaz: (e) => this.setState({ sAd: e.target.value, sHata: '' }),
       sEpostaYaz: (e) => this.setState({ sEposta: e.target.value, sHata: '' }),
@@ -234,6 +248,16 @@ class Component extends DCLogic {
         // Ödeme sırasında kontenjan yeniden kontrol edilir
         const asan = sepetteKi.find((b) => sepet[`${b.tarih}|${b.ad}`] > kalanYer(b));
         if (asan) return this.setState({ sHata: `${asan.ad} için yeterli yer kalmadı.` });
+        // Canlıda: sunucu isteği açar ve tutarı hesaplar (üye fiyatı oturumdan), sonra havale + dekont
+        if (canli) {
+          if (!window.FCSBiletAc) return this.setState({ sHata: 'Bilet satışı şu an yapılamıyor; biraz sonra tekrar dene.' });
+          const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
+          this.setState({ sHata: 'Hazırlanıyor…' });
+          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim() })
+            .then((h) => this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' }))
+            .catch((h) => this.setState({ sHata: h.message }));
+          return;
+        }
         let no = 4821;
         const biletler = [];
         sepetteKi.forEach((b) => { for (let i = 0; i < sepet[`${b.tarih}|${b.ad}`]; i++) biletler.push({ ad: b.ad, zaman: `${b.gun} ${b.ay} · ${b.saat}`, kod: `FC-B-${no++}` }); });

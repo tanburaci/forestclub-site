@@ -1,7 +1,7 @@
 // Forest Club Urla · ana site (deneme sitesi): etkinlikler ve kalan yerler Supabase'den; üyelik başvurusu, tanışma
 // bileti ve Açık Çağrı spam korumalı form-gonder Edge Function'dan sunucudaki işlevlere gider. Ziyaretçi tablolara
 // doğrudan yazamaz.
-// Sepet / kartla ödeme ve Açık Çağrı şimdilik yalnız ekranda (iyzico sonra).
+// Etkinlik bileti: sepet → sunucuda istek (form-gonder bilet_adres) → havale + dekont → yönetici onayı.
 (function () {
   'use strict';
   const A = window.FC_AYAR;

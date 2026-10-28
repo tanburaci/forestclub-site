@@ -1,10 +1,12 @@
-// Forest Club Urla · anonim formların tek kapısı: üyelik başvurusu, tanışma bileti, Açık Çağrı ve dekont.
+// Forest Club Urla · anonim formların tek kapısı: üyelik başvurusu, tanışma bileti, Açık Çağrı, dekont ve etkinlik bileti.
 // Sıra: IP başına saatlik sınır → Cloudflare Turnstile doğrulaması → SQL işlevi (service_role).
 // Dekont iki adımda gelir: "dekont_adres" yükleme hakkı ve tek kullanımlık imzalı yükleme adresi verir (Turnstile'lı),
 // dosya tarayıcıdan doğrudan depoya yüklenir, "dekont_kaydet" kaydı açar (yalnız bu e-postaya verilmiş yol).
 //
 // "Yakında" modunda (ayarlar.yakinda) üyelik başvurusu ve tanışma bileti alınmaz; Açık Çağrı ve dekont açık.
 // "destek": kartla destek; iyzico ödeme sayfası açılır, dönüş odeme-donus?tur=destek (ayarlar.kart_odeme açıkken).
+// Etkinlik bileti havale + dekontla: "bilet_adres" isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
+// imzalı yükleme adresi verir, dekont yüklenince "bilet_kaydet" isteği yöneticinin onayına düşürür.
 //
 // Secrets: TURNSTILE_SECRET (zorunlu), IP_TUZU (isteğe bağlı; IP özetine katılır); destek için IYZICO_API_KEY,
 // IYZICO_SECRET_KEY, IYZICO_ADRES, isteğe bağlı IYZICO_TCKN
@@ -12,8 +14,11 @@ import { CORS, json, servisIstemcisi } from '../_ortak/ortak.ts';
 import { fiyat, iyzico } from '../_ortak/iyzico.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
-const SINIR: Record<string, number> = { basvuru: 5, tanisma: 5, cagri: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, hepsi: 30 };
-const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet']);  // yol zaten Turnstile'lı "dekont_adres" adımında verildi
+const SINIR: Record<string, number> = {
+  basvuru: 5, tanisma: 5, cagri: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, hepsi: 30,
+};
+// yol zaten Turnstile'lı "dekont_adres" / "bilet_adres" adımında verildi
+const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet', 'bilet_kaydet']);
 const UZANTI: Record<string, string> = {
   '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
   '.heic': 'image/heic', '.heif': 'image/heif', '.webp': 'image/webp',
@@ -123,6 +128,26 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
     }
     case 'dekont_kaydet':
       return rpc('dekont_kaydet', { p_eposta: metin(v.eposta, 200), p_dosya: metin(v.yol, 300) });
+    case 'bilet_adres': {
+      // Oturum anahtarı geldiyse doğrulanır (üye fiyatı yalnız gerçek oturuma)
+      let kullanici: string | null = null;
+      if (typeof v.oturum === 'string' && v.oturum.length < 4000) {
+        const { data } = await servisIstemcisi().auth.getUser(v.oturum);
+        kullanici = data?.user?.id ?? null;
+      }
+      const kalemler = (Array.isArray(v.kalemler) ? v.kalemler : []).slice(0, 5)
+        .map((k: Record<string, unknown>) => ({ etkinlik: Number(k?.etkinlik) || 0, adet: Number(k?.adet) || 0 }));
+      const rastgele = crypto.getRandomValues(new Uint8Array(8));
+      const yol = `yeni/${Date.now()}-${Array.from(rastgele, (b) => b.toString(16).padStart(2, '0')).join('')}`;
+      const istek = await rpc('bilet_istegi_ac', {
+        p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60), p_kalemler: kalemler, p_user: kullanici, p_dosya: yol,
+      }) as { id: number; tutar: number };
+      const { data, error } = await servisIstemcisi().storage.from('dekontlar').createSignedUploadUrl(yol);
+      if (error || !data) throw error || new Error('İmzalı adres alınamadı');
+      return { id: istek.id, tutar: istek.tutar, yol, jeton: data.token };
+    }
+    case 'bilet_kaydet':
+      return rpc('bilet_kaydet', { p_id: Number(v.id) || 0, p_eposta: metin(v.eposta, 200) });
     case 'destek':
       return destekBaslat(v.tutar, ip);
     default:
