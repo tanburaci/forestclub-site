@@ -1,0 +1,35 @@
+# Forest Club Urla · siteyi (deneme-site/) Netlify'a doğrudan yayınlar. Netlify'ın kendi kuyruğu canlı yayınları atladığı
+# için ("a new one was scheduled"): main'e her birleştirmede kendiliğinden, istenirse elle (Actions › Netlify'a yayınla).
+# netlify.toml (güvenlik başlıkları, yönlendirmeler) deneme-site/ içinden okunur; derleme adımı yok.
+# Secrets: NETLIFY_AUTH_TOKEN (Netlify › User settings › Applications), NETLIFY_SITE_ID (Site configuration › General)
+name: Netlify'a yayınla
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['deneme-site/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: netlify-yayin
+  cancel-in-progress: false
+
+jobs:
+  yayinla:
+    runs-on: ubuntu-latest
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Yayınla
+        working-directory: deneme-site
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then echo "NETLIFY_AUTH_TOKEN ve NETLIFY_SITE_ID gerekli"; exit 1; fi
+          npx --yes netlify-cli@17.38.1 deploy --prod --dir . --no-build --message "main@${GITHUB_SHA::7}"
