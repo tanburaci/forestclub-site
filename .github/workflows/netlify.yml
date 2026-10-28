@@ -1,14 +1,11 @@
 # Forest Club Urla · siteyi (deneme-site/) Netlify'a doğrudan yayınlar. Netlify'ın kendi kuyruğu canlı yayınları atladığı
-# için ("a new one was scheduled"): main'e her birleştirmede kendiliğinden, istenirse elle (Actions › Netlify'a yayınla).
+# için ("a new one was scheduled"). Şimdilik yalnız elle (Actions › Netlify'a yayınla); otomatik çalışma hata çözülünce açılacak.
 # netlify.toml (güvenlik başlıkları, yönlendirmeler) deneme-site/ içinden okunur; derleme adımı yok.
 # Secrets: NETLIFY_AUTH_TOKEN (Netlify › User settings › Applications), NETLIFY_SITE_ID (Site configuration › General)
 name: Netlify'a yayınla
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['deneme-site/**']
 
 permissions:
   contents: read
