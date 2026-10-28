@@ -79,6 +79,7 @@ async function biletSahte(page, tutar) {
     await u.page.route(`${SB}/auth/v1/user`, (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ id: 'uye-1', email: 'deniz@posta.test', aud: 'authenticated' }) }));
     await u.page.goto(`${SITE}/uye/`);
     await u.page.getByText('Merhaba Deniz').waitFor({ timeout: 15000 });
+    dogru(await u.page.locator('[aria-label="Etkinlik seç"] button').count() === 0, 'üye: ücretli etkinlik için üye karekodu yok (girişte bilet kodu)');
     await sekme(u.page, 'Etkinlikler');
     await u.page.getByRole('button', { name: 'Sepete ekle' }).first().click();
     await u.page.getByRole('button', { name: 'Ödemeye geç' }).click();

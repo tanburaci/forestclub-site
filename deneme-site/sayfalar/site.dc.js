@@ -289,7 +289,8 @@ class Component extends DCLogic {
         { soru: 'Kişisel verilerim ne olacak?', cevap: 'Bilgilerin yalnız kulüp işleri için kullanılır. Üye panelinden verilerinin kopyasını isteyebilir ya da hesabının silinmesini talep edebilirsin.' },
       ].filter((x) => !canli || !/\[[A-ZÇĞİÖŞÜ ]+/.test(x.cevap)),
       // Tanışma bileti yalnız seçilen yaklaşan buluşmada geçerli
-      tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN).map((b) => {
+      // Tanışma bileti yalnız üyelere ücretsiz buluşmalarda (biletli etkinliklerde kural "ucretsiz" olmalı)
+      tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN && (!b.satis || b.satis.uye === 'ucretsiz')).map((b) => {
         const on = `${b.tarih}|${b.ad}` === this.state.tEtk;
         return {
           ad: `${b.gun} ${b.ay} · ${b.ad} · ${b.saat}`, basili: on ? 'true' : 'false',
