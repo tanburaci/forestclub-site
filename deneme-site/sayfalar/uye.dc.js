@@ -137,8 +137,8 @@ class Component extends DCLogic {
         // Ücretsiz (üyelik kapsamında) etkinlikte aktif üye "Geliyorum" der; sepet misafir bileti içindir
         geliyorVar: aktif && (!ucretli || e.ben === 'kayitli'),
         // Üyeye kendi fiyatı büyük: üyelik kapsamındakilerde “Sana ücretsiz”, bilet yalnız misafir için
-        fiyatYazi: !aktif ? `Bilet ${TL(e.fiyat)}` : e.uye === 'ucretsiz' ? 'Sana ücretsiz' : e.uye === 'yuzde50' ? `Sana ${TL(e.fiyat / 2)}` : `Bilet ${TL(e.fiyat)}`,
-        benimFiyat: !aktif ? 'Üyelik aktif değil: tam fiyat' : e.uye === 'ucretsiz' ? `Üyelik kapsamında · misafir bileti ${TL(e.fiyat)}` : e.uye === 'yuzde50' ? `Normal fiyat ${TL(e.fiyat)} · üyelere %50` : 'Üyelere de aynı fiyat',
+        fiyatYazi: !e.fiyat ? 'Üyelere ücretsiz' : !aktif ? `Bilet ${TL(e.fiyat)}` : e.uye === 'ucretsiz' ? 'Sana ücretsiz' : e.uye === 'yuzde50' ? `Sana ${TL(e.fiyat / 2)}` : `Bilet ${TL(e.fiyat)}`,
+        benimFiyat: !e.fiyat ? (aktif ? 'Üyelik kapsamında · “Geliyorum” de' : 'Üyeliğin aktif olunca ücretsiz') : !aktif ? (e.uye === 'ucretsiz' ? 'Üyelere ücretsiz · üyeliğin aktif değil, bilet tam fiyat' : 'Üyelik aktif değil: tam fiyat') : e.uye === 'ucretsiz' ? `Üyelik kapsamında · misafir bileti ${TL(e.fiyat)}` : e.uye === 'yuzde50' ? `Normal fiyat ${TL(e.fiyat)} · üyelere %50` : 'Üyelere de aynı fiyat',
         sepetDugme: !e.fiyat ? 'Bilet satışı yok' : kalan <= sepette ? 'Yer kalmadı' : sepette ? `Sepette ${sepette} · bir tane daha` : aktif && !ucretli ? 'Misafir bileti ekle' : 'Sepete ekle',
         sepetSinif: aktif && !ucretli ? 'fu-btn fu-btn-ikincil' : 'fu-btn',
         sepetKapali: !e.fiyat || kalan <= sepette,  // canlıda bilet havale + dekontla (yönetici onayı)
@@ -156,7 +156,8 @@ class Component extends DCLogic {
 
     // Ana sayfa: etkinlik seç → karekod (kayıtlı değilse yer ayrılır, doluysa uyarır)
     const secili = this.state.secili;
-    const secimEtk = Object.entries(kayit).map(([id, e]) => {
+    // Üye karekodu yalnız üyelere ücretsiz buluşmalarda; ücretli etkinlikte girişte bilet kodu (FC-B) geçer
+    const secimEtk = Object.entries(kayit).filter(([, e]) => e.uye === 'ucretsiz').map(([id, e]) => {
       const [, m, d] = e.tarih.split('-');
       const on = id === secili;
       return {

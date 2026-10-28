@@ -4,7 +4,7 @@ window.DC.sinif('/sayfalar/yonetim.dc.html', function (DCLogic) {
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    const BOS = { tarih: '', saat: '', tur: 'bulusma', ad: '', kim: '', metin: '', link: '', kontenjan: '30', fiyat: '', uye: 'ucretsiz' };
+    const BOS = { tarih: '', saat: '', tur: 'bulusma', ad: '', kim: '', metin: '', link: '', kontenjan: '30', min: '', fiyat: '', uye: 'ucretsiz' };
     this.BOS = BOS;
     this.BUGUN = window.FC ? window.FC.bugun : '2026-10-24';  // deneme sitesinde gerçek bugün
     this.MBOS = { tur: 'gider', tarih: this.BUGUN, tutar: '', kasa: 'banka', hedef: 'nakit', kategori: 'İkram', etk: '', aciklama: '', belge: '' };
@@ -145,12 +145,70 @@ class Component extends DCLogic {
       }
       if (f.link && !/^https:\/\//.test(f.link.trim())) return this.setState({ formHata: 'Instagram bağlantısı https:// ile başlamalı.' });
       const kontenjan = Math.max(1, Number(f.kontenjan) || 30);
+      const min = Math.floor(Number(f.min)) > 0 ? Math.floor(Number(f.min)) : null;
+      if (min && min > kontenjan) return this.setState({ formHata: 'Minimum kişi kontenjandan büyük olamaz.' });
       this.setState((s) => ({
-        etkinlikler: [...s.etkinlikler, { ...f, ad: f.ad.trim(), kontenjan, satis: Number(String(f.fiyat).replace(/\./g, '')) > 0 ? { fiyat: Number(String(f.fiyat).replace(/\./g, '')), uye: f.uye, satilan: 0 } : null }],
+        etkinlikler: [...s.etkinlikler, { ...f, ad: f.ad.trim(), kontenjan, min, satis: Number(String(f.fiyat).replace(/\./g, '')) > 0 ? { fiyat: Number(String(f.fiyat).replace(/\./g, '')), uye: f.uye, satilan: 0 } : null }],
         kayitlar: { ...s.kayitlar, [`${f.tarih}|${f.ad.trim()}`]: { kontenjan, kayitli: [], bekleme: [], gelen: [] } },
         form: { ...this.BOS }, formAcik: false, formHata: '',
         eklendiMesaj: window.FC ? `“${f.ad.trim()}” eklendi; sitede ve üye panelinde görünür.` : `“${f.ad.trim()}” eklendi. Duyurusu hazır olunca üyelere gönderilecek.`,
       }));
+    };
+    // Aylık dosya (CSV): GG.AA.YYYY;saat;tur;ad;kim;kontenjan;bilet_fiyati;uyelere;tanisma_kontenjan;aciklama;link[;min_kisi]
+    this.csvCoz = (metin) => {
+      const ilk = metin.replace(/^\uFEFF/, '').split(/\r?\n/)[0] || '';
+      const ayr = (ilk.match(/;/g) || []).length >= (ilk.match(/,/g) || []).length ? ';' : ',';
+      const satirlar = [];
+      let alan = '';
+      let satir = [];
+      let tirnak = false;
+      const m = metin.replace(/^\uFEFF/, '');
+      for (let i = 0; i < m.length; i++) {
+        const c = m[i];
+        if (tirnak) {
+          if (c === '"' && m[i + 1] === '"') { alan += '"'; i++; } else if (c === '"') tirnak = false; else alan += c;
+        } else if (c === '"') tirnak = true;
+        else if (c === ayr) { satir.push(alan); alan = ''; }
+        else if (c === '\n' || c === '\r') { if (c === '\r' && m[i + 1] === '\n') i++; satir.push(alan); satirlar.push(satir); satir = []; alan = ''; }
+        else alan += c;
+      }
+      if (alan || satir.length) { satir.push(alan); satirlar.push(satir); }
+      const dolu = satirlar.filter((r) => r.some((x) => x.trim()));
+      if (!dolu.length) return { hata: 'Dosya boş.' };
+      const basliklar = dolu[0].map((b) => b.trim().toLowerCase());
+      const gerekli = ['tarih', 'tur', 'ad', 'kontenjan'];
+      const eksik = gerekli.filter((g) => !basliklar.includes(g));
+      if (eksik.length) return { hata: `Başlık satırında eksik sütun: ${eksik.join(', ')}` };
+      const TURLER = ['bulusma', 'yoga', 'atolye', 'hareket', 'muzik'];
+      const goruldu = new Set(this.state.etkinlikler.map((x) => `${x.tarih}|${x.ad}`));
+      return { satirlar: dolu.slice(1).map((r, i) => {
+        const v = Object.fromEntries(basliklar.map((b, j) => [b, (r[j] || '').trim()]));
+        const tm = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(v.tarih) || /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.tarih);
+        const tarih = !tm ? '' : v.tarih.includes('-') ? v.tarih : `${tm[3]}-${tm[2].padStart(2, '0')}-${tm[1].padStart(2, '0')}`;
+        const sayi = (x) => Number(String(x || '').replace(/\./g, '').replace(',', '.'));
+        const kontenjan = Math.floor(sayi(v.kontenjan));
+        const fiyat = v.bilet_fiyati ? sayi(v.bilet_fiyati) : 0;
+        const min = v.min_kisi ? Math.floor(sayi(v.min_kisi)) : null;
+        const tanisma = v.tanisma_kontenjan !== undefined && v.tanisma_kontenjan !== '' ? Math.floor(sayi(v.tanisma_kontenjan)) : null;
+        const uye = v.uyelere || 'ucretsiz';
+        let hata = '';
+        if (!tarih || Number.isNaN(Date.parse(tarih))) hata = 'Tarih GG.AA.YYYY olmalı';
+        else if (tarih < this.BUGUN) hata = 'Tarih geçmişte';
+        else if (!TURLER.includes(v.tur)) hata = `Tür şunlardan biri olmalı: ${TURLER.join(', ')}`;
+        else if (!v.ad) hata = 'Ad boş';
+        else if (!(kontenjan > 0)) hata = 'Kontenjan sayı olmalı';
+        else if (v.bilet_fiyati && !(fiyat > 0)) hata = 'Bilet fiyatı sayı olmalı';
+        else if (!['ucretsiz', 'yuzde50', 'tam'].includes(uye)) hata = 'Üyelere: ucretsiz, yuzde50 ya da tam';
+        else if (min !== null && !(min > 0 && min <= kontenjan)) hata = 'Minimum kişi 1 ile kontenjan arasında olmalı';
+        else if (tanisma !== null && !(tanisma >= 0)) hata = 'Tanışma kontenjanı sayı olmalı';
+        else if (v.link && !/^https:\/\//.test(v.link)) hata = 'Bağlantı https:// ile başlamalı';
+        else if (goruldu.has(`${tarih}|${v.ad}`)) hata = 'Bu tarihte aynı adla etkinlik var';
+        if (!hata) goruldu.add(`${tarih}|${v.ad}`);
+        return { no: i + 2, hata, etk: hata ? null : {
+          tarih, saat: v.saat || '', tur: v.tur, ad: v.ad, kim: v.kim || '', metin: v.aciklama || '', link: v.link || '', kontenjan, min, tanisma,
+          satis: fiyat > 0 ? { fiyat, uye, satilan: 0 } : null,
+        } };
+      }) };
     };
     // Muhasebe formu
     this.mAlan = {};
@@ -998,6 +1056,34 @@ class Component extends DCLogic {
       hatirla: this.state.hatirla,
       hatirlaDegis: () => this.setState((s) => ({ hatirla: !s.hatirla })),
       etkinlikSec: () => this.setState({ sekme: 'etkinlikler', formAcik: true, eklendiMesaj: '' }),
+      // Aylık dosya (CSV) önizleme ve ekleme
+      csvSec: (ev) => {
+        const f = ev.target.files && ev.target.files[0];
+        ev.target.value = '';
+        if (!f) return;
+        f.text().then((t) => {
+          const r = this.csvCoz(t);
+          if (r.hata) return this.setState({ csv: null, eklendiMesaj: `Dosya okunamadı: ${r.hata}` });
+          this.setState({ csv: r.satirlar, eklendiMesaj: '' });
+        });
+      },
+      aylikVar: !!this.state.csv,
+      csvBaslik: this.state.csv ? `Dosyadan ${this.state.csv.length} satır · ${this.state.csv.filter((c) => c.etk).length} etkinlik eklenmeye hazır` : '',
+      csvSatirlar: (this.state.csv || []).map((c) => ({
+        no: String(c.no), tarih: c.etk ? tYaz(c.etk.tarih) : '', ad: c.etk ? c.etk.ad : '', kontenjan: c.etk ? String(c.etk.kontenjan) : '',
+        min: c.etk && c.etk.min ? String(c.etk.min) : '—',
+        bilet: c.etk ? (c.etk.satis ? `${c.etk.satis.fiyat.toLocaleString('tr-TR')} TL · ${{ ucretsiz: 'üyelere ücretsiz', yuzde50: 'üyelere %50', tam: 'üyelere tam' }[c.etk.satis.uye]}` : 'Satış yok · üyelere ücretsiz') : '',
+        durum: c.hata ? `Eklenmeyecek: ${c.hata}` : 'Hazır ✓', stil: c.hata ? 'color:#82301F;font-weight:600' : 'font-weight:600',
+      })),
+      csvEklenemez: !(this.state.csv || []).some((c) => c.etk),
+      csvEkleYazi: `${(this.state.csv || []).filter((c) => c.etk).length} etkinliği ekle`,
+      csvVazgec: () => this.setState({ csv: null }),
+      csvEkle: () => this.setState((s) => {
+        const yeni = (s.csv || []).filter((c) => c.etk).map((c) => c.etk);
+        const kayitlar = { ...s.kayitlar };
+        yeni.forEach((e) => { kayitlar[`${e.tarih}|${e.ad}`] = { kontenjan: e.kontenjan, kayitli: [], bekleme: [], gelen: [] }; });
+        return { etkinlikler: [...s.etkinlikler, ...yeni], kayitlar, csv: null, eklendiMesaj: `${yeni.length} etkinlik eklendi; sitede ve üye panelinde görünür.` };
+      }),
       basvurularaGit: () => this.setState({ sekme: 'basvurular' }),
       formAc: () => this.setState({ formAcik: true, eklendiMesaj: '' }),
       formKapat: () => this.setState({ formAcik: false, form: { ...this.BOS }, formHata: '' }),
@@ -1024,6 +1110,13 @@ class Component extends DCLogic {
             ? `Bilet ${x.satis.fiyat.toLocaleString('tr-TR')} TL · ${{ ucretsiz: 'üyelere ücretsiz', yuzde50: 'üyelere %50', tam: 'üyelere tam fiyat' }[x.satis.uye]} · ${x.satis.satilan} satıldı (${(x.satis.fiyat * x.satis.satilan).toLocaleString('tr-TR')} TL)`
             : 'Bilet satışı yok (yalnız üyeler)',
           beklemeYazi: k && k.bekleme.length ? `Bekleme listesi: ${k.bekleme.length}` : '',
+          ...(() => {
+            if (!x.min) return { minYazi: '', minStil: '' };
+            const gelen = k ? k.kayitli.length + (x.satis ? x.satis.satilan : 0) + (k.tanisma || 0) : 0;
+            const eksik = x.min - gelen;
+            return { minYazi: eksik > 0 ? `Minimum ${x.min} kişi · ${eksik} kişi eksik` : `Minimum ${x.min} kişi · tamam ✓`,
+              minStil: `flex: 1 1 100%; font-weight: 700; color: ${eksik > 0 ? '#82301F' : '#3A3A3A'}` };
+          })(),
           kontenjan: k ? String(k.kontenjan) : '',
           // Kontenjan artınca bekleme listesinden sıradakiler kayda geçer (gerçekte "yer açıldı" maili gider)
           kontenjanYaz: (ev) => {

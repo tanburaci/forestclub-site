@@ -1302,7 +1302,8 @@ class Component extends DCLogic {
         { soru: 'Kişisel verilerim ne olacak?', cevap: 'Bilgilerin yalnız kulüp işleri için kullanılır. Üye panelinden verilerinin kopyasını isteyebilir ya da hesabının silinmesini talep edebilirsin.' },
       ].filter((x) => !canli || !/\[[A-ZÇĞİÖŞÜ ]+/.test(x.cevap)),
       // Tanışma bileti yalnız seçilen yaklaşan buluşmada geçerli
-      tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN).map((b) => {
+      // Tanışma bileti yalnız üyelere ücretsiz buluşmalarda (biletli etkinliklerde kural "ucretsiz" olmalı)
+      tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN && (!b.satis || b.satis.uye === 'ucretsiz')).map((b) => {
         const on = `${b.tarih}|${b.ad}` === this.state.tEtk;
         return {
           ad: `${b.gun} ${b.ay} · ${b.ad} · ${b.saat}`, basili: on ? 'true' : 'false',
@@ -1465,8 +1466,9 @@ class Component extends DCLogic {
       ],
       filtreler,
       yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map((b) => {
-        if (!b.satis) return { ...b, fiyatYazi: '', uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
+        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
         const key = `${b.tarih}|${b.ad}`;
         const kalan = kalanYer(b);
         const sepette = sepet[key] || 0;
