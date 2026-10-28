@@ -25,8 +25,7 @@ function oturum(id, email, aal = 'aal2', faktorler = aal === 'aal2' ? [{ id: 'fa
 
 // Ana sayfadaki "Yakında" kapağı (index.html) siteyi tıklanamaz yapar; site testleri kapağın altındaki sayfayı dener
 const KAPAKSIZ = () => document.addEventListener('DOMContentLoaded', () => {
-  const k = document.getElementById('fc-yakinda');
-  if (k) k.remove();
+  ['fc-yakinda', 'fc-yakinda-stil'].forEach((id) => { const k = document.getElementById(id); if (k) k.remove(); });
   const kok = document.getElementById('kok');
   if (kok) kok.removeAttribute('inert');
 });
