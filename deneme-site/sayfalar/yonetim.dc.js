@@ -98,6 +98,7 @@ class Component extends DCLogic {
         { id: 2, ad: 'Selin Demir', tur: 'Veri kopyası', tarih: '2026-10-20', tamam: true },
       ],
       profilSecili: null, notlar: window.FC ? window.FC.notlar : { 2: 'Seramik atölyesinde gönüllü yardım etmek istiyor.' },  // anahtar: üye numarası
+      muaflar: window.FC ? window.FC.muaflar : {},  // aidattan muaf üyeler (anahtar: üye numarası)
       // Ayarlar (deneme sitesinde ayarlar tablosundan)
       tanismaSunuluyor: window.FC ? window.FC.ayarlar.tanisma_acik !== false : true,
       kartOdeme: window.FC ? window.FC.ayarlar.kart_odeme === true : false,
@@ -113,7 +114,7 @@ class Component extends DCLogic {
       // Muhasebedeki katılımcı sayısı = yoklamada gelenler (geçmiş etkinlikler)
       katilimci: Object.fromEntries(Object.entries(this.DEMO.kayitlar).filter(([k]) => k.split('|')[0] <= this.BUGUN).map(([k, v]) => [k, v.gelen.length])),
       arama: '', uyeSayisi: 100,
-      mAy: '2026-10', mEtk: '', mGorunum: 'hareketler', mFiltre: 'tumu', mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mMesaj: '',
+      mAy: '2026-10', mEtk: '', mGorunum: 'hareketler', mFiltre: 'tumu', faturaKopya: null, mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mMesaj: '',
       // Envanter (örnek kalemler; satın alınanların gideri muhasebede ayrıca kayıtlı)
       envanter: window.FC ? window.FC.envanter : [
         { id: 1, ad: 'Yoga matı', kategori: 'Yoga / hareket', adet: 6, birim: 'adet', giris: 'satin', tarih: '2026-09-03', tutar: 4800, kasa: 'banka', konum: 'Depo' },
@@ -442,14 +443,19 @@ class Component extends DCLogic {
     const BUGUN_SABIT = this.BUGUN;
     const tYaz = (t) => (t ? t.split('-').reverse().join('.') : '—');
     const kalanGun = (t) => Math.round((new Date(`${t}T12:00:00Z`) - new Date(`${BUGUN_SABIT}T12:00:00Z`)) / 86400000);
+    // Aidattan muaf: sunucu bitişi 31.12.2099'a sabitler; muafiyet kaldırılınca bugünden 30 gün verir
+    const MUAF_BITIS = '2099-12-31';
+    const otuzGunSonra = (() => { const d = new Date(`${BUGUN_SABIT}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 30); return d.toISOString().slice(0, 10); })();
     const tumUyeler = this.DEMO.kisiler.map((k) => {
-      const kalan = k.bitis ? kalanGun(k.bitis) : null;
-      const tur = k.durum;
+      const muaf = !!this.state.muaflar[k.id];
+      const bitis = !muaf && k.bitis === MUAF_BITIS ? otuzGunSonra : k.bitis;
+      const kalan = bitis ? kalanGun(bitis) : null;
+      const tur = muaf || (k.bitis === MUAF_BITIS) ? 'aktif' : k.durum;
       return {
         id: k.id, ad: k.ad, tel: k.tel, eposta: k.eposta, kod: k.kod, profil: k.profil, basvuru: tYaz(k.basvuru), odemeSayisi: String(k.odemeler.length),
-        bitis: tYaz(k.bitis), tur, bitisSira: k.bitis || '0',
-        durum: tur === 'aktif' ? (kalan <= 3 ? `Aktif · ${kalan} gün kaldı` : 'Aktif') : tur === 'doldu' ? 'Süresi doldu' : 'Hiç ödemedi',
-        rozet: tur === 'aktif' ? (kalan <= 3 ? BEKLER : AKTIF) : tur === 'doldu' ? DOLDU : TASLAK,
+        bitis: muaf ? 'Süresiz' : tYaz(bitis), tur, bitisSira: muaf ? MUAF_BITIS : bitis || '0', muaf,
+        durum: muaf ? 'Aidattan muaf' : tur === 'aktif' ? (kalan <= 3 ? `Aktif · ${kalan} gün kaldı` : 'Aktif') : tur === 'doldu' ? 'Süresi doldu' : 'Hiç ödemedi',
+        rozet: muaf ? AKTIF : tur === 'aktif' ? (kalan <= 3 ? BEKLER : AKTIF) : tur === 'doldu' ? DOLDU : TASLAK,
       };
     });
     const sayac = { aktif: 0, doldu: 0, basvuru: 0 };
@@ -566,7 +572,7 @@ class Component extends DCLogic {
       ad: profilUye.ad, harf: profilUye.ad[0], eposta: profilUye.eposta, tel: profilUye.tel, durum: profilUye.durum, rozet: profilUye.rozet,
       dogum: pr.dogum ? gunAy(pr.dogum) : 'Girilmedi', ozel: pr.ozel.length ? pr.ozel.map((g) => `${g.ad} · ${gunAy(g.tarih)}`).join(', ') : 'Yok',
       kutlama: pr.kutlama ? 'Gönderilsin' : 'Gönderilmesin', foto: pr.foto ? 'Var' : 'Yok', tanisma: pr.tanisma, baslangic: pr.baslangic,
-      ilgi: pr.ilgi, not: this.state.notlar[profilUye.id] || '',
+      ilgi: pr.ilgi, not: this.state.notlar[profilUye.id] || '', muaf: profilUye.muaf,
     } : {};
     const bugunT = new Date(`${BUGUN_SABIT}T12:00:00Z`);
     const ozelGunler = [];
@@ -653,7 +659,8 @@ class Component extends DCLogic {
       eldenAlan[k] = (e) => { const v = e.target.value; this.setState((s) => ({ elden: { ...s.elden, [k]: v, hata: '' } })); };
     });
     const KASA = { banka: 'Banka', nakit: 'Nakit' };
-    const ACILIS = { banka: 8000, nakit: 1000 }; // 1 Eylül 2026 açılış bakiyesi (örnek)
+    // Açılış bakiyesi: canlıda sıfır (kasada yalnız kayıtlı hareketler); tasarım önizlemesinde örnek
+    const ACILIS = window.FC ? { banka: 0, nakit: 0 } : { banka: 8000, nakit: 1000 };
     const etki = (h, k) => {
       if (h.tur === 'gelir') return h.kasa === k ? h.tutar : 0;
       if (h.tur === 'gider') return h.kasa === k ? -h.tutar : 0;
@@ -698,7 +705,10 @@ class Component extends DCLogic {
     // Etkinlik seçiliyse ay sınırı yok: o etkinliğin bütün giriş ve çıkışları
     const mEtk = this.state.mEtk;
     const etkH = hareketler.filter((h) => h.etk === mEtk);
-    const hareketSatirlari = (mEtk ? etkH : ayH).filter((h) => mFiltre === 'tumu' || h.tur === mFiltre)
+    // Fatura takibi: faturası kesilecek gelirler ay sınırı olmadan; kesildi / gerekmez işareti satırda
+    const faturasiz = hareketler.filter((h) => h.tur === 'gelir' && !h.fatura);
+    const faturaYaz = (id, degisiklik) => this.setState((s) => ({ hareketler: s.hareketler.map((x) => (x.id === id ? { ...x, ...degisiklik } : x)) }));
+    const hareketSatirlari = (mFiltre === 'fatura' ? faturasiz : (mEtk ? etkH : ayH).filter((h) => mFiltre === 'tumu' || h.tur === mFiltre))
       .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id)
       .map((h) => ({
         tarihYazi: tarihYaz(h.tarih), turAd: TUR_AD[h.tur], rozet: TUR_ROZET[h.tur], aciklama: h.aciklama, otomatik: h.otomatik,
@@ -706,6 +716,26 @@ class Component extends DCLogic {
         kasaAd: h.tur === 'aktarim' ? `${KASA[h.kasa]} → ${KASA[h.hedef]}` : KASA[h.kasa],
         tutarYazi: `${h.tur === 'gelir' ? '+' : h.tur === 'gider' ? '−' : ''}${TL(h.tutar)}`,
         belge: h.belge || '—',
+        faturaGelir: h.tur === 'gelir', faturaBekliyor: h.tur === 'gelir' && !h.fatura, faturaVar: h.tur === 'gelir' && !!h.fatura,
+        faturaYazi: h.fatura === 'kesildi' ? `Kesildi ✓${h.faturaNo ? ` · ${h.faturaNo}` : ''}${h.faturaTarih ? ` · ${tarihYaz(h.faturaTarih)}` : ''}` : 'Gerekmez',
+        faturaRozet: h.fatura === 'kesildi' ? AKTIF : `${pill('#FFFFFF', '#5E5E5E')};border:1.5px dashed #5E5E5E`,
+        faturaKes: () => {
+          const no = window.prompt(`${h.aciklama} · ${TL(h.tutar)}\nFatura no (GİB e-Arşiv; boş bırakabilirsin):`, '');
+          if (no === null) return;
+          faturaYaz(h.id, { fatura: 'kesildi', faturaNo: no.trim().slice(0, 60), faturaTarih: this.BUGUN });
+        },
+        faturaGerekmez: () => faturaYaz(h.id, { fatura: 'gerekmez', faturaNo: '', faturaTarih: '' }),
+        // Portala yapıştırmak için: alıcı (açıklamadaki "· " sonrası), hizmet, tutar
+        faturaKopyaYazi: this.state.faturaKopya === h.id ? 'Kopyalandı ✓' : 'Bilgileri kopyala',
+        faturaKopyala: () => {
+          const alici = h.kategori === 'Aidat' && h.aciklama.includes('·') ? h.aciklama.split('·').pop().trim() : '';
+          const hizmet = h.kategori === 'Destek' ? 'Forest Club Urla topluluk desteği' : h.kategori === 'Aidat' ? 'Forest Club Urla üyeliği – 30 gün' : h.aciklama;
+          const metin = `Alıcı: ${alici || '(adı yaz)'}\nTCKN: 11111111111\nAdres: Urla / İzmir\nHizmet: ${hizmet}\nMiktar: 1\nToplam (KDV dahil): ${String(h.tutar).replace('.', ',')} TL\nTarih: ${tarihYaz(h.tarih)}`;
+          const bitti = () => this.setState({ faturaKopya: h.id });
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(metin).then(bitti, () => window.prompt('Kopyala:', metin));
+          else window.prompt('Kopyala:', metin);
+        },
+        faturaGeriAl: () => faturaYaz(h.id, { fatura: '', faturaNo: '', faturaTarih: '' }),
       }));
 
     // Etkinlik maliyeti: giderler − katılım geliri = kulübe maliyeti; katılımcıya bölünür
@@ -899,7 +929,8 @@ class Component extends DCLogic {
       muhasebeSekme: sekme === 'muhasebe',
       kasalar, aylar, ayOzet, hareketSatirlari, etkMaliyet, etkOzetMetin, kasaTablo,
       hareketYok: !hareketSatirlari.length,
-      hareketYokMetin: mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
+      faturaRehberi: mFiltre === 'fatura',
+      hareketYokMetin: mFiltre === 'fatura' ? 'Faturası kesilecek gelir yok ✓' : mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
       mEtkFiltre: [{ id: '', ad: 'Tüm kayıtlar' }, ...etkGorunum.filter((x) => x.tarih.startsWith(mAy) || `${x.tarih}|${x.ad}` === mEtk)
         .map((x) => ({ id: `${x.tarih}|${x.ad}`, ad: `${x.gun}.${x.tarih.slice(5, 7)} ${x.ad}` }))]
         .map((o) => ({ ...o, sinif: o.id === mEtk ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ mEtk: o.id }) })),
@@ -920,7 +951,8 @@ class Component extends DCLogic {
       gelirDagilim: dagilim([...aidatH, ...digerGelirH]), gelirYok: !gelirTop,
       mGorunumler: secimler([{ id: 'hareketler', ad: 'Hareketler' }, { id: 'etkinlik', ad: 'Etkinlik maliyetleri' }, { id: 'ozet', ad: 'Aylık özet' }], mGorunum, 'mGorunum'),
       gHareketler: mGorunum === 'hareketler', gEtkinlik: mGorunum === 'etkinlik', gOzet: mGorunum === 'ozet',
-      mFiltreler: secimler([{ id: 'tumu', ad: 'Tümü' }, { id: 'gelir', ad: 'Gelir' }, { id: 'gider', ad: 'Gider' }, { id: 'aktarim', ad: 'Aktarım' }], mFiltre, 'mFiltre'),
+      mFiltreler: secimler([{ id: 'tumu', ad: 'Tümü' }, { id: 'gelir', ad: 'Gelir' }, { id: 'gider', ad: 'Gider' }, { id: 'aktarim', ad: 'Aktarım' },
+        { id: 'fatura', ad: `Faturası kesilecek (${faturasiz.length})` }], mFiltre, 'mFiltre'),
       mFormAcik: this.state.mFormAcik, mForm, mAlan: this.mAlan, mKaydet: this.mKaydet, mHata: this.state.mHata, mMesaj: this.state.mMesaj,
       mFormBaslik: { gider: 'Gider ekle', gelir: 'Gelir ekle', aktarim: 'Kasalar arası aktar' }[mForm.tur],
       mGider: mForm.tur === 'gider', mGelir: mForm.tur === 'gelir', mAktarim: mForm.tur === 'aktarim', mAktarimDegil: mForm.tur !== 'aktarim',
@@ -1064,6 +1096,7 @@ class Component extends DCLogic {
       }),
       profilKapat: () => this.setState({ profilSecili: null }),
       profilNotYaz: (e) => { const v = e.target.value; this.setState((s) => ({ notlar: { ...s.notlar, [s.profilSecili]: v } })); },
+      profilMuafDegis: (e) => { const v = e.target.checked; this.setState((s) => ({ muaflar: { ...s.muaflar, [s.profilSecili]: v } })); },
       ozelGunler,
       tanismaSunuluyor: this.state.tanismaSunuluyor,
       // Deneme sitesinde kart komisyonu iyzico'nun bildirdiği tutarla her ödemede gider olarak yazılır (oran girilmez)
