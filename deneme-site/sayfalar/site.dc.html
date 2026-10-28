@@ -1465,8 +1465,9 @@ class Component extends DCLogic {
       ],
       filtreler,
       yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map((b) => {
-        if (!b.satis) return { ...b, fiyatYazi: '', uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
+        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
         const key = `${b.tarih}|${b.ad}`;
         const kalan = kalanYer(b);
         const sepette = sepet[key] || 0;
