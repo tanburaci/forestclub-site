@@ -4,27 +4,26 @@
 -- Tekrar çalıştırılabilir: üye e-postayla, dekont ve Açık Çağrı "kaynak" ile tanınır; ikinci çalıştırmada yeni satır
 -- açılmaz, Sheets'teki değişiklikler işlenir. Yeni sistemde yapılanlar geri alınmaz: üyelik bitişi yalnız ileri gider,
 -- yeni sistemde karar verilmiş dekont Sheets'e göre değişmez. Sorunlu satırlar aktarim.sorunlar'a yazılır, aktarım
--- durmaz. Hepsi tek işlem: bir hata olursa hiçbir şey yazılmaz.
+-- durmaz. Hepsi tek işlem: bir hata olursa hiçbir şey yazılmaz. Supabase SQL Editor ifadeleri aynı oturumda
+-- çalıştırmayabildiği için aktarım tek bir do bloğudur (ara tablolar blok içinde görünür).
 --
 -- Sheets'te olmayan ya da aktarılmayanlar: muhasebe hareketleri (Sheets'teki ödemeler aidat gelirine ayrıca yazılmaz),
 -- KVKK onay zamanı, üye kodu (sırayla yeni kod verilir).
 
-begin;
+do $aktar$
+begin
 
 create schema if not exists aktarim;
 create table if not exists aktarim.ham (sayfa text not null, satir int not null, veri jsonb not null, primary key (sayfa, satir));
 create table if not exists aktarim.sorunlar (sayfa text, satir int, alan text, deger text, aciklama text);
 truncate aktarim.sorunlar;
 
-do $$
-begin
-  if exists (select 1 from public.uyeler where public.demo_adres_mi(eposta)) then
-    raise exception 'Veritabanında demo verisi (ornek.com) var. Aktarım boş, gerçek veritabanına yapılır.';
-  end if;
-  if not exists (select 1 from aktarim.ham where sayfa = 'uyeler') then
-    raise exception 'Üyeler sayfası yüklenmemiş: önce cikti/01_ham_veri.sql çalıştırın.';
-  end if;
-end $$;
+if exists (select 1 from public.uyeler where public.demo_adres_mi(eposta)) then
+  raise exception 'Veritabanında demo verisi (ornek.com) var. Aktarım boş, gerçek veritabanına yapılır.';
+end if;
+if not exists (select 1 from aktarim.ham where sayfa = 'uyeler') then
+  raise exception 'Üyeler sayfası yüklenmemiş: önce cikti/01_ham_veri.sql çalıştırın.';
+end if;
 
 -- Üyelik aidatı (Sheets'te tutar yoksa)
 create or replace function aktarim.aidat() returns numeric language sql immutable as $$ select 3000::numeric $$;
@@ -257,9 +256,9 @@ select 'acik_cagri', h.satir, 'iletisim', null, 'İletişim bilgisi yok'
 from aktarim.ham h where h.sayfa = 'acik_cagri'
   and aktarim.al(h.veri, 'e_posta_veya_telefon_numaran', 'iletisim', 'e_posta', 'telefon') is null;
 
--- Ara tablolar (SQL Editor geçici tabloları ifadeler arasında tutmadığı için aktarim şemasında)
+-- Ara tablolar
 drop table aktarim.k_uye, aktarim.k_dekont;
 
-commit;
+end $aktar$;
 
 select sayfa, count(*) as sorun from aktarim.sorunlar group by sayfa order by sayfa;
