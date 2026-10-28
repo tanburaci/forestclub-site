@@ -35,10 +35,11 @@ const veri = {
       const noktalar = [[10, 10], [w - 10, 10], [10, h - 10], [w - 10, h - 10], [w / 2, h - 60]];
       const hepsiKapakta = await page.evaluate((ns) => ns.every(([x, y]) => document.getElementById('fc-yakinda').contains(document.elementFromPoint(x, y))), noktalar);
       dogru(hepsiKapakta, `${ad}: ekranın her yeri kapakta (tıklama siteye gitmez)`);
-      // Tıklanan tek şey Instagram bağlantısı; Tab ile siteye ulaşılamaz
-      const ig = page.locator('#fc-yakinda a, #fc-yakinda button');
-      dogru(await ig.count() === 1 && await ig.getAttribute('href') === 'https://www.instagram.com/forestcluburla/' && await ig.getAttribute('target') === '_blank',
-        `${ad}: kapakta yalnız Instagram bağlantısı var (yeni sekmede)`);
+      // Tıklananlar yalnız Instagram ve WhatsApp (Pelin, Ezgi) bağlantıları; Tab ile siteye ulaşılamaz
+      const baglantilar = await page.locator('#fc-yakinda a, #fc-yakinda button').evaluateAll((l) => l.map((a) => `${a.getAttribute('href')}|${a.target}`));
+      dogru(JSON.stringify(baglantilar) === JSON.stringify(['https://www.instagram.com/forestcluburla/|_blank', 'https://wa.me/905435926654|_blank', 'https://wa.me/905350359146|_blank']),
+        `${ad}: kapakta yalnız Instagram ve WhatsApp bağlantıları var, yeni sekmede (${baglantilar})`);
+      const ig = page.locator('#fc-yakinda a.ig');
       await page.context().route('https://www.instagram.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>instagram</p>' }));
       const [sekme] = await Promise.all([page.context().waitForEvent('page'), ig.click()]);
       await sekme.waitForLoadState();
@@ -47,7 +48,7 @@ const veri = {
       // Açılışa kadar yalnız ilk ekran ve "Biz Kimiz?" görünür
       const gorunen = await page.evaluate(() => document.body.innerText);
       // Etkinlik adı testte "Kahvaltı Testi" (Biz Kimiz? kartlarındaki "Breakfast Club" ile karışmasın)
-      const yasak = ['Kahvaltı Testi', ' TL', 'Üyelik', 'SSS', 'İletişim', '%50', 'WhatsApp', 'Üye girişi', 'Sık sorulan'].filter((x) => gorunen.includes(x));
+      const yasak = ['Kahvaltı Testi', ' TL', 'Üyelik', 'SSS', 'İletişim', '%50', 'Üye girişi', 'Sık sorulan', 'Destek ol'].filter((x) => gorunen.includes(x));
       if (/Etkinlikler(?!i)/.test(gorunen)) yasak.push('Etkinlikler (menü)');  // ilk ekrandaki "Etkinlikleri gör" kalır
       dogru(gorunen.includes('Biz Kimiz?') && !yasak.length, `${ad}: etkinlikler, fiyatlar, üyelik, SSS, iletişim ve menüdeki diğer başlıklar görünmüyor (${yasak})`);
       for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
