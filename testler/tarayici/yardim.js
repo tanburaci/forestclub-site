@@ -23,8 +23,17 @@ function oturum(id, email, aal = 'aal2', faktorler = aal === 'aal2' ? [{ id: 'fa
     expires_at: Math.floor(Date.now() / 1000) + 36000, user: { id, email, aud: 'authenticated', role: 'authenticated', factors: faktorler } });
 }
 
+// Ana sayfadaki "Yakında" kapağı (index.html) siteyi tıklanamaz yapar; site testleri kapağın altındaki sayfayı dener
+const KAPAKSIZ = () => document.addEventListener('DOMContentLoaded', () => {
+  const k = document.getElementById('fc-yakinda');
+  if (k) k.remove();
+  const kok = document.getElementById('kok');
+  if (kok) kok.removeAttribute('inert');
+});
+
 async function sayfaAc(tarayici, veri, oturumJson) {
   const ctx = await tarayici.newContext();
+  if (!veri.kapak) await ctx.addInitScript(KAPAKSIZ);  // veri.kapak: kapağın kendisini denemek için
   const page = await ctx.newPage();
   const istekler = [];
   const konsol = [];
@@ -104,4 +113,4 @@ function yonetimVerisi() {
 }
 
 
-module.exports = { sayfaAc, yonetimVerisi, oturum, jwt, gun, dogru: (...a) => dogru(...a), hatalar: () => hatalar, SITE };
+module.exports = { KAPAKSIZ, sayfaAc, yonetimVerisi, oturum, jwt, gun, dogru: (...a) => dogru(...a), hatalar: () => hatalar, SITE };

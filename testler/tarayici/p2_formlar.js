@@ -17,7 +17,9 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
   await new Promise((r) => setTimeout(r, 800));
   const tarayici = await chromium.launch();
   try {
-    const page = await (await tarayici.newContext()).newPage();
+    const ctx = await tarayici.newContext();
+    await ctx.addInitScript(require('./yardim.js').KAPAKSIZ);
+    const page = await ctx.newPage();
     const konsol = [];
     const formlar = [];
     const yuklemeler = [];
