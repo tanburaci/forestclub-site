@@ -30,7 +30,7 @@ jobs:
           echo "== Gizli tablolar (ziyaretçi 0 satır görmeli)"
           for t in uyeler odemeler dekontlar dekont_yuklemeleri destekler muhasebe_hareketleri eposta_kuyrugu eposta_sablonlari \
                    denetim_kaydi yoneticiler acik_cagri tanisma_biletleri veri_talepleri envanter etkinlik_kayitlari \
-                   uyelik_dondurmalari anket_yanitlari odeme_istekleri sayaclar istek_sayaci; do
+                   uyelik_dondurmalari anket_yanitlari odeme_istekleri sayaclar istek_sayaci formlar form_yanitlari; do
             c=$(kod "$SB/rest/v1/$t?select=*&limit=5" -H "apikey: $K" -H "Authorization: Bearer $K")
             n=$(python3 -c "import json;d=json.load(open('/tmp/govde'));print(len(d) if isinstance(d,list) else -1)" 2>/dev/null || echo -1)
             if [ "$n" = 0 ] || [ "$c" = 401 ] || [ "$c" = 403 ] || [ "$c" = 404 ]; then sonuc ok "$t okunamıyor ($c, $n satır)"; else sonuc x "$t: $c, $n satır döndü"; fi
