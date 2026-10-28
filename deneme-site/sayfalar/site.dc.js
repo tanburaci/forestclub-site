@@ -307,6 +307,8 @@ class Component extends DCLogic {
         }
         this.setState({ tanisma: UYE_EPOSTA.includes(ep) ? 'uye' : BILETLI.includes(ep) ? 'kullanilmis' : 'verildi' });
       },
+      // Tasarım önizlemesine özel notlar (örnek e-postalar, örnek fiyatlar) canlıda görünmez
+      onizleme: !canli,
       waLink: waNo ? `https://wa.me/${waNo}` : '#iletisim',
       // Biz Kimiz? › WhatsApp'tan yaz: kişi seçilir (numaralar ayar.js'te)
       waSecAcik: this.state.waSecAcik, waSecAcikYazi: this.state.waSecAcik ? 'true' : 'false',
