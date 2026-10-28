@@ -1,0 +1,49 @@
+# Forest Club Urla · deneme Supabase projesine göç ve Edge Function uygulama. Yalnız elle çalışır (Actions › Supabase'e
+# uygula › Run workflow) ve depoya yazma izni olanlar çalıştırabilir. Önce "listele" ile neyin uygulanacağına bakılır.
+# Secrets (Settings › Secrets and variables › Actions): SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD
+name: Supabase'e uygula
+
+on:
+  workflow_dispatch:
+    inputs:
+      islem:
+        description: "listele = yalnız göster; goc = göçleri uygula; fonksiyon = Edge Function'ları dağıt"
+        required: true
+        default: listele
+        type: choice
+        options: [listele, goc, fonksiyon]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-uygula
+  cancel-in-progress: false
+
+env:
+  PROJE: gflabqnazkstsyafzdmn
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+jobs:
+  uygula:
+    name: ${{ inputs.islem }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Projeye bağlan
+        run: supabase link --project-ref "$PROJE" --password "$SUPABASE_DB_PASSWORD"
+      - name: Uygulanacak göçler (değişiklik yapmaz)
+        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
+      - name: Göçleri uygula
+        if: inputs.islem == 'goc'
+        run: yes | supabase db push --password "$SUPABASE_DB_PASSWORD"
+      - name: Uygulanmış göçler
+        if: inputs.islem != 'fonksiyon'
+        run: supabase migration list --password "$SUPABASE_DB_PASSWORD"
+      - name: Edge Function'ları dağıt
+        if: inputs.islem == 'fonksiyon'
+        run: supabase functions deploy --project-ref "$PROJE"
