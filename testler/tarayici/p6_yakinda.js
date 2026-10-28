@@ -80,8 +80,11 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     await y.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
     await y.page.locator('button').filter({ hasText: /^İletişim$/ }).first().click();
     const kutu = y.page.locator('label').filter({ hasText: '“Yakında açılıyoruz” modu' }).locator('input');
-    dogru(await kutu.isChecked() && await y.page.getByText(/Açık: sitede “Yakında açılıyoruz” şeridi var/).count() === 1, 'yakında modu açık görünüyor');
+    dogru(await kutu.isChecked() && await y.page.getByText(/Açık: ana sayfada “Yakında yayındayız” kapağı var/).count() === 1, 'yakında modu açık görünüyor');
+    const sorular = [];
+    y.page.once('dialog', (d) => { sorular.push(d.message()); d.accept(); });
     await kutu.click();
+    dogru(/Site herkese açılacak/.test(sorular[0] || ''), 'açılış öncesi onay soruluyor');
     await y.page.getByText(/Kapalı: site tam açık/).waitFor({ timeout: 3000 });
     await y.page.waitForTimeout(600);  // ekran hemen değişir; kayıt isteği arkadan gider
     const ay = y.istekler.filter((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/ayarlar');
