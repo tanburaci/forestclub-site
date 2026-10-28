@@ -125,7 +125,7 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     await u.page.goto(`${SITE}/uye/`);
     await u.page.getByText('Merhaba Deniz').waitFor({ timeout: 15000 });
     await sekme(u.page, 'Etkinlikler');
-    dogru(await u.page.getByRole('button', { name: 'Bilet satışı yakında' }).first().isDisabled(), 'canlıda bilet sepeti kapalı');
+    dogru(!(await u.page.getByRole('button', { name: 'Sepete ekle' }).first().isDisabled()), 'canlıda bilet sepeti açık (havale + dekont)');
     await sekme(u.page, 'Katıldıklarım');
     dogru(await u.page.getByText('Eski').count() > 0 && await u.page.getByRole('button', { name: 'Fotoğraflar' }).count() === 0, 'canlıda galeri yer tutucusu yok');
     await sekme(u.page, 'Üyeliğim');

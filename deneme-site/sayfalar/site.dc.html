@@ -252,7 +252,7 @@ a{color:#111111}a:hover{color:#000000}
               <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ sHata }}</p>
             </sc-if>
             <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; border-top: 2px solid #111111; padding-top: 10px"><span>Ara toplam</span><span>{{ araToplamYazi }}</span></div>
-            <span style="color: #5E5E5E; font-size: 13px">Aktif üyeysen, üye fiyatı bir sonraki adımda e-postanla kontrol edilip uygulanır (her etkinlikte 1 kişi için).</span>
+            <span style="color: #5E5E5E; font-size: 13px">{{ uyeFiyatNotu }}</span>
             <button type="button" class="fs-btn" onClick="{{ bilgiyeGec }}">Devam et</button>
           </div>
         </sc-if>
@@ -287,6 +287,40 @@ a{color:#111111}a:hover{color:#000000}
               <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5">Önizleme: <strong>deniz@ornek.com</strong> aktif üye olarak indirim alır. Ödeme iyzico'nun güvenli penceresinde yapılır; kart bilgileri bize gelmez.</p>
             </sc-if>
             <button type="button" onClick="{{ sOdemeHata }}" style="align-self: flex-start; font: 600 13px Figtree, sans-serif; color: #3A3A3A; background: transparent; border: 0; padding: 8px 4px; min-height: 40px; cursor: pointer; text-decoration: underline">Önizleme: başarısız ödemeyi göster</button>
+          </div>
+        </sc-if>
+
+        <!-- Canlıda: havale / EFT + dekont; yönetici onaylayınca biletler e-postayla gelir -->
+        <sc-if value="{{ sDekontta }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 12px">
+            <span class="fs-baslik" style="font-size: 44px">Ödeme</span>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-bottom: 1.5px solid #111111; padding-bottom: 12px">
+              <span style="font-size: 16px">{{ hakAdetYazi }}</span>
+              <span style="font-size: 30px; font-weight: 700">{{ hakTutarYazi }}</span>
+            </div>
+            <sc-if value="{{ hakIndirimli }}" hint-placeholder-val="{{ false }}">
+              <p role="status" style="margin: 0; background: #C9E33A; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600">Aktif üyeliğin bulundu 🌲 Üye fiyatı uygulandı.</p>
+            </sc-if>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3A3A3A">Yerlerin dekontunu yükleyince ayrılır. Tutarı aşağıdaki hesaba havale / EFT ile gönder, dekontunu yükle; onaylanınca biletlerin e-postana gelir.</p>
+            <div style="background: #F0F0EE; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; font-size: 15px">
+              <span><strong>Alıcı:</strong> {{ odemeAlici }}</span>
+              <span style="font-variant-numeric: tabular-nums"><strong>IBAN:</strong> {{ odemeIban }}</span>
+              <span style="color: #5E5E5E; font-size: 13px">Açıklamaya adını ve soyadını yaz.</span>
+            </div>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Dekont (PDF ya da fotoğraf, en fazla 10 MB)
+              <input type="file" accept=".pdf,image/*" onChange="{{ sDekontSec }}" style="font: 400 15px Figtree, sans-serif">
+            </label>
+            <sc-if value="{{ sHata }}" hint-placeholder-val="{{ false }}">
+              <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ sHata }}</p>
+            </sc-if>
+            <button type="button" class="fs-btn" onClick="{{ sDekontGonder }}">Dekontu gönder</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ sGonderildi }}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="display: flex; flex-direction: column; gap: 12px">
+            <span class="fs-baslik" style="font-size: 44px">Teşekkürler! 🌲</span>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5">Dekontun bize ulaştı. Onaylanınca biletlerin <strong>{{ sEposta }}</strong> adresine gelecek; girişte bilet kodunu göstermen yeterli.</p>
+            <button type="button" class="fs-btn" onClick="{{ sepetKapat }}">Tamam</button>
           </div>
         </sc-if>
 
@@ -983,7 +1017,7 @@ a{color:#111111}a:hover{color:#000000}
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis', destek: '', dsTutar: 1000, dsElle: false, dsTutarYazi: '', dsHata: '', dsKopya: '', waSecAcik: false };
+    this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', hak: null, sDosya: null, satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis', destek: '', dsTutar: 1000, dsElle: false, dsTutarYazi: '', dsHata: '', dsKopya: '', waSecAcik: false };
     this.bekle = null;
     this.kaydir = () => {
       if (this.bekle) return;
@@ -1167,7 +1201,9 @@ class Component extends DCLogic {
       return { sepet: s2, sHata: '' };
     });
     const sAdim = this.state.sAdim;
-    const ADIMLAR = [{ id: 'sepet', ad: '1 · Sepet' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
+    const ADIMLAR = canli ? [{ id: 'sepet', ad: '1 · Sepet' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'dekont', ad: '3 · Ödeme' }]
+      : [{ id: 'sepet', ad: '1 · Sepet' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
+    const hak = this.state.hak;
     const sepetToplamAdet = Object.values(sepet).reduce((t, n) => t + n, 0);
     return {
       uyeDugme: this.state.uyeGirisli ? 'Panelim' : 'Üye girişi',
@@ -1177,13 +1213,23 @@ class Component extends DCLogic {
       sepetAdet: String(sepetToplamAdet), sepetEtiket: `Sepeti aç, ${sepetToplamAdet} bilet`,
       sepetAcik: this.state.sepetAcik,
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
-      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(st.sAdim === 'tamam' ? { sAdim: 'sepet' } : {}) })),
+      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
       sAdimlar: ADIMLAR.map((a) => {
-        const sira = ADIMLAR.findIndex((x) => x.id === (sAdim === 'hata' ? 'bilgi' : sAdim));
+        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont' }[sAdim] || sAdim));
         const i = ADIMLAR.indexOf(a);
         return { ad: a.ad, stil: `border-radius:999px;padding:5px 10px;border:2px solid #111111;${i <= sira ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
       }),
       sSepette: sAdim === 'sepet', sBilgide: sAdim === 'bilgi', sTamam: sAdim === 'tamam', sHatali: sAdim === 'hata',
+      sDekontta: sAdim === 'dekont', sGonderildi: sAdim === 'gonderildi',
+      hakTutarYazi: hak ? TL(Number(hak.tutar)) : '', hakAdetYazi: hak ? `${hak.adet} bilet` : '', hakIndirimli: !!hak && Number(hak.tutar) < hak.araToplam,
+      odemeAlici: odemeBilgi.alici, odemeIban: odemeBilgi.iban,
+      sDekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ sDosya: f || null, sHata: '' }); },
+      sDekontGonder: () => {
+        this.setState({ sHata: 'Yükleniyor…' });
+        window.FCSBiletDekont(hak, this.state.sEposta, this.state.sDosya)
+          .then(() => this.setState({ sAdim: 'gonderildi', sepet: {}, hak: null, sDosya: null, sHata: '' }))
+          .catch((h) => this.setState({ sHata: h.message }));
+      },
       sepetSatirlar: sepetteKi.map((b) => {
         const key = `${b.tarih}|${b.ad}`;
         const n = sepet[key];
@@ -1195,8 +1241,10 @@ class Component extends DCLogic {
         };
       }),
       araToplamYazi: TL(araToplam), indirimYazi: indirim ? `−${TL(indirim)}` : '—', toplamYazi: toplam ? TL(toplam) : '0 TL',
-      uyeIndirimi: uyeMi && indirim > 0,
-      odemeDugme: toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)',
+      uyeIndirimi: !canli && uyeMi && indirim > 0,
+      uyeFiyatNotu: canli ? 'Aktif üyeysen önce üye girişi yap; üye fiyatı ödeme adımında uygulanır (her etkinlikte 1 kişi için).'
+        : 'Aktif üyeysen, üye fiyatı bir sonraki adımda e-postanla kontrol edilip uygulanır (her etkinlikte 1 kişi için).',
+      odemeDugme: canli ? 'Ödemeye geç · havale / EFT' : toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)',
       sAd: this.state.sAd, sEposta: this.state.sEposta, sTel: this.state.sTel, sOnay: this.state.sOnay, sHata: this.state.sHata,
       sAdYaz: (e) => this.setState({ sAd: e.target.value, sHata: '' }),
       sEpostaYaz: (e) => this.setState({ sEposta: e.target.value, sHata: '' }),
@@ -1213,6 +1261,16 @@ class Component extends DCLogic {
         // Ödeme sırasında kontenjan yeniden kontrol edilir
         const asan = sepetteKi.find((b) => sepet[`${b.tarih}|${b.ad}`] > kalanYer(b));
         if (asan) return this.setState({ sHata: `${asan.ad} için yeterli yer kalmadı.` });
+        // Canlıda: sunucu isteği açar ve tutarı hesaplar (üye fiyatı oturumdan), sonra havale + dekont
+        if (canli) {
+          if (!window.FCSBiletAc) return this.setState({ sHata: 'Bilet satışı şu an yapılamıyor; biraz sonra tekrar dene.' });
+          const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
+          this.setState({ sHata: 'Hazırlanıyor…' });
+          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim() })
+            .then((h) => this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' }))
+            .catch((h) => this.setState({ sHata: h.message }));
+          return;
+        }
         let no = 4821;
         const biletler = [];
         sepetteKi.forEach((b) => { for (let i = 0; i < sepet[`${b.tarih}|${b.ad}`]; i++) biletler.push({ ad: b.ad, zaman: `${b.gun} ${b.ay} · ${b.saat}`, kod: `FC-B-${no++}` }); });

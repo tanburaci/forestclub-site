@@ -38,7 +38,7 @@ select is_empty($$
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
     and p.proname not in ('demo_adres_mi', 'etkinlik_doluluk', 'istanbul_bugun', 'sayac_artir', 'tr_tarih', 'yonetici_mi',
       'anket_gonder', 'dekont_karar', 'dondurma_bitir', 'elden_odeme', 'eposta_deneme', 'eposta_yeniden_dene',
-      'etkinlik_durum_degistir', 'etkinlik_kaydi', 'giris_kaydet', 'kontenjan_degistir', 'profil_kaydet', 'saglik_ozeti',
+      'bilet_karar', 'etkinlik_durum_degistir', 'etkinlik_kaydi', 'giris_kaydet', 'kontenjan_degistir', 'profil_kaydet', 'saglik_ozeti',
       'uye_anonimlestir', 'uye_bagla', 'uyelik_dondur', 'veri_kopyasi', 'veri_talebi_ac', 'yoklama_isaretle') $$,
   'giriş yapmış kullanıcı yalnız izinli işlevleri çalıştırabilir');
 

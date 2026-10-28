@@ -54,7 +54,7 @@ class Component extends DCLogic {
         b2: { ad: 'Breakfast Club', tarih: '2026-11-30', saat: '10.00', bitisSaat: '12.00', bilgi: 'Pazar 10.00', kontenjan: 35, kayitli: 13, ben: 'yok', sira: 0, fiyat: 600, uye: 'ucretsiz' },
       },
       ...(window.FCU ? { anket: window.FCU.anket } : {}),
-      sepet: {}, sepetAdim: 'yok', satinAlinan: [], secili: '', bilet: null, kodHata: '', dondurma: h.dondurma || null, dondurmaSecim: false, silmeSoru: false, silmeIstendi: false, veriMesaj: '', profilMesaj: '',
+      sepet: {}, sepetAdim: 'yok', satinAlinan: [], hak: null, sepetDosya: null, sepetHata: '', secili: '', bilet: null, kodHata: '', dondurma: h.dondurma || null, dondurmaSecim: false, silmeSoru: false, silmeIstendi: false, veriMesaj: '', profilMesaj: '',
     });
   }
   componentDidMount() {
@@ -139,9 +139,9 @@ class Component extends DCLogic {
         // Üyeye kendi fiyatı büyük: üyelik kapsamındakilerde “Sana ücretsiz”, bilet yalnız misafir için
         fiyatYazi: !aktif ? `Bilet ${TL(e.fiyat)}` : e.uye === 'ucretsiz' ? 'Sana ücretsiz' : e.uye === 'yuzde50' ? `Sana ${TL(e.fiyat / 2)}` : `Bilet ${TL(e.fiyat)}`,
         benimFiyat: !aktif ? 'Üyelik aktif değil: tam fiyat' : e.uye === 'ucretsiz' ? `Üyelik kapsamında · misafir bileti ${TL(e.fiyat)}` : e.uye === 'yuzde50' ? `Normal fiyat ${TL(e.fiyat)} · üyelere %50` : 'Üyelere de aynı fiyat',
-        sepetDugme: canli ? 'Bilet satışı yakında' : kalan <= sepette ? 'Yer kalmadı' : sepette ? `Sepette ${sepette} · bir tane daha` : aktif && !ucretli ? 'Misafir bileti ekle' : 'Sepete ekle',
+        sepetDugme: !e.fiyat ? 'Bilet satışı yok' : kalan <= sepette ? 'Yer kalmadı' : sepette ? `Sepette ${sepette} · bir tane daha` : aktif && !ucretli ? 'Misafir bileti ekle' : 'Sepete ekle',
         sepetSinif: aktif && !ucretli ? 'fu-btn fu-btn-ikincil' : 'fu-btn',
-        sepetKapali: canli || kalan <= sepette,  // bilet satışı kartla ödemeyle gelecek
+        sepetKapali: !e.fiyat || kalan <= sepette,  // canlıda bilet havale + dekontla (yönetici onayı)
         sepeteEkle: () => { if (kalan > sepette) this.setState((s) => ({ sepet: { ...s.sepet, [id]: (s.sepet[id] || 0) + 1 }, sepetAdim: 'sepet' })); },
       };
     });
@@ -314,6 +314,12 @@ class Component extends DCLogic {
       secimEtk, kodOlustur, kodHata: this.state.kodHata, bilet: this.state.bilet || { karekod: [], izgara: '', not: '' }, biletVar: !!this.state.bilet,
       yaklasan,
       sepetVar: sepetIdler.length > 0, sepetOdemede: this.state.sepetAdim === 'odeme', satinTamam: this.state.sepetAdim === 'tamam' && !sepetIdler.length,
+      sepetDekontta: this.state.sepetAdim === 'dekont', biletGonderildi: this.state.sepetAdim === 'gonderildi' && !sepetIdler.length,
+      sepetOdemeNotu: canli ? `Havale / EFT ile ödersin, dekontunu yüklersin; onaylanınca biletler ${this.state.hesap} adresine gelir.`
+        : `“Kartla öde”ye basınca iyzico’nun güvenli ödeme penceresi açılır; biletler ${this.state.hesap} adresine gelir.`,
+      sepetHata: this.state.sepetHata, hakTutar: this.state.hak ? TL(Number(this.state.hak.tutar)) : '',
+      odemeAlici: ((window.FC_AYAR && window.FC_AYAR.odeme) || {}).alici || '', odemeIban: ((window.FC_AYAR && window.FC_AYAR.odeme) || {}).iban || '',
+      sepetDekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ sepetDosya: f || null, sepetHata: '' }); },
       satinAlinan: this.state.satinAlinan,
       sepetToplam: TL(sepetToplamTL),
       sepetSatirlar: sepetIdler.map((id) => {
@@ -332,12 +338,26 @@ class Component extends DCLogic {
           azalt: () => degis(-1), arttir: () => degis(1),
         };
       }),
-      sepetOdeDugme: this.state.sepetAdim === 'odeme' ? `Kartla öde · ${TL(sepetToplamTL)}` : 'Ödemeye geç',
-      sepetBosalt: () => this.setState({ sepet: {}, sepetAdim: 'yok' }),
+      sepetOdeDugme: this.state.sepetAdim === 'dekont' ? 'Dekontu gönder' : this.state.sepetAdim !== 'odeme' ? 'Ödemeye geç'
+        : canli ? 'Devam · havale / EFT' : `Kartla öde · ${TL(sepetToplamTL)}`,
+      sepetBosalt: () => this.setState({ sepet: {}, sepetAdim: 'yok', hak: null, sepetHata: '' }),
       // Gerçek sitede iyzico; başarılı ödemede biletler kesinleşir, üye bileti alınan etkinlikte yerin ayrılır
       sepetOde: () => {
-        if (this.state.sepetAdim !== 'odeme') return this.setState({ sepetAdim: 'odeme' });
-        if (canli) return yakinda('Bilet satın alma (kartla ödeme) yakında. Şimdilik bilet için bize WhatsApp\'tan yaz.');
+        // Canlıda: 1) sunucu isteği açar ve tutarı söyler, 2) dekont yüklenir; yönetici onaylayınca biletler e-postayla
+        if (canli && this.state.sepetAdim === 'dekont') {
+          this.setState({ sepetHata: 'Yükleniyor…' });
+          return window.FCSBiletDekont(this.state.hak, this.state.hesap, this.state.sepetDosya)
+            .then(() => this.setState({ sepetAdim: 'gonderildi', sepet: {}, hak: null, sepetDosya: null, sepetHata: '' }))
+            .catch((h) => this.setState({ sepetHata: h.message }));
+        }
+        if (this.state.sepetAdim !== 'odeme') return this.setState({ sepetAdim: 'odeme', sepetHata: '' });
+        if (canli) {
+          this.setState({ sepetHata: 'Hazırlanıyor…' });
+          const kalemler = sepetIdler.map((id) => ({ etkinlik: Number(id), adet: this.state.sepet[id] }));
+          return window.FCSBiletAc({ kalemler, ad: h.ad, eposta: this.state.hesap, tel: (this.state.profil && this.state.profil.telefon) || '' })
+            .then((hak) => this.setState({ sepetAdim: 'dekont', hak, sepetHata: '' }))
+            .catch((x) => this.setState({ sepetHata: x.message }));
+        }
         let no = 7301;
         const biletler = [];
         sepetIdler.forEach((id) => { for (let i = 0; i < this.state.sepet[id]; i++) biletler.push({ ad: kayit[id].ad, zaman: tarihYaz(kayit[id].tarih), kod: `FC-B-${no++}` }); });
