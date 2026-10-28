@@ -1012,6 +1012,8 @@ class Component extends DCLogic {
       ...secilenEtkinlik,
       yaklasanYok: !etkGorunum.some((x) => x.tarih >= BUGUN),
       sekmeler,
+      // Tasarım önizlemesine özel notlar canlıda görünmez
+      onizleme: !window.FC,
       anaSayfa: sekme === 'ana',
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',

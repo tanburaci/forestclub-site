@@ -283,7 +283,9 @@ a{color:#111111}a:hover{color:#000000}
             </div>
             <button type="button" class="fs-btn" onClick="{{ odemeyeGec }}">{{ odemeDugme }}</button>
             <button type="button" class="fs-btn fs-btn-acik" onClick="{{ sepeteDon }}">Sepete dön</button>
-            <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5">Önizleme: <strong>deniz@ornek.com</strong> aktif üye olarak indirim alır. Ödeme iyzico'nun güvenli penceresinde yapılır; kart bilgileri bize gelmez.</p>
+            <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5">Önizleme: <strong>deniz@ornek.com</strong> aktif üye olarak indirim alır. Ödeme iyzico'nun güvenli penceresinde yapılır; kart bilgileri bize gelmez.</p>
+            </sc-if>
             <button type="button" onClick="{{ sOdemeHata }}" style="align-self: flex-start; font: 600 13px Figtree, sans-serif; color: #3A3A3A; background: transparent; border: 0; padding: 8px 4px; min-height: 40px; cursor: pointer; text-decoration: underline">Önizleme: başarısız ödemeyi göster</button>
           </div>
         </sc-if>
@@ -408,7 +410,9 @@ a{color:#111111}a:hover{color:#000000}
               <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ tHata }}</p>
             </sc-if>
             <button type="button" onClick="{{ tanismaGonder }}" class="fs-btn">Biletimi al</button>
-            <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5">Önizleme: <strong>deniz@ornek.com</strong> üye, <strong>misafir@ornek.com</strong> biletini daha önce almış; başka her e-posta bilet alır.</p>
+            <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5">Önizleme: <strong>deniz@ornek.com</strong> üye, <strong>misafir@ornek.com</strong> biletini daha önce almış; başka her e-posta bilet alır.</p>
+            </sc-if>
           </form>
         </sc-if>
 
@@ -767,7 +771,9 @@ a{color:#111111}a:hover{color:#000000}
           </li>
         </sc-for>
       </ol>
-      <p style="margin: 0; color: #5E5E5E; font-size: 13px">Önizleme: fiyatlar örnektir. Üye fiyatları ödeme adımında e-postayla üyelik kontrol edilerek uygulanır.</p>
+      <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
+        <p style="margin: 0; color: #5E5E5E; font-size: 13px">Önizleme: fiyatlar örnektir. Üye fiyatları ödeme adımında e-postayla üyelik kontrol edilerek uygulanır.</p>
+      </sc-if>
       <p style="margin: 0; color: #3A3A3A; font-size: 15px">Üyeysen yerini <a href="Uye.dc.html">üye panelinden</a> ayırabilirsin; kontenjan dolunca bekleme listesine yazılırsın.</p>
       <h3 style="margin: 16px 0 0; font-size: 22px">Geçmiş etkinlikler</h3>
       <ol class="fs-gecmis" aria-label="Geçmiş etkinlikler" style="list-style: none; margin: 0; padding: 4px 14px 12px 4px; display: flex; flex-direction: column; gap: 14px">
@@ -1280,6 +1286,8 @@ class Component extends DCLogic {
         }
         this.setState({ tanisma: UYE_EPOSTA.includes(ep) ? 'uye' : BILETLI.includes(ep) ? 'kullanilmis' : 'verildi' });
       },
+      // Tasarım önizlemesine özel notlar (örnek e-postalar, örnek fiyatlar) canlıda görünmez
+      onizleme: !canli,
       waLink: waNo ? `https://wa.me/${waNo}` : '#iletisim',
       // Biz Kimiz? › WhatsApp'tan yaz: kişi seçilir (numaralar ayar.js'te)
       waSecAcik: this.state.waSecAcik, waSecAcikYazi: this.state.waSecAcik ? 'true' : 'false',

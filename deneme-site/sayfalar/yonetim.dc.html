@@ -637,7 +637,9 @@ a{color:#111111}a:hover{color:#000000}
                 <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ mAktarAc }}">Kasalar arası aktar</button>
               </div>
             </div>
-            <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 14px">Tasarım önizlemesi: tutarlar ve kayıtlar örnektir.</p>
+            <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 14px">Tasarım önizlemesi: tutarlar ve kayıtlar örnektir.</p>
+            </sc-if>
             <label style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 600; font-size: 14px">Kart komisyonu (iyzico) %
               <input class="fc-input" type="text" inputmode="decimal" placeholder="örn. 2,99" value="{{ komisyonOran }}" onChange="{{ komisyonYaz }}" disabled="{{ yakindaKapali }}" title="{{ yakindaIpucu }}" style="width: 110px">
               <span style="font-weight: 400; color: #5E5E5E">{{ komisyonNot }}</span>
@@ -946,7 +948,9 @@ a{color:#111111}a:hover{color:#000000}
               </div>
               <button type="button" class="fc-btn" onClick="{{ eFormAc }}">Envanter girişi</button>
             </div>
-            <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 14px">Tasarım önizlemesi: kalemler örnektir.</p>
+            <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 14px">Tasarım önizlemesi: kalemler örnektir.</p>
+            </sc-if>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
               <sc-for list="{{ eOzet }}" as="k" hint-placeholder-count="4">
@@ -2361,6 +2365,8 @@ class Component extends DCLogic {
       ...secilenEtkinlik,
       yaklasanYok: !etkGorunum.some((x) => x.tarih >= BUGUN),
       sekmeler,
+      // Tasarım önizlemesine özel notlar canlıda görünmez
+      onizleme: !window.FC,
       anaSayfa: sekme === 'ana',
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
