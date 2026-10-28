@@ -28,7 +28,7 @@ const aidat = (id, ad) => ({ id, tarih: gun(-id), tur: 'gelir', tutar: 3000, kas
     await y.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
     // Ana sayfadaki "Başvurular" düğmesi Başvurular sekmesini açar (eskiden boş bağlantıydı)
     await y.page.locator('button.fc-btn', { hasText: /^Başvurular$/ }).click();
-    dogru(await y.page.getByText('Havale dekontları, Açık Çağrı başvuruları').isVisible({ timeout: 3000 }).catch(() => false), 'ana sayfa "Başvurular" düğmesi sekmeyi açıyor');
+    dogru(await y.page.getByText('Havale dekontları ve Açık Çağrı başvuruları').isVisible({ timeout: 3000 }).catch(() => false), 'ana sayfa "Başvurular" düğmesi sekmeyi açıyor');
 
     await sekme(y.page, 'Muhasebe');
     await y.page.getByText('Aidatların geldiği hesap').waitFor({ timeout: 5000 });
