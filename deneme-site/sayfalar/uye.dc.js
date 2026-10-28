@@ -309,6 +309,11 @@ class Component extends DCLogic {
       sAna: sekme === 'ana', sEtkinlikler: sekme === 'etkinlikler', sKatildiklarim: sekme === 'katildiklarim',
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
       ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf,
+      formVar: !!(window.FCU && window.FCU.formlar && window.FCU.formlar.length),
+      formlar: ((window.FCU && window.FCU.formlar) || []).map((f) => ({
+        baslik: f.baslik, durum: f.doldu ? '· doldurdun ✓' : '', link: `/form/?id=${f.id}`,
+        dugme: f.doldu ? 'Cevabını düzelt' : 'Doldur', sinif: f.doldu ? 'fu-btn fu-btn-ikincil' : 'fu-btn',
+      })),
       // Canlıda (kartla ödeme gelene kadar) ödeme havale + dekont sayfasından
       odemeyeGit: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ sekme: 'uyelik', odeme: 'ozet' })),
       anaSayfayaGit: () => this.setState({ sekme: 'ana', odeme: 'yok' }),

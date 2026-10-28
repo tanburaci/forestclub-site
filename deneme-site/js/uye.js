@@ -47,6 +47,13 @@
       sb.from('uyelik_dondurmalari').select('bas, gun').eq('uye_id', u.id).is('bitti', null).order('id', { ascending: false }).limit(1),
       sb.from('ayarlar').select('anahtar, deger'),
     ]);
+    // Açık formlar (RLS yalnız açıkları gösterir) ve üyenin doldurdukları; tablo yoksa panel yine açılır
+    const [frm, fyn] = await Promise.all([
+      sb.from('formlar').select('id, baslik').order('created_at', { ascending: false }),
+      sb.from('form_yanitlari').select('form_id').eq('uye_id', u.id),
+    ]);
+    const doldurulan = new Set((fyn.data || []).map((y) => y.form_id));
+    const formlar = (frm.data || []).map((f) => ({ id: f.id, baslik: f.baslik, doldu: doldurulan.has(f.id) }));
     [ods, kys, etks, ank, don, ayr].forEach((r) => { if (r.error) throw r.error; });
     const ayar = Object.fromEntries(ayr.data.map((a) => [a.anahtar, a.deger]));
     const yanit = new Map(ank.data.map((a) => [a.etkinlik_id, a]));
@@ -74,7 +81,7 @@
       anket[String(e.id)] = a ? { puan: a.puan, yorum: a.yorum || '', bitti: true } : { puan: 0, yorum: '', bitti: false };
     });
     return {
-      bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket,
+      bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket, formlar,
       kartOdeme: ayar.kart_odeme === true, dondurmaKurali: ayar.dondurma || { gunler: [7, 14], yillik: 2 },
       hesap: {
         ad: u.ad, kod: u.kod, bitis: u.bitis || '', muaf: !!u.aidat_muaf,

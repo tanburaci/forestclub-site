@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Forest Club Urla · Form</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#111111}a:hover{color:#000000}
+.ff-btn{font:700 16px Figtree,sans-serif;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:14px 22px;min-height:48px;background:#111111;color:#FFFFFF;border:2.5px solid #111111;box-shadow:3px 3px 0 #111111;cursor:pointer}
+.ff-btn:hover{background:#000000;color:#FFFFFF}
+.ff-btn-acik{background:transparent;color:#111111}
+.ff-btn-acik:hover{background:#E8E8E6;color:#000000}
+.ff-baslik{font-family:'Amatic SC',cursive;font-weight:700;color:#111111;line-height:1;margin:0}
+.ff-input{font:400 16px Figtree,sans-serif;width:100%;box-sizing:border-box;padding:12px 14px;border:2px solid #111111;border-radius:12px;background:#FFFFFF;color:#000000;min-height:46px}
+.ff-soru{display:flex;flex-direction:column;gap:8px;font-weight:600;font-size:15px}
+.ff-secim{display:flex;gap:10px;align-items:center;font-weight:400;font-size:15px;min-height:40px;border:2px solid #111111;border-radius:12px;padding:8px 12px;cursor:pointer}
+.ff-secim input{width:20px;height:20px;margin:0;accent-color:#111111}
+</style>
+</helmet>
+
+<!-- Üye formu: Yönetim › Formlar'da kurulur, üye girişiyle doldurulur; cevap sonradan düzeltilebilir -->
+<div style="font-family: Figtree, sans-serif; color: #000000; background: #DCE9C8; min-height: 100vh; padding: 40px 16px; box-sizing: border-box">
+  <div style="max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+    <a href="Site.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; align-self: center">
+      <img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="" style="width: 56px">
+      <span class="ff-baslik" style="font-size: 38px">Forest Club Urla</span>
+    </a>
+
+    <div style="background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 6px 6px 0 #111111; border-radius: 16px; padding: 30px 26px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+      <sc-if value="{{ girisYok }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 14px; text-align: center; align-items: center">
+          <h1 class="ff-baslik" style="font-size: 46px">Önce üye girişi</h1>
+          <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #3A3A3A">Bu formu doldurmak için üye panelinden giriş yap; sonra bu bağlantıyı yeniden aç.</p>
+          <a class="ff-btn" href="{{ girisLink }}">Üye girişi</a>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ kapali }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 14px; text-align: center; align-items: center">
+          <h1 class="ff-baslik" style="font-size: 46px">Form kapalı</h1>
+          <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #3A3A3A">Bu form şu an cevap almıyor. Üye panelinde açık formları görebilirsin.</p>
+          <a class="ff-btn" href="/uye">Üye paneline dön</a>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ formda }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 20px">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <h1 class="ff-baslik" style="font-size: 52px">{{ baslik }}</h1>
+            <sc-if value="{{ aciklamaVar }}" hint-placeholder-val="{{ true }}">
+              <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3A3A3A; white-space: pre-line">{{ aciklama }}</p>
+            </sc-if>
+            <sc-if value="{{ dahaOnce }}" hint-placeholder-val="{{ false }}">
+              <p role="status" style="margin: 0; background: #F0F0EE; border-radius: 10px; padding: 10px 12px; font-size: 14px">Bu formu daha önce doldurdun; cevaplarını düzeltip yeniden gönderebilirsin.</p>
+            </sc-if>
+          </div>
+          <sc-for list="{{ sorular }}" as="s" hint-placeholder-count="3">
+            <div class="ff-soru">
+              <span>{{ s.metin }}<span style="color: #82301F">{{ s.yildiz }}</span></span>
+              <sc-if value="{{ s.kisa }}" hint-placeholder-val="{{ true }}">
+                <input class="ff-input" type="text" maxlength="200" aria-label="{{ s.metin }}" value="{{ s.deger }}" onChange="{{ s.yaz }}">
+              </sc-if>
+              <sc-if value="{{ s.uzun }}" hint-placeholder-val="{{ false }}">
+                <textarea class="ff-input" rows="4" maxlength="2000" aria-label="{{ s.metin }}" value="{{ s.deger }}" onChange="{{ s.yaz }}" style="resize: vertical"></textarea>
+              </sc-if>
+              <sc-if value="{{ s.secimli }}" hint-placeholder-val="{{ false }}">
+                <div role="group" aria-label="{{ s.metin }}" style="display: flex; flex-direction: column; gap: 8px">
+                  <sc-for list="{{ s.secenekler }}" as="o" hint-placeholder-count="2">
+                    <label class="ff-secim"><input type="{{ s.girdi }}" name="{{ s.id }}" checked="{{ o.secili }}" onChange="{{ o.sec }}"> {{ o.ad }}</label>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <sc-if value="{{ hata }}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ hata }}</p>
+          </sc-if>
+          <button type="button" class="ff-btn" onClick="{{ gonder }}" style="align-self: flex-start">{{ gonderYazi }}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ gitti }}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="display: flex; flex-direction: column; gap: 12px; text-align: center; align-items: center">
+          <h1 class="ff-baslik" style="font-size: 52px">Teşekkürler! 🌲</h1>
+          <p style="margin: 0; font-size: 17px; line-height: 1.5">Cevapların bize ulaştı. İstersen sonra bu bağlantıdan düzeltebilirsin.</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center">
+            <a class="ff-btn" href="/uye">Üye paneline dön</a>
+            <button type="button" class="ff-btn ff-btn-acik" onClick="{{ duzelt }}">Cevaplarımı düzelt</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":1200}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // Canlıda veri form.js'ten (window.FCF); önizlemede örnek form
+    const F = window.FCF || { durum: 'form', form: { id: 1, baslik: 'Kasım ayı önerileri', aciklama: 'Kasım buluşmaları için fikirlerini merak ediyoruz.', sorular: [
+      { id: 's1', metin: 'Hangi buluşmalara katılmak istersin?', tur: 'coklu', secenekler: ['Breakfast Club', 'Sunset Club', 'Yoga', 'Atölye'], zorunlu: true },
+      { id: 's2', metin: 'Hangi gün sana uygun?', tur: 'tek', secenekler: ['Cumartesi', 'Pazar'], zorunlu: true },
+      { id: 's3', metin: 'Önerdiğin etkinlik', tur: 'kisa' },
+      { id: 's4', metin: 'Eklemek istediğin bir şey var mı?', tur: 'uzun' },
+    ] }, cevaplar: {} };
+    this.F = F;
+    this.state = { cevaplar: { ...(F.cevaplar || {}) }, hata: '', gitti: false };
+  }
+  renderVals() {
+    const F = this.F;
+    const c = this.state.cevaplar;
+    const formda = F.durum === 'form' && !this.state.gitti;
+    const sorular = ((F.form && F.form.sorular) || []).map((s) => {
+      const coklu = s.tur === 'coklu';
+      const secili = coklu ? (Array.isArray(c[s.id]) ? c[s.id] : []) : c[s.id];
+      return {
+        id: s.id, metin: s.metin, yildiz: s.zorunlu ? ' *' : '',
+        kisa: s.tur === 'kisa', uzun: s.tur === 'uzun', secimli: s.tur === 'tek' || coklu, girdi: coklu ? 'checkbox' : 'radio',
+        deger: typeof c[s.id] === 'string' ? c[s.id] : '',
+        yaz: (e) => { const v = e.target.value; this.setState((st) => ({ cevaplar: { ...st.cevaplar, [s.id]: v }, hata: '' })); },
+        secenekler: (s.secenekler || []).map((o) => ({
+          ad: o, secili: coklu ? secili.includes(o) : secili === o,
+          sec: () => this.setState((st) => {
+            if (!coklu) return { cevaplar: { ...st.cevaplar, [s.id]: o }, hata: '' };
+            const eski = Array.isArray(st.cevaplar[s.id]) ? st.cevaplar[s.id] : [];
+            return { cevaplar: { ...st.cevaplar, [s.id]: eski.includes(o) ? eski.filter((x) => x !== o) : [...eski, o] }, hata: '' };
+          }),
+        })),
+      };
+    });
+    return {
+      girisYok: F.durum === 'giris', girisLink: '/uye', kapali: F.durum === 'kapali', formda, gitti: this.state.gitti,
+      baslik: F.form ? F.form.baslik : '', aciklama: F.form ? F.form.aciklama || '' : '', aciklamaVar: !!(F.form && F.form.aciklama),
+      dahaOnce: !!F.dahaOnce, sorular, hata: this.state.hata, gonderYazi: F.dahaOnce ? 'Cevaplarımı güncelle' : 'Gönder',
+      duzelt: () => this.setState({ gitti: false }),
+      gonder: () => {
+        const eksik = F.form.sorular.find((s) => s.zorunlu && (s.tur === 'coklu' ? !(Array.isArray(c[s.id]) && c[s.id].length) : !String(c[s.id] || '').trim()));
+        if (eksik) return this.setState({ hata: `"${eksik.metin}" sorusunu cevapla.` });
+        if (!window.FCFGonder) return this.setState({ gitti: true, hata: '' });
+        this.setState({ hata: 'Gönderiliyor…' });
+        window.FCFGonder(c).then(() => { F.dahaOnce = true; this.setState({ gitti: true, hata: '' }); }).catch((h) => this.setState({ hata: h.message }));
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>
