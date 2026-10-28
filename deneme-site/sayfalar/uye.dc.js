@@ -156,7 +156,8 @@ class Component extends DCLogic {
 
     // Ana sayfa: etkinlik seç → karekod (kayıtlı değilse yer ayrılır, doluysa uyarır)
     const secili = this.state.secili;
-    const secimEtk = Object.entries(kayit).map(([id, e]) => {
+    // Üye karekodu yalnız üyelere ücretsiz buluşmalarda; ücretli etkinlikte girişte bilet kodu (FC-B) geçer
+    const secimEtk = Object.entries(kayit).filter(([, e]) => e.uye === 'ucretsiz').map(([id, e]) => {
       const [, m, d] = e.tarih.split('-');
       const on = id === secili;
       return {

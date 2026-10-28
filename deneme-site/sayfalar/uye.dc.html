@@ -149,7 +149,7 @@ a{color:#111111}a:hover{color:#000000}
           <section class="fu-kart" style="display: flex; flex-direction: column; gap: 16px">
             <div>
               <h2 style="margin: 0; font-size: 22px">Etkinlik giriş karekodu</h2>
-              <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 15px">Gitmek istediğin buluşmayı seç, karekodunu oluştur; girişte göstermen yeterli.</p>
+              <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 15px">Üyelere ücretsiz buluşmalardan gideceğini seç, karekodunu oluştur; girişte göstermen yeterli. Ücretli etkinliklerde girişte bilet kodun geçer.</p>
             </div>
 
             <sc-if value="{{ aktif }}" hint-placeholder-val="{{ true }}">
@@ -682,7 +682,8 @@ class Component extends DCLogic {
 
     // Ana sayfa: etkinlik seç → karekod (kayıtlı değilse yer ayrılır, doluysa uyarır)
     const secili = this.state.secili;
-    const secimEtk = Object.entries(kayit).map(([id, e]) => {
+    // Üye karekodu yalnız üyelere ücretsiz buluşmalarda; ücretli etkinlikte girişte bilet kodu (FC-B) geçer
+    const secimEtk = Object.entries(kayit).filter(([, e]) => e.uye === 'ucretsiz').map(([id, e]) => {
       const [, m, d] = e.tarih.split('-');
       const on = id === secili;
       return {
