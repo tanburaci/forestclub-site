@@ -1,6 +1,7 @@
 # Forest Club Urla · siteyi (deneme-site/) Netlify'a doğrudan yayınlar. Netlify'ın kendi kuyruğu canlı yayınları atladığı
 # için ("a new one was scheduled"). Şimdilik yalnız elle (Actions › Netlify'a yayınla); otomatik çalışma hata çözülünce açılacak.
-# netlify.toml (güvenlik başlıkları, yönlendirmeler) deneme-site/ içinden okunur; derleme adımı yok.
+# Yalnız deneme-site/ yayınlanır (deponun kökü değil: kökte site yok, "Page not found" olur); netlify.toml
+# (güvenlik başlıkları, yönlendirmeler) oradan okunur; derleme adımı yok.
 # Secrets: NETLIFY_AUTH_TOKEN (Netlify › User settings › Applications), NETLIFY_SITE_ID (Site configuration › General)
 name: Netlify'a yayınla
 
@@ -24,9 +25,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Yayınla
         working-directory: deneme-site
         run: |
           if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then echo "NETLIFY_AUTH_TOKEN ve NETLIFY_SITE_ID gerekli"; exit 1; fi
-          npx --yes netlify-cli@17.38.1 deploy --prod --dir . --no-build --message "main@${GITHUB_SHA::7}"
+          test -f index.html || { echo "deneme-site/index.html yok; yanlış klasör"; exit 1; }
+          npx --yes netlify-cli deploy --prod --dir=. --no-build --message "main@${GITHUB_SHA::7}"
