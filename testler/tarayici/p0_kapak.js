@@ -9,7 +9,7 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
 
 const veri = {
   kapak: true,
-  tablolar: { etkinlikler: [{ id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfast Club', kim: null, kontenjan: 30, bilet_fiyati: null,
+  tablolar: { etkinlikler: [{ id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Kahvaltı Testi', kim: null, kontenjan: 30, bilet_fiyati: 600,
     uyelere: null, satilan_bilet: 0, durum: 'yayinda', aciklama: 'Kahvaltı', link: null }] },
   rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null] },
 };
@@ -23,7 +23,7 @@ const veri = {
       const { page, konsol } = await sayfaAc(tarayici, veri, null);
       await page.setViewportSize({ width: w, height: h });
       await page.goto(`${SITE}/`);
-      await page.getByText('Breakfast Club').first().waitFor({ timeout: 15000 });
+      await page.waitForFunction(() => document.querySelectorAll('#kok *').length > 100, null, { timeout: 15000 });
       dogru(await page.getByRole('heading', { name: /Yakında yayındayız/ }).isVisible(), `${ad}: kapak görünüyor`);
       dogru(!(await page.getByText(/Örnek duyuru/).isVisible().catch(() => false)), `${ad}: sahte "Örnek duyuru" şeridi görünmüyor`);
       dogru(await page.getByText('Ağaçların altında').first().count() > 0 || await page.locator('#kok *').count() > 50, `${ad}: site arkada çizildi`);
@@ -34,8 +34,21 @@ const veri = {
       const noktalar = [[10, 10], [w - 10, 10], [10, h - 10], [w - 10, h - 10], [w / 2, h - 60]];
       const hepsiKapakta = await page.evaluate((ns) => ns.every(([x, y]) => document.getElementById('fc-yakinda').contains(document.elementFromPoint(x, y))), noktalar);
       dogru(hepsiKapakta, `${ad}: ekranın her yeri kapakta (tıklama siteye gitmez)`);
-      // Kapakta bağlantı yok; Tab ile siteye ulaşılamaz
-      dogru(await page.locator('#fc-yakinda a, #fc-yakinda button').count() === 0, `${ad}: kapakta tıklanacak bir şey yok`);
+      // Tıklanan tek şey Instagram bağlantısı; Tab ile siteye ulaşılamaz
+      const ig = page.locator('#fc-yakinda a, #fc-yakinda button');
+      dogru(await ig.count() === 1 && await ig.getAttribute('href') === 'https://www.instagram.com/forestcluburla/' && await ig.getAttribute('target') === '_blank',
+        `${ad}: kapakta yalnız Instagram bağlantısı var (yeni sekmede)`);
+      await page.context().route('https://www.instagram.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>instagram</p>' }));
+      const [sekme] = await Promise.all([page.context().waitForEvent('page'), ig.click()]);
+      await sekme.waitForLoadState();
+      dogru(sekme.url().startsWith('https://www.instagram.com/forestcluburla'), `${ad}: Instagram bağlantısı açılıyor (${sekme.url()})`);
+      await sekme.close();
+      // Açılışa kadar yalnız ilk ekran ve "Biz Kimiz?" görünür
+      const gorunen = await page.evaluate(() => document.body.innerText);
+      // Etkinlik adı testte "Kahvaltı Testi" (Biz Kimiz? kartlarındaki "Breakfast Club" ile karışmasın)
+      const yasak = ['Kahvaltı Testi', ' TL', 'Üyelik', 'SSS', 'İletişim', '%50', 'WhatsApp', 'Üye girişi', 'Sık sorulan'].filter((x) => gorunen.includes(x));
+      if (/Etkinlikler(?!i)/.test(gorunen)) yasak.push('Etkinlikler (menü)');  // ilk ekrandaki "Etkinlikleri gör" kalır
+      dogru(gorunen.includes('Biz Kimiz?') && !yasak.length, `${ad}: etkinlikler, fiyatlar, üyelik, SSS, iletişim ve menüdeki diğer başlıklar görünmüyor (${yasak})`);
       for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
       dogru(await page.evaluate(() => !document.getElementById('kok').contains(document.activeElement)), `${ad}: Tab ile siteye odaklanılamıyor`);
       dogru(await page.evaluate(() => document.getElementById('kok').hasAttribute('inert')), `${ad}: site inert kaldı (çizimden sonra da)`);
