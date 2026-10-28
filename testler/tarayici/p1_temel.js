@@ -17,8 +17,11 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
 
 const { oturum } = require('./yardim.js');
 
+const { KAPAKSIZ } = require('./yardim.js');
+
 async function sayfaAc(tarayici, veri, oturumJson) {
   const ctx = await tarayici.newContext();
+  await ctx.addInitScript(KAPAKSIZ);
   const page = await ctx.newPage();
   const istekler = [];
   const konsol = [];
