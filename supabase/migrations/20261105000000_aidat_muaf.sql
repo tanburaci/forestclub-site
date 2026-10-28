@@ -18,6 +18,7 @@ begin
   end if;
   return new;
 end $$;
+revoke execute on function public.aidat_muaf_uygula() from public, anon, authenticated;
 
 drop trigger if exists aidat_muaf on public.uyeler;
 create trigger aidat_muaf before insert or update of aidat_muaf, bitis, durum on public.uyeler
