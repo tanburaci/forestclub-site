@@ -46,6 +46,8 @@
     return sonuc;
   };
   window.FCSCagri = (alanlar) => formGonder('cagri', alanlar);
+  // Destek ol (kartla): sunucu iyzico ödeme sayfasının adresini döndürür
+  window.FCSDestek = async (tutar) => (await formGonder('destek', { tutar })).sayfa;
   window.FCSTanisma = async (ad, eposta, etkAnahtar) => {
     const id = window.FCS && window.FCS.anahtar[etkAnahtar];
     if (!id) throw new Error('Geleceğin buluşmayı seç.');
@@ -70,6 +72,7 @@
       window.FCSBasvuru = null;
       window.FCSTanisma = null;
       window.FCSCagri = null;
+      window.FCSDestek = null;
     }
     kok.textContent = '';
     const site = await window.DC.bagla('/sayfalar/site.dc.html', kok, { varliklar: A.varliklar });
