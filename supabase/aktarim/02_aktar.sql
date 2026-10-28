@@ -152,19 +152,21 @@ create temp table k_dekont on commit drop as
 select h.satir,
        lower(aktarim.al(h.veri, 'e_posta', 'eposta', 'e_posta_adresi', 'email', 'e_mail', 'mail')) as eposta,
        aktarim.al(h.veri, 'ad_soyad', 'ad_soyadi', 'adi_soyadi', 'isim', 'ad') as ad,
-       aktarim.al(h.veri, 'zaman_damgasi', 'tarih', 'gonderim_tarihi', 'yukleme_tarihi') as zaman_ham,
+       aktarim.al(h.veri, 'zaman_damgasi', 'tarih', 'gonderim_tarihi', 'yukleme_tarihi', 'yuklenme') as zaman_ham,
        aktarim.al(h.veri, 'odeme_tarihi', 'dekont_tarihi', 'zaman_damgasi', 'tarih') as odeme_ham,
        aktarim.al(h.veri, 'karar_tarihi', 'onay_tarihi', 'sonuc_tarihi') as karar_ham,
        aktarim.al(h.veri, 'tutar', 'miktar', 'odenen_tutar') as tutar_ham,
        aktarim.al(h.veri, 'dekont', 'dosya', 'dekont_dosyasi', 'dekont_linki', 'dosya_linki', 'link', 'dekont_yukle', 'drive') as dosya,
        aktarim.al(h.veri, 'durum', 'onay', 'sonuc_durumu') as durum_ham,
-       aktarim.al(h.veri, 'sonuc', 'not', 'notlar', 'aciklama', 'red_gerekcesi') as sonuc
+       aktarim.al(h.veri, 'sonuc', 'islendi', 'not', 'notlar', 'aciklama', 'red_gerekcesi') as sonuc
 from aktarim.ham h where h.sayfa = 'dekontlar';
 
 alter table k_dekont add column uye_id bigint, add column durum dekont_durum, add column kaynak text;
 update k_dekont k set
   uye_id = (select id from public.uyeler u where u.eposta = k.eposta),
+  -- "Onay" onay kutusu ise TRUE / FALSE gelir
   durum = case when lower(coalesce(k.durum_ham, '')) ~ 'red' then 'reddedildi'
+               when lower(coalesce(k.durum_ham, '')) ~ '^\s*(true|evet|x|✓|✔)\s*$' then 'onaylandi'
                when lower(coalesce(k.durum_ham, '')) ~ '(onay|kabul|tamam)' and lower(k.durum_ham) !~ 'bekl' then 'onaylandi'
                else 'bekliyor' end::dekont_durum,
   kaynak = 'sheets:dekont:' || md5(coalesce(k.eposta, '') || '|' || coalesce(k.dosya, '') || '|' || coalesce(k.zaman_ham, ''));
@@ -235,12 +237,12 @@ from (
          aktarim.al(h.veri, 'e_posta_veya_telefon_numaran', 'iletisim', 'e_posta', 'telefon') as iletisim,
          aktarim.al(h.veri, 'forest_club_uyesi_misin', 'uye', 'uye_mi', 'uyelik') as uye,
          aktarim.al(h.veri, 'calisman_hangi_alanda', 'alan') as alan,
-         aktarim.al(h.veri, 'atolyenin_veya_bulusmanin_adi', 'baslik', 'atolye_adi', 'bulusma_adi') as baslik,
+         aktarim.al(h.veri, 'atolyenin_veya_bulusmanin_adi', 'atolye_bulusma_adi', 'baslik', 'atolye_adi', 'bulusma_adi') as baslik,
          aktarim.al(h.veri, 'bize_biraz_anlatir_misin', 'anlatim', 'anlat', 'aciklama') as anlatim,
-         aktarim.al(h.veri, 'daha_once_bu_calismayi_gerceklestirdin_mi', 'deneyim') as deneyim,
+         aktarim.al(h.veri, 'daha_once_bu_calismayi_gerceklestirdin_mi', 'daha_once_yapti_mi', 'deneyim') as deneyim,
          aktarim.al(h.veri, 'bulusma_ne_kadar_surer', 'sure') as sure,
          aktarim.al(h.veri, 'kac_kisiyle_gerceklestirmek_istersin', 'kisi', 'kisi_sayisi') as kisi,
-         aktarim.al(h.veri, 'ihtiyac_duydugun_malzemeler_veya_alan_var_mi', 'ihtiyac', 'malzemeler') as ihtiyac,
+         aktarim.al(h.veri, 'ihtiyac_duydugun_malzemeler_veya_alan_var_mi', 'malzeme_alan_ihtiyaci', 'ihtiyac', 'malzemeler') as ihtiyac,
          aktarim.al(h.veri, 'kasim_ayinda_hangi_gunler_uygunsun', 'gunler', 'uygun_gunler') as gunler,
          aktarim.al(h.veri, 'durum') as durum,
          aktarim.al(h.veri, 'notlar', 'not') as notlar
