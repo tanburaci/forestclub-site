@@ -20,39 +20,9 @@
 <script src="/js/ayar.js?v=202611021200"></script>
 <script src="/js/ortak.js?v=202611021200"></script>
 <script src="/js/site.js?v=202611021200" defer></script>
-<!-- YAKINDA KAPAĞI: site görünür ve kaydırılır ama hiçbir yeri tıklanmaz, klavyeyle de ulaşılmaz (#kok inert);
-     tıklanan tek şey karttaki Instagram bağlantısı.
-     Açılışta bu iki blok ve #kok'taki inert silinir. -->
-<style id="fc-yakinda-stil">
-#fc-yakinda{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:transparent}
-#fc-yakinda .kart{max-width:440px;width:100%;box-sizing:border-box;background:#FFFFFF;border:3px solid #111111;border-radius:18px;box-shadow:6px 6px 0 #111111;padding:26px 24px;text-align:center;font:16px Figtree,sans-serif;color:#111111;transform:rotate(-1.5deg)}
-#fc-yakinda h1{font-family:'Amatic SC',cursive;font-weight:700;font-size:56px;line-height:1;margin:0 0 10px}
-#fc-yakinda p{margin:0 0 16px;line-height:1.5;color:#3A3A3A}
-#fc-yakinda .ig{display:inline-block;font:700 15px Figtree,sans-serif;color:#FFFFFF;background:#111111;border:2.5px solid #111111;border-radius:999px;padding:10px 18px;text-decoration:none}
-#fc-yakinda .ig:hover{background:#FFFFFF;color:#111111}
-@media (max-width:480px){#fc-yakinda h1{font-size:44px}}
-/* Tasarımdan kalan "Örnek duyuru" şeridi açılışa kadar gizli (gerçek duyuru yönetim panelinden gelecek) */
-#kok [role="alert"][style*="F6C945"]{display:none !important}
-/* Açılışa kadar yalnız ilk ekran ve "Biz Kimiz?" görünür: etkinlikler, fiyatlar, üyelik, başvuru, SSS ve alt bilgi gizli */
-#kok #bulusmalar, #kok #bulusmalar ~ *{display:none !important}
-/* "Biz Kimiz?" kartlarından fiyat söyleyen ("üyelere %50 indirim") */
-#kok #kulup div[style*="grid-template-columns: repeat(2"] > div:nth-child(3){display:none !important}
-/* Üst menüde yalnız "Biz Kimiz?" kalır (diğerleri gizli bölümlere götürür; üye girişi açılışta) */
-#kok nav .fs-menu:not([href="#kulup"]), #kok nav .fs-uye-giris{display:none !important}
-/* Kapak dururken "Yakında açılıyoruz" şeridi de gizli (kapak aynı şeyi söylüyor) */
-#kok .fs-yakinda-serit{display:none !important}
-</style>
 </head>
 <body style="margin:0;background:#FFFFFF">
-<div id="fc-yakinda" role="dialog" aria-modal="true" aria-labelledby="fc-yakinda-baslik">
-  <div class="kart">
-    <h1 id="fc-yakinda-baslik">Yakında yayındayız 🌲</h1>
-    <p>Forest Club Urla'nın yeni sitesi hazırlanıyor. O zamana kadar buluşmalarımızı Instagram'dan takip edebilirsin.</p>
-    <a class="ig" href="https://www.instagram.com/forestcluburla/" target="_blank" rel="noopener">Instagram · @forestcluburla</a>
-  </div>
-</div>
-<!-- /YAKINDA KAPAĞI -->
-<div id="kok" inert style="font:16px Figtree,sans-serif;padding:24px">Yükleniyor…</div>
+<div id="kok" style="font:16px Figtree,sans-serif;padding:24px">Yükleniyor…</div>
 <noscript><p style="font:16px Figtree,sans-serif;padding:0 24px">Forest Club Urla: Urla'da ağaçların altında kahvaltı ve gün batımı buluşmaları, yoga, atölyeler ve müzik. Siteyi görmek için tarayıcında JavaScript'i aç; bize Instagram'da @forestcluburla adresinden ulaşabilirsin.</p></noscript>
 </body>
 </html>
