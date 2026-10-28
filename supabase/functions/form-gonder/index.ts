@@ -3,6 +3,8 @@
 // Dekont iki adımda gelir: "dekont_adres" yükleme hakkı ve tek kullanımlık imzalı yükleme adresi verir (Turnstile'lı),
 // dosya tarayıcıdan doğrudan depoya yüklenir, "dekont_kaydet" kaydı açar (yalnız bu e-postaya verilmiş yol).
 //
+// "Yakında" modunda (ayarlar.yakinda) üyelik başvurusu ve tanışma bileti alınmaz; Açık Çağrı ve dekont açık.
+//
 // Secrets: TURNSTILE_SECRET (zorunlu), IP_TUZU (isteğe bağlı; IP özetine katılır)
 import { CORS, json, servisIstemcisi } from '../_ortak/ortak.ts';
 
@@ -55,7 +57,16 @@ async function rpc(islev: string, parametre: Record<string, unknown>): Promise<u
   return data;
 }
 
+async function acildiMi(): Promise<void> {
+  const { data, error } = await servisIstemcisi().from('ayarlar').select('deger').eq('anahtar', 'yakinda').maybeSingle();
+  if (error) throw error;
+  if (data && data.deger === true) {
+    throw new KullaniciHatasi('Üyelik başvuruları ve tanışma biletleri açılışla birlikte başlıyor. Instagram\'dan takipte kal!', 403);
+  }
+}
+
 async function isle(tur: string, v: Record<string, unknown>): Promise<unknown> {
+  if (tur === 'basvuru' || tur === 'tanisma') await acildiMi();
   switch (tur) {
     case 'basvuru':
       return rpc('basvuru_yap', {

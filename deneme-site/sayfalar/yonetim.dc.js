@@ -103,6 +103,8 @@ class Component extends DCLogic {
       kartOdeme: window.FC ? window.FC.ayarlar.kart_odeme === true : false,
       ilt: { eposta: 'forestcluburla@gmail.com', alan: 'Pinya, Urla', whatsapp: '', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}) },
       iltMesaj: '', kameraAcik: false,
+      yakinda: window.FC ? window.FC.ayarlar.yakinda === true : false,
+      siteDuyurusu: window.FC ? String(window.FC.ayarlar.site_duyurusu || '') : '', duyuruMesaj: '',
       biletler: this.DEMO.biletler,
       komisyonOran: '',
       anaMesaj: '',
@@ -226,6 +228,15 @@ class Component extends DCLogic {
     if (!window.FCAyarKaydet) return;
     window.FCAyarKaydet(anahtar, yeni).then(() => window.FC_ORTAK.bildir(`${etiket} ${yeni ? 'açık' : 'kapalı'} ✓`),
       (h) => { this.setState({ [alan]: !yeni }); window.FC_ORTAK.bildir(h.message, true); });
+  }
+  // Sitenin en üstündeki duyuru (ayarlar.site_duyurusu); boş metin kaldırır
+  duyuruYaz(metin) {
+    if (metin.length > 300) return this.setState({ duyuruMesaj: 'Duyuru en çok 300 karakter olabilir.' });
+    const tamam = metin ? 'Yayında ✓ Sitenin en üstünde görünüyor.' : 'Duyuru kaldırıldı ✓';
+    if (!window.FCAyarKaydet) return this.setState({ siteDuyurusu: metin, duyuruMesaj: `Önizleme: ${tamam}` });
+    this.setState({ duyuruMesaj: 'Kaydediliyor…' });
+    return window.FCAyarKaydet('site_duyurusu', metin).then(() => this.setState({ siteDuyurusu: metin, duyuruMesaj: tamam }),
+      (h) => this.setState({ duyuruMesaj: h.message }));
   }
   // Kapıda kamera: okunan kod yoklama kutusuna yazılır ve hemen işlenir
   kameraKapat() {
@@ -531,9 +542,14 @@ class Component extends DCLogic {
           }
           this.setState({ iptalMesaj: 'Kaydediliyor…' });
           window.FCEtkinlikDurum(p.key, ip.tur, ip.tarih, ip.neden, ip.mesaj || varsayilan)
+            .then((r) => {
+              // Ekrandaki söz: duyuru "sitenin üstünde ve maille"
+              if (window.FCAyarKaydet) window.FCAyarKaydet('site_duyurusu', (ip.mesaj || varsayilan).slice(0, 300)).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
+              return r;
+            })
             .then((r) => this.setState((s) => ({
               etkDurum: { ...s.etkDurum, [p.key]: etiket },
-              iptalMesaj: `${ip.tur === 'iptal' ? 'İptal edildi: etkinlik sitedeki listeden kalktı.' : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) görünüyor, kayıtlar taşındı; bu listede sayfa yenilenince güncellenir.`} Duyuru ${r.mail} kişiye maille gidiyor.`,
+              iptalMesaj: `${ip.tur === 'iptal' ? 'İptal edildi: etkinlik sitedeki listeden kalktı.' : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) görünüyor, kayıtlar taşındı; bu listede sayfa yenilenince güncellenir.`} Duyuru sitenin en üstünde yayında (İletişim › Site durumu’ndan kaldırılır) ve ${r.mail} kişiye maille gidiyor.`,
             })))
             .catch((h) => this.setState({ iptalMesaj: h.message }));
         },
@@ -1053,6 +1069,15 @@ class Component extends DCLogic {
       kartOdeme: this.state.kartOdeme,
       kartOdemeDegis: () => this.ayarDegis('kartOdeme', 'kart_odeme', 'Kartla ödeme'),
       ilt: this.state.ilt, iltMesaj: this.state.iltMesaj,
+      yakinda: this.state.yakinda,
+      yakindaNot: this.state.yakinda
+        ? 'Açık: sitede “Yakında açılıyoruz” şeridi var; üyelik başvurusu, tanışma bileti ve bilet satışı kapalı. Üye paneli ve dekont sayfası çalışır. Açılış günü işareti kaldırın.'
+        : 'Kapalı: site tam açık; başvuru, tanışma bileti ve bilet satışı çalışıyor.',
+      yakindaDegis: () => this.ayarDegis('yakinda', 'yakinda', '“Yakında” modu'),
+      siteDuyurusu: this.state.siteDuyurusu, duyuruMesaj: this.state.duyuruMesaj,
+      siteDuyurusuYaz: (e) => this.setState({ siteDuyurusu: e.target.value, duyuruMesaj: '' }),
+      siteDuyurusuKaydet: () => this.duyuruYaz(this.state.siteDuyurusu.trim()),
+      siteDuyurusuKaldir: () => this.duyuruYaz(''),
       iltAlan: Object.fromEntries(['eposta', 'alan', 'whatsapp', 'topluluk', 'instagram'].map((a) => [a, (e) => {
         const v = e.target.value;
         this.setState((s) => ({ ilt: { ...s.ilt, [a]: v }, iltMesaj: '' }));
