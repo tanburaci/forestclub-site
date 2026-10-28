@@ -162,5 +162,5 @@
     await formGonder('bilet_kaydet', { id: hak.id, eposta: String(eposta || '').trim().toLowerCase() });
   };
 
-  window.FC_ORTAK = { sb, bugun, bildir, formGonder, kurtarma: /type=recovery/.test(location.hash) };
+  window.FC_ORTAK = { sb, bugun, bildir, formGonder, kurtarma: /type=(recovery|invite)/.test(location.hash) };
 })();

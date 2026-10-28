@@ -95,6 +95,12 @@ const aidat = (id, ad) => ({ id, tarih: gun(-id), tur: 'gelir', tutar: 3000, kas
     await u.page.getByText('Şifren kaydedildi ✓', { exact: false }).waitFor({ timeout: 5000 });
     dogru(sifreler.includes('orman2026'), 'profilde şifre e-postasız belirlendi');
     dogru(!u.konsol.some((x) => /pageerror/.test(x)), 'üye: sayfa hatası yok');
+
+    // Hoş geldin mailindeki davet bağlantısı (type=invite): üye panelinde doğrudan yeni şifre sorulur
+    const d = await sayfaAc(tarayici, uv, oturum('uye-1', 'ezgi@posta.test'));
+    await d.page.goto(`${SITE}/uye/#type=invite`);
+    await d.page.getByRole('button', { name: 'Şifremi kaydet' }).waitFor({ timeout: 15000 });
+    dogru(await d.page.getByLabel('Yeni şifre (tekrar)').count() === 1, 'davet bağlantısı: doğrudan yeni şifre ekranı');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
   } finally {
