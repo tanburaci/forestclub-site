@@ -113,7 +113,7 @@ class Component extends DCLogic {
       // Muhasebedeki katılımcı sayısı = yoklamada gelenler (geçmiş etkinlikler)
       katilimci: Object.fromEntries(Object.entries(this.DEMO.kayitlar).filter(([k]) => k.split('|')[0] <= this.BUGUN).map(([k, v]) => [k, v.gelen.length])),
       arama: '', uyeSayisi: 100,
-      mAy: '2026-10', mEtk: '', mGorunum: 'hareketler', mFiltre: 'tumu', mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mMesaj: '',
+      mAy: '2026-10', mEtk: '', mGorunum: 'hareketler', mFiltre: 'tumu', faturaKopya: null, mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mMesaj: '',
       // Envanter (örnek kalemler; satın alınanların gideri muhasebede ayrıca kayıtlı)
       envanter: window.FC ? window.FC.envanter : [
         { id: 1, ad: 'Yoga matı', kategori: 'Yoga / hareket', adet: 6, birim: 'adet', giris: 'satin', tarih: '2026-09-03', tutar: 4800, kasa: 'banka', konum: 'Depo' },
@@ -718,6 +718,16 @@ class Component extends DCLogic {
           faturaYaz(h.id, { fatura: 'kesildi', faturaNo: no.trim().slice(0, 60), faturaTarih: this.BUGUN });
         },
         faturaGerekmez: () => faturaYaz(h.id, { fatura: 'gerekmez', faturaNo: '', faturaTarih: '' }),
+        // Portala yapıştırmak için: alıcı (açıklamadaki "· " sonrası), hizmet, tutar
+        faturaKopyaYazi: this.state.faturaKopya === h.id ? 'Kopyalandı ✓' : 'Bilgileri kopyala',
+        faturaKopyala: () => {
+          const alici = h.kategori === 'Aidat' && h.aciklama.includes('·') ? h.aciklama.split('·').pop().trim() : '';
+          const hizmet = h.kategori === 'Destek' ? 'Forest Club Urla topluluk desteği' : h.kategori === 'Aidat' ? 'Forest Club Urla üyeliği – 30 gün' : h.aciklama;
+          const metin = `Alıcı: ${alici || '(adı yaz)'}\nTCKN: 11111111111\nAdres: Urla / İzmir\nHizmet: ${hizmet}\nMiktar: 1\nToplam (KDV dahil): ${String(h.tutar).replace('.', ',')} TL\nTarih: ${tarihYaz(h.tarih)}`;
+          const bitti = () => this.setState({ faturaKopya: h.id });
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(metin).then(bitti, () => window.prompt('Kopyala:', metin));
+          else window.prompt('Kopyala:', metin);
+        },
         faturaGeriAl: () => faturaYaz(h.id, { fatura: '', faturaNo: '', faturaTarih: '' }),
       }));
 
@@ -912,6 +922,7 @@ class Component extends DCLogic {
       muhasebeSekme: sekme === 'muhasebe',
       kasalar, aylar, ayOzet, hareketSatirlari, etkMaliyet, etkOzetMetin, kasaTablo,
       hareketYok: !hareketSatirlari.length,
+      faturaRehberi: mFiltre === 'fatura',
       hareketYokMetin: mFiltre === 'fatura' ? 'Faturası kesilecek gelir yok ✓' : mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
       mEtkFiltre: [{ id: '', ad: 'Tüm kayıtlar' }, ...etkGorunum.filter((x) => x.tarih.startsWith(mAy) || `${x.tarih}|${x.ad}` === mEtk)
         .map((x) => ({ id: `${x.tarih}|${x.ad}`, ad: `${x.gun}.${x.tarih.slice(5, 7)} ${x.ad}` }))]

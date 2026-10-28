@@ -35,6 +35,13 @@ const satir = (id, tarih, tur, tutar, aciklama, ek = {}) => ({ id, tarih, tur, t
     dogru(metin.length === 2 && metin.some((x) => x.includes('Aidat · Ezgi')) && metin.some((x) => x.includes('Kartla destek')),
       `süzgeç: yalnız kesilmemiş gelirler, ay sınırı yok (${metin.length})`);
 
+    dogru(await y.page.getByText('Fatura nasıl kesilir? (GİB e-Arşiv portalı, ücretsiz)').isVisible()
+      && await y.page.getByRole('link', { name: 'earsivportal.efatura.gov.tr' }).getAttribute('href') === 'https://earsivportal.efatura.gov.tr', 'süzgeçte fatura kesme rehberi görünüyor');
+    await y.page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: SITE });
+    await satirlar.filter({ hasText: 'Aidat · Ezgi' }).getByRole('button', { name: 'Bilgileri kopyala' }).click();
+    await satirlar.filter({ hasText: 'Aidat · Ezgi' }).getByRole('button', { name: 'Kopyalandı ✓' }).waitFor({ timeout: 3000 });
+    const pano = await y.page.evaluate(() => navigator.clipboard.readText());
+    dogru(/^Alıcı: Ezgi\nTCKN: 11111111111\nAdres: Urla \/ İzmir\nHizmet: Forest Club Urla üyeliği – 30 gün\nMiktar: 1\nToplam \(KDV dahil\): 3000 TL/.test(pano), `fatura bilgileri panoya kopyalandı (${JSON.stringify(pano)})`);
     y.page.once('dialog', (d) => d.accept('GIB2026000002'));
     await satirlar.filter({ hasText: 'Aidat · Ezgi' }).getByRole('button', { name: 'Kesildi' }).click();
     await y.page.getByRole('button', { name: 'Faturası kesilecek (1)' }).waitFor({ timeout: 3000 });
