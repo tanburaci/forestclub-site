@@ -69,6 +69,7 @@
         kontenjan: e.kontenjan, kayitli: d.kayitli + e.satilan_bilet,
         ben: k ? k.durum : 'yok', sira: k && k.sira ? k.sira : 0,
         fiyat: Number(e.bilet_fiyati || 0), uye: e.bilet_fiyati ? e.uyelere || 'tam' : 'ucretsiz',
+        aciklama: e.aciklama || '', kim: e.kim || '', afis: e.afis || '',
         satilan: e.satilan_bilet,
       };
     });

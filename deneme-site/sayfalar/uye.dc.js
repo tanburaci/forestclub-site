@@ -116,7 +116,7 @@ class Component extends DCLogic {
       const [, m, d] = e.tarih.split('-');
       let durum, rozet, dugme, islem, dugmeSinif = 'fu-btn';
       if (e.ben === 'kayitli') {
-        durum = 'Yerin ayrıldı ✓'; rozet = pill('#C9E33A', '#111111'); dugme = 'Gelemeyeceğim'; dugmeSinif = 'fu-btn fu-btn-ikincil';
+        durum = 'Yerin ayrıldı ✓'; rozet = pill('#C9E33A', '#111111'); dugme = 'Randevumu iptal et'; dugmeSinif = 'fu-btn fu-btn-ikincil';
         islem = () => kGuncelle(id, { ben: 'yok', kayitli: e.kayitli - 1 });
       } else if (e.ben === 'bekleme') {
         durum = `Bekleme listesinde ${e.sira}. sıradasın`; rozet = pill('#F6C945', '#111111'); dugme = 'Listeden çık'; dugmeSinif = 'fu-btn fu-btn-ikincil';
@@ -125,7 +125,7 @@ class Component extends DCLogic {
         durum = `Dolu · ${e.kontenjan}/${e.kontenjan}`; rozet = pill('#F3DCD5', '#82301F'); dugme = 'Bekleme listesine yazıl';
         islem = () => kGuncelle(id, { ben: 'bekleme', sira: 4 });
       } else {
-        durum = `${e.kontenjan - e.kayitli} yer kaldı`; rozet = pill('#F0F0EE', '#111111'); dugme = 'Geliyorum';
+        durum = `${e.kontenjan - e.kayitli} yer kaldı`; rozet = pill('#F0F0EE', '#111111'); dugme = 'Randevu oluştur';
         islem = () => kGuncelle(id, { ben: 'kayitli', kayitli: e.kayitli + 1 });
       }
       const sepette = this.state.sepet[id] || 0;
@@ -134,12 +134,17 @@ class Component extends DCLogic {
       return {
         id, gun: d, ay: AYLAR[Number(m) - 1], ad: e.ad, bilgi: `${e.bilgi} · Pinya, Urla · ${e.kayitli}/${e.kontenjan} kişi`,
         durum, rozet, dugme, islem, dugmeSinif, takvim: takvimLink(e.ad, e.tarih, e.saat, e.bitisSaat),
+        acik: this.state.acikEtk === id, acikYazi: this.state.acikEtk === id ? 'true' : 'false',
+        acYazi: this.state.acikEtk === id ? 'Ayrıntıları gizle' : 'Ayrıntılar ve afiş',
+        ac: () => this.setState((s) => ({ acikEtk: s.acikEtk === id ? null : id })),
+        afisVar: !!e.afis, afis: e.afis || '', afisAlt: `${e.ad} afişi`, kimVar: !!e.kim, kim: e.kim || '',
+        aciklama: e.aciklama || 'Ayrıntılar yakında.',
         // Ücretsiz (üyelik kapsamında) etkinlikte aktif üye "Geliyorum" der; sepet misafir bileti içindir
         geliyorVar: aktif && (!ucretli || e.ben === 'kayitli'),
         // Üyeye kendi fiyatı büyük: üyelik kapsamındakilerde “Sana ücretsiz”, bilet yalnız misafir için
         fiyatYazi: !e.fiyat ? 'Üyelere ücretsiz' : !aktif ? `Bilet ${TL(e.fiyat)}` : e.uye === 'ucretsiz' ? 'Sana ücretsiz' : e.uye === 'yuzde50' ? `Sana ${TL(e.fiyat / 2)}` : `Bilet ${TL(e.fiyat)}`,
-        benimFiyat: !e.fiyat ? (aktif ? 'Üyelik kapsamında · “Geliyorum” de' : 'Üyeliğin aktif olunca ücretsiz') : !aktif ? (e.uye === 'ucretsiz' ? 'Üyelere ücretsiz · üyeliğin aktif değil, bilet tam fiyat' : 'Üyelik aktif değil: tam fiyat') : e.uye === 'ucretsiz' ? `Üyelik kapsamında · misafir bileti ${TL(e.fiyat)}` : e.uye === 'yuzde50' ? `Normal fiyat ${TL(e.fiyat)} · üyelere %50` : 'Üyelere de aynı fiyat',
-        sepetDugme: !e.fiyat ? 'Bilet satışı yok' : kalan <= sepette ? 'Yer kalmadı' : sepette ? `Sepette ${sepette} · bir tane daha` : aktif && !ucretli ? 'Misafir bileti ekle' : 'Sepete ekle',
+        benimFiyat: !e.fiyat ? (aktif ? 'Üyelerimize ücretsiz · “Randevu oluştur” de' : 'Üyelerimize ücretsiz · üyeliğin aktif olunca') : !aktif ? (e.uye === 'ucretsiz' ? 'Üyelere ücretsiz · üyeliğin aktif değil, bilet tam fiyat' : 'Üyelik aktif değil: tam fiyat') : e.uye === 'ucretsiz' ? `Üyelik kapsamında · misafir bileti ${TL(e.fiyat)}` : e.uye === 'yuzde50' ? `Normal fiyat ${TL(e.fiyat)} · üyelere %50` : 'Üyelere de aynı fiyat',
+        sepetDugme: !e.fiyat ? 'Bilet satışı yok' : kalan <= sepette ? 'Yer kalmadı' : sepette ? `Sepette ${sepette} · bir tane daha` : aktif && !ucretli ? 'Misafir için randevu' : 'Randevu oluştur',
         sepetSinif: aktif && !ucretli ? 'fu-btn fu-btn-ikincil' : 'fu-btn',
         sepetKapali: !e.fiyat || kalan <= sepette,  // canlıda bilet havale + dekontla (yönetici onayı)
         sepeteEkle: () => { if (kalan > sepette) this.setState((s) => ({ sepet: { ...s.sepet, [id]: (s.sepet[id] || 0) + 1 }, sepetAdim: 'sepet' })); },
