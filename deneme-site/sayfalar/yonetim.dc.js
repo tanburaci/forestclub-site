@@ -997,6 +997,7 @@ class Component extends DCLogic {
       hatirla: this.state.hatirla,
       hatirlaDegis: () => this.setState((s) => ({ hatirla: !s.hatirla })),
       etkinlikSec: () => this.setState({ sekme: 'etkinlikler', formAcik: true, eklendiMesaj: '' }),
+      basvurularaGit: () => this.setState({ sekme: 'basvurular' }),
       formAc: () => this.setState({ formAcik: true, eklendiMesaj: '' }),
       formKapat: () => this.setState({ formAcik: false, form: { ...this.BOS }, formHata: '' }),
       formAcik: this.state.formAcik,
