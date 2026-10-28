@@ -75,7 +75,8 @@ const aidat = (id, ad) => ({ id, tarih: gun(-id), tur: 'gelir', tutar: 3000, kas
     };
     const u = await sayfaAc(tarayici, uv, oturum('uye-1', 'ezgi@posta.test'));
     await u.page.route('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', headers: { 'access-control-allow-origin': '*' }, body: QG }));
-    await u.page.route(`${SB}/auth/v1/user`, (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ id: 'uye-1', email: 'ezgi@posta.test', aud: 'authenticated' }) }));
+    const sifreler = [];
+    await u.page.route(`${SB}/auth/v1/user`, (r) => (r.request().method() === 'PUT' && sifreler.push(JSON.parse(r.request().postData()).password), r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ id: 'uye-1', email: 'ezgi@posta.test', aud: 'authenticated' }) })));
     await u.page.goto(`${SITE}/uye/`);
     await u.page.getByText('Merhaba Ezgi').waitFor({ timeout: 15000 });
     dogru(await u.page.getByText('Üyeliğin aktif · aidattan muafsın').count() === 1, 'ana sayfa: aidattan muaf');
@@ -85,6 +86,14 @@ const aidat = (id, ad) => ({ id, tarih: gun(-id), tur: 'gelir', tutar: 3000, kas
     dogru(!/Kartla yenile|Üye ol · 3\.000|Yenile · havale/.test(govde), 'muaf üyeye ödeme düğmesi yok');
     dogru(!govde.includes('gün kaldı') && !govde.includes('2099'), 'kalan gün / 2099 görünmüyor');
     dogru(!govde.includes('Üyeliğimi dondur'), 'dondurma önerilmiyor');
+    // Şifre panelden belirlenir (e-posta bağlantısı gerekmez)
+    await sekme(u.page, 'Profilim');
+    await u.page.getByRole('button', { name: 'Şifre belirle / değiştir' }).click();
+    await u.page.getByLabel('Yeni şifre', { exact: true }).fill('orman2026');
+    await u.page.getByLabel('Yeni şifre (tekrar)').fill('orman2026');
+    await u.page.getByRole('button', { name: 'Şifremi kaydet' }).click();
+    await u.page.getByText('Şifren kaydedildi ✓', { exact: false }).waitFor({ timeout: 5000 });
+    dogru(sifreler.includes('orman2026'), 'profilde şifre e-postasız belirlendi');
     dogru(!u.konsol.some((x) => /pageerror/.test(x)), 'üye: sayfa hatası yok');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
