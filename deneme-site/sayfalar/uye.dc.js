@@ -90,19 +90,20 @@ class Component extends DCLogic {
     };
 
     // Üyelik durumu: aktif / süresi dolmuş / hiç ödememiş
-    const aktif = !!bitis && bitis > BUGUN;
+    const muaf = !!h.muaf;  // aidattan muaf (yönetim ekibi): süresiz aktif, ödeme ve dondurma yok
+    const aktif = muaf || (!!bitis && bitis > BUGUN);
     const durumTur = aktif ? 'aktif' : bitis ? 'doldu' : 'basvuru';
-    const kalan = aktif ? gunFark(bitis, BUGUN) : 0;
+    const kalan = aktif && bitis ? gunFark(bitis, BUGUN) : 0;
     const dond = this.state.dondurma;
     const uyari = durumTur === 'doldu'
       ? { baslik: 'Üyeliğinin süresi doldu', metin: `Üyeliğin ${tarihYaz(bitis)} tarihinde sona erdi. Buluşmalara katılmak ve giriş karekodu almak için üyeliğini yenile.`, dugme: 'Üyeliğini yenile · 3.000 TL' }
       : { baslik: 'Üyeliğin henüz başlamadı', metin: 'Başvurun bize ulaştı. Buluşmalara katılmak ve giriş karekodu almak için üyelik ödemesini tamamla; üyeliğin hemen başlar.', dugme: 'Üye ol · 3.000 TL' };
-    const yeniBitis = gunEkle(aktif ? bitis : BUGUN, 30);
+    const yeniBitis = gunEkle(aktif && bitis ? bitis : BUGUN, 30);
     const ben = {
       ad: h.ad, ilkAd: h.ad.split(' ')[0], harf: h.ad[0], eposta: this.state.hesap,
-      ozet: aktif ? `Üyeliğin aktif · ${kalan} gün kaldı (bitiş ${tarihYaz(bitis)})` : durumTur === 'doldu' ? `Üyeliğin ${tarihYaz(bitis)} tarihinde sona erdi` : 'Başvurun alındı, üyeliğin henüz başlamadı',
-      durumYazi: dond ? 'Donduruldu' : aktif ? (kalan <= 3 ? 'Aktif · yakında bitiyor' : 'Aktif') : durumTur === 'doldu' ? 'Süresi doldu' : 'Üye değil',
-      rozet: dond ? pill('#E4E4E2', '#111111') : aktif ? (kalan <= 3 ? pill('#E4E4E2', '#111111') : pill('#111111', '#FFFFFF')) : pill('#F3DCD5', '#82301F'),
+      ozet: muaf ? 'Üyeliğin aktif · aidattan muafsın' : aktif ? `Üyeliğin aktif · ${kalan} gün kaldı (bitiş ${tarihYaz(bitis)})` : durumTur === 'doldu' ? `Üyeliğin ${tarihYaz(bitis)} tarihinde sona erdi` : 'Başvurun alındı, üyeliğin henüz başlamadı',
+      durumYazi: muaf ? 'Aidattan muaf' : dond ? 'Donduruldu' : aktif ? (kalan <= 3 ? 'Aktif · yakında bitiyor' : 'Aktif') : durumTur === 'doldu' ? 'Süresi doldu' : 'Üye değil',
+      rozet: muaf ? pill('#111111', '#FFFFFF') : dond ? pill('#E4E4E2', '#111111') : aktif ? (kalan <= 3 ? pill('#E4E4E2', '#111111') : pill('#111111', '#FFFFFF')) : pill('#F3DCD5', '#82301F'),
       kalan: String(kalan), bitisYazi: bitis ? tarihYaz(bitis) : '—', kalanEtiket: `30 günden ${kalan} gün kaldı`,
       kalanCubuk: `height:12px;border-radius:4px;background:#111111;width:${Math.max(2, Math.min(100, (kalan * 100) / 30))}%`,
     };
@@ -301,7 +302,7 @@ class Component extends DCLogic {
       sekmeler,
       sAna: sekme === 'ana', sEtkinlikler: sekme === 'etkinlikler', sKatildiklarim: sekme === 'katildiklarim',
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
-      ben, aktif, pasif: !aktif, uyari,
+      ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf,
       // Canlıda (kartla ödeme gelene kadar) ödeme havale + dekont sayfasından
       odemeyeGit: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ sekme: 'uyelik', odeme: 'ozet' })),
       anaSayfayaGit: () => this.setState({ sekme: 'ana', odeme: 'yok' }),
@@ -347,7 +348,7 @@ class Component extends DCLogic {
       },
       gecmis, gecmisYok: !gecmis.length,
       // Ödeme (ilk üyelik, yeniden başlatma ya da yenileme)
-      odemeYok: odeme === 'yok', odemeOzet: odeme === 'ozet', odemeBasarili: odeme === 'basarili', odemeHata: odeme === 'hata',
+      odemeYok: odeme === 'yok' && !muaf, odemeOzet: odeme === 'ozet', odemeBasarili: odeme === 'basarili', odemeHata: odeme === 'hata',
       odemeTuru: aktif ? 'Üyelik yenileme' : durumTur === 'doldu' ? 'Üyeliği yeniden başlatma' : 'İlk üyelik',
       odemeDugme: aktif ? (canli && !kartla ? 'Yenile · havale / EFT' : 'Kartla yenile · 3.000 TL') : uyari.dugme,
       odemeAciklama: aktif ? 'Erken yenilersen kalan günlerin kaybolmaz; yeni 30 gün mevcut bitişinden sonra başlar. Otomatik ücret çekilmez.' : 'Ödemen geçtiği anda üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.',
