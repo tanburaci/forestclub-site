@@ -42,6 +42,23 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
       `düzenleme ve afiş kaydedildi (${JSON.stringify(g && g.govde)})`);
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
 
+    // Minimum kişi onayı: 6 saat sonra başlayan, minimumu 8 olan, kimsenin kayıtlı olmadığı etkinlik
+    const ist = new Date(Date.now() + 6 * 3600 * 1000 + 3 * 3600 * 1000).toISOString();
+    const v2 = yonetimVerisi();
+    v2.tablolar.uyeler = v2.tablolar.uyeler.slice(0, 5);
+    v2.tablolar.etkinlikler = [...v2.tablolar.etkinlikler, { ...v2.tablolar.etkinlikler[0], id: 11, ad: 'Yakın Yoga', tarih: ist.slice(0, 10), saat: `${ist.slice(11, 13)}.${ist.slice(14, 16)}`, min_kisi: 8 }];
+    const y2 = await sayfaAc(tarayici, v2, oturum('yon-1', 'yonetici@posta.test'));
+    await y2.page.goto(`${SITE}/yonetim/`);
+    await y2.page.getByText('Onayınızı bekliyor: minimum kişiye ulaşılamadı').waitFor({ timeout: 15000 });
+    const kutu = y2.page.locator('section[role="alert"]').filter({ hasText: 'Yakın Yoga' });
+    dogru((await kutu.innerText()).includes('0 kişi / minimum 8') && !(await kutu.innerText()).includes('Breakfast Club'), 'onay kutusu: yalnız 24 saat içindeki ve minimumun altındaki etkinlik');
+    await kutu.getByRole('button', { name: 'İptal et' }).click();
+    await y2.page.getByText('Duyur', { exact: false }).first().waitFor({ timeout: 3000 }).catch(() => {});
+    dogru(await y2.page.locator('select').filter({ has: y2.page.locator('option[value="Yeterli katılım yok"]') }).first().inputValue() === 'Yeterli katılım yok', 'İptal et: iptal paneli "Yeterli katılım yok" nedeniyle açıldı');
+    await y2.page.locator('button').filter({ hasText: /^Ana sayfa$/ }).first().click();
+    await y2.page.locator('section[role="alert"]').filter({ hasText: 'Yakın Yoga' }).getByRole('button', { name: 'Devam et' }).click();
+    dogru(await y2.page.getByText('Onayınızı bekliyor: minimum kişiye ulaşılamadı').count() === 0, '"Devam et" onay kutusunu kapatır');
+
     // ---------- Üye paneli: açılır kart ----------
     const uye = { id: 1, kod: 'FC-U-0001', ad: 'Deniz Yılmaz', eposta: 'deniz@posta.test', tel: null, bitis: gun(20), baslangic: gun(-10), dogum_gunu: null,
       ozel_gunler: [], ilgi_alanlari: [], kutlama_izni: false, foto_izni: false, user_id: 'uye-1' };
