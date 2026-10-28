@@ -35,10 +35,10 @@ const veri = {
       const noktalar = [[10, 10], [w - 10, 10], [10, h - 10], [w - 10, h - 10], [w / 2, h - 60]];
       const hepsiKapakta = await page.evaluate((ns) => ns.every(([x, y]) => document.getElementById('fc-yakinda').contains(document.elementFromPoint(x, y))), noktalar);
       dogru(hepsiKapakta, `${ad}: ekranın her yeri kapakta (tıklama siteye gitmez)`);
-      // Tıklananlar yalnız Instagram ve WhatsApp (Pelin, Ezgi) bağlantıları; Tab ile siteye ulaşılamaz
+      // Tıklanan tek şey Instagram bağlantısı (WhatsApp numaraları kapakta yok); Tab ile siteye ulaşılamaz
       const baglantilar = await page.locator('#fc-yakinda a, #fc-yakinda button').evaluateAll((l) => l.map((a) => `${a.getAttribute('href')}|${a.target}`));
-      dogru(JSON.stringify(baglantilar) === JSON.stringify(['https://www.instagram.com/forestcluburla/|_blank', 'https://wa.me/905435926654|_blank', 'https://wa.me/905350359146|_blank']),
-        `${ad}: kapakta yalnız Instagram ve WhatsApp bağlantıları var, yeni sekmede (${baglantilar})`);
+      dogru(JSON.stringify(baglantilar) === JSON.stringify(['https://www.instagram.com/forestcluburla/|_blank']),
+        `${ad}: kapakta yalnız Instagram bağlantısı var, yeni sekmede (${baglantilar})`);
       const ig = page.locator('#fc-yakinda a.ig');
       await page.context().route('https://www.instagram.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>instagram</p>' }));
       const [sekme] = await Promise.all([page.context().waitForEvent('page'), ig.click()]);
@@ -48,9 +48,9 @@ const veri = {
       // Açılışa kadar yalnız ilk ekran ve "Biz Kimiz?" görünür
       const gorunen = await page.evaluate(() => document.body.innerText);
       // Etkinlik adı testte "Kahvaltı Testi" (Biz Kimiz? kartlarındaki "Breakfast Club" ile karışmasın)
-      const yasak = ['Kahvaltı Testi', ' TL', 'Üyelik', 'SSS', 'İletişim', '%50', 'Üye girişi', 'Sık sorulan', 'Destek ol'].filter((x) => gorunen.includes(x));
+      const yasak = ['Kahvaltı Testi', ' TL', 'Üyelik', 'SSS', 'İletişim', '%50', 'Üye girişi', 'Sık sorulan', 'Destek ol', 'WhatsApp'].filter((x) => gorunen.includes(x));
       if (/Etkinlikler(?!i)/.test(gorunen)) yasak.push('Etkinlikler (menü)');  // ilk ekrandaki "Etkinlikleri gör" kalır
-      dogru(gorunen.includes('Biz Kimiz?') && !yasak.length, `${ad}: etkinlikler, fiyatlar, üyelik, SSS, iletişim ve menüdeki diğer başlıklar görünmüyor (${yasak})`);
+      dogru(gorunen.includes('Biz Kimiz?') && !yasak.length, `${ad}: etkinlikler, fiyatlar, üyelik, SSS, iletişim, WhatsApp ve menüdeki diğer başlıklar görünmüyor (${yasak})`);
       for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
       dogru(await page.evaluate(() => !document.getElementById('kok').contains(document.activeElement)), `${ad}: Tab ile siteye odaklanılamıyor`);
       dogru(await page.evaluate(() => document.getElementById('kok').hasAttribute('inert')), `${ad}: site inert kaldı (çizimden sonra da)`);

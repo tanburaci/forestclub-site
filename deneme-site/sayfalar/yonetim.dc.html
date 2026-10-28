@@ -324,6 +324,11 @@ a{color:#111111}a:hover{color:#000000}
                     </sc-for>
                   </div>
                 </div>
+                <label style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 600; font-size: 14px; min-height: 44px">
+                  <input type="checkbox" checked="{{ profil.muaf }}" onChange="{{ profilMuafDegis }}" style="width: 20px; height: 20px">
+                  Aidattan muaf (yönetim ekibi)
+                  <span style="font-weight: 400; color: #5E5E5E">Üyeliği süresiz aktif kalır, yenileme hatırlatması gitmez, panelinde ödeme istenmez. Kaldırılınca bugünden 30 gün verilir.</span>
+                </label>
                 <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Yönetici notu (üye görmez)
                   <textarea class="fc-input" rows="2" value="{{ profil.not }}" onChange="{{ profilNotYaz }}" style="resize: vertical"></textarea>
                 </label>
@@ -1478,6 +1483,7 @@ class Component extends DCLogic {
         { id: 2, ad: 'Selin Demir', tur: 'Veri kopyası', tarih: '2026-10-20', tamam: true },
       ],
       profilSecili: null, notlar: window.FC ? window.FC.notlar : { 2: 'Seramik atölyesinde gönüllü yardım etmek istiyor.' },  // anahtar: üye numarası
+      muaflar: window.FC ? window.FC.muaflar : {},  // aidattan muaf üyeler (anahtar: üye numarası)
       // Ayarlar (deneme sitesinde ayarlar tablosundan)
       tanismaSunuluyor: window.FC ? window.FC.ayarlar.tanisma_acik !== false : true,
       kartOdeme: window.FC ? window.FC.ayarlar.kart_odeme === true : false,
@@ -1822,14 +1828,19 @@ class Component extends DCLogic {
     const BUGUN_SABIT = this.BUGUN;
     const tYaz = (t) => (t ? t.split('-').reverse().join('.') : '—');
     const kalanGun = (t) => Math.round((new Date(`${t}T12:00:00Z`) - new Date(`${BUGUN_SABIT}T12:00:00Z`)) / 86400000);
+    // Aidattan muaf: sunucu bitişi 31.12.2099'a sabitler; muafiyet kaldırılınca bugünden 30 gün verir
+    const MUAF_BITIS = '2099-12-31';
+    const otuzGunSonra = (() => { const d = new Date(`${BUGUN_SABIT}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 30); return d.toISOString().slice(0, 10); })();
     const tumUyeler = this.DEMO.kisiler.map((k) => {
-      const kalan = k.bitis ? kalanGun(k.bitis) : null;
-      const tur = k.durum;
+      const muaf = !!this.state.muaflar[k.id];
+      const bitis = !muaf && k.bitis === MUAF_BITIS ? otuzGunSonra : k.bitis;
+      const kalan = bitis ? kalanGun(bitis) : null;
+      const tur = muaf || (k.bitis === MUAF_BITIS) ? 'aktif' : k.durum;
       return {
         id: k.id, ad: k.ad, tel: k.tel, eposta: k.eposta, kod: k.kod, profil: k.profil, basvuru: tYaz(k.basvuru), odemeSayisi: String(k.odemeler.length),
-        bitis: tYaz(k.bitis), tur, bitisSira: k.bitis || '0',
-        durum: tur === 'aktif' ? (kalan <= 3 ? `Aktif · ${kalan} gün kaldı` : 'Aktif') : tur === 'doldu' ? 'Süresi doldu' : 'Hiç ödemedi',
-        rozet: tur === 'aktif' ? (kalan <= 3 ? BEKLER : AKTIF) : tur === 'doldu' ? DOLDU : TASLAK,
+        bitis: muaf ? 'Süresiz' : tYaz(bitis), tur, bitisSira: muaf ? MUAF_BITIS : bitis || '0', muaf,
+        durum: muaf ? 'Aidattan muaf' : tur === 'aktif' ? (kalan <= 3 ? `Aktif · ${kalan} gün kaldı` : 'Aktif') : tur === 'doldu' ? 'Süresi doldu' : 'Hiç ödemedi',
+        rozet: muaf ? AKTIF : tur === 'aktif' ? (kalan <= 3 ? BEKLER : AKTIF) : tur === 'doldu' ? DOLDU : TASLAK,
       };
     });
     const sayac = { aktif: 0, doldu: 0, basvuru: 0 };
@@ -1946,7 +1957,7 @@ class Component extends DCLogic {
       ad: profilUye.ad, harf: profilUye.ad[0], eposta: profilUye.eposta, tel: profilUye.tel, durum: profilUye.durum, rozet: profilUye.rozet,
       dogum: pr.dogum ? gunAy(pr.dogum) : 'Girilmedi', ozel: pr.ozel.length ? pr.ozel.map((g) => `${g.ad} · ${gunAy(g.tarih)}`).join(', ') : 'Yok',
       kutlama: pr.kutlama ? 'Gönderilsin' : 'Gönderilmesin', foto: pr.foto ? 'Var' : 'Yok', tanisma: pr.tanisma, baslangic: pr.baslangic,
-      ilgi: pr.ilgi, not: this.state.notlar[profilUye.id] || '',
+      ilgi: pr.ilgi, not: this.state.notlar[profilUye.id] || '', muaf: profilUye.muaf,
     } : {};
     const bugunT = new Date(`${BUGUN_SABIT}T12:00:00Z`);
     const ozelGunler = [];
@@ -2033,7 +2044,8 @@ class Component extends DCLogic {
       eldenAlan[k] = (e) => { const v = e.target.value; this.setState((s) => ({ elden: { ...s.elden, [k]: v, hata: '' } })); };
     });
     const KASA = { banka: 'Banka', nakit: 'Nakit' };
-    const ACILIS = { banka: 8000, nakit: 1000 }; // 1 Eylül 2026 açılış bakiyesi (örnek)
+    // Açılış bakiyesi: canlıda sıfır (kasada yalnız kayıtlı hareketler); tasarım önizlemesinde örnek
+    const ACILIS = window.FC ? { banka: 0, nakit: 0 } : { banka: 8000, nakit: 1000 };
     const etki = (h, k) => {
       if (h.tur === 'gelir') return h.kasa === k ? h.tutar : 0;
       if (h.tur === 'gider') return h.kasa === k ? -h.tutar : 0;
@@ -2469,6 +2481,7 @@ class Component extends DCLogic {
       }),
       profilKapat: () => this.setState({ profilSecili: null }),
       profilNotYaz: (e) => { const v = e.target.value; this.setState((s) => ({ notlar: { ...s.notlar, [s.profilSecili]: v } })); },
+      profilMuafDegis: (e) => { const v = e.target.checked; this.setState((s) => ({ muaflar: { ...s.muaflar, [s.profilSecili]: v } })); },
       ozelGunler,
       tanismaSunuluyor: this.state.tanismaSunuluyor,
       // Deneme sitesinde kart komisyonu iyzico'nun bildirdiği tutarla her ödemede gider olarak yazılır (oran girilmez)
