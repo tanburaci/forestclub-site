@@ -95,7 +95,8 @@
         tanisma: (biletGrup.get(e.id) || []).filter((b) => b.durum === 'bekliyor' || b.durum === 'geldi').length,
       };
       if (e.anket_sayisi) anket[key] = { n: e.anket_sayisi, ort: Number(e.anket_ortalama) };
-      const x = { id: e.id, tarih: e.tarih, saat: e.saat || '', tur: e.tur, ad: e.ad, kim: e.kim || '', kontenjan: e.kontenjan, min: e.min_kisi || null };
+      const x = { id: e.id, tarih: e.tarih, saat: e.saat || '', tur: e.tur, ad: e.ad, kim: e.kim || '', kontenjan: e.kontenjan, min: e.min_kisi || null,
+        metin: e.aciklama || '', link: e.link || '', afis: e.afis || '' };
       if (e.bilet_fiyati) x.satis = { fiyat: Number(e.bilet_fiyati), uye: e.uyelere || 'tam', satilan: e.satilan_bilet };
       return x;
     });
@@ -178,6 +179,21 @@
     bildir(onay ? `${i.ad}: ${data.adet} bilet onaylandı, kodlar e-postayla gidiyor ✓` : 'Bilet dekontu reddedildi; gerekçeli mail gidecek');
     setTimeout(() => { location.hash = 'basvurular'; location.reload(); }, 900);
   }
+  // Etkinlik düzenleme (tarih ve ad değişmez) ve afiş yükleme (herkese açık "afisler" deposu). Dönüş: afişin adresi
+  window.FCEtkinlikGuncelle = async (id, e) => {
+    const { error } = await sb.from('etkinlikler').update({
+      saat: e.saat || null, tur: e.tur, kim: e.kim || null, aciklama: e.metin || null, link: e.link || null, kontenjan: e.kontenjan,
+      min_kisi: e.min || null, bilet_fiyati: e.satis ? e.satis.fiyat : null, uyelere: e.satis ? e.satis.uye : null, afis: e.afis || null,
+    }).eq('id', id).select('id').single();
+    if (error) throw new Error(error.message);
+  };
+  window.FCAfisYukle = async (dosya) => {
+    const uzanti = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[dosya.type];
+    const yol = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${uzanti}`;
+    const { error } = await sb.storage.from('afisler').upload(yol, dosya, { contentType: dosya.type, cacheControl: '31536000' });
+    if (error) throw new Error(error.message);
+    return sb.storage.from('afisler').getPublicUrl(yol).data.publicUrl;
+  };
   // Formlar: kaydet (yeni → insert, var → update) ve aç / kapat. Dönüş: form id
   window.FCFormKaydet = async (f) => {
     const satir = { baslik: f.baslik, aciklama: f.aciklama || null, sorular: f.sorular };
@@ -588,7 +604,7 @@
             tarih: e.tarih, saat: e.saat || null, tur: e.tur, ad: e.ad, kim: e.kim || null, kontenjan: e.kontenjan,
             bilet_fiyati: e.satis ? e.satis.fiyat : null, uyelere: e.satis ? e.satis.uye : null,
             aciklama: (e.metin || '').trim() || null, link: /^https:\/\//.test(e.link || '') ? e.link.trim() : null,
-            min_kisi: e.min || null, ...(Number.isInteger(e.tanisma) ? { tanisma_kontenjan: e.tanisma } : {}),
+            min_kisi: e.min || null, afis: e.afis || null, ...(Number.isInteger(e.tanisma) ? { tanisma_kontenjan: e.tanisma } : {}),
           }).select('id').single().then(({ data, error }) => {
             if (error) {
               if (onceki === undefined) delete keyEtk[key]; else keyEtk[key] = onceki;

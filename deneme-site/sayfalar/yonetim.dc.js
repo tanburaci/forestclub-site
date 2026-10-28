@@ -4,7 +4,7 @@ window.DC.sinif('/sayfalar/yonetim.dc.html', function (DCLogic) {
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    const BOS = { tarih: '', saat: '', tur: 'bulusma', ad: '', kim: '', metin: '', link: '', kontenjan: '30', min: '', fiyat: '', uye: 'ucretsiz' };
+    const BOS = { tarih: '', saat: '', tur: 'bulusma', ad: '', kim: '', metin: '', link: '', kontenjan: '30', min: '', fiyat: '', uye: 'ucretsiz', afis: '' };
     this.BOS = BOS;
     this.BUGUN = window.FC ? window.FC.bugun : '2026-10-24';  // deneme sitesinde gerçek bugün
     this.MBOS = { tur: 'gider', tarih: this.BUGUN, tutar: '', kasa: 'banka', hedef: 'nakit', kategori: 'İkram', etk: '', aciklama: '', belge: '' };
@@ -141,6 +141,7 @@ class Component extends DCLogic {
       const f = this.state.form;
       if (!f.tarih) return this.setState({ formHata: 'Tarih seçin.' });
       if (!f.ad.trim()) return this.setState({ formHata: 'Etkinlik adını yazın.' });
+      if (this.state.duzKey) return this.duzenlemeKaydet();
       if (this.state.etkinlikler.some((x) => x.tarih === f.tarih && x.ad === f.ad.trim())) {
         return this.setState({ formHata: 'Bu tarihte aynı adla bir etkinlik zaten var; adı biraz değiştirin.' });
       }
@@ -154,6 +155,27 @@ class Component extends DCLogic {
         form: { ...this.BOS }, formAcik: false, formHata: '',
         eklendiMesaj: window.FC ? `“${f.ad.trim()}” eklendi; sitede ve üye panelinde görünür.` : `“${f.ad.trim()}” eklendi. Duyurusu hazır olunca üyelere gönderilecek.`,
       }));
+    };
+    // Düzenlenen etkinliği kaydeder (tarih ve ad değişmez); canlıda FCEtkinlikGuncelle
+    this.duzenlemeKaydet = () => {
+      const f = this.state.form;
+      const key = this.state.duzKey;
+      if (f.link && !/^https:\/\//.test(f.link.trim())) return this.setState({ formHata: 'Instagram bağlantısı https:// ile başlamalı.' });
+      const kontenjan = Math.max(1, Number(f.kontenjan) || 30);
+      const min = Math.floor(Number(f.min)) > 0 ? Math.floor(Number(f.min)) : null;
+      if (min && min > kontenjan) return this.setState({ formHata: 'Minimum kişi kontenjandan büyük olamaz.' });
+      const fiyat = Number(String(f.fiyat).replace(/\./g, ''));
+      const eski = this.state.etkinlikler.find((x) => `${x.tarih}|${x.ad}` === key);
+      const yeni = { ...eski, saat: f.saat.trim(), tur: f.tur, kim: f.kim.trim(), metin: f.metin.trim(), link: f.link.trim(), kontenjan, min, afis: f.afis || '',
+        satis: fiyat > 0 ? { fiyat, uye: f.uye, satilan: eski.satis ? eski.satis.satilan : 0 } : null };
+      const bitir = () => this.setState((s) => ({
+        etkinlikler: s.etkinlikler.map((x) => (`${x.tarih}|${x.ad}` === key ? yeni : x)),
+        kayitlar: s.kayitlar[key] ? { ...s.kayitlar, [key]: { ...s.kayitlar[key], kontenjan } } : s.kayitlar,
+        form: { ...this.BOS }, formAcik: false, formHata: '', duzKey: null, eklendiMesaj: `“${eski.ad}” güncellendi.`,
+      }));
+      if (!window.FCEtkinlikGuncelle || !eski.id) return bitir();
+      this.setState({ formHata: 'Kaydediliyor…' });
+      window.FCEtkinlikGuncelle(eski.id, yeni).then(bitir, (h) => this.setState({ formHata: h.message }));
     };
     // Aylık dosya (CSV): GG.AA.YYYY;saat;tur;ad;kim;kontenjan;bilet_fiyati;uyelere;tanisma_kontenjan;aciklama;link[;min_kisi]
     this.csvCoz = (metin) => {
@@ -1170,8 +1192,21 @@ class Component extends DCLogic {
         return { etkinlikler: [...s.etkinlikler, ...yeni], kayitlar, csv: null, eklendiMesaj: `${yeni.length} etkinlik eklendi; sitede ve üye panelinde görünür.` };
       }),
       basvurularaGit: () => this.setState({ sekme: 'basvurular' }),
-      formAc: () => this.setState({ formAcik: true, eklendiMesaj: '' }),
-      formKapat: () => this.setState({ formAcik: false, form: { ...this.BOS }, formHata: '' }),
+      formAc: () => this.setState({ formAcik: true, eklendiMesaj: '', duzKey: null, form: { ...this.BOS }, afisDurum: '' }),
+      formKapat: () => this.setState({ formAcik: false, form: { ...this.BOS }, formHata: '', duzKey: null, afisDurum: '' }),
+      formBaslik: this.state.duzKey ? 'Etkinliği düzenle' : 'Yeni etkinlik', duzenlemede: !!this.state.duzKey,
+      afisVar: !!this.state.form.afis, afisDurum: this.state.afisDurum || '',
+      afisSec: (ev) => {
+        const dosya = ev.target.files && ev.target.files[0];
+        if (!dosya) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(dosya.type)) return this.setState({ afisDurum: 'Afiş JPG, PNG ya da WEBP olmalı.' });
+        if (dosya.size > 5 * 1024 * 1024) return this.setState({ afisDurum: 'Afiş 5 MB\'tan büyük; küçültüp tekrar deneyin.' });
+        if (!window.FCAfisYukle) return this.setState((s) => ({ form: { ...s.form, afis: URL.createObjectURL(dosya) }, afisDurum: 'Önizleme: afiş kaydedilmez.' }));
+        this.setState({ afisDurum: 'Yükleniyor…' });
+        window.FCAfisYukle(dosya).then((url) => this.setState((s) => ({ form: { ...s.form, afis: url }, afisDurum: 'Afiş yüklendi ✓ Etkinliği kaydetmeyi unutmayın.' })),
+          (h) => this.setState({ afisDurum: `Yüklenemedi: ${h.message}` }));
+      },
+      afisKaldir: () => this.setState((s) => ({ form: { ...s.form, afis: '' }, afisDurum: '' })),
       formAcik: this.state.formAcik,
       form: this.state.form,
       alan: this.alan,
@@ -1216,6 +1251,16 @@ class Component extends DCLogic {
           yoklamaAc: () => this.setState({ etkPanel: { key, mod: 'yoklama' }, kod: '', kodMesaj: '' }),
           iptalAc: () => this.setState({ etkPanel: { key, mod: 'iptal' }, iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '' }),
           duyuruDuzenle: () => this.setState({ sekme: 'eposta', sSecili: 'duyuru', sMesaj: '' }),
+          // Düzenle: aynı form, tarih ve ad kilitli (kayıtlar tarih|ad ile bağlı)
+          duzenle: () => {
+            const o = this.state.etkinlikler.find((z) => `${z.tarih}|${z.ad}` === key);
+            if (!o) return;
+            this.setState({ formAcik: true, duzKey: key, formHata: '', eklendiMesaj: '', afisDurum: '', form: {
+              ...this.BOS, tarih: o.tarih, saat: o.saat || '', tur: o.tur, ad: o.ad, kim: o.kim || '', metin: o.metin || '', link: o.link || '',
+              kontenjan: String(o.kontenjan), min: o.min ? String(o.min) : '', fiyat: o.satis ? String(o.satis.fiyat) : '', uye: o.satis ? o.satis.uye : 'ucretsiz', afis: o.afis || '',
+            } });
+            if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
+          },
         };
       }),
       gecmisEtk: etkGorunum.filter((x) => x.tarih < BUGUN).reverse().map((x, i) => ({
