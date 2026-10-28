@@ -31,4 +31,4 @@ jobs:
         run: |
           if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then echo "NETLIFY_AUTH_TOKEN ve NETLIFY_SITE_ID gerekli"; exit 1; fi
           test -f index.html || { echo "deneme-site/index.html yok; yanlış klasör"; exit 1; }
-          npx --yes netlify-cli deploy --prod --dir=. --no-build --message "main@${GITHUB_SHA::7}"
+          npx --yes netlify-cli deploy --prod --dir=. --message "main@${GITHUB_SHA::7}"
