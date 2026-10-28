@@ -131,9 +131,6 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     await sekme(u.page, 'Üyeliğim');
     dogru(await u.page.getByText(/Havale · dekont/).count() === 1 && await u.page.getByText('2.500 TL').count() === 1, 'ödeme geçmişi: havale ve gerçek tutar');
     await sekme(u.page, 'Profilim');
-    await u.page.getByRole('button', { name: 'Şifremi değiştir' }).click();
-    await u.page.getByText('deniz@posta.test adresine şifre belirleme bağlantısı gönderdik.').waitFor({ timeout: 4000 });
-    dogru(u.istekler.some((x) => x.yol === '/auth/v1/recover' && x.govde.email === 'deniz@posta.test'), '"Şifremi değiştir" sıfırlama bağlantısı istedi');
     await sekme(u.page, 'Üyeliğim');
     await u.page.getByRole('button', { name: 'Yenile · havale / EFT' }).click();
     await u.page.waitForURL(/\/dekont$/, { timeout: 5000 });

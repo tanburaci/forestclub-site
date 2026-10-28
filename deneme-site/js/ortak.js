@@ -59,6 +59,11 @@
     const { error } = await sb.auth.resetPasswordForEmail(eposta, { redirectTo: `${location.origin}${sayfa}` });
     if (error) throw new Error(error.message);
   };
+  // Oturum açıkken şifre belirleme (sayfa yenilenmez)
+  window.FCSifreGuncelle = async (sifre) => {
+    const { error } = await sb.auth.updateUser({ password: sifre });
+    if (error) throw new Error(/different|same/i.test(error.message) ? 'Yeni şifre eskisinden farklı olmalı.' : error.message);
+  };
   window.FCSifreKaydet = async (sifre) => {
     const { error } = await sb.auth.updateUser({ password: sifre });
     if (error) throw new Error(error.message);
