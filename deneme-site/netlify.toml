@@ -1,4 +1,4 @@
-# Forest Club Urla · www.forestcluburla.com. Ana sayfa arama motorlarına açık; paneller, dekont sayfası ve tasarım
+# Forest Club Urla · www.forestcluburla.com. Ana sayfa arama motorlarına açık; paneller, dekont ve form sayfaları ve tasarım
 # parçaları (sayfalar/) kapalı (X-Robots-Tag aşağıda).
 [build]
   publish = "."
@@ -41,6 +41,16 @@
 
 [[headers]]
   for = "/dekont/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/form"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/form/*"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
 

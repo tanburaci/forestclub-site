@@ -1367,6 +1367,111 @@ a{color:#111111}a:hover{color:#000000}
           </div>
         </sc-if>
 
+        <!-- FORMLAR: üyelere form (öneri, anket…); üye panelinde ve /form/?id=N bağlantısıyla doldurulur -->
+        <sc-if value="{{ formlarSekme }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 20px">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+              <div>
+                <h2 style="margin: 0; font-family: 'Amatic SC', cursive; font-size: 56px; line-height: 1; color: #111111">Formlar</h2>
+                <p style="margin: 6px 0 0; color: #5E5E5E">Açık formlar üye panelinde görünür; bağlantıyı WhatsApp'tan da paylaşabilirsiniz.</p>
+              </div>
+              <button type="button" class="fc-btn" onClick="{{ fmYeni }}">Yeni form</button>
+            </div>
+
+            <sc-if value="{{ fmDuzVar }}" hint-placeholder-val="{{ false }}">
+              <section style="background: #FFFFFF; border-radius: 14px; border: 2px solid #111111; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+                <h3 style="margin: 0; font-size: 20px">{{ fmDuzBaslik }}</h3>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Başlık *
+                  <input class="fc-input" type="text" maxlength="120" placeholder="Örn. Kasım ayı önerileri" value="{{ fmDuz.baslik }}" onChange="{{ fmBaslikYaz }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Açıklama
+                  <textarea class="fc-input" rows="2" maxlength="1000" value="{{ fmDuz.aciklama }}" onChange="{{ fmAciklamaYaz }}" style="resize: vertical"></textarea>
+                </label>
+                <sc-for list="{{ fmSorular }}" as="s" hint-placeholder-count="2">
+                  <div style="border: 2px solid #111111; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+                    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 10px">
+                      <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">{{ s.etiket }}
+                        <input class="fc-input" type="text" maxlength="200" value="{{ s.metin }}" onChange="{{ s.metinYaz }}">
+                      </label>
+                      <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Tür
+                        <select class="fc-input" value="{{ s.tur }}" onChange="{{ s.turYaz }}">
+                          <option value="kisa">Kısa yazı</option>
+                          <option value="uzun">Uzun yazı</option>
+                          <option value="tek">Tek seçim</option>
+                          <option value="coklu">Çoklu seçim</option>
+                        </select>
+                      </label>
+                    </div>
+                    <sc-if value="{{ s.secimli }}" hint-placeholder-val="{{ false }}">
+                      <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Seçenekler (her satıra bir tane)
+                        <textarea class="fc-input" rows="3" value="{{ s.seceneklerYazi }}" onChange="{{ s.secenekYaz }}" style="resize: vertical"></textarea>
+                      </label>
+                    </sc-if>
+                    <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap">
+                      <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px"><input type="checkbox" checked="{{ s.zorunlu }}" onChange="{{ s.zorunluDegis }}" style="width: 20px; height: 20px"> Zorunlu</label>
+                      <button type="button" class="fc-sekme" onClick="{{ s.sil }}" style="text-decoration: underline">Soruyu sil</button>
+                    </div>
+                  </div>
+                </sc-for>
+                <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ fmSoruEkle }}" style="align-self: flex-start">Soru ekle</button>
+                <sc-if value="{{ fmHata }}" hint-placeholder-val="{{ false }}">
+                  <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ fmHata }}</p>
+                </sc-if>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                  <button type="button" class="fc-btn" onClick="{{ fmKaydet }}">Formu kaydet</button>
+                  <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ fmVazgec }}">Vazgeç</button>
+                </div>
+              </section>
+            </sc-if>
+
+            <sc-if value="{{ fmMesaj }}" hint-placeholder-val="{{ false }}">
+              <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 12px; padding: 12px 14px; font-weight: 600">{{ fmMesaj }}</p>
+            </sc-if>
+            <sc-if value="{{ fmYok }}" hint-placeholder-val="{{ false }}">
+              <p style="margin: 0; color: #5E5E5E">Henüz form yok. “Yeni form” ile başlayın.</p>
+            </sc-if>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px">
+              <sc-for list="{{ fmListe }}" as="f" hint-placeholder-count="2">
+                <article style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+                  <div style="display: flex; justify-content: space-between; gap: 10px; align-items: flex-start">
+                    <h3 style="margin: 0; font-size: 18px">{{ f.baslik }}</h3>
+                    <span style="{{ f.rozet }}">{{ f.durum }}</span>
+                  </div>
+                  <span style="color: #3A3A3A; font-size: 14px">{{ f.ozet }}</span>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                    <button type="button" class="fc-btn" onClick="{{ f.acKapa }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">{{ f.acKapaYazi }}</button>
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ f.cevaplar }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Cevaplar</button>
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ f.duzenle }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Düzenle</button>
+                    <button type="button" class="fc-sekme" onClick="{{ f.kopyala }}" style="text-decoration: underline">{{ f.kopyalaYazi }}</button>
+                  </div>
+                </article>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ fmCevapVar }}" hint-placeholder-val="{{ false }}">
+              <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap">
+                  <h3 style="margin: 0; font-size: 20px">{{ fmCevapBaslik }}</h3>
+                  <div style="display: flex; gap: 8px">
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ fmCsv }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">CSV indir</button>
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ fmCevapKapat }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Kapat</button>
+                  </div>
+                </div>
+                <div style="overflow: auto; max-height: 480px; border: 1px solid #DADAD8; border-radius: 10px">
+                  <table class="fc-tablo">
+                    <thead><tr><sc-for list="{{ fmCevapBaslar }}" as="b" hint-placeholder-count="3"><th>{{ b }}</th></sc-for></tr></thead>
+                    <tbody>
+                      <sc-for list="{{ fmCevapSatirlar }}" as="r" hint-placeholder-count="2">
+                        <tr><sc-for list="{{ r.hucreler }}" as="h" hint-placeholder-count="3"><td style="white-space: normal; min-width: 120px">{{ h }}</td></sc-for></tr>
+                      </sc-for>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </sc-if>
+          </div>
+        </sc-if>
+
         <!-- İLETİŞİM -->
         <sc-if value="{{ iletisimSekme }}" hint-placeholder-val="{{ false }}">
           <div style="display: flex; flex-direction: column; gap: 20px">
@@ -1533,6 +1638,7 @@ class Component extends DCLogic {
         { id: 1, ad: 'Can Öztürk', tur: 'Hesap silme', tarih: '2026-10-23', tamam: false },
         { id: 2, ad: 'Selin Demir', tur: 'Veri kopyası', tarih: '2026-10-20', tamam: true },
       ],
+      formlar: window.FC ? window.FC.formlar || [] : [], fmDuz: null, fmCevap: null, fmMesaj: '', fmHata: '', fmKopya: null,
       profilSecili: null, notlar: window.FC ? window.FC.notlar : { 2: 'Seramik atölyesinde gönüllü yardım etmek istiyor.' },  // anahtar: üye numarası
       muaflar: window.FC ? window.FC.muaflar : {},  // aidattan muaf üyeler (anahtar: üye numarası)
       // Ayarlar (deneme sitesinde ayarlar tablosundan)
@@ -1645,6 +1751,90 @@ class Component extends DCLogic {
           satis: fiyat > 0 ? { fiyat, uye, satilan: 0 } : null,
         } };
       }) };
+    };
+    // Formlar: liste, düzenleyici (sorular), cevaplar. Canlıda yazma yonetim.js'teki FCFormKaydet / FCFormAcKapa ile
+    this.formlarGorunum = () => {
+      const st = this.state;
+      const liste = st.formlar || [];
+      const yeniSoru = () => ({ id: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, metin: '', tur: 'kisa', secenekler: [], zorunlu: false });
+      const duz = st.fmDuz;
+      const sDegis = (i, deg) => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: s.fmDuz.sorular.map((x, j) => (j === i ? { ...x, ...deg } : x)) }, fmHata: '' }));
+      const acik = liste.find((f) => f.id === st.fmCevap);
+      const PILL = (bg, fg) => `background:${bg};color:${fg};font-size:13px;font-weight:700;border-radius:999px;padding:5px 11px;display:inline-block`;
+      const cevapYazi = (s, v) => (Array.isArray(v) ? v.join(', ') : v || '');
+      return {
+        fmYok: !liste.length && !duz, fmMesaj: st.fmMesaj || '', fmHata: st.fmHata || '',
+        fmYeni: () => this.setState({ fmDuz: { id: null, baslik: '', aciklama: '', sorular: [yeniSoru()] }, fmHata: '', fmMesaj: '' }),
+        fmDuzVar: !!duz, fmDuz: duz || { baslik: '', aciklama: '' }, fmDuzBaslik: duz && duz.id ? 'Formu düzenle' : 'Yeni form',
+        fmBaslikYaz: (e) => { const v = e.target.value; this.setState((s) => ({ fmDuz: { ...s.fmDuz, baslik: v }, fmHata: '' })); },
+        fmAciklamaYaz: (e) => { const v = e.target.value; this.setState((s) => ({ fmDuz: { ...s.fmDuz, aciklama: v } })); },
+        fmSorular: duz ? duz.sorular.map((x, i) => ({
+          ...x, etiket: `Soru ${i + 1}`, secimli: x.tur === 'tek' || x.tur === 'coklu', seceneklerYazi: (x.secenekler || []).join('\n'),
+          metinYaz: (e) => sDegis(i, { metin: e.target.value }),
+          turYaz: (e) => sDegis(i, { tur: e.target.value }),
+          secenekYaz: (e) => sDegis(i, { secenekler: e.target.value.split('\n') }),
+          zorunluDegis: () => sDegis(i, { zorunlu: !x.zorunlu }),
+          sil: () => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: s.fmDuz.sorular.filter((_, j) => j !== i) } })),
+        })) : [],
+        fmSoruEkle: () => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: [...s.fmDuz.sorular, yeniSoru()] } })),
+        fmVazgec: () => this.setState({ fmDuz: null, fmHata: '' }),
+        fmKaydet: () => {
+          const f = this.state.fmDuz;
+          const sorular = f.sorular.map((x) => ({ id: x.id, metin: x.metin.trim(), tur: x.tur, zorunlu: !!x.zorunlu,
+            ...(x.tur === 'tek' || x.tur === 'coklu' ? { secenekler: [...new Set((x.secenekler || []).map((o) => o.trim()).filter(Boolean))] } : {}) }));
+          if (!f.baslik.trim()) return this.setState({ fmHata: 'Başlık yazın.' });
+          if (!sorular.length) return this.setState({ fmHata: 'En az bir soru ekleyin.' });
+          const bos = sorular.findIndex((x) => !x.metin);
+          if (bos >= 0) return this.setState({ fmHata: `Soru ${bos + 1}: soru metnini yazın.` });
+          const azSecenek = sorular.findIndex((x) => x.secenekler && x.secenekler.length < 2);
+          if (azSecenek >= 0) return this.setState({ fmHata: `Soru ${azSecenek + 1}: en az iki seçenek yazın.` });
+          const kayit = { id: f.id, baslik: f.baslik.trim(), aciklama: f.aciklama.trim(), sorular };
+          const bitir = (id) => this.setState((s) => {
+            const eski = (s.formlar || []).find((x) => x.id === id);
+            const yeni = { ...(eski || { acik: false, yanitlar: [] }), ...kayit, id };
+            return { formlar: eski ? s.formlar.map((x) => (x.id === id ? yeni : x)) : [yeni, ...(s.formlar || [])], fmDuz: null, fmHata: '',
+              fmMesaj: eski ? `“${kayit.baslik}” güncellendi.` : `“${kayit.baslik}” kaydedildi. Üyelere açmak için “Aç”a basın.` };
+          });
+          if (!window.FCFormKaydet) return bitir(f.id || Date.now());
+          this.setState({ fmHata: 'Kaydediliyor…' });
+          window.FCFormKaydet(kayit).then(bitir, (h) => this.setState({ fmHata: h.message }));
+        },
+        fmListe: liste.map((f) => ({
+          baslik: f.baslik, durum: f.acik ? 'Açık' : 'Kapalı', rozet: f.acik ? PILL('#111111', '#FFFFFF') : PILL('#E4E4E2', '#111111'),
+          ozet: `${f.sorular.length} soru · ${f.yanitlar.length} cevap`,
+          acKapaYazi: f.acik ? 'Kapat' : 'Aç',
+          acKapa: () => {
+            const yap = () => this.setState((s) => ({ formlar: s.formlar.map((x) => (x.id === f.id ? { ...x, acik: !f.acik } : x)),
+              fmMesaj: f.acik ? `“${f.baslik}” kapandı; üyeler artık cevap veremez.` : `“${f.baslik}” açıldı; üye panelinde görünüyor.` }));
+            if (!window.FCFormAcKapa) return yap();
+            window.FCFormAcKapa(f.id, !f.acik).then(yap, (h) => this.setState({ fmMesaj: `Kaydedilemedi: ${h.message}` }));
+          },
+          duzenle: () => this.setState({ fmDuz: { id: f.id, baslik: f.baslik, aciklama: f.aciklama || '', sorular: f.sorular.map((x) => ({ ...x, secenekler: x.secenekler || [] })) }, fmHata: '', fmMesaj: '' }),
+          cevaplar: () => this.setState({ fmCevap: f.id }),
+          kopyalaYazi: st.fmKopya === f.id ? 'Kopyalandı ✓' : 'Bağlantıyı kopyala',
+          kopyala: () => {
+            const u = `${location.origin}/form/?id=${f.id}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(() => this.setState({ fmKopya: f.id }), () => this.setState({ fmMesaj: u }));
+            else this.setState({ fmMesaj: u });
+          },
+        })),
+        fmCevapVar: !!acik,
+        fmCevapBaslik: acik ? `${acik.baslik} · ${acik.yanitlar.length} cevap` : '',
+        fmCevapBaslar: acik ? ['Üye', 'Tarih', ...acik.sorular.map((s) => s.metin)] : [],
+        fmCevapSatirlar: acik ? acik.yanitlar.map((y) => ({ hucreler: [y.ad, y.tarih, ...acik.sorular.map((s) => cevapYazi(s, y.cevaplar[s.id]))] })) : [],
+        fmCevapKapat: () => this.setState({ fmCevap: null }),
+        fmCsv: () => {
+          if (!acik) return;
+          const hucre = (x) => { let v = x == null ? '' : String(x); if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`; return /[;"\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+          const satirlar = [['Üye', 'Tarih', ...acik.sorular.map((s) => s.metin)], ...acik.yanitlar.map((y) => [y.ad, y.tarih, ...acik.sorular.map((s) => cevapYazi(s, y.cevaplar[s.id]))])];
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([`\uFEFF${satirlar.map((r) => r.map(hucre).join(';')).join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' }));
+          a.download = `forest-club-form-${acik.id}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+        },
+      };
     };
     // Muhasebe formu
     this.mAlan = {};
@@ -1932,7 +2122,7 @@ class Component extends DCLogic {
     const TASLAK = pill('#F0F0EE', '#3A3A3A');
     const sekmeler = [
       { id: 'ana', ad: 'Ana sayfa' }, { id: 'uyeler', ad: 'Üyeler' },
-      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'iletisim', ad: 'İletişim' },
+      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'formlar', ad: 'Formlar' }, { id: 'iletisim', ad: 'İletişim' },
     ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ sekme: s.id }) }));
     const BUGUN_SABIT = this.BUGUN;
     const tYaz = (t) => (t ? t.split('-').reverse().join('.') : '—');
@@ -2581,6 +2771,8 @@ class Component extends DCLogic {
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
       iletisimSekme: sekme === 'iletisim',
+      formlarSekme: sekme === 'formlar',
+      ...this.formlarGorunum(),
       basvuruSekme: sekme === 'basvurular',
       bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' },
       ozet: [
