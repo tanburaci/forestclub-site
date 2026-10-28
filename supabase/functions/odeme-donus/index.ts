@@ -1,15 +1,18 @@
 // Forest Club Urla · iyzico ödeme sayfasından dönüş (callbackUrl). iyzico token'ı form olarak POST eder; sonuç
 // iyzico'dan yeniden sorgulanır (gelen veriye güvenilmez), başarılıysa odeme_tamamla üyeliği uzatır. Üye
 // SITE_ADRESI/uye#odeme-tamam ya da #odeme-hata sayfasına yönlenir.
+// ?tur=destek: sitedeki "Destek ol" ödemesi; destek_tamamla muhasebeye gelir yazar, ziyaretçi SITE_ADRESI/#destek-tamam
+// ya da #destek-hata sayfasına döner.
 // Secrets: IYZICO_API_KEY, IYZICO_SECRET_KEY, IYZICO_ADRES, SITE_ADRESI
 import { servisIstemcisi } from '../_ortak/ortak.ts';
 import { iyzico } from '../_ortak/iyzico.ts';
 
-const yonlen = (sonuc: 'tamam' | 'hata') => new Response(null, {
-  status: 303, headers: { Location: `${(Deno.env.get('SITE_ADRESI') || '').replace(/\/$/, '')}/uye#odeme-${sonuc}` },
-});
-
 Deno.serve(async (istek) => {
+  const destek = new URL(istek.url).searchParams.get('tur') === 'destek';
+  const site = (Deno.env.get('SITE_ADRESI') || '').replace(/\/$/, '');
+  const yonlen = (sonuc: 'tamam' | 'hata') => new Response(null, {
+    status: 303, headers: { Location: destek ? `${site}/#destek-${sonuc}` : `${site}/uye#odeme-${sonuc}` },
+  });
   if (istek.method !== 'POST') return yonlen('hata');
   let token = '';
   try {
@@ -19,13 +22,13 @@ Deno.serve(async (istek) => {
     const sonuc = await iyzico('/payment/iyzipos/checkoutform/auth/ecom/detail', { locale: 'tr', token });
     if (sonuc.status === 'success' && sonuc.paymentStatus === 'SUCCESS' && sonuc.paymentId) {
       const komisyon = Number(sonuc.iyziCommissionRateAmount || 0) + Number(sonuc.iyziCommissionFee || 0);
-      const { error } = await sb.rpc('odeme_tamamla', {
+      const { error } = await sb.rpc(destek ? 'destek_tamamla' : 'odeme_tamamla', {
         p_token: token, p_odeme_no: String(sonuc.paymentId), p_odenen: Number(sonuc.paidPrice), p_komisyon: Math.round(komisyon * 100) / 100,
       });
-      if (error) { console.error('odeme_tamamla', error); return yonlen('hata'); }
+      if (error) { console.error(destek ? 'destek_tamamla' : 'odeme_tamamla', error); return yonlen('hata'); }
       return yonlen('tamam');
     }
-    await sb.rpc('odeme_basarisiz', { p_token: token, p_hata: sonuc.errorMessage || sonuc.paymentStatus || 'başarısız' });
+    await sb.rpc(destek ? 'destek_basarisiz' : 'odeme_basarisiz', { p_token: token, p_hata: sonuc.errorMessage || sonuc.paymentStatus || 'başarısız' });
     return yonlen('hata');
   } catch (h) {
     console.error('odeme-donus', h);

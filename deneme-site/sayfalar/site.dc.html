@@ -73,9 +73,20 @@ a{color:#111111}a:hover{color:#000000}
 .fs-tv-bacak{width:64%;margin:-.3em auto 0}
 .fs-yuzen{position:fixed;right:28px;bottom:0;width:300px;z-index:40;transform:translateY(115%);transition:transform .6s cubic-bezier(.2,.9,.25,1.12);pointer-events:none}
 .fs-yuzen .fs-tv{font-size:7px}
-.fs-wa{position:fixed;left:20px;bottom:20px;z-index:41;display:inline-flex;align-items:center;gap:10px;background:#FFFFFF;color:#111111;border:2.5px solid #111111;box-shadow:3px 3px 0 #111111;border-radius:999px;padding:10px 18px 10px 12px;min-height:48px;box-sizing:border-box;font:700 15px Figtree,sans-serif;text-decoration:none}
-.fs-wa:hover{background:#E8E8E6;color:#000000}
-@media (max-width: 640px){.fs-wa-yazi{display:none}.fs-wa{padding:10px;left:12px;bottom:12px}}
+.fs-destek{position:fixed;left:20px;bottom:20px;z-index:41;display:inline-flex;align-items:center;gap:8px;background:#2F6B3F;color:#FFFFFF;border:2.5px solid #111111;box-shadow:3px 3px 0 #111111;border-radius:999px;padding:8px 16px 8px 10px;min-height:46px;box-sizing:border-box;font:700 15px Figtree,sans-serif;cursor:pointer;transition:transform .15s}
+.fs-destek:hover{background:#255732;transform:translateY(-2px)}
+.fs-destek svg{flex:none;transform-origin:50% 90%;animation:fs-yaprak 3.2s ease-in-out infinite}
+@keyframes fs-yaprak{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}
+@media (max-width: 640px){.fs-destek{left:12px;bottom:12px;padding:7px 13px 7px 8px;min-height:42px;font-size:14px}}
+@media (prefers-reduced-motion: reduce){.fs-destek svg{animation:none}}
+.fs-tutar{font:700 15px Figtree,sans-serif;border-radius:999px;padding:10px 16px;min-height:44px;cursor:pointer;border:2px solid #111111;background:#FFFFFF;color:#111111}
+.fs-tutar[aria-pressed="true"]{background:#2F6B3F;color:#FFFFFF;box-shadow:3px 3px 0 #111111}
+.fs-kopya-satir{display:flex;align-items:center;gap:10px;justify-content:space-between;background:#F4F6F1;border:1.5px solid #111111;border-radius:10px;padding:8px 8px 8px 12px}
+.fs-kopya{flex:none;display:inline-flex;align-items:center;gap:6px;font:600 13px Figtree,sans-serif;border:2px solid #111111;border-radius:999px;background:#FFFFFF;color:#111111;padding:6px 10px;min-height:36px;cursor:pointer}
+.fs-kopya:hover{background:#E8E8E6}
+.fs-wa-sec{display:flex;flex-direction:column;gap:8px;background:#FFFFFF;color:#111111;border:2.5px solid #111111;box-shadow:4px 4px 0 #2F6B3F;border-radius:14px;padding:12px;max-width:320px}
+.fs-wa-sec a{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#111111;text-decoration:none;font-weight:700;border:2px solid #111111;border-radius:10px;padding:10px 12px;min-height:44px;box-sizing:border-box}
+.fs-wa-sec a:hover{background:#E9F2EA}
 .fs-yuzen-acik{transform:translateY(0);pointer-events:auto}
 .fs-yuzen-git{position:absolute;inset:0;border:0;background:transparent;cursor:pointer}
 .fs-yuzen-kapat{position:absolute;top:30px;right:-10px;width:34px;height:34px;border-radius:50%;border:2.5px solid #111111;background:#FFFFFF;color:#111111;font:700 18px Figtree,sans-serif;cursor:pointer;z-index:1}
@@ -96,8 +107,6 @@ a{color:#111111}a:hover{color:#000000}
   .fs-uye-giris{position:absolute;top:24px;right:16px;margin:0 !important;padding:0 14px !important;min-height:0 !important;height:36px !important;font-size:13px !important;border-width:2px !important;border-radius:999px !important;box-shadow:2px 2px 0 #111111 !important}
   .fs-galeri{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important}
   .fs-galeri .fs-foto{height:140px !important;border-radius:14px}
-  .fs-wa{padding:8px !important}
-  .fs-wa svg{width:22px;height:22px}
   footer#iletisim{padding-bottom:96px !important}
 }
 @media (prefers-reduced-motion: reduce){.fs-yuzen{transition:none}}
@@ -299,6 +308,68 @@ a{color:#111111}a:hover{color:#000000}
             <p style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 12px 14px; font-size: 15px; line-height: 1.5">Kartından para çekilmedi, sepetin duruyor. Kart bilgilerini ya da limitini kontrol edip tekrar deneyebilirsin.</p>
             <button type="button" class="fs-btn" onClick="{{ tekrarDene }}">Tekrar dene</button>
             <a class="fs-btn fs-btn-acik" href="{{ waLink }}">Sorun sürüyorsa WhatsApp'tan yaz</a>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- DESTEK OL: kartla (iyzico, ayarlar.kart_odeme açıkken) ya da IBAN'a havale -->
+  <sc-if value="{{ destekAcik }}" hint-placeholder-val="{{ false }}">
+    <div class="fs-modal-zemin" onClick="{{ destekKapat }}"></div>
+    <div class="fs-modal" role="dialog" aria-modal="true" aria-label="Topluluğumuza destek ol">
+      <button type="button" class="fs-modal-kapat" aria-label="Kapat" onClick="{{ destekKapat }}">×</button>
+      <div class="fs-modal-form" style="display: flex; flex-direction: column; gap: 14px">
+        <sc-if value="{{ destekForm }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.55; color: #3A3A3A">
+            <span class="fs-baslik" style="font-size: 44px">Topluluğumuza destek ol 🌿</span>
+            <p style="margin: 0">Forest Club Urla, doğanın içinde bir araya gelen, birlikte üreten, keşfeden ve yeni karşılaşmalara alan açan bir topluluk.</p>
+            <p style="margin: 0">Ağaçların altında kurduğumuz her buluşma; emekle, müzikle ve paylaşımla büyüyor. Desteğin, Breakfast Club ve Sunset Club buluşmalarımızın, atölyelerimizin ve topluluğumuza özel karşılaşmaların sürmesine alan açıyor.</p>
+            <p style="margin: 0">Küçük ya da büyük, her katkı bu alanı birlikte yeşertmemize yardım ediyor.</p>
+            <p style="margin: 0; font-style: italic; color: #111111">We listen carefully.<br>To the trees. To the music. To each other.</p>
+            <p style="margin: 0; color: #111111">Teşekkürler,<br><strong>Forest Club Urla</strong> 🌲</p>
+          </div>
+          <div role="group" aria-label="Destek tutarı" style="display: flex; flex-wrap: wrap; gap: 8px">
+            <sc-for list="{{ destekTutarlar }}" as="d" hint-placeholder-count="4">
+              <button type="button" class="fs-tutar" aria-pressed="{{ d.basili }}" onClick="{{ d.sec }}">{{ d.ad }}</button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ destekElle }}" hint-placeholder-val="{{ false }}">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Tutar (TL)
+              <input type="number" inputmode="numeric" min="50" step="1" placeholder="Örn. 1500" value="{{ destekTutarYazi }}" onChange="{{ destekTutarYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
+            </label>
+          </sc-if>
+          <sc-if value="{{ destekHata }}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ destekHata }}</p>
+          </sc-if>
+          <button type="button" class="fs-btn" onClick="{{ destekKartla }}" aria-disabled="{{ destekKartKapali }}" style="{{ destekKartStil }}">{{ destekKartYazi }}</button>
+          <sc-if value="{{ destekKartKapaliMi }}" hint-placeholder-val="{{ true }}">
+            <p style="margin: -6px 0 0; font-size: 13px; color: #5E5E5E">Kartla ödeme çok yakında; şimdilik IBAN ile gönderebilirsin.</p>
+          </sc-if>
+          <div style="display: flex; align-items: center; gap: 10px; color: #5E5E5E; font-size: 13px; font-weight: 600"><span style="flex: 1; border-top: 1.5px dashed #BFBFBF"></span>ya da IBAN ile gönder<span style="flex: 1; border-top: 1.5px dashed #BFBFBF"></span></div>
+          <div class="fs-kopya-satir">
+            <span style="font-size: 14px; min-width: 0"><strong>Alıcı:</strong> {{ odeme.alici }}</span>
+            <button type="button" class="fs-kopya" onClick="{{ aliciKopyala }}" aria-label="Alıcı adını kopyala"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path></svg>{{ aliciKopyaYazi }}</button>
+          </div>
+          <div class="fs-kopya-satir">
+            <span style="font-size: 14px; min-width: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere"><strong>IBAN:</strong> {{ odeme.iban }}</span>
+            <button type="button" class="fs-kopya" onClick="{{ ibanKopyala }}" aria-label="IBAN'ı kopyala"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path></svg>{{ ibanKopyaYazi }}</button>
+          </div>
+          <p style="margin: 0; font-size: 13px; color: #5E5E5E">Havale açıklamasına “Destek” yazman yeterli.</p>
+        </sc-if>
+        <sc-if value="{{ destekTamam }}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="display: flex; flex-direction: column; gap: 12px; padding-top: 4px">
+            <span class="fs-baslik" style="font-size: 44px">Teşekkürler 🌲</span>
+            <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3A3A3A">Desteğin bize ulaştı. Sizi ağaçların altında görmek için sabırsızlanıyoruz.</p>
+            <p style="margin: 0; font-style: italic">We listen carefully. To the trees. To the music. To each other.</p>
+            <button type="button" class="fs-btn" onClick="{{ destekKapat }}">Kapat</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ destekBasarisiz }}" hint-placeholder-val="{{ false }}">
+          <div role="alert" style="display: flex; flex-direction: column; gap: 12px; padding-top: 4px">
+            <span class="fs-baslik" style="font-size: 40px">Ödeme tamamlanamadı</span>
+            <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3A3A3A">Kartından para çekilmedi. Tekrar deneyebilir ya da IBAN ile gönderebilirsin.</p>
+            <button type="button" class="fs-btn" onClick="{{ destekTekrar }}">Tekrar dene</button>
           </div>
         </sc-if>
       </div>
@@ -610,6 +681,21 @@ a{color:#111111}a:hover{color:#000000}
           <p style="margin: 0; font-size: 18px; line-height: 1.65; color: #FFFFFF; font-weight: 600">Biz yalnızca etkinlik düzenlemiyoruz.<br>İnsanların kendileriyle, doğayla ve birbirleriyle bağ kurabilecekleri deneyimler tasarlıyoruz.</p>
           <p style="margin: 0; font-size: 18px; line-height: 1.65; color: #D9D9D9">Çünkü bizim için önemli olan yalnızca ne yaptığımız değil, bir aradayken nasıl hissettiğimiz.</p>
           <a href="https://www.instagram.com/p/Dao6AihsUyr/" style="color: #FFFFFF; font-weight: 600">Instagram'da gör</a>
+          <!-- WhatsApp'tan yaz: kime yazılacağı seçilir -->
+          <div class="fs-wa-yaz" style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start">
+            <button type="button" class="fs-btn fs-btn-beyaz" onClick="{{ waSecDegis }}" aria-expanded="{{ waSecAcikYazi }}" style="display: inline-flex; align-items: center; gap: 8px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.1A8 8 0 1 1 20 11.5z"></path><path d="M9 9.5c.3 2 2 4 4.5 4.6l1-1.2 1.8.8c-.2 1-1 1.6-2 1.6-3.3 0-6.3-3-6.3-6.3 0-1 .7-1.8 1.6-2l.8 1.8z"></path></svg>
+              WhatsApp'tan yaz
+            </button>
+            <sc-if value="{{ waSecAcik }}" hint-placeholder-val="{{ false }}">
+              <div class="fs-wa-sec" role="group" aria-label="Kime yazmak istersin?">
+                <span style="font-size: 13px; color: #5E5E5E; font-weight: 600">Kime yazmak istersin?</span>
+                <sc-for list="{{ waKisiler }}" as="k" hint-placeholder-count="2">
+                  <a href="{{ k.link }}" target="_blank" rel="noopener"><span>{{ k.ad }}</span><span style="font-weight: 400; font-size: 14px; color: #3A3A3A">{{ k.yazi }}</span></a>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
         </div>
         <div style="flex: 1 1 420px; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
           <sc-for list="{{ ozellikler }}" as="o" hint-placeholder-count="4">
@@ -879,11 +965,11 @@ a{color:#111111}a:hover{color:#000000}
       </div>
     </footer>
 
-    <!-- WhatsApp: her sayfada sol altta (sağ alt mini TV'nin) -->
-    <a class="fs-wa" href="{{ waLink }}" aria-label="WhatsApp'tan yaz">
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.1A8 8 0 1 1 20 11.5z"></path><path d="M9 9.5c.3 2 2 4 4.5 4.6l1-1.2 1.8.8c-.2 1-1 1.6-2 1.6-3.3 0-6.3-3-6.3-6.3 0-1 .7-1.8 1.6-2l.8 1.8z"></path></svg>
-      <span class="fs-wa-yazi">WhatsApp'tan yaz</span>
-    </a>
+    <!-- Destek ol: sol altta (sağ alt mini TV'nin); WhatsApp "Biz Kimiz?" bölümünde -->
+    <button type="button" class="fs-destek" onClick="{{ destekAc }}" aria-haspopup="dialog">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20c0-8 5-14 15-15-1 10-7 15-15 15z" fill="#7FB77E"></path><path d="M5 20c3-4 6-7 10-10"></path></svg>
+      <span>Destek ol</span>
+    </button>
   </div>
 </div>
 </x-dc>
@@ -891,7 +977,7 @@ a{color:#111111}a:hover{color:#000000}
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis' };
+    this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis', destek: '', dsTutar: 1000, dsElle: false, dsTutarYazi: '', dsHata: '', dsKopya: '', waSecAcik: false };
     this.bekle = null;
     this.kaydir = () => {
       if (this.bekle) return;
@@ -907,6 +993,12 @@ class Component extends DCLogic {
     this.kaydir();
     // Üye panelinde "Beni hatırla" ile giriş yapılmışsa düğme "Panelim" olur
     if (window.FCS && window.FCS.oturum) this.setState({ uyeGirisli: true });  // deneme sitesi: Supabase oturumu
+    // iyzico'dan dönüş (odeme-donus?tur=destek): teşekkür ya da hata penceresi; adres temizlenir
+    const donus = /^#destek-(tamam|hata)$/.exec(location.hash);
+    if (donus) {
+      this.setState({ destek: donus[1] });
+      history.replaceState(null, '', location.pathname + location.search);
+    }
   }
   componentWillUnmount() {
     window.removeEventListener('scroll', this.kaydir);
@@ -1042,6 +1134,15 @@ class Component extends DCLogic {
     const duyuruMetni = String(canli ? (AYAR.site_duyurusu || '') : (this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.')).trim();
     // SEPET: etkinlik biletleri. Gerçek sitede ödeme iyzico'da; başarılı ödeme biletleri kesinleştirir, muhasebeye "Etkinlik katılım ücreti" geliri yazar
     const TL = (n) => (n ? `${n.toLocaleString('tr-TR')} TL` : 'Ücretsiz');
+    // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
+    const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
+    const kartAcik = !canli || AYAR.kart_odeme === true;
+    const destekTutar = this.state.dsElle ? Math.round(Number(String(this.state.dsTutarYazi).replace(/[^\d]/g, ''))) : this.state.dsTutar;
+    const kopyala = (hangi, metin) => {
+      const bitti = () => this.setState({ dsKopya: hangi });
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(metin).then(bitti, () => this.setState({ dsHata: `Kopyalanamadı; elle seç: ${metin}` }));
+      else this.setState({ dsHata: `Kopyalanamadı; elle seç: ${metin}` });
+    };
     const AKTIF_UYELER = ['deniz@ornek.com', 'ece@ornek.com', 'selin@ornek.com'];
     const sepet = this.state.sepet;
     const satilan = this.state.satilan;
@@ -1180,6 +1281,42 @@ class Component extends DCLogic {
         this.setState({ tanisma: UYE_EPOSTA.includes(ep) ? 'uye' : BILETLI.includes(ep) ? 'kullanilmis' : 'verildi' });
       },
       waLink: waNo ? `https://wa.me/${waNo}` : '#iletisim',
+      // Biz Kimiz? › WhatsApp'tan yaz: kişi seçilir (numaralar ayar.js'te)
+      waSecAcik: this.state.waSecAcik, waSecAcikYazi: this.state.waSecAcik ? 'true' : 'false',
+      waSecDegis: () => this.setState((s) => ({ waSecAcik: !s.waSecAcik })),
+      waKisiler: ((window.FC_AYAR && window.FC_AYAR.whatsapp) || [{ ad: 'Pelin', tel: '05435926654' }, { ad: 'Ezgi', tel: '05350359146' }]).map((k) => {
+        const r = String(k.tel).replace(/\D/g, '');
+        const no = r.startsWith('0') ? `90${r.slice(1)}` : r.length === 10 ? `90${r}` : r;
+        return { ad: k.ad, link: `https://wa.me/${no}`, yazi: r.replace(/^(\d{4})(\d{3})(\d{2})(\d{2})$/, '$1 $2 $3 $4') };
+      }),
+      // DESTEK OL: hazır tutarlar ya da elle; kart iyzico'ya gider (kart_odeme açıkken), yoksa IBAN
+      destekAcik: !!this.state.destek, destekForm: this.state.destek === 'form',
+      destekTamam: this.state.destek === 'tamam', destekBasarisiz: this.state.destek === 'hata',
+      destekAc: () => this.setState({ destek: 'form', dsHata: '', dsKopya: '' }),
+      destekKapat: () => this.setState({ destek: '' }),
+      destekTekrar: () => this.setState({ destek: 'form', dsHata: '' }),
+      destekTutarlar: [1000, 2500, 5000, 0].map((n) => ({
+        ad: n ? TL(n) : 'Başka tutar',
+        basili: (n ? !this.state.dsElle && this.state.dsTutar === n : this.state.dsElle) ? 'true' : 'false',
+        sec: () => this.setState(n ? { dsTutar: n, dsElle: false, dsHata: '' } : { dsElle: true, dsHata: '' }),
+      })),
+      destekElle: this.state.dsElle, destekTutarYazi: this.state.dsTutarYazi, destekHata: this.state.dsHata,
+      destekTutarYaz: (e) => this.setState({ dsTutarYazi: e.target.value, dsHata: '' }),
+      destekKartKapali: kartAcik ? 'false' : 'true', destekKartKapaliMi: !kartAcik,
+      destekKartStil: kartAcik ? 'width:100%' : 'width:100%;opacity:.45;cursor:not-allowed',
+      destekKartYazi: kartAcik ? `Kartla öde · ${TL(destekTutar)}` : 'Kartla öde',
+      destekKartla: () => {
+        if (!kartAcik) return this.setState({ dsHata: 'Kartla ödeme çok yakında; şimdilik IBAN ile gönderebilirsin.' });
+        if (!(destekTutar >= 50)) return this.setState({ dsHata: 'En az 50 TL yaz.' });
+        if (destekTutar > 100000) return this.setState({ dsHata: 'En çok 100.000 TL gönderebilirsin.' });
+        if (!window.FCSDestek) return this.setState({ dsHata: 'Önizleme: gerçek sitede iyzico ödeme sayfası açılır.' });
+        this.setState({ dsHata: 'Ödeme sayfası açılıyor…' });
+        window.FCSDestek(destekTutar).then((sayfa) => { location.href = sayfa; }).catch((h) => this.setState({ dsHata: h.message }));
+      },
+      aliciKopyaYazi: this.state.dsKopya === 'alici' ? 'Kopyalandı ✓' : 'Kopyala',
+      ibanKopyaYazi: this.state.dsKopya === 'iban' ? 'Kopyalandı ✓' : 'Kopyala',
+      aliciKopyala: () => kopyala('alici', odemeBilgi.alici),
+      ibanKopyala: () => kopyala('iban', odemeBilgi.iban.replace(/\s/g, '')),
       waYazi: waHam || '[WHATSAPP NUMARASI]',
       uyeFormda: this.state.uyeAdim === 'form',
       uyeOdemede: this.state.uyeAdim === 'odeme',
@@ -1191,7 +1328,7 @@ class Component extends DCLogic {
       bEpostaYaz: (e) => this.setState({ bEposta: e.target.value, bHata: '' }),
       bKosulDegis: () => this.setState((s) => ({ bKosul: !s.bKosul, bHata: '' })),
       bFoto: this.state.bFoto, bFotoDegis: () => this.setState((s) => ({ bFoto: !s.bFoto })),
-      odeme: (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' },
+      odeme: odemeBilgi,
       dHata: this.state.dHata,
       dekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ dDosya: f || null, dHata: '' }); },
       dekontGonder: () => {

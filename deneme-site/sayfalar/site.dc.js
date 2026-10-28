@@ -4,7 +4,7 @@ window.DC.sinif('/sayfalar/site.dc.html', function (DCLogic) {
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis' };
+    this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis', destek: '', dsTutar: 1000, dsElle: false, dsTutarYazi: '', dsHata: '', dsKopya: '', waSecAcik: false };
     this.bekle = null;
     this.kaydir = () => {
       if (this.bekle) return;
@@ -20,6 +20,12 @@ class Component extends DCLogic {
     this.kaydir();
     // Üye panelinde "Beni hatırla" ile giriş yapılmışsa düğme "Panelim" olur
     if (window.FCS && window.FCS.oturum) this.setState({ uyeGirisli: true });  // deneme sitesi: Supabase oturumu
+    // iyzico'dan dönüş (odeme-donus?tur=destek): teşekkür ya da hata penceresi; adres temizlenir
+    const donus = /^#destek-(tamam|hata)$/.exec(location.hash);
+    if (donus) {
+      this.setState({ destek: donus[1] });
+      history.replaceState(null, '', location.pathname + location.search);
+    }
   }
   componentWillUnmount() {
     window.removeEventListener('scroll', this.kaydir);
@@ -155,6 +161,15 @@ class Component extends DCLogic {
     const duyuruMetni = String(canli ? (AYAR.site_duyurusu || '') : (this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.')).trim();
     // SEPET: etkinlik biletleri. Gerçek sitede ödeme iyzico'da; başarılı ödeme biletleri kesinleştirir, muhasebeye "Etkinlik katılım ücreti" geliri yazar
     const TL = (n) => (n ? `${n.toLocaleString('tr-TR')} TL` : 'Ücretsiz');
+    // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
+    const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
+    const kartAcik = !canli || AYAR.kart_odeme === true;
+    const destekTutar = this.state.dsElle ? Math.round(Number(String(this.state.dsTutarYazi).replace(/[^\d]/g, ''))) : this.state.dsTutar;
+    const kopyala = (hangi, metin) => {
+      const bitti = () => this.setState({ dsKopya: hangi });
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(metin).then(bitti, () => this.setState({ dsHata: `Kopyalanamadı; elle seç: ${metin}` }));
+      else this.setState({ dsHata: `Kopyalanamadı; elle seç: ${metin}` });
+    };
     const AKTIF_UYELER = ['deniz@ornek.com', 'ece@ornek.com', 'selin@ornek.com'];
     const sepet = this.state.sepet;
     const satilan = this.state.satilan;
@@ -293,6 +308,42 @@ class Component extends DCLogic {
         this.setState({ tanisma: UYE_EPOSTA.includes(ep) ? 'uye' : BILETLI.includes(ep) ? 'kullanilmis' : 'verildi' });
       },
       waLink: waNo ? `https://wa.me/${waNo}` : '#iletisim',
+      // Biz Kimiz? › WhatsApp'tan yaz: kişi seçilir (numaralar ayar.js'te)
+      waSecAcik: this.state.waSecAcik, waSecAcikYazi: this.state.waSecAcik ? 'true' : 'false',
+      waSecDegis: () => this.setState((s) => ({ waSecAcik: !s.waSecAcik })),
+      waKisiler: ((window.FC_AYAR && window.FC_AYAR.whatsapp) || [{ ad: 'Pelin', tel: '05435926654' }, { ad: 'Ezgi', tel: '05350359146' }]).map((k) => {
+        const r = String(k.tel).replace(/\D/g, '');
+        const no = r.startsWith('0') ? `90${r.slice(1)}` : r.length === 10 ? `90${r}` : r;
+        return { ad: k.ad, link: `https://wa.me/${no}`, yazi: r.replace(/^(\d{4})(\d{3})(\d{2})(\d{2})$/, '$1 $2 $3 $4') };
+      }),
+      // DESTEK OL: hazır tutarlar ya da elle; kart iyzico'ya gider (kart_odeme açıkken), yoksa IBAN
+      destekAcik: !!this.state.destek, destekForm: this.state.destek === 'form',
+      destekTamam: this.state.destek === 'tamam', destekBasarisiz: this.state.destek === 'hata',
+      destekAc: () => this.setState({ destek: 'form', dsHata: '', dsKopya: '' }),
+      destekKapat: () => this.setState({ destek: '' }),
+      destekTekrar: () => this.setState({ destek: 'form', dsHata: '' }),
+      destekTutarlar: [1000, 2500, 5000, 0].map((n) => ({
+        ad: n ? TL(n) : 'Başka tutar',
+        basili: (n ? !this.state.dsElle && this.state.dsTutar === n : this.state.dsElle) ? 'true' : 'false',
+        sec: () => this.setState(n ? { dsTutar: n, dsElle: false, dsHata: '' } : { dsElle: true, dsHata: '' }),
+      })),
+      destekElle: this.state.dsElle, destekTutarYazi: this.state.dsTutarYazi, destekHata: this.state.dsHata,
+      destekTutarYaz: (e) => this.setState({ dsTutarYazi: e.target.value, dsHata: '' }),
+      destekKartKapali: kartAcik ? 'false' : 'true', destekKartKapaliMi: !kartAcik,
+      destekKartStil: kartAcik ? 'width:100%' : 'width:100%;opacity:.45;cursor:not-allowed',
+      destekKartYazi: kartAcik ? `Kartla öde · ${TL(destekTutar)}` : 'Kartla öde',
+      destekKartla: () => {
+        if (!kartAcik) return this.setState({ dsHata: 'Kartla ödeme çok yakında; şimdilik IBAN ile gönderebilirsin.' });
+        if (!(destekTutar >= 50)) return this.setState({ dsHata: 'En az 50 TL yaz.' });
+        if (destekTutar > 100000) return this.setState({ dsHata: 'En çok 100.000 TL gönderebilirsin.' });
+        if (!window.FCSDestek) return this.setState({ dsHata: 'Önizleme: gerçek sitede iyzico ödeme sayfası açılır.' });
+        this.setState({ dsHata: 'Ödeme sayfası açılıyor…' });
+        window.FCSDestek(destekTutar).then((sayfa) => { location.href = sayfa; }).catch((h) => this.setState({ dsHata: h.message }));
+      },
+      aliciKopyaYazi: this.state.dsKopya === 'alici' ? 'Kopyalandı ✓' : 'Kopyala',
+      ibanKopyaYazi: this.state.dsKopya === 'iban' ? 'Kopyalandı ✓' : 'Kopyala',
+      aliciKopyala: () => kopyala('alici', odemeBilgi.alici),
+      ibanKopyala: () => kopyala('iban', odemeBilgi.iban.replace(/\s/g, '')),
       waYazi: waHam || '[WHATSAPP NUMARASI]',
       uyeFormda: this.state.uyeAdim === 'form',
       uyeOdemede: this.state.uyeAdim === 'odeme',
@@ -304,7 +355,7 @@ class Component extends DCLogic {
       bEpostaYaz: (e) => this.setState({ bEposta: e.target.value, bHata: '' }),
       bKosulDegis: () => this.setState((s) => ({ bKosul: !s.bKosul, bHata: '' })),
       bFoto: this.state.bFoto, bFotoDegis: () => this.setState((s) => ({ bFoto: !s.bFoto })),
-      odeme: (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' },
+      odeme: odemeBilgi,
       dHata: this.state.dHata,
       dekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ dDosya: f || null, dHata: '' }); },
       dekontGonder: () => {
