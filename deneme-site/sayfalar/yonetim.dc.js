@@ -1071,9 +1071,13 @@ class Component extends DCLogic {
       ilt: this.state.ilt, iltMesaj: this.state.iltMesaj,
       yakinda: this.state.yakinda,
       yakindaNot: this.state.yakinda
-        ? 'Açık: sitede “Yakında açılıyoruz” şeridi var; üyelik başvurusu, tanışma bileti ve bilet satışı kapalı. Üye paneli ve dekont sayfası çalışır. Açılış günü işareti kaldırın.'
-        : 'Kapalı: site tam açık; başvuru, tanışma bileti ve bilet satışı çalışıyor.',
-      yakindaDegis: () => this.ayarDegis('yakinda', 'yakinda', '“Yakında” modu'),
+        ? 'Açık: ana sayfada “Yakında yayındayız” kapağı var, site tıklanamaz; üyelik başvurusu, tanışma bileti ve bilet satışı kapalı. Üye paneli ve dekont sayfası çalışır. Açılış günü işareti kaldırın.'
+        : 'Kapalı: site tam açık; kapak yok, başvuru, tanışma bileti ve bilet satışı çalışıyor.',
+      yakindaDegis: () => {
+        // Kapatmak siteyi herkese açar (etkinlikler, fiyatlar, başvuru): yanlışlıkla tıklanmasın
+        if (this.state.yakinda && !window.confirm('Site herkese açılacak: kapak kalkar; etkinlikler, fiyatlar ve başvuru görünür. Emin misin?')) return;
+        this.ayarDegis('yakinda', 'yakinda', '“Yakında” modu');
+      },
       siteDuyurusu: this.state.siteDuyurusu, duyuruMesaj: this.state.duyuruMesaj,
       siteDuyurusuYaz: (e) => this.setState({ siteDuyurusu: e.target.value, duyuruMesaj: '' }),
       siteDuyurusuKaydet: () => this.duyuruYaz(this.state.siteDuyurusu.trim()),
