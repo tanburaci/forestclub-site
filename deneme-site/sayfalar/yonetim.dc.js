@@ -698,7 +698,10 @@ class Component extends DCLogic {
     // Etkinlik seçiliyse ay sınırı yok: o etkinliğin bütün giriş ve çıkışları
     const mEtk = this.state.mEtk;
     const etkH = hareketler.filter((h) => h.etk === mEtk);
-    const hareketSatirlari = (mEtk ? etkH : ayH).filter((h) => mFiltre === 'tumu' || h.tur === mFiltre)
+    // Fatura takibi: faturası kesilecek gelirler ay sınırı olmadan; kesildi / gerekmez işareti satırda
+    const faturasiz = hareketler.filter((h) => h.tur === 'gelir' && !h.fatura);
+    const faturaYaz = (id, degisiklik) => this.setState((s) => ({ hareketler: s.hareketler.map((x) => (x.id === id ? { ...x, ...degisiklik } : x)) }));
+    const hareketSatirlari = (mFiltre === 'fatura' ? faturasiz : (mEtk ? etkH : ayH).filter((h) => mFiltre === 'tumu' || h.tur === mFiltre))
       .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id)
       .map((h) => ({
         tarihYazi: tarihYaz(h.tarih), turAd: TUR_AD[h.tur], rozet: TUR_ROZET[h.tur], aciklama: h.aciklama, otomatik: h.otomatik,
@@ -706,6 +709,16 @@ class Component extends DCLogic {
         kasaAd: h.tur === 'aktarim' ? `${KASA[h.kasa]} → ${KASA[h.hedef]}` : KASA[h.kasa],
         tutarYazi: `${h.tur === 'gelir' ? '+' : h.tur === 'gider' ? '−' : ''}${TL(h.tutar)}`,
         belge: h.belge || '—',
+        faturaGelir: h.tur === 'gelir', faturaBekliyor: h.tur === 'gelir' && !h.fatura, faturaVar: h.tur === 'gelir' && !!h.fatura,
+        faturaYazi: h.fatura === 'kesildi' ? `Kesildi ✓${h.faturaNo ? ` · ${h.faturaNo}` : ''}${h.faturaTarih ? ` · ${tarihYaz(h.faturaTarih)}` : ''}` : 'Gerekmez',
+        faturaRozet: h.fatura === 'kesildi' ? AKTIF : `${pill('#FFFFFF', '#5E5E5E')};border:1.5px dashed #5E5E5E`,
+        faturaKes: () => {
+          const no = window.prompt(`${h.aciklama} · ${TL(h.tutar)}\nFatura no (GİB e-Arşiv; boş bırakabilirsin):`, '');
+          if (no === null) return;
+          faturaYaz(h.id, { fatura: 'kesildi', faturaNo: no.trim().slice(0, 60), faturaTarih: this.BUGUN });
+        },
+        faturaGerekmez: () => faturaYaz(h.id, { fatura: 'gerekmez', faturaNo: '', faturaTarih: '' }),
+        faturaGeriAl: () => faturaYaz(h.id, { fatura: '', faturaNo: '', faturaTarih: '' }),
       }));
 
     // Etkinlik maliyeti: giderler − katılım geliri = kulübe maliyeti; katılımcıya bölünür
@@ -899,7 +912,7 @@ class Component extends DCLogic {
       muhasebeSekme: sekme === 'muhasebe',
       kasalar, aylar, ayOzet, hareketSatirlari, etkMaliyet, etkOzetMetin, kasaTablo,
       hareketYok: !hareketSatirlari.length,
-      hareketYokMetin: mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
+      hareketYokMetin: mFiltre === 'fatura' ? 'Faturası kesilecek gelir yok ✓' : mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
       mEtkFiltre: [{ id: '', ad: 'Tüm kayıtlar' }, ...etkGorunum.filter((x) => x.tarih.startsWith(mAy) || `${x.tarih}|${x.ad}` === mEtk)
         .map((x) => ({ id: `${x.tarih}|${x.ad}`, ad: `${x.gun}.${x.tarih.slice(5, 7)} ${x.ad}` }))]
         .map((o) => ({ ...o, sinif: o.id === mEtk ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ mEtk: o.id }) })),
@@ -920,7 +933,8 @@ class Component extends DCLogic {
       gelirDagilim: dagilim([...aidatH, ...digerGelirH]), gelirYok: !gelirTop,
       mGorunumler: secimler([{ id: 'hareketler', ad: 'Hareketler' }, { id: 'etkinlik', ad: 'Etkinlik maliyetleri' }, { id: 'ozet', ad: 'Aylık özet' }], mGorunum, 'mGorunum'),
       gHareketler: mGorunum === 'hareketler', gEtkinlik: mGorunum === 'etkinlik', gOzet: mGorunum === 'ozet',
-      mFiltreler: secimler([{ id: 'tumu', ad: 'Tümü' }, { id: 'gelir', ad: 'Gelir' }, { id: 'gider', ad: 'Gider' }, { id: 'aktarim', ad: 'Aktarım' }], mFiltre, 'mFiltre'),
+      mFiltreler: secimler([{ id: 'tumu', ad: 'Tümü' }, { id: 'gelir', ad: 'Gelir' }, { id: 'gider', ad: 'Gider' }, { id: 'aktarim', ad: 'Aktarım' },
+        { id: 'fatura', ad: `Faturası kesilecek (${faturasiz.length})` }], mFiltre, 'mFiltre'),
       mFormAcik: this.state.mFormAcik, mForm, mAlan: this.mAlan, mKaydet: this.mKaydet, mHata: this.state.mHata, mMesaj: this.state.mMesaj,
       mFormBaslik: { gider: 'Gider ekle', gelir: 'Gelir ekle', aktarim: 'Kasalar arası aktar' }[mForm.tur],
       mGider: mForm.tur === 'gider', mGelir: mForm.tur === 'gelir', mAktarim: mForm.tur === 'aktarim', mAktarimDegil: mForm.tur !== 'aktarim',
