@@ -11,7 +11,7 @@ const toml = fs.readFileSync(path.join(DENEME, 'netlify.toml'), 'utf8');
 const BASLIK = {};
 toml.split('\n').forEach((l) => { const m = /^\s+([A-Za-z-]+) = "(.*)"$/.exec(l); if (m) BASLIK[m[1]] = m[2]; });
 
-const gun = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const { gun } = require('./yardim.js');
 let hatalar = 0;
 const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if (!k) hatalar += 1; };
 

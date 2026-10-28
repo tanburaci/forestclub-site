@@ -11,7 +11,9 @@ const toml = fs.readFileSync(path.join(DENEME, 'netlify.toml'), 'utf8');
 const BASLIK = {};
 toml.split('\n').forEach((l) => { const m = /^\s+([A-Za-z-]+) = "(.*)"$/.exec(l); if (m) BASLIK[m[1]] = m[2]; });
 
-const gun = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+// Bugün İstanbul saatiyle (site ve sunucu da öyle sayar); UTC gece yarısından sonra tarih kaymasın
+const IST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' });
+const gun = (n) => { const d = new Date(`${IST.format(new Date())}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 let hatalar = 0;
 const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if (!k) hatalar += 1; };
 
