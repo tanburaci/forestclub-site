@@ -269,7 +269,7 @@ a{color:#111111}a:hover{color:#000000}
             <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Telefon *
               <input type="tel" value="{{ sTel }}" onChange="{{ sTelYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
             </label>
-            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ sOnay }}" onChange="{{ sOnayDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="#">Mesafeli satış sözleşmesi</a>, <a href="#">iptal ve iade koşulları</a>, doğal alan beyanı ve KVKK metnini okudum. *</span></label>
+            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ sOnay }}" onChange="{{ sOnayDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="/mesafeli-satis/" target="_blank" rel="noopener">Mesafeli satış sözleşmesi</a>, <a href="/teslimat-iade/" target="_blank" rel="noopener">teslimat ve iade şartları</a>, doğal alan beyanı ve <a href="/gizlilik/" target="_blank" rel="noopener">KVKK metnini</a> okudum. *</span></label>
             <sc-if value="{{ uyeIndirimi }}" hint-placeholder-val="{{ false }}">
               <p role="status" style="margin: 0; background: #C9E33A; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600">Aktif üyeliğin bulundu 🌲 Üye fiyatı uygulandı.</p>
             </sc-if>
@@ -439,7 +439,7 @@ a{color:#111111}a:hover{color:#000000}
             <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Telefon
               <input type="tel" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
             </label>
-            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ tOnay }}" onChange="{{ tOnayDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Doğal alan beyanını ve KVKK aydınlatma metnini okudum. <a href="#">Metinler</a> *</span></label>
+            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ tOnay }}" onChange="{{ tOnayDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Doğal alan beyanını ve <a href="/gizlilik/" target="_blank" rel="noopener">KVKK aydınlatma metnini</a> okudum. *</span></label>
             <sc-if value="{{ tHata }}" hint-placeholder-val="{{ false }}">
               <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ tHata }}</p>
             </sc-if>
@@ -998,9 +998,14 @@ a{color:#111111}a:hover{color:#000000}
         <a href="#">Doğal alan beyanı</a>
         <a href="#">KVKK aydınlatma metni</a>
         <a href="#">Fotoğraf ve video izni</a>
-        <a href="#">Mesafeli satış sözleşmesi</a>
-        <a href="#">İptal ve iade koşulları</a>
         </sc-if>
+        <!-- Satış ve gizlilik sayfaları (iyzico şartı): her zaman görünür -->
+        <h3 style="margin: 8px 0 4px; font-size: 16px">Sözleşmeler</h3>
+        <a href="/hakkimizda/">Hakkımızda</a>
+        <a href="/teslimat-iade/">Teslimat ve iade şartları</a>
+        <a href="/gizlilik/">Gizlilik sözleşmesi ve KVKK</a>
+        <a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a>
+        <div aria-label="Ödeme yöntemleri" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; font-size: 13px; font-weight: 700"><span style="border: 2px solid #111111; border-radius: 8px; padding: 4px 9px">VISA</span><span style="border: 2px solid #111111; border-radius: 8px; padding: 4px 9px">Mastercard</span><span style="border: 2px solid #111111; border-radius: 8px; padding: 4px 9px">iyzico ile Öde</span></div>
         <a href="Main.dc.html" style="margin-top: 8px; color: #5E5E5E; font-size: 14px">Yönetici girişi</a>
       </div>
     </footer>
@@ -1302,7 +1307,8 @@ class Component extends DCLogic {
         { soru: 'Kişisel verilerim ne olacak?', cevap: 'Bilgilerin yalnız kulüp işleri için kullanılır. Üye panelinden verilerinin kopyasını isteyebilir ya da hesabının silinmesini talep edebilirsin.' },
       ].filter((x) => !canli || !/\[[A-ZÇĞİÖŞÜ ]+/.test(x.cevap)),
       // Tanışma bileti yalnız seçilen yaklaşan buluşmada geçerli
-      tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN).map((b) => {
+      // Tanışma bileti yalnız üyelere ücretsiz buluşmalarda (biletli etkinliklerde kural "ucretsiz" olmalı)
+      tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN && (!b.satis || b.satis.uye === 'ucretsiz')).map((b) => {
         const on = `${b.tarih}|${b.ad}` === this.state.tEtk;
         return {
           ad: `${b.gun} ${b.ay} · ${b.ad} · ${b.saat}`, basili: on ? 'true' : 'false',
@@ -1465,8 +1471,9 @@ class Component extends DCLogic {
       ],
       filtreler,
       yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map((b) => {
-        if (!b.satis) return { ...b, fiyatYazi: '', uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
+        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
         const key = `${b.tarih}|${b.ad}`;
         const kalan = kalanYer(b);
         const sepette = sepet[key] || 0;
