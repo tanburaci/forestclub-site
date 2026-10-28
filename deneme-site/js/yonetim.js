@@ -36,10 +36,10 @@
 
   // --- Veritabanı → panelin beklediği biçim ------------------------------------------------------------------
   async function veriYukle(eposta) {
-    const [uyeler, odemeler, etkinlikler, kayitlar, biletler, hareketler, envanter, sablonlar, dekontlar, cagri] = await Promise.all([
+    const [uyeler, odemeler, etkinlikler, kayitlar, biletler, hareketler, envanter, sablonlar, dekontlar, cagri, biletIstekleri] = await Promise.all([
       hepsi('uyeler'), hepsi('odemeler'), hepsi('etkinlikler'), hepsi('etkinlik_kayitlari', ['etkinlik_id', 'uye_id']),
       hepsi('tanisma_biletleri'), hepsi('muhasebe_hareketleri'), hepsi('envanter'), hepsi('eposta_sablonlari'),
-      hepsi('dekontlar'), hepsi('acik_cagri'),
+      hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'),
     ]);
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
     const [kuyruk, saglik, ayarlar, veriTalepleri] = await Promise.all([
@@ -131,7 +131,7 @@
       kuyruk, saglik, ayarlar, veriTalepleri,
       eksik: eksikler,
       _keyEtk: keyEtk,
-      basvurular: { dekontlar, cagri, uyeler: new Map(uyeler.map((u) => [u.id, u])) },
+      basvurular: { dekontlar, cagri, biletIstekleri, etkinlikAd: new Map(etkinlikler.map((e) => [e.id, `${e.ad} (${trTarih(e.tarih)})`])), uyeler: new Map(uyeler.map((u) => [u.id, u])) },
     };
     return FC;
   }
@@ -159,9 +159,20 @@
     bildir(onay ? `${d.ad}: üyelik ${trTarih(data.bitis)} tarihine kadar ✓` : 'Dekont reddedildi; üyeye gerekçeli mail gidecek');
     setTimeout(() => { location.hash = 'basvurular'; location.reload(); }, 900);  // üye ve muhasebe listeleri tazelensin
   }
+  async function biletKarar(i, onay) {
+    let not = null;
+    if (!onay) {
+      not = window.prompt(`${i.ad} için red gerekçesi (alıcıya e-postayla gider):`, 'Dekonttaki tutar ödemeyle eşleşmedi.');
+      if (not === null) return;
+    }
+    const { data, error } = await sb.rpc('bilet_karar', { p_id: i.id, p_onay: onay, p_not: not });
+    if (error) return bildir(error.message, true);
+    bildir(onay ? `${i.ad}: ${data.adet} bilet onaylandı, kodlar e-postayla gidiyor ✓` : 'Bilet dekontu reddedildi; gerekçeli mail gidecek');
+    setTimeout(() => { location.hash = 'basvurular'; location.reload(); }, 900);
+  }
   window.FCBasvuruGorunum = (panel) => {
     const b = window.FC && window.FC.basvurular;
-    if (!b) return { bekleyen: [], kararlar: [], cagri: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' };
+    if (!b) return { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' };
     const B = window.FC.bugun;
     const uyelikYazi = (u) => (!u ? '—' : u.bitis && u.bitis > B ? `aktif, bitiş ${trTarih(u.bitis)}` : u.bitis ? `süresi doldu (${trTarih(u.bitis)})` : 'hiç ödememiş');
     const sirali = [...b.dekontlar].sort((x, y) => y.created_at.localeCompare(x.created_at));
@@ -181,7 +192,21 @@
         c.gunler && `Günler: ${c.gunler}`, c.ihtiyac && `İhtiyaç: ${c.ihtiyac}`].filter(Boolean).join(' · '),
       notlar: c.notlar || '',
     }));
+    // Bilet dekontları (yalnız dekontu yüklenmiş istekler)
+    const kalemYazi = (i) => i.kalemler.map((k) => `${b.etkinlikAd.get(k.etkinlik_id) || 'Etkinlik'} × ${k.adet}`).join(', ');
+    const bIstek = b.biletIstekleri.filter((i) => i.yuklendi).sort((x, y) => y.created_at.localeCompare(x.created_at));
+    const biletler = bIstek.filter((i) => i.durum === 'bekliyor').map((i) => ({
+      ad: i.ad, eposta: i.eposta, tel: i.tel || '—', tarih: zaman(i.created_at), tutar: tl(i.tutar), kalemler: kalemYazi(i),
+      ac: () => dekontAc(i.dosya), onayla: () => biletKarar(i, true), reddet: () => biletKarar(i, false),
+    }));
+    const biletKararlar = bIstek.filter((i) => i.durum !== 'bekliyor').slice(0, 50).map((i) => ({
+      ad: i.ad, tarih: zaman(i.created_at), tutar: tl(i.tutar), kalemler: kalemYazi(i), sonuc: i.sonuc || '—',
+      durum: i.durum === 'onaylandi' ? 'Onaylandı' : 'Reddedildi',
+      rozet: i.durum === 'onaylandi' ? pill('#111111', '#FFFFFF') : pill('#F3DCD5', '#82301F'),
+      ac: () => dekontAc(i.dosya),
+    }));
     return {
+      biletler, biletYok: !biletler.length, biletSayi: String(biletler.length), biletKararlar, biletKararVar: biletKararlar.length > 0,
       bekleyen, bekleyenYok: !bekleyen.length, bekleyenSayi: String(bekleyen.length), kararlar, kararVar: kararlar.length > 0,
       cagri, cagriYok: !cagri.length, cagriSayi: String(cagri.length), mesaj: '',
     };

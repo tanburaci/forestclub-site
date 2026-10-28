@@ -48,7 +48,7 @@ class Component extends DCLogic {
         metin: 'Merhaba {ad},\n\n{etkinlik} için geldiğin için teşekkürler! Üye panelinden 1–5 arası puan verip bir cümle yazarsan bir sonrakini daha güzel yaparız. Fotoğraflar da panelde.\n\nForest Club Urla' },
     ];
     this.ORNEK = { ad: 'Deniz', bitis: '23.11.2026', odemeLinki: '[ödeme bağlantısı]', etkinlik: 'Breakfast Club', tarih: '26 Ekim Pazar', saat: '10.00', yer: 'Pinya, Urla', kod: 'FC-4821', ozelGun: 'Evlilik yıldönümün', biletKodu: 'FC-T-4821', duyuru: '26.10.2026 tarihli Breakfast Club, yağmur nedeniyle 02.11.2026 tarihine ertelendi. Kaydın yeni tarihe taşındı.' };
-    this.ALAN_AD = { neden: 'Red gerekçesi', ozet: 'Sorun özeti', ad: 'Ad', bitis: 'Üyelik bitişi', odemeLinki: 'Ödeme (dekont) sayfası bağlantısı', etkinlik: 'Etkinlik adı', tarih: 'Etkinlik tarihi', saat: 'Saat', yer: 'Yer', kod: 'Geçici şifre', ozelGun: 'Özel günün adı', biletKodu: 'Tanışma bileti kodu', duyuru: 'İptal / erteleme duyuru metni' };
+    this.ALAN_AD = { neden: 'Red gerekçesi', ozet: 'Sorun özeti', ad: 'Ad', bitis: 'Üyelik bitişi', odemeLinki: 'Ödeme (dekont) sayfası bağlantısı', etkinlik: 'Etkinlik adı', tarih: 'Etkinlik tarihi', saat: 'Saat', yer: 'Yer', kod: 'Geçici şifre', ozelGun: 'Özel günün adı', biletKodu: 'Tanışma bileti kodu', biletler: 'Bilet kodları (etkinlik, tarih ve kodlar)', duyuru: 'İptal / erteleme duyuru metni' };
     // Örnek üye profilleri (gerçekte üye kendi panelinden girer)
     this.PROFILLER = {
       'Deniz Yılmaz': { dogum: '1992-11-03', ozel: [{ ad: 'Evlilik yıldönümü', tarih: '2019-06-14' }], ilgi: ['Yoga', 'Kahvaltı buluşmaları'], kutlama: true, foto: true, tanisma: 'Instagram', baslangic: '26.08.2026' },
@@ -511,7 +511,8 @@ class Component extends DCLogic {
           if (window.FCGirisKaydet) {
             this.setState({ kodMesaj: 'Kontrol ediliyor…' });
             window.FCGirisKaydet(p.key, kod).then((r) => this.setState((s) => {
-              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : ''}`;
+              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : r.bilet ? ' (bilet)' : ''}`;
+              if (r.bilet) return { kodMesaj: mesaj, kod: '' };
               // Tanışma bileti: sunucuda "geldi" yazıldı; liste yalnız ekranda güncellenir (kapida: ikinci kez yazılmasın)
               if (r.tanisma) return { kodMesaj: mesaj, kod: '', biletler: s.biletler.map((b) => (b.id === r.bilet_id ? { ...b, durum: 'geldi', kapida: true } : b)) };
               const i = this.DEMO.kisiler.findIndex((x) => x.id === r.uye_id);
@@ -1052,7 +1053,7 @@ class Component extends DCLogic {
       etkinliklerSekme: sekme === 'etkinlikler',
       iletisimSekme: sekme === 'iletisim',
       basvuruSekme: sekme === 'basvurular',
-      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' },
+      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' },
       ozet: [
         { baslik: 'Aktif üye', sayi: String(sayac.aktif), alt: `${this.DEMO.kisiler.filter((k) => k.bas && k.bas >= `${BUGUN_SABIT.slice(0, 7)}-01`).length} kişi bu ay katıldı · ${tumUyeler.length} kayıt` },
         { baslik: 'Bu ay kart ödemesi', sayi: String(buAyKart.length), alt: `${TL(topla(buAyKart))} · kendiliğinden işlendi` },
