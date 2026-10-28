@@ -167,7 +167,7 @@ a{color:#111111}a:hover{color:#000000}
                 <p style="margin: 6px 0 0; color: #5E5E5E">Bugün {{ bugunYazi }} · kulüpte olup bitenler</p>
               </div>
               <div style="display: flex; gap: 10px; flex-wrap: wrap">
-                <a class="fc-btn fc-btn-ikincil" href="#" style="text-decoration: none; display: inline-flex; align-items: center">Başvuru sayfası</a>
+                <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ basvurularaGit }}">Başvurular</button>
                 <button type="button" class="fc-btn" onClick="{{ etkinlikSec }}">Yeni etkinlik</button>
               </div>
             </div>
@@ -2382,6 +2382,7 @@ class Component extends DCLogic {
       hatirla: this.state.hatirla,
       hatirlaDegis: () => this.setState((s) => ({ hatirla: !s.hatirla })),
       etkinlikSec: () => this.setState({ sekme: 'etkinlikler', formAcik: true, eklendiMesaj: '' }),
+      basvurularaGit: () => this.setState({ sekme: 'basvurular' }),
       formAc: () => this.setState({ formAcik: true, eklendiMesaj: '' }),
       formKapat: () => this.setState({ formAcik: false, form: { ...this.BOS }, formHata: '' }),
       formAcik: this.state.formAcik,
