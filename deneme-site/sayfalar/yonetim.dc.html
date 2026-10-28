@@ -629,7 +629,7 @@ a{color:#111111}a:hover{color:#000000}
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
               <div>
                 <h2 style="margin: 0; font-family: 'Amatic SC', cursive; font-size: 56px; line-height: 1; color: #111111">Muhasebe</h2>
-                <p style="margin: 6px 0 0; color: #5E5E5E">Aidatlar ödeme onaylanınca kendiliğinden gelir olarak yazılır; giderleri siz girersiniz.</p>
+                <p style="margin: 6px 0 0; color: #5E5E5E">Aidatlar ve kartla gelen destekler kendiliğinden gelir olarak yazılır; IBAN'a gelen destekleri “Gelir ekle › Destek” ile, giderleri siz girersiniz.</p>
               </div>
               <div style="display: flex; gap: 10px; flex-wrap: wrap">
                 <button type="button" class="fc-btn" onClick="{{ mGiderAc }}">Gider ekle</button>
@@ -645,7 +645,7 @@ a{color:#111111}a:hover{color:#000000}
             <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
               <input type="checkbox" checked="{{ kartOdeme }}" onChange="{{ kartOdemeDegis }}" style="width: 20px; height: 20px">
               Üyeler aidatı kartla ödeyebilsin (iyzico)
-              <span style="font-weight: 400; color: #5E5E5E">Kapalıyken üye paneli havale + dekont sayfasına yönlendirir.</span>
+              <span style="font-weight: 400; color: #5E5E5E">Sitedeki “Destek ol” penceresinde de kartla ödeme açılır. Kapalıyken üye paneli havale + dekont sayfasına yönlendirir, destek yalnız IBAN ile gelir.</span>
             </label>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
@@ -717,6 +717,7 @@ a{color:#111111}a:hover{color:#000000}
                     <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Kategori
                       <select class="fc-input" value="{{ mForm.kategori }}" onChange="{{ mAlan.kategori }}">
                         <option value="Etkinlik katılım ücreti">Etkinlik katılım ücreti</option>
+                        <option value="Destek">Destek (IBAN'a gelen)</option>
                         <option value="Bağış">Bağış</option>
                         <option value="Sponsor">Sponsor</option>
                         <option value="Diğer gelir">Diğer gelir</option>
@@ -2024,13 +2025,16 @@ class Component extends DCLogic {
     const ayH = hareketler.filter((h) => h.tarih.startsWith(mAy));
     const aidatH = ayH.filter((h) => h.tur === 'gelir' && h.kategori === 'Aidat');
     const digerGelirH = ayH.filter((h) => h.tur === 'gelir' && h.kategori !== 'Aidat');
+    // Destek: kartla gelenler kendiliğinden (iyzico), IBAN'a gelenler elle "Destek" kategorisiyle yazılır
+    const destekH = digerGelirH.filter((h) => h.kategori === 'Destek');
     const giderH = ayH.filter((h) => h.tur === 'gider');
     const etkGider = topla(giderH.filter((h) => h.etk));
     const genelGider = topla(giderH.filter((h) => !h.etk));
     const gelirTop = topla(aidatH) + topla(digerGelirH);
     const ayOzet = [
       { baslik: 'Aidat geliri', sayi: TL(topla(aidatH)), alt: `${aidatH.length} ödeme onaylandı` },
-      { baslik: 'Diğer gelir', sayi: TL(topla(digerGelirH)), alt: digerGelirH.length ? 'Katılım ücreti, bağış, sponsor' : 'Bu ay yok' },
+      { baslik: 'Diğer gelir', sayi: TL(topla(digerGelirH)), alt: !digerGelirH.length ? 'Bu ay yok'
+        : destekH.length ? `Destek ${TL(topla(destekH))} (${destekH.length}) · katılım ücreti, sponsor` : 'Katılım ücreti, destek, sponsor' },
       { baslik: 'Toplam gider', sayi: TL(etkGider + genelGider), alt: `Etkinlik ${TL(etkGider)} · genel ${TL(genelGider)}` },
       { baslik: 'Kasaya net giren', sayi: TL(gelirTop - etkGider - genelGider), alt: 'Bu ayın gelirleri eksi giderleri' },
     ];

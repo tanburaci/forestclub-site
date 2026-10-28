@@ -676,13 +676,16 @@ class Component extends DCLogic {
     const ayH = hareketler.filter((h) => h.tarih.startsWith(mAy));
     const aidatH = ayH.filter((h) => h.tur === 'gelir' && h.kategori === 'Aidat');
     const digerGelirH = ayH.filter((h) => h.tur === 'gelir' && h.kategori !== 'Aidat');
+    // Destek: kartla gelenler kendiliğinden (iyzico), IBAN'a gelenler elle "Destek" kategorisiyle yazılır
+    const destekH = digerGelirH.filter((h) => h.kategori === 'Destek');
     const giderH = ayH.filter((h) => h.tur === 'gider');
     const etkGider = topla(giderH.filter((h) => h.etk));
     const genelGider = topla(giderH.filter((h) => !h.etk));
     const gelirTop = topla(aidatH) + topla(digerGelirH);
     const ayOzet = [
       { baslik: 'Aidat geliri', sayi: TL(topla(aidatH)), alt: `${aidatH.length} ödeme onaylandı` },
-      { baslik: 'Diğer gelir', sayi: TL(topla(digerGelirH)), alt: digerGelirH.length ? 'Katılım ücreti, bağış, sponsor' : 'Bu ay yok' },
+      { baslik: 'Diğer gelir', sayi: TL(topla(digerGelirH)), alt: !digerGelirH.length ? 'Bu ay yok'
+        : destekH.length ? `Destek ${TL(topla(destekH))} (${destekH.length}) · katılım ücreti, sponsor` : 'Katılım ücreti, destek, sponsor' },
       { baslik: 'Toplam gider', sayi: TL(etkGider + genelGider), alt: `Etkinlik ${TL(etkGider)} · genel ${TL(genelGider)}` },
       { baslik: 'Kasaya net giren', sayi: TL(gelirTop - etkGider - genelGider), alt: 'Bu ayın gelirleri eksi giderleri' },
     ];

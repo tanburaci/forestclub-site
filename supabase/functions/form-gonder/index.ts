@@ -4,12 +4,15 @@
 // dosya tarayıcıdan doğrudan depoya yüklenir, "dekont_kaydet" kaydı açar (yalnız bu e-postaya verilmiş yol).
 //
 // "Yakında" modunda (ayarlar.yakinda) üyelik başvurusu ve tanışma bileti alınmaz; Açık Çağrı ve dekont açık.
+// "destek": kartla destek; iyzico ödeme sayfası açılır, dönüş odeme-donus?tur=destek (ayarlar.kart_odeme açıkken).
 //
-// Secrets: TURNSTILE_SECRET (zorunlu), IP_TUZU (isteğe bağlı; IP özetine katılır)
+// Secrets: TURNSTILE_SECRET (zorunlu), IP_TUZU (isteğe bağlı; IP özetine katılır); destek için IYZICO_API_KEY,
+// IYZICO_SECRET_KEY, IYZICO_ADRES, isteğe bağlı IYZICO_TCKN
 import { CORS, json, servisIstemcisi } from '../_ortak/ortak.ts';
+import { fiyat, iyzico } from '../_ortak/iyzico.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
-const SINIR: Record<string, number> = { basvuru: 5, tanisma: 5, cagri: 5, dekont_adres: 10, dekont_kaydet: 10, hepsi: 30 };
+const SINIR: Record<string, number> = { basvuru: 5, tanisma: 5, cagri: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, hepsi: 30 };
 const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet']);  // yol zaten Turnstile'lı "dekont_adres" adımında verildi
 const UZANTI: Record<string, string> = {
   '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
@@ -65,7 +68,32 @@ async function acildiMi(): Promise<void> {
   }
 }
 
-async function isle(tur: string, v: Record<string, unknown>): Promise<unknown> {
+// Kartla destek: alıcı bilgisi istenmez (kart sahibinin adını iyzico sayfası alır); iyzico'nun zorunlu alıcı alanlarına
+// kulübün bilgileri yazılır
+async function destekBaslat(tutarHam: unknown, ip: string): Promise<{ sayfa: string }> {
+  const o = await rpc('destek_istegi_ac', { p_tutar: Number(tutarHam) }) as { id: string; tutar: number };
+  const adres = { contactName: 'Forest Club Urla', city: 'Izmir', country: 'Turkey', address: 'Urla, İzmir' };
+  const tutar = fiyat(Number(o.tutar));
+  const sonuc = await iyzico('/payment/iyzipos/checkoutform/initialize/auth/ecom', {
+    locale: 'tr', conversationId: o.id, price: tutar, paidPrice: tutar, currency: 'TRY', basketId: o.id, paymentGroup: 'PRODUCT',
+    callbackUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/odeme-donus?tur=destek`, enabledInstallments: [1],
+    buyer: {
+      id: 'destek', name: 'Forest Club', surname: 'Destekçi', email: 'forestcluburla@gmail.com',
+      identityNumber: Deno.env.get('IYZICO_TCKN') || '11111111111', registrationAddress: adres.address,
+      ip: ip === 'bilinmiyor' ? '85.34.78.112' : ip, city: adres.city, country: adres.country,
+    },
+    billingAddress: adres,
+    basketItems: [{ id: 'destek', name: 'Forest Club Urla topluluk desteği', category1: 'Destek', itemType: 'VIRTUAL', price: tutar }],
+  });
+  if (sonuc.status !== 'success' || !sonuc.token || !sonuc.paymentPageUrl) {
+    console.error('iyzico initialize (destek)', sonuc.errorCode, sonuc.errorMessage);
+    throw new KullaniciHatasi('Ödeme sayfası açılamadı; biraz sonra tekrar dene ya da IBAN ile gönder.', 502);
+  }
+  await rpc('destek_istegi_token', { p_id: o.id, p_token: sonuc.token });
+  return { sayfa: sonuc.paymentPageUrl };
+}
+
+async function isle(tur: string, v: Record<string, unknown>, ip: string): Promise<unknown> {
   if (tur === 'basvuru' || tur === 'tanisma') await acildiMi();
   switch (tur) {
     case 'basvuru':
@@ -95,6 +123,8 @@ async function isle(tur: string, v: Record<string, unknown>): Promise<unknown> {
     }
     case 'dekont_kaydet':
       return rpc('dekont_kaydet', { p_eposta: metin(v.eposta, 200), p_dosya: metin(v.yol, 300) });
+    case 'destek':
+      return destekBaslat(v.tutar, ip);
     default:
       throw new KullaniciHatasi('Bilinmeyen form.');
   }
@@ -118,7 +148,7 @@ Deno.serve(async (istek) => {
     if (!tumu || !bu) throw new KullaniciHatasi('Çok fazla deneme yapıldı; bir saat sonra tekrar dene.', 429);
 
     if (!TURNSTILE_GEREKMEZ.has(tur)) await turnstileDogrula(govde.jeton, ip);
-    return json(200, { sonuc: await isle(tur, veri) });
+    return json(200, { sonuc: await isle(tur, veri, ip) });
   } catch (h) {
     if (h instanceof KullaniciHatasi) return json(h.durum, { hata: h.message });
     if (h instanceof SyntaxError) return json(400, { hata: 'Geçersiz istek.' });
