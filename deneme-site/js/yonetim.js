@@ -67,7 +67,7 @@
         i, id: u.id, ad: u.ad, eposta: u.eposta, tel: u.tel || '', kod: u.kod, durum, bas: u.baslangic, bitis: u.bitis,
         basvuru: u.basvuru_tarihi, yol: ods.length ? ods[ods.length - 1].yol : 'kart',
         odemeler: ods.map((o) => ({ tarih: o.tarih, yol: o.yol, tutar: Number(o.tutar) })),
-        kutlama: u.kutlama_izni, foto: u.foto_izni,
+        kutlama: u.kutlama_izni, foto: u.foto_izni, muaf: !!u.aidat_muaf,
         profil: {
           dogum: u.dogum_gunu || '', ozel: u.ozel_gunler || [], ilgi: u.ilgi_alanlari || [], kutlama: u.kutlama_izni,
           foto: u.foto_izni, tanisma: u.nereden_duydu || '', baslangic: trTarih(u.baslangic),
@@ -126,6 +126,7 @@
       })),
       // Yönetici notları üye numarasıyla (aynı adlı iki üye karışmasın)
       notlar: Object.fromEntries(uyeler.filter((u) => u.yonetici_notu).map((u) => [u.id, u.yonetici_notu])),
+      muaflar: Object.fromEntries(uyeler.filter((u) => u.aidat_muaf).map((u) => [u.id, true])),
       etkDurum,
       kuyruk, saglik, ayarlar, veriTalepleri,
       eksik: eksikler,
@@ -601,6 +602,14 @@
         Object.keys(simdi.notlar).forEach((id) => {
           if (once.notlar[id] === simdi.notlar[id]) return;
           ertele(`not${id}`, () => yaz(sb.from('uyeler').update({ yonetici_notu: simdi.notlar[id] || null }).eq('id', Number(id)), 'Not kaydedildi ✓'));
+        });
+      }
+      // Aidattan muaf (bitişi sunucu ayarlar: muafken 31.12.2099, kaldırılınca bugünden 30 gün)
+      if (once.muaflar !== simdi.muaflar) {
+        Object.keys(simdi.muaflar).forEach((id) => {
+          if (!!once.muaflar[id] === !!simdi.muaflar[id]) return;
+          const muaf = !!simdi.muaflar[id];
+          yaz(sb.from('uyeler').update({ aidat_muaf: muaf }).eq('id', Number(id)).select('id'), muaf ? 'Aidattan muaf ✓' : 'Muafiyet kaldırıldı ✓');
         });
       }
     };

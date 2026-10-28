@@ -77,7 +77,7 @@
       bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket,
       kartOdeme: ayar.kart_odeme === true, dondurmaKurali: ayar.dondurma || { gunler: [7, 14], yillik: 2 },
       hesap: {
-        ad: u.ad, kod: u.kod, bitis: u.bitis || '',
+        ad: u.ad, kod: u.kod, bitis: u.bitis || '', muaf: !!u.aidat_muaf,
         odemeler: ods.data.map((o) => ({ tarih: o.tarih, yol: ({ kart: 'Kart', havale: 'Havale · dekont', elden: 'Elden' })[o.yol] || o.yol, tutar: Number(o.tutar) })),
         profil: { telefon: u.tel || '', dogum: u.dogum_gunu || '', kutlama: u.kutlama_izni, foto: u.foto_izni,
           ilgi: u.ilgi_alanlari || [], ozel: u.ozel_gunler || [] },

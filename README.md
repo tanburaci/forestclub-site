@@ -27,4 +27,7 @@ Yönetim paneli iki adımlı girişle açılır (şifre / e-posta bağlantısı 
 çıkarmak yalnız Supabase SQL Editor'dan: `insert into yoneticiler (user_id, ad) values ('<auth kullanıcı id>', 'Ad');`.
 Telefonu kaybeden yönetici: Supabase › Authentication › Users › kullanıcı › MFA faktörünü sil; ilk girişte yeniden kurar.
 
+Aidattan muaf üye (yönetim ekibi): Yönetim › Üyeler › Profil › "Aidattan muaf". Üyeliği süresiz aktif kalır (bitiş 31.12.2099),
+yenileme hatırlatması gitmez; işaret kaldırılınca bugünden 30 gün verilir.
+
 Ödeme: IBAN + dekont; iyzico (kartla aidat) yönetim panelinden açılınca kart da. Gerçek veri (Google Sheets) yayın günü boş veritabanına aktarılacak.
