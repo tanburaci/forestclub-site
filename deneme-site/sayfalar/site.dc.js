@@ -76,7 +76,7 @@ class Component extends DCLogic {
       // Satış (örnek): fiyat TL, üye: ucretsiz | yuzde50 | tam; kontenjan ve kayıtlı (üye + satılan bilet)
       const sat = !gecti ? (b.satis || (!window.FCS && b.ad === 'The Common Table' ? { fiyat: 750, uye: 'ucretsiz', kontenjan: 35, kayitli: 20 } : null)) : null;
       return {
-        ...b, takvim, satis: sat ? { ...sat } : null,
+        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
         etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : 'Yaklaşan',
         rozet: gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : pill('#111111', '#FFFFFF'),
         kart: `background:#FFFFFF;border-radius:20px;border:2.5px solid #111111;box-shadow:${bugun ? '7px 7px 0 #111111' : '4px 4px 0 #111111'};padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;${gecti ? 'opacity:.78' : ''}`,
@@ -188,8 +188,8 @@ class Component extends DCLogic {
       return { sepet: s2, sHata: '' };
     });
     const sAdim = this.state.sAdim;
-    const ADIMLAR = canli ? [{ id: 'sepet', ad: '1 · Sepet' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'dekont', ad: '3 · Ödeme' }]
-      : [{ id: 'sepet', ad: '1 · Sepet' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
+    const ADIMLAR = canli ? [{ id: 'sepet', ad: '1 · Randevu' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'dekont', ad: '3 · Ödeme' }]
+      : [{ id: 'sepet', ad: '1 · Randevu' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
     const hak = this.state.hak;
     const sepetToplamAdet = Object.values(sepet).reduce((t, n) => t + n, 0);
     return {
@@ -197,7 +197,7 @@ class Component extends DCLogic {
       // Ürün kartları
       urunVals: null,
       sepetVar: sepetToplamAdet > 0 && !this.state.sepetAcik,
-      sepetAdet: String(sepetToplamAdet), sepetEtiket: `Sepeti aç, ${sepetToplamAdet} bilet`,
+      sepetAdet: String(sepetToplamAdet), sepetEtiket: `Randevuları aç, ${sepetToplamAdet} kişi`,
       sepetAcik: this.state.sepetAcik,
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
       sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
@@ -466,7 +466,7 @@ class Component extends DCLogic {
           kalanYazi: kalan <= 0 ? 'Tükendi' : kalan <= 5 ? `Son ${kalan} yer!` : `${kalan} yer kaldı`,
           kalanStil: `font-size:13px;font-weight:700;color:${kalan <= 5 ? '#82301F' : '#5E5E5E'}`,
           dolu: kalan <= sepette,
-          dugme: kalan <= 0 ? 'Tükendi' : sepette ? `Sepette ${sepette} · bir tane daha` : 'Sepete ekle',
+          dugme: kalan <= 0 ? 'Tükendi' : sepette ? `Randevuda ${sepette} kişi · bir kişi daha` : 'Randevu oluştur',
           dugmeStil: kalan <= sepette ? 'opacity:.5;cursor:default' : '',
           sepeteEkle: () => { if (kalan > sepette) adetDegis(key, 1, kalan); },
         };
