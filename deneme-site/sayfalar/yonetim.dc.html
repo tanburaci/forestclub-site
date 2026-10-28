@@ -517,7 +517,7 @@ a{color:#111111}a:hover{color:#000000}
                       <sc-if value="{{ kameraAcik }}" hint-placeholder-val="{{ false }}">
                         <video id="fc-kamera" muted playsinline aria-label="Kamera görüntüsü" style="flex: 1 1 100%; width: 100%; max-width: 420px; aspect-ratio: 4 / 3; object-fit: cover; background: #111111; border-radius: 10px"></video>
                       </sc-if>
-                      <span style="flex: 1 1 100%; color: #5E5E5E; font-size: 13px">Üyenin (FC-U-…) ya da tanışma biletinin (FC-T-…) karekodunu kameraya gösterin; okunan kod kendiliğinden işlenir. Kamera yoksa kodu elle yazın.</span>
+                      <span style="flex: 1 1 100%; color: #5E5E5E; font-size: 13px">Üyenin (FC-U-…), tanışma biletinin (FC-T-…) ya da biletin (FC-B-…) kodunu kameraya gösterin; okunan kod kendiliğinden işlenir. Kamera yoksa kodu elle yazın.</span>
                     </form>
                     <sc-if value="{{ kodMesaj }}" hint-placeholder-val="{{ false }}">
                       <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px">{{ kodMesaj }}</p>
@@ -1239,7 +1239,7 @@ a{color:#111111}a:hover{color:#000000}
           <div style="display: flex; flex-direction: column; gap: 20px">
             <div>
               <h2 style="margin: 0; font-family: 'Amatic SC', cursive; font-size: 56px; line-height: 1; color: #111111">Başvurular</h2>
-              <p style="margin: 6px 0 0; color: #5E5E5E">Havale dekontları ve Açık Çağrı başvuruları</p>
+              <p style="margin: 6px 0 0; color: #5E5E5E">Aidat ve bilet dekontları, Açık Çağrı başvuruları</p>
             </div>
 
             <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
@@ -1271,6 +1271,41 @@ a{color:#111111}a:hover{color:#000000}
                     <tbody>
                       <sc-for list="{{ bvr.kararlar }}" as="d" hint-placeholder-count="3">
                         <tr><td>{{ d.tarih }}</td><td style="font-weight: 600">{{ d.ad }}</td><td style="color: #3A3A3A">{{ d.eposta }}</td><td>{{ d.tutar }}</td><td><span style="{{ d.rozet }}">{{ d.durum }}</span></td><td>{{ d.sonuc }}</td>
+                          <td><button type="button" class="fc-sekme" onClick="{{ d.ac }}" style="text-decoration: underline">Aç</button></td></tr>
+                      </sc-for>
+                    </tbody>
+                  </table>
+                </div>
+              </sc-if>
+            </section>
+
+            <!-- Etkinlik biletleri: havale + dekont; onayda bilet kodları e-postayla gider, muhasebeye gelir yazılır -->
+            <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+              <h3 style="margin: 0; font-size: 18px">Bilet dekontları · {{ bvr.biletSayi }}</h3>
+              <p style="margin: 0; color: #5E5E5E; font-size: 14px">Onaylayınca her kişi için bir bilet kodu (FC-B-…) alıcıya e-postayla gider, muhasebeye “Etkinlik katılım ücreti” yazılır. Kodlar kapıda okutulur.</p>
+              <sc-if value="{{ bvr.biletYok }}" hint-placeholder-val="{{ false }}">
+                <p style="margin: 0; color: #3A3A3A">Onay bekleyen bilet dekontu yok.</p>
+              </sc-if>
+              <sc-for list="{{ bvr.biletler }}" as="d" hint-placeholder-count="2">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; border-top: 1px solid #ECECEA; padding-top: 12px">
+                  <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+                    <span style="font-weight: 700">{{ d.ad }} <span style="font-weight: 400; color: #5E5E5E">{{ d.eposta }} · {{ d.tel }}</span></span>
+                    <span style="font-size: 14px; color: #3A3A3A">{{ d.tarih }} · <strong>{{ d.tutar }}</strong> · {{ d.kalemler }}</span>
+                  </div>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ d.ac }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Dekontu aç</button>
+                    <button type="button" class="fc-btn" onClick="{{ d.onayla }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Onayla</button>
+                    <button type="button" class="fc-sekme" onClick="{{ d.reddet }}" style="text-decoration: underline">Reddet</button>
+                  </div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ bvr.biletKararVar }}" hint-placeholder-val="{{ false }}">
+                <div style="overflow: auto; max-height: 320px; border: 1px solid #DADAD8; border-radius: 10px">
+                  <table class="fc-tablo">
+                    <thead><tr><th>Yüklenme</th><th>Ad soyad</th><th>Biletler</th><th>Tutar</th><th>Durum</th><th>Sonuç</th><th><span style="position: absolute; left: -9999px">Dekont</span></th></tr></thead>
+                    <tbody>
+                      <sc-for list="{{ bvr.biletKararlar }}" as="d" hint-placeholder-count="3">
+                        <tr><td>{{ d.tarih }}</td><td style="font-weight: 600">{{ d.ad }}</td><td>{{ d.kalemler }}</td><td>{{ d.tutar }}</td><td><span style="{{ d.rozet }}">{{ d.durum }}</span></td><td>{{ d.sonuc }}</td>
                           <td><button type="button" class="fc-sekme" onClick="{{ d.ac }}" style="text-decoration: underline">Aç</button></td></tr>
                       </sc-for>
                     </tbody>
@@ -1419,7 +1454,7 @@ class Component extends DCLogic {
         metin: 'Merhaba {ad},\n\n{etkinlik} için geldiğin için teşekkürler! Üye panelinden 1–5 arası puan verip bir cümle yazarsan bir sonrakini daha güzel yaparız. Fotoğraflar da panelde.\n\nForest Club Urla' },
     ];
     this.ORNEK = { ad: 'Deniz', bitis: '23.11.2026', odemeLinki: '[ödeme bağlantısı]', etkinlik: 'Breakfast Club', tarih: '26 Ekim Pazar', saat: '10.00', yer: 'Pinya, Urla', kod: 'FC-4821', ozelGun: 'Evlilik yıldönümün', biletKodu: 'FC-T-4821', duyuru: '26.10.2026 tarihli Breakfast Club, yağmur nedeniyle 02.11.2026 tarihine ertelendi. Kaydın yeni tarihe taşındı.' };
-    this.ALAN_AD = { neden: 'Red gerekçesi', ozet: 'Sorun özeti', ad: 'Ad', bitis: 'Üyelik bitişi', odemeLinki: 'Ödeme (dekont) sayfası bağlantısı', etkinlik: 'Etkinlik adı', tarih: 'Etkinlik tarihi', saat: 'Saat', yer: 'Yer', kod: 'Geçici şifre', ozelGun: 'Özel günün adı', biletKodu: 'Tanışma bileti kodu', duyuru: 'İptal / erteleme duyuru metni' };
+    this.ALAN_AD = { neden: 'Red gerekçesi', ozet: 'Sorun özeti', ad: 'Ad', bitis: 'Üyelik bitişi', odemeLinki: 'Ödeme (dekont) sayfası bağlantısı', etkinlik: 'Etkinlik adı', tarih: 'Etkinlik tarihi', saat: 'Saat', yer: 'Yer', kod: 'Geçici şifre', ozelGun: 'Özel günün adı', biletKodu: 'Tanışma bileti kodu', biletler: 'Bilet kodları (etkinlik, tarih ve kodlar)', duyuru: 'İptal / erteleme duyuru metni' };
     // Örnek üye profilleri (gerçekte üye kendi panelinden girer)
     this.PROFILLER = {
       'Deniz Yılmaz': { dogum: '1992-11-03', ozel: [{ ad: 'Evlilik yıldönümü', tarih: '2019-06-14' }], ilgi: ['Yoga', 'Kahvaltı buluşmaları'], kutlama: true, foto: true, tanisma: 'Instagram', baslangic: '26.08.2026' },
@@ -1882,7 +1917,8 @@ class Component extends DCLogic {
           if (window.FCGirisKaydet) {
             this.setState({ kodMesaj: 'Kontrol ediliyor…' });
             window.FCGirisKaydet(p.key, kod).then((r) => this.setState((s) => {
-              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : ''}`;
+              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : r.bilet ? ' (bilet)' : ''}`;
+              if (r.bilet) return { kodMesaj: mesaj, kod: '' };
               // Tanışma bileti: sunucuda "geldi" yazıldı; liste yalnız ekranda güncellenir (kapida: ikinci kez yazılmasın)
               if (r.tanisma) return { kodMesaj: mesaj, kod: '', biletler: s.biletler.map((b) => (b.id === r.bilet_id ? { ...b, durum: 'geldi', kapida: true } : b)) };
               const i = this.DEMO.kisiler.findIndex((x) => x.id === r.uye_id);
@@ -2423,7 +2459,7 @@ class Component extends DCLogic {
       etkinliklerSekme: sekme === 'etkinlikler',
       iletisimSekme: sekme === 'iletisim',
       basvuruSekme: sekme === 'basvurular',
-      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], bekleyenYok: true, cagriYok: true, bekleyenSayi: '0', cagriSayi: '0' },
+      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' },
       ozet: [
         { baslik: 'Aktif üye', sayi: String(sayac.aktif), alt: `${this.DEMO.kisiler.filter((k) => k.bas && k.bas >= `${BUGUN_SABIT.slice(0, 7)}-01`).length} kişi bu ay katıldı · ${tumUyeler.length} kayıt` },
         { baslik: 'Bu ay kart ödemesi', sayi: String(buAyKart.length), alt: `${TL(topla(buAyKart))} · kendiliğinden işlendi` },

@@ -30,7 +30,7 @@ jobs:
           echo "== Gizli tablolar (ziyaretçi 0 satır görmeli)"
           for t in uyeler odemeler dekontlar dekont_yuklemeleri destekler muhasebe_hareketleri eposta_kuyrugu eposta_sablonlari \
                    denetim_kaydi yoneticiler acik_cagri tanisma_biletleri veri_talepleri envanter etkinlik_kayitlari \
-                   uyelik_dondurmalari anket_yanitlari odeme_istekleri sayaclar istek_sayaci; do
+                   uyelik_dondurmalari anket_yanitlari odeme_istekleri sayaclar istek_sayaci bilet_istekleri biletler; do
             c=$(kod "$SB/rest/v1/$t?select=*&limit=5" -H "apikey: $K" -H "Authorization: Bearer $K")
             n=$(python3 -c "import json;d=json.load(open('/tmp/govde'));print(len(d) if isinstance(d,list) else -1)" 2>/dev/null || echo -1)
             if [ "$n" = 0 ] || [ "$c" = 401 ] || [ "$c" = 403 ] || [ "$c" = 404 ]; then sonuc ok "$t okunamıyor ($c, $n satır)"; else sonuc x "$t: $c, $n satır döndü"; fi
@@ -51,7 +51,7 @@ jobs:
 
           echo "== Yönetici / sunucu işlevleri ziyaretçiye kapalı"
           for f in saglik_ozeti veri_kopyasi uye_anonimlestir dekont_karar elden_odeme destek_istegi_ac destek_tamamla odeme_tamamla \
-                   odeme_istegi_ac tanisma_bileti_al basvuru_yap cagri_gonder eposta_sirasi_al dekont_artiklari istek_sinir; do
+                   odeme_istegi_ac tanisma_bileti_al basvuru_yap cagri_gonder eposta_sirasi_al dekont_artiklari istek_sinir bilet_karar bilet_istegi_ac bilet_kaydet; do
             c=$(kod -X POST "$SB/rest/v1/rpc/$f" -H "apikey: $K" -H "Authorization: Bearer $K" -H 'Content-Type: application/json' -d '{}')
             case $c in 401|403|404) sonuc ok "$f çağrılamıyor ($c)";; *) sonuc x "$f: $c $(head -c 150 /tmp/govde)";; esac
           done

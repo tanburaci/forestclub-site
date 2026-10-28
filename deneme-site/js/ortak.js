@@ -105,7 +105,7 @@
 
   // Anonim formlar "form-gonder" Edge Function'a gider (Turnstile + IP başına saatlik sınır). Dönüş: sunucunun sonucu
   async function formGonder(tur, veri) {
-    const jeton = tur === 'dekont_kaydet' ? null : await insanJetonu();
+    const jeton = tur === 'dekont_kaydet' || tur === 'bilet_kaydet' ? null : await insanJetonu();
     let yanit;
     try {
       yanit = await fetch(`${A.supabaseUrl}/functions/v1/form-gonder`, {
@@ -124,20 +124,37 @@
   // Dekont: sunucu yükleme hakkı ve tek kullanımlık imzalı adres verir (yalnız başvurusu olan e-posta), dosya gizli
   // depoya bu adresle yüklenir, sonra kayıt sunucuda açılır
   const DEKONT_TURLERI = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
-  window.FCSDekont = async (eposta, dosya) => {
-    const ep = String(eposta || '').trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ep)) throw new Error('Başvuruda yazdığın e-postayı yaz.');
+  function dekontDosyasi(dosya) {
     if (!dosya) throw new Error('Dekont dosyasını seç.');
     const uzanti0 = (dosya.name.match(/\.[a-z0-9]{2,5}$/i) || [''])[0].toLowerCase();
     const tur = dosya.type || ({ '.heic': 'image/heic', '.heif': 'image/heif', '.pdf': 'application/pdf' })[uzanti0] || '';
     if (!DEKONT_TURLERI.includes(tur)) throw new Error('Dekont yalnız PDF ya da fotoğraf (JPG, PNG, HEIC) olabilir.');
     if (dosya.size > 10 * 1024 * 1024) throw new Error('Dosya 10 MB\'tan büyük.');
     const uzanti = uzanti0 || { 'application/pdf': '.pdf', 'image/jpeg': '.jpg', 'image/png': '.png', 'image/heic': '.heic', 'image/heif': '.heif', 'image/webp': '.webp' }[tur];
+    return { tur, uzanti };
+  }
+  window.FCSDekont = async (eposta, dosya) => {
+    const ep = String(eposta || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ep)) throw new Error('Başvuruda yazdığın e-postayı yaz.');
+    const { tur, uzanti } = dekontDosyasi(dosya);
     const hak = await formGonder('dekont_adres', { eposta: ep, uzanti });
     const { error: yHata } = await sb.storage.from('dekontlar').uploadToSignedUrl(hak.yol, hak.jeton, dosya, { contentType: tur });
     if (yHata) throw new Error(`Dosya yüklenemedi: ${yHata.message}`);
     await formGonder('dekont_kaydet', { eposta: ep, yol: hak.yol });
     sb.rpc('sayac_artir', { p_adim: 'dekont' }).then(() => {}, () => {});
+  };
+
+  // Etkinlik bileti (havale + dekont): 1) istek açılır, sunucu tutarı söyler ve yerleri dekont gelene dek ayırmaz;
+  // 2) dekont imzalı adrese yüklenir, istek yöneticinin onayına düşer. kalemler: [{etkinlik: id, adet}]
+  window.FCSBiletAc = async ({ kalemler, ad, eposta, tel }) => {
+    const { data: { session } } = await sb.auth.getSession();
+    return formGonder('bilet_adres', { kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, oturum: session ? session.access_token : null });
+  };
+  window.FCSBiletDekont = async (hak, eposta, dosya) => {
+    const { tur } = dekontDosyasi(dosya);
+    const { error: yHata } = await sb.storage.from('dekontlar').uploadToSignedUrl(hak.yol, hak.jeton, dosya, { contentType: tur });
+    if (yHata) throw new Error(`Dosya yüklenemedi: ${yHata.message}`);
+    await formGonder('bilet_kaydet', { id: hak.id, eposta: String(eposta || '').trim().toLowerCase() });
   };
 
   window.FC_ORTAK = { sb, bugun, bildir, formGonder, kurtarma: /type=recovery/.test(location.hash) };
