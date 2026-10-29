@@ -84,6 +84,9 @@ async function biletSahte(page, tutar) {
     await u.page.getByRole('button', { name: 'Randevu oluştur' }).first().click();
     await u.page.getByRole('button', { name: 'Ödemeye geç' }).click();
     await u.page.getByRole('button', { name: 'Devam · havale / EFT' }).click();
+    dogru(await u.page.getByText('Devam etmek için sözleşmeleri onayla.').count() === 1, 'üye sepeti: sözleşme onayı istenir');
+    await u.page.getByRole('checkbox', { name: /Mesafeli satış sözleşmesi/ }).check();
+    await u.page.getByRole('button', { name: 'Devam · havale / EFT' }).click();
     await u.page.getByText('Ödenecek').waitFor({ timeout: 5000 });
     const uac = uf.formlar.find((f) => f.tur === 'bilet_adres');
     dogru(uac && uac.veri.eposta === 'deniz@posta.test' && /^eyJ/.test(uac.veri.oturum || '') && uac.veri.kalemler[0].etkinlik === 7,
