@@ -39,7 +39,7 @@ class Component extends DCLogic {
         metin: 'Merhaba {ad},\n\nForest Club Urla’ya hoş geldin! Tanışma biletin: {biletKodu}\n\n{etkinlik} ({tarih}, {saat}) için yerin ayrıldı. Bilet ücretsiz, tek kullanımlık ve yalnız bu buluşmada geçerli; girişte kodunu göstermen yeterli.\n\nOrmanda görüşmek üzere,\nForest Club Urla' },
       { id: 'iptal', ad: 'Etkinlik iptal / erteleme', ne: 'Yönetici “İptal / ertele” ile duyurunca kayıtlılara ve bekleme listesine gider.', acik: true,
         konu: '{etkinlik}: önemli değişiklik', alanlar: ['ad', 'etkinlik', 'duyuru'],
-        metin: 'Merhaba {ad},\n\n{duyuru}\n\nSorun olursa WhatsApp’tan yazabilirsin.\n\nForest Club Urla' },
+        metin: 'Merhaba {ad},\n\n{duyuru}\n\nSorun olursa forestcluburla@gmail.com adresine yazabilirsin.\n\nForest Club Urla' },
       { id: 'bekleme', ad: 'Bekleme listesinden yer açıldı', ne: 'Kayıtlı biri vazgeçince sıradaki kişiye gider.', acik: true,
         konu: 'Yer açıldı: {etkinlik} 🎉', alanlar: ['ad', 'etkinlik', 'tarih', 'saat'],
         metin: 'Merhaba {ad},\n\nMüjde! {etkinlik} ({tarih}, {saat}) için yer açıldı ve kaydın yapıldı. Gelemeyeceksen üye panelinden “Gelemeyeceğim” de ki yer sıradakine geçsin.\n\nForest Club Urla' },
@@ -103,7 +103,7 @@ class Component extends DCLogic {
       // Ayarlar (deneme sitesinde ayarlar tablosundan)
       tanismaSunuluyor: window.FC ? window.FC.ayarlar.tanisma_acik !== false : true,
       kartOdeme: window.FC ? window.FC.ayarlar.kart_odeme === true : false,
-      ilt: { eposta: 'forestcluburla@gmail.com', alan: 'Pinya, Urla', whatsapp: '', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}) },
+      ilt: { eposta: 'forestcluburla@gmail.com', alan: 'Pinya, Urla', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}), whatsapp: undefined },
       iltMesaj: '', kameraAcik: false,
       yakinda: window.FC ? window.FC.ayarlar.yakinda === true : false,
       siteDuyurusu: window.FC ? String(window.FC.ayarlar.site_duyurusu || '') : '', duyuruMesaj: '',
@@ -1480,12 +1480,13 @@ class Component extends DCLogic {
       siteDuyurusuYaz: (e) => this.setState({ siteDuyurusu: e.target.value, duyuruMesaj: '' }),
       siteDuyurusuKaydet: () => this.duyuruYaz(this.state.siteDuyurusu.trim()),
       siteDuyurusuKaldir: () => this.duyuruYaz(''),
-      iltAlan: Object.fromEntries(['eposta', 'alan', 'whatsapp', 'topluluk', 'instagram'].map((a) => [a, (e) => {
+      iltAlan: Object.fromEntries(['eposta', 'alan', 'topluluk', 'instagram'].map((a) => [a, (e) => {
         const v = e.target.value;
         this.setState((s) => ({ ilt: { ...s.ilt, [a]: v }, iltMesaj: '' }));
       }])),
       iltKaydet: () => {
-        const ilt = Object.fromEntries(Object.entries(this.state.ilt).map(([a, v]) => [a, String(v || '').trim()]));
+        // WhatsApp numarası tutulmaz (sitede numara gösterilmez); topluluk bağlantısı kalır
+        const ilt = Object.fromEntries(Object.entries(this.state.ilt).filter(([a]) => a !== 'whatsapp').map(([a, v]) => [a, String(v || '').trim()]));
         if (ilt.topluluk && !/^https:\/\//.test(ilt.topluluk)) return this.setState({ iltMesaj: 'WhatsApp topluluğu bağlantısı https:// ile başlamalı.' });
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ilt.eposta)) return this.setState({ iltMesaj: 'Geçerli bir e-posta yazın.' });
         if (!window.FCAyarKaydet) return this.setState({ ilt, iltMesaj: 'Önizleme: kaydedildi (sitede görünür).' });
