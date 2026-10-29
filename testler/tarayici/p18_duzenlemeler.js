@@ -89,6 +89,7 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     await s.page.goto(`${SITE}/`);
     await s.page.getByText('Aramıza katıl, kulübümüze üye ol.').waitFor({ timeout: 15000 });
     dogru(await s.page.locator('a.fs-menu', { hasText: 'Üyelik' }).getAttribute('href') === '#basvuru', 'site: menüdeki Üyelik başvuru bölümüne gider');
+    dogru(await s.page.locator('#uyelik').count() === 0, 'site: ayrı Üyelik bölümü yok (Aramıza katıl yeterli)');
     const katil = await s.page.locator('#basvuru').innerText();
     dogru(katil.includes('3.000 TL') && katil.includes('Aylık Breakfast Club') && katil.includes('%50'), 'site: ücret ve üyelik hakları yazıyor');
     dogru(await s.page.locator('#basvuru').getByRole('button', { name: 'Aramıza katıl' }).count() === 1 && !katil.includes('Ödemeye geç'), 'site: düğme "Aramıza katıl"');
