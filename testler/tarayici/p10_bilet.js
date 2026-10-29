@@ -112,6 +112,7 @@ async function biletSahte(page, tutar) {
     const y = await sayfaAc(tarayici, v, oturum('yon-1', 'yonetici@posta.test'));
     await y.page.goto(`${SITE}/yonetim/#basvurular`);
     await y.page.getByText('Bilet dekontları · 1').waitFor({ timeout: 15000 });
+    await y.page.getByRole('button', { name: /Bilet dekontları/ }).click();  // bölüm kapalı başlar
     const satir = y.page.locator('div').filter({ hasText: 'Misafir Kişi' }).filter({ has: y.page.getByRole('button', { name: 'Onayla' }) }).last();
     dogru((await satir.innerText()).includes('Yoga Sabahı') && (await satir.innerText()).includes('2.000 TL'), 'yönetim: bilet dekontu etkinlik ve tutarla listede');
     dogru(await y.page.getByText('Yarım Kalan').count() === 0, 'yönetim: dekontu yüklenmemiş istek görünmüyor');

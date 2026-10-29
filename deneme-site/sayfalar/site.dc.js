@@ -466,6 +466,7 @@ class Component extends DCLogic {
       cagriForm: () => this.setState({ cagriAdim: 'form' }),
       cagriAfiseDon: () => this.setState({ cagriAdim: 'afis' }),
       yuzenSinif: acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),
       cagriOzelAfis: AYLIK.tur === 'cagri' && !!AYLIK.resim, cagriHazirAfis: !(AYLIK.tur === 'cagri' && AYLIK.resim),
@@ -513,6 +514,32 @@ class Component extends DCLogic {
       yaklasanYok: !(tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).some((b) => b.tarih >= BUGUN),
       yaklasanYokYazi: window.FCS_HATA ? 'Etkinlikler şu an yüklenemiyor. Biraz sonra sayfayı yenile; Instagram ve WhatsApp topluluğundan da takip edebilirsin.'
         : 'Yeni etkinlikler yakında duyurulacak. Instagram ve WhatsApp topluluğunu takipte kal.',
+      aidatYazi: `${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL`,
+      ...(() => {
+        // Gönüllü ol formu
+        const gn = { ad: '', eposta: '', tel: '', not: '', kvkk: false, alanlar: [], ...(this.state.gn || {}) };
+        const degis = (alan, v) => this.setState((st) => ({ gn: { ...(st.gn || {}), [alan]: v }, gnHata: '' }));
+        const ALANLAR = ['Kurulum ve toplama', 'Mutfak / ikram', 'Karşılama', 'Fotoğraf / video', 'Müzik / ses', 'Atölye yardımı'];
+        return {
+          gn, gnFormda: !this.state.gnGitti, gnGitti: !!this.state.gnGitti, gnHata: this.state.gnHata || '',
+          gnYaz: Object.fromEntries(['ad', 'eposta', 'tel', 'not'].map((k) => [k, (e) => degis(k, e.target.value)])),
+          gnKvkkDegis: () => degis('kvkk', !gn.kvkk),
+          gnAlanlar: ALANLAR.map((a) => {
+            const on = gn.alanlar.includes(a);
+            return { ad: a, basili: on ? 'true' : 'false', sec: () => degis('alanlar', on ? gn.alanlar.filter((x) => x !== a) : [...gn.alanlar, a]),
+              stil: `font:600 14px Figtree,sans-serif;border:2px solid #111111;border-radius:999px;padding:8px 14px;min-height:40px;cursor:pointer;${on ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
+          }),
+          gnGonder: () => {
+            if (String(gn.ad).trim().length < 3) return this.setState({ gnHata: 'Adını ve soyadını yaz.' });
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(gn.eposta).trim())) return this.setState({ gnHata: 'Geçerli bir e-posta yaz.' });
+            if (!gn.kvkk) return this.setState({ gnHata: 'Devam etmek için KVKK metnini onayla.' });
+            if (!window.FCSGonullu) return this.setState({ gnGitti: true });
+            this.setState({ gnHata: 'Gönderiliyor…' });
+            window.FCSGonullu({ ad: gn.ad.trim(), eposta: gn.eposta.trim(), tel: gn.tel.trim(), not: gn.not.trim(), alanlar: gn.alanlar, kvkk: true })
+              .then(() => this.setState({ gnGitti: true, gnHata: '' }), (h) => this.setState({ gnHata: h.message }));
+          },
+        };
+      })(),
       haklar: [
         'Aylık Breakfast Club buluşmaları',
         'Aylık Sunset Club etkinlikleri',

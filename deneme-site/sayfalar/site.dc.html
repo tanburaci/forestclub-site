@@ -688,7 +688,7 @@ a{color:#111111}a:hover{color:#000000}
       <nav aria-label="Site menüsü" style="display: flex; flex-wrap: wrap; align-items: center; gap: 2px">
         <a class="fs-menu" href="#kulup">Biz Kimiz?</a>
         <a class="fs-menu" href="#bulusmalar">Etkinlikler</a>
-        <a class="fs-menu" href="#uyelik">Üyelik</a>
+        <a class="fs-menu" href="#basvuru">Üyelik</a>
         <a class="fs-menu" href="#sss">SSS</a>
         <a class="fs-menu" href="#iletisim">İletişim</a>
         <a class="fs-btn fs-btn-acik fs-uye-giris" href="Uye.dc.html" style="margin-left: 8px; padding: 10px 18px; min-height: 44px">{{ uyeDugme }}</a>
@@ -699,7 +699,7 @@ a{color:#111111}a:hover{color:#000000}
     <section id="ust" style="position: relative; max-width: 1200px; margin: 0 auto; padding: 8px 20px 36vh; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 40px; width: 100%; box-sizing: border-box; flex: 1 1 0; min-height: 0">
       <div class="fs-dogal fs-dogal-masaustu" style="top: 300px; left: 40%; width: 56px; transform: rotate(10deg)"><svg viewBox="0 0 110 100" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M30 78V22l50-12v56" fill="none"/><path d="M30 22l50-12v12L30 34z" fill="#111111"/><ellipse cx="20" cy="80" rx="12" ry="9" fill="#111111"/><ellipse cx="70" cy="68" rx="12" ry="9" fill="#111111"/></g></svg></div>
       <div class="fs-hero-yazi" style="position: relative; z-index: 1; flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 22px">
-        <span style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #5E5E5E">Gatherings in Nature · Pinya, Urla</span>
+        <span style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #5E5E5E">Gatherings in Nature</span>
         <h1 class="fs-baslik" style="font-size: clamp(44px, min(7vw, 9vh), 100px)">Ağaçların altında buluşan bir topluluk</h1>
         <p style="margin: 0; font-size: 19px; line-height: 1.6; color: #3A3A3A; max-width: 540px">Doğada bir araya geliyor, birlikte deneyimliyor, üretiyor ve birbirimizi dinliyoruz. Kahvaltılar, gün batımları, atölyeler ve müzikle.</p>
         <div style="display: flex; flex-wrap: wrap; gap: 12px">
@@ -710,7 +710,7 @@ a{color:#111111}a:hover{color:#000000}
       </div>
       <div style="flex: 1 1 420px; min-width: 0; position: relative; z-index: 1; display: flex; justify-content: center; align-self: center">
         <sc-if value="{{ aylikGoster }}" hint-placeholder-val="{{ true }}">
-          <button type="button" class="fs-cagri-rozet" onClick="{{ aylikTikla }}" aria-haspopup="dialog">
+          <button type="button" class="fs-cagri-rozet" onClick="{{ aylikTikla }}" aria-haspopup="dialog" style="{{ aylikRozetStil }}">
             <span class="fs-cagri-rozet-ust">{{ aylikUst }}</span>
             <span class="fs-cagri-rozet-ana">{{ aylikAna }}</span>
             <span class="fs-cagri-rozet-alt">{{ aylikAltYazi }}</span>
@@ -732,7 +732,7 @@ a{color:#111111}a:hover{color:#000000}
     <!-- Telefonda kapak yazısı ormanın altında ayrı bölüm (ilk ekranda renkli TV + orman görünsün) -->
     <section class="fs-sadece-tel" aria-label="Forest Club Urla" style="background: #DCE9C8; border-top: 3px solid #111111; padding: 36px 20px 40px">
       <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px">
-        <span style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #5E5E5E">Gatherings in Nature · Pinya, Urla</span>
+        <span style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #5E5E5E">Gatherings in Nature</span>
         <h2 class="fs-baslik" style="font-size: clamp(44px, min(7vw, 9vh), 100px)">Ağaçların altında buluşan bir topluluk</h2>
         <p style="margin: 0; font-size: 19px; line-height: 1.6; color: #3A3A3A; max-width: 540px">Doğada bir araya geliyor, birlikte deneyimliyor, üretiyor ve birbirimizi dinliyoruz. Kahvaltılar, gün batımları, atölyeler ve müzikle.</p>
         <div style="display: flex; flex-wrap: wrap; gap: 12px">
@@ -767,7 +767,7 @@ a{color:#111111}a:hover{color:#000000}
       </div>
       </sc-if>
       <sc-if value="{{ aylikGoster }}" hint-placeholder-val="{{ true }}">
-        <button type="button" onClick="{{ aylikTikla }}" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; text-align: left; font: inherit; color: #111111; background: #F6C945; border: 2.5px solid #111111; box-shadow: 4px 4px 0 #111111; border-radius: 14px; padding: 14px 18px; cursor: pointer">
+        <button type="button" onClick="{{ aylikTikla }}" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; text-align: left; font: inherit; color: #111111; background: #F6C945; border: 2.5px solid #111111; box-shadow: 4px 4px 0 #111111; border-radius: 14px; padding: 14px 18px; cursor: pointer; {{ aylikRozetStil }}">
           <span style="font-family: 'Amatic SC', cursive; font-size: 30px; font-weight: 700; line-height: 1">{{ aylikAna }}</span>
           <span style="font-weight: 700">{{ aylikUst }}</span>
           <span style="font-size: 14px; font-weight: 600">{{ aylikAltYazi }}</span>
@@ -935,9 +935,20 @@ a{color:#111111}a:hover{color:#000000}
     <section id="basvuru" style="position: relative; overflow: hidden; background: #FFFFFF; border-top: 3px solid #111111; border-bottom: 3px solid #111111">
       <div style="max-width: 1200px; margin: 0 auto; padding: 72px 20px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center">
         <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
-          <h2 class="fs-baslik" style="font-size: 64px">Aramıza katıl</h2>
+          <h2 class="fs-baslik" style="font-size: 56px">Aramıza katıl, kulübümüze üye ol.</h2>
           <div style="display: flex; align-items: flex-end; gap: 14px" aria-hidden="true"><div style="width: 44px"><svg viewBox="0 0 80 140" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10h52q4 46-26 54Q10 56 14 10z" fill="#FFFFFF"/><path d="M15 30h50q-2 28-25 32Q15 58 15 30z" fill="#9E2B3A"/><path d="M40 64v52M20 126h40" fill="none"/></g></svg></div><div style="width: 62px"><svg viewBox="0 0 100 150" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M50 8 L80 50 H64 L88 88 H70 L94 126 H6 L30 88 H12 L36 50 H20 Z" fill="#2F5A35"/><rect x="43" y="126" width="14" height="18" fill="#7A4A2A"/></g></svg></div><div style="width: 46px"><svg viewBox="0 0 100 150" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M50 8 L80 50 H64 L88 88 H70 L94 126 H6 L30 88 H12 L36 50 H20 Z" fill="#2F5A35"/><rect x="43" y="126" width="14" height="18" fill="#7A4A2A"/></g></svg></div><div style="width: 80px; transform: rotate(-6deg)"><svg viewBox="0 0 120 120" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M60 8v12M60 100v12M8 60h12M100 60h12M23 23l9 9M88 88l9 9M97 23l-9 9M32 88l-9 9" fill="none"/><circle cx="60" cy="60" r="34" fill="#EE6B2F"/><path d="M30 64h60M33 75h54M40 86h40" stroke="#FFFFFF" stroke-width="4"/></g></svg></div></div>
           <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">{{ katilMetin }}</p>
+          <!-- Ücret ve üyelik hakları -->
+          <div style="border: 2.5px solid #111111; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; background: #F7F7F4">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap">
+              <span style="font-weight: 700">Aylık üyelik · 30 gün</span>
+              <span style="font-size: 26px; font-weight: 700">{{ aidatYazi }}</span>
+            </div>
+            <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; color: #3A3A3A">
+              <sc-for list="{{ haklar }}" as="h" hint-placeholder-count="4"><li>{{ h }}</li></sc-for>
+            </ul>
+            <span style="font-size: 13px; color: #5E5E5E">Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.</span>
+          </div>
           <sc-if value="{{ kartliUyelik }}" hint-placeholder-val="{{ true }}">
             <p style="margin: 0; color: #5E5E5E">Ödeme iyzico güvencesiyle yapılır; kart bilgilerin bize gelmez.</p>
           </sc-if>
@@ -962,7 +973,7 @@ a{color:#111111}a:hover{color:#000000}
           <sc-if value="{{ bHata }}" hint-placeholder-val="{{ false }}">
             <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ bHata }}</p>
           </sc-if>
-          <button type="button" onClick="{{ uyeOdemeye }}" class="fs-btn">Ödemeye geç</button>
+          <button type="button" onClick="{{ uyeOdemeye }}" class="fs-btn">Aramıza katıl</button>
         </form>
         </sc-if>
 
@@ -1009,6 +1020,51 @@ a{color:#111111}a:hover{color:#000000}
           </div>
         </sc-if>
       </div>
+    </section>
+
+    <!-- GÖNÜLLÜ OL: etkinliklerde yardım edecek gönüllüler; form yönetim › Başvurular › Gönüllüler'e düşer -->
+    <section id="gonullu" style="max-width: 1200px; margin: 0 auto; padding: 56px 20px; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
+      <div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <h2 class="fs-baslik" style="font-size: 52px">Gönüllü ol</h2>
+        <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">Etkinliklerimizde bize yardım edecek gönüllüler arıyoruz. Kurulumdan mutfağa, karşılamadan fotoğrafa; elini taşın altına koymak istersen formu doldur, seninle e-postayla iletişime geçelim.</p>
+      </div>
+      <sc-if value="{{ gnFormda }}" hint-placeholder-val="{{ true }}">
+        <form style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Ad Soyad
+            <input type="text" autocomplete="name" value="{{ gn.ad }}" onChange="{{ gnYaz.ad }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 12px; min-height: 46px; box-sizing: border-box">
+          </label>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px">
+            <label style="flex: 1 1 180px; display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">E-posta
+              <input type="email" autocomplete="email" value="{{ gn.eposta }}" onChange="{{ gnYaz.eposta }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 12px; min-height: 46px; box-sizing: border-box">
+            </label>
+            <label style="flex: 1 1 180px; display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Telefon (isteğe bağlı)
+              <input type="tel" autocomplete="tel" value="{{ gn.tel }}" onChange="{{ gnYaz.tel }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 12px; min-height: 46px; box-sizing: border-box">
+            </label>
+          </div>
+          <div role="group" aria-label="Nasıl yardım etmek istersin?" style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-weight: 600; font-size: 14px">Nasıl yardım etmek istersin?</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <sc-for list="{{ gnAlanlar }}" as="a" hint-placeholder-count="6">
+                <button type="button" aria-pressed="{{ a.basili }}" onClick="{{ a.sec }}" style="{{ a.stil }}">{{ a.ad }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Eklemek istediğin bir şey var mı?
+            <textarea rows="3" maxlength="1000" value="{{ gn.not }}" onChange="{{ gnYaz.not }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 12px; resize: vertical; box-sizing: border-box"></textarea>
+          </label>
+          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ gn.kvkk }}" onChange="{{ gnKvkkDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span><a href="/gizlilik/" target="_blank" rel="noopener">KVKK Aydınlatma Metni</a>'ni okudum. *</span></label>
+          <sc-if value="{{ gnHata }}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ gnHata }}</p>
+          </sc-if>
+          <button type="button" class="fs-btn" onClick="{{ gnGonder }}" style="align-self: flex-start">Gönüllü olmak istiyorum</button>
+        </form>
+      </sc-if>
+      <sc-if value="{{ gnGitti }}" hint-placeholder-val="{{ false }}">
+        <div role="status" style="flex: 1 1 440px; min-width: 0; background: #111111; color: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box">
+          <span class="fs-baslik" style="font-size: 44px; color: #FFFFFF">Teşekkürler! 🌲</span>
+          <p style="margin: 0; font-size: 17px; line-height: 1.5">Gönüllü başvurun bize ulaştı. Seninle e-postayla iletişime geçeceğiz.</p>
+        </div>
+      </sc-if>
     </section>
 
     <!-- SIK SORULANLAR + YOL TARİFİ -->
@@ -1541,6 +1597,7 @@ class Component extends DCLogic {
       cagriForm: () => this.setState({ cagriAdim: 'form' }),
       cagriAfiseDon: () => this.setState({ cagriAdim: 'afis' }),
       yuzenSinif: acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),
       cagriOzelAfis: AYLIK.tur === 'cagri' && !!AYLIK.resim, cagriHazirAfis: !(AYLIK.tur === 'cagri' && AYLIK.resim),
@@ -1588,6 +1645,32 @@ class Component extends DCLogic {
       yaklasanYok: !(tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).some((b) => b.tarih >= BUGUN),
       yaklasanYokYazi: window.FCS_HATA ? 'Etkinlikler şu an yüklenemiyor. Biraz sonra sayfayı yenile; Instagram ve WhatsApp topluluğundan da takip edebilirsin.'
         : 'Yeni etkinlikler yakında duyurulacak. Instagram ve WhatsApp topluluğunu takipte kal.',
+      aidatYazi: `${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL`,
+      ...(() => {
+        // Gönüllü ol formu
+        const gn = { ad: '', eposta: '', tel: '', not: '', kvkk: false, alanlar: [], ...(this.state.gn || {}) };
+        const degis = (alan, v) => this.setState((st) => ({ gn: { ...(st.gn || {}), [alan]: v }, gnHata: '' }));
+        const ALANLAR = ['Kurulum ve toplama', 'Mutfak / ikram', 'Karşılama', 'Fotoğraf / video', 'Müzik / ses', 'Atölye yardımı'];
+        return {
+          gn, gnFormda: !this.state.gnGitti, gnGitti: !!this.state.gnGitti, gnHata: this.state.gnHata || '',
+          gnYaz: Object.fromEntries(['ad', 'eposta', 'tel', 'not'].map((k) => [k, (e) => degis(k, e.target.value)])),
+          gnKvkkDegis: () => degis('kvkk', !gn.kvkk),
+          gnAlanlar: ALANLAR.map((a) => {
+            const on = gn.alanlar.includes(a);
+            return { ad: a, basili: on ? 'true' : 'false', sec: () => degis('alanlar', on ? gn.alanlar.filter((x) => x !== a) : [...gn.alanlar, a]),
+              stil: `font:600 14px Figtree,sans-serif;border:2px solid #111111;border-radius:999px;padding:8px 14px;min-height:40px;cursor:pointer;${on ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
+          }),
+          gnGonder: () => {
+            if (String(gn.ad).trim().length < 3) return this.setState({ gnHata: 'Adını ve soyadını yaz.' });
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(gn.eposta).trim())) return this.setState({ gnHata: 'Geçerli bir e-posta yaz.' });
+            if (!gn.kvkk) return this.setState({ gnHata: 'Devam etmek için KVKK metnini onayla.' });
+            if (!window.FCSGonullu) return this.setState({ gnGitti: true });
+            this.setState({ gnHata: 'Gönderiliyor…' });
+            window.FCSGonullu({ ad: gn.ad.trim(), eposta: gn.eposta.trim(), tel: gn.tel.trim(), not: gn.not.trim(), alanlar: gn.alanlar, kvkk: true })
+              .then(() => this.setState({ gnGitti: true, gnHata: '' }), (h) => this.setState({ gnHata: h.message }));
+          },
+        };
+      })(),
       haklar: [
         'Aylık Breakfast Club buluşmaları',
         'Aylık Sunset Club etkinlikleri',
