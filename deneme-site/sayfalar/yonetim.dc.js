@@ -399,7 +399,7 @@ class Component extends DCLogic {
   // Üye profili: açılır ve ekrana kaydırılır (telefonda profil tablonun üstünde kalıyordu)
   profilAc(id) {
     this.setState({ profilSecili: id });
-    setTimeout(() => { const p = document.querySelector('section[aria-label="Üye profili"]'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    setTimeout(() => { const p = document.querySelector('section[aria-label="Üye profili"]'); if (p) scrollTo({ top: p.getBoundingClientRect().top + scrollY - 12, left: 0, behavior: 'smooth' }); }, 50);  // yalnız dikey
   }
   // Aylık duyuru (ayarlar.aylik_duyuru): sitedeki sarı rozet ve etkinlik şeridi
   aylikGorunum() {

@@ -55,6 +55,15 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     dogru(!s1.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), `site: sayfa / CSP hatası yok ${s1.konsol.filter((x) => /pageerror|Content Security/.test(x)).join(' | ')}`);
 
     // ---------- Açılış: yakında kapalı, duyuru var ----------
+    // Site açıkken kapak yüklenirken de görünmez (ayar gelene kadar yanıp sönmesin)
+    const sy = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }]), null);
+    await sy.page.route(`${SB}/rest/v1/ayarlar**`, async (r) => { await new Promise((t) => setTimeout(t, 1500)); await r.fallback(); });
+    await sy.page.goto(`${SITE}/`);
+    await sy.page.waitForTimeout(600);
+    const gorunur = await sy.page.evaluate(() => { const k = document.getElementById('fc-yakinda'); return !!k && getComputedStyle(k).visibility !== 'hidden'; });
+    dogru(!gorunur, 'site açıkken yüklenirken kapak görünmüyor');
+    await sy.page.waitForFunction(() => !document.getElementById('fc-yakinda'), null, { timeout: 8000 });
+    dogru(true, 'ayar gelince kapak kaldırıldı');
     const s2 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: 'Yağmur nedeniyle pazar buluşması ertelendi.' }]), null);
     await s2.page.goto(`${SITE}/`);
     await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').waitFor({ timeout: 15000 });
