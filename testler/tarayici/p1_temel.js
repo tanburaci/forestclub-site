@@ -162,8 +162,9 @@ function yonetimVerisi() {
       await page.getByRole('button', { name: 'Profil' }).first().click();
       await page.locator('textarea').first().fill('yeni not');
       await page.waitForTimeout(1200);
-      const not = istekler.find((x) => x.yontem === 'PATCH' && x.yol.endsWith('/uyeler'));
-      dogru(not && /id=eq\.2/.test(not.ara) && not.govde.yonetici_notu === 'yeni not', `D3: not uye_id ile yazıldı (${not && not.ara})`);
+      const not = istekler.filter((x) => x.yontem === 'POST' && x.yol.endsWith('/uye_notlari')).pop();
+      dogru(not && not.govde.uye_id === 2 && not.govde.metin === 'yeni not', `D3: not uye_id ile ayrı tabloya yazıldı (${JSON.stringify(not && not.govde)})`);
+      dogru(!istekler.some((x) => x.yontem === 'PATCH' && x.yol.endsWith('/uyeler') && 'yonetici_notu' in (x.govde || {})), 'D3: not üyenin satırına yazılmıyor');
       await page.locator('nav button, button').filter({ hasText: /^Muhasebe$/ }).first().click();
       dogru(await page.locator('input[placeholder="örn. 2,99"]').isDisabled(), 'D5: komisyon oranı kutusu kapalı');
       dogru(!konsol.some((x) => /pageerror/.test(x)), `sayfa hatası yok ${konsol.filter((x) => /pageerror/.test(x)).join(' | ')}`);

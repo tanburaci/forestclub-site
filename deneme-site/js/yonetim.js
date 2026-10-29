@@ -9,7 +9,7 @@
   const bugun = window.FC_ORTAK.bugun;
   const trTarih = (t) => (t ? t.split('-').reverse().join('.') : '—');
   const etkEtiket = (e) => `${e.tarih.slice(8)}.${e.tarih.slice(5, 7)} ${e.ad}`;
-  const SABLON_SIRA = ['basvuru', 'onay', 'dekont_red', 'yenileme', 'duyuru', 'hatirlatma', 'iptal', 'bekleme', 'dogumgunu', 'ozelgun',
+  const SABLON_SIRA = ['basvuru', 'onay', 'uzatma', 'dekont_red', 'yenileme', 'duyuru', 'hatirlatma', 'iptal', 'bekleme', 'dogumgunu', 'ozelgun',
     'tanisma', 'anket', 'sifre', 'saglik'];
   const GUN_YAZI = { yenileme: 'gün kala gönderilsin', hatirlatma: 'gün önce gönderilsin', anket: 'gün sonra gönderilsin' };
 
@@ -42,12 +42,14 @@
       hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'), hepsi('formlar'), hepsi('form_yanitlari', ['form_id', 'uye_id']),
     ]);
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
-    const [kuyruk, saglik, ayarlar, veriTalepleri] = await Promise.all([
+    const [kuyruk, saglik, ayarlar, veriTalepleri, uyeNotlari] = await Promise.all([
       sb.from('eposta_kuyrugu').select('id, sablon, alici, durum, deneme, son_hata, created_at, gonderim_at')
         .order('id', { ascending: false }).limit(200).then((r) => r.data || [], () => []),
       sb.rpc('saglik_ozeti').then((r) => r.data || null, () => null),
       sb.from('ayarlar').select('anahtar, deger').then((r) => Object.fromEntries((r.data || []).map((a) => [a.anahtar, a.deger])), () => ({})),
       sb.from('veri_talepleri').select('*').order('id', { ascending: false }).limit(200).then((r) => r.data || [], () => []),
+      // Yönetici notları ayrı tabloda (üye kendi satırında göremesin); göç uygulanmadıysa eski sütun okunur
+      sb.from('uye_notlari').select('uye_id, metin').then((r) => (r.error ? null : r.data), () => null),
     ]);
     const B = bugun();
     const grupla = (xs, alan) => {
@@ -126,7 +128,8 @@
         ...(s.gun ? { gun: s.gun, gunYazi: GUN_YAZI[s.id] || 'gün' } : {}),
       })),
       // Yönetici notları üye numarasıyla (aynı adlı iki üye karışmasın)
-      notlar: Object.fromEntries(uyeler.filter((u) => u.yonetici_notu).map((u) => [u.id, u.yonetici_notu])),
+      notlar: uyeNotlari ? Object.fromEntries(uyeNotlari.map((n) => [n.uye_id, n.metin]))
+        : Object.fromEntries(uyeler.filter((u) => u.yonetici_notu).map((u) => [u.id, u.yonetici_notu])),
       muaflar: Object.fromEntries(uyeler.filter((u) => u.aidat_muaf).map((u) => [u.id, true])),
       // Formlar ve cevapları (üye adıyla)
       formlar: [...formlar].sort((a, b) => b.created_at.localeCompare(a.created_at)).map((f) => ({
@@ -674,7 +677,10 @@
       if (once.notlar !== simdi.notlar) {
         Object.keys(simdi.notlar).forEach((id) => {
           if (once.notlar[id] === simdi.notlar[id]) return;
-          ertele(`not${id}`, () => yaz(sb.from('uyeler').update({ yonetici_notu: simdi.notlar[id] || null }).eq('id', Number(id)), 'Not kaydedildi ✓'));
+          const metin = (simdi.notlar[id] || '').trim();
+          ertele(`not${id}`, () => yaz(metin
+            ? sb.from('uye_notlari').upsert({ uye_id: Number(id), metin, updated_at: new Date().toISOString() })
+            : sb.from('uye_notlari').delete().eq('uye_id', Number(id)), 'Not kaydedildi ✓'));
         });
       }
       // Aidattan muaf (bitişi sunucu ayarlar: muafken 31.12.2099, kaldırılınca bugünden 30 gün)
