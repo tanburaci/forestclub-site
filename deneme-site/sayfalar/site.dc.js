@@ -150,10 +150,8 @@ class Component extends DCLogic {
         secimAlani('gun', `${AYLIK.ay} ayında hangi günler uygunsun?`, ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
       ] },
     ];
-    // WhatsApp numarası (Tweaks › İletişim): 0532… ya da 532… yazılırsa wa.me için 90 eklenir
     // Deneme sitesi: iletişim bilgileri yönetim panelindeki ayarlardan (ayarlar.iletisim)
     const IL = (window.FCS && window.FCS.ayar && window.FCS.ayar.iletisim) || {};
-    const waHam = String(IL.whatsapp || this.props.whatsapp || '').trim();
     const igAd = String(IL.instagram || '').replace(/^@/, '').trim();
     const ilt = {
       eposta: IL.eposta || 'forestcluburla@gmail.com', alan: IL.alan || 'Pinya, Urla',
@@ -162,9 +160,6 @@ class Component extends DCLogic {
       toplulukLink: /^https:\/\//.test(IL.topluluk || '') ? IL.topluluk : '#', toplulukYazi: /^https:\/\//.test(IL.topluluk || '') ? 'WhatsApp topluluğu' : '[WhatsApp topluluğu]',
     };
     ilt.epostaLink = `mailto:${ilt.eposta}`;
-    let waNo = waHam.replace(/\D/g, '');
-    if (waNo.startsWith('0')) waNo = `90${waNo.slice(1)}`;
-    else if (waNo.length === 10) waNo = `90${waNo}`;
     // Tanışma bileti: önizlemede örnek listeler; gerçekte üyeler ve verilmiş biletler veritabanından bakılır
     const UYE_EPOSTA = ['deniz@ornek.com', 'ece@ornek.com', 'selin@ornek.com', 'can@ornek.com'];
     const BILETLI = ['misafir@ornek.com'];
@@ -350,15 +345,6 @@ class Component extends DCLogic {
       },
       // Tasarım önizlemesine özel notlar (örnek e-postalar, örnek fiyatlar) canlıda görünmez
       onizleme: !canli,
-      waLink: waNo ? `https://wa.me/${waNo}` : '#iletisim',
-      // Biz Kimiz? › WhatsApp'tan yaz: kişi seçilir (numaralar ayar.js'te)
-      waSecAcik: this.state.waSecAcik, waSecAcikYazi: this.state.waSecAcik ? 'true' : 'false',
-      waSecDegis: () => this.setState((s) => ({ waSecAcik: !s.waSecAcik })),
-      waKisiler: ((window.FC_AYAR && window.FC_AYAR.whatsapp) || [{ ad: 'Pelin', tel: '05435926654' }, { ad: 'Ezgi', tel: '05350359146' }]).map((k) => {
-        const r = String(k.tel).replace(/\D/g, '');
-        const no = r.startsWith('0') ? `90${r.slice(1)}` : r.length === 10 ? `90${r}` : r;
-        return { ad: k.ad, link: `https://wa.me/${no}`, yazi: r.replace(/^(\d{4})(\d{3})(\d{2})(\d{2})$/, '$1 $2 $3 $4') };
-      }),
       // DESTEK OL: hazır tutarlar ya da elle; kart iyzico'ya gider (kart_odeme açıkken), yoksa IBAN
       destekAcik: !!this.state.destek, destekForm: this.state.destek === 'form',
       destekTamam: this.state.destek === 'tamam', destekBasarisiz: this.state.destek === 'hata',
@@ -387,7 +373,6 @@ class Component extends DCLogic {
       ibanKopyaYazi: this.state.dsKopya === 'iban' ? 'Kopyalandı ✓' : 'Kopyala',
       aliciKopyala: () => kopyala('alici', odemeBilgi.alici),
       ibanKopyala: () => kopyala('iban', odemeBilgi.iban.replace(/\s/g, '')),
-      waYazi: waHam || '[WHATSAPP NUMARASI]', waVar: !!waHam || !canli,
       // Üyelik metinleri ödeme yoluna göre (kart kapalıyken havale + dekont)
       kartliUyelik: kartAcik,
       uyelikMetin: kartAcik
