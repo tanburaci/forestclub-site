@@ -40,6 +40,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
       },
       rpc: {
         etkinlik_doluluk: () => [200, [{ etkinlik_id: 3, kayitli: 1 }]],
+        uye_biletlerim: () => [200, [{ kod: 'FC-B-ABC234', etkinlik_id: 3, durum: 'bilet' }]],
         uyelik_dondur: (g) => { rpcler.push(['uyelik_dondur', g]); return [200, { bitis: gun(30), bas: gun(0), gun: g.p_gun }]; },
         dondurma_bitir: (g) => { rpcler.push(['dondurma_bitir', g]); return [200, { bitis: gun(20) }]; },
         anket_gonder: (g) => { rpcler.push(['anket_gonder', g]); return [200, { tamam: true }]; },
@@ -60,13 +61,14 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     await u.page.getByText('Merhaba Deniz').waitFor({ timeout: 15000 });
 
     // Gerçek karekod: ekrandaki hücreler tuvale çizilip jsQR ile okunur
-    await u.page.getByRole('button', { name: 'Etkinlik seç' }).click();  // liste dokununca açılır
-    await u.page.getByRole('button', { name: /Yoga/ }).first().click();
-    await u.page.getByRole('button', { name: 'Karekod oluştur' }).click();
-    await u.page.locator('[aria-label="Giriş karekodu"]').waitFor({ timeout: 4000 });
+    // Randevularım: yeri ayrılmış etkinlikte üye karekodu ve satın alınan biletin karekodu; okutulmuş (geldi) etkinlik yok
+    dogru(await u.page.locator('button').filter({ hasText: /^Randevularım$/ }).count() > 0 && await u.page.getByText('Karekodum', { exact: true }).count() === 0, 'sekme adı "Randevularım"');
+    await u.page.locator('[aria-label="Üye giriş karekodu"]').waitFor({ timeout: 4000 });
+    dogru(await u.page.locator('[aria-label="Bilet karekodu 1"]').count() === 1 && await u.page.getByText('FC-B-ABC234').count() === 1, 'Randevularım: bilet karekodu görünüyor');
+    dogru(await u.page.getByText('Eski Buluşma').count() === 0 || !(await u.page.locator('section').filter({ hasText: 'Randevularım' }).innerText()).includes('Eski Buluşma'), 'Randevularım: okutulan (geldi) etkinlik yok');
     await u.page.addScriptTag({ url: 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js' });
     const okunan = await u.page.evaluate(() => {
-      const kutu = document.querySelector('[aria-label="Giriş karekodu"]');
+      const kutu = document.querySelector('[aria-label="Üye giriş karekodu"]');
       const h = [...kutu.children].map((c) => getComputedStyle(c).backgroundColor === 'rgb(17, 17, 17)');
       const n = Math.round(Math.sqrt(h.length));
       const B = 6; const K = 4; const W = (n + 2 * K) * B;

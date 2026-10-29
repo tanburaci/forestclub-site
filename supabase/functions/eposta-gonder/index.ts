@@ -10,6 +10,7 @@
 //          isteğe bağlı EPOSTA_YANIT (yanıt adresi), EPOSTA_TEST_ALICI (doluysa bütün mailler yalnız bu adrese gider)
 import { json, servisIstemcisi, zamanlayiciMi } from '../_ortak/ortak.ts';
 import { demoAdresMi, iletiYap } from '../_ortak/sablon.ts';
+import { karekodlariEkle } from '../_ortak/karekod.ts';
 
 const ADET = 40;
 const ZAMAN_ASIMI = 10_000;  // Resend 10 saniyede yanıt vermezse bu mail sonraki turda yeniden denenir
@@ -64,7 +65,7 @@ Deno.serve(async (istek) => {
         signal: AbortSignal.timeout(ZAMAN_ASIMI),
         body: JSON.stringify({
           from: gonderen, to: [alici], subject: testAlici ? `[TEST → ${s.alici}] ${ileti.konu}` : ileti.konu,
-          text: ileti.metin, html: ileti.html, ...(yanitAdresi ? { reply_to: yanitAdresi } : {}),
+          text: ileti.metin, html: karekodlariEkle(ileti.html, ileti.metin), ...(yanitAdresi ? { reply_to: yanitAdresi } : {}),
           tags: [{ name: 'sablon', value: s.sablon }],
         }),
       });

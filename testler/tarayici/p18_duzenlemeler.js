@@ -72,18 +72,14 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     const uye = { id: 1, kod: 'FC-U-0001', ad: 'Deniz Deneme', eposta: 'deniz@posta.test', tel: null, bitis: gun(20), baslangic: gun(-10), dogum_gunu: null,
       ozel_gunler: [], ilgi_alanlari: [], kutlama_izni: false, foto_izni: false, user_id: 'uye-1', aidat_muaf: false };
     const e = (id, g, ad) => ({ id, tarih: gun(g), saat: '10.00', tur: 'bulusma', ad, kim: null, kontenjan: 30, bilet_fiyati: null, uyelere: null, satilan_bilet: 0, durum: 'yayinda', aciklama: 'x', link: null });
-    const u = await sayfaAc(tarayici, { tablolar: { uyeler: [uye], odemeler: [], etkinlikler: [e(9, 3, 'Yakın Buluşma'), e(2, 20, 'Uzak Buluşma'), e(5, 10, 'Orta Buluşma')], etkinlik_kayitlari: [], anket_yanitlari: [], uyelik_dondurmalari: [], ayarlar: [] },
+    const u = await sayfaAc(tarayici, { tablolar: { uyeler: [uye], odemeler: [], etkinlikler: [e(9, 3, 'Yakın Buluşma'), e(2, 20, 'Uzak Buluşma'), e(5, 10, 'Orta Buluşma')], etkinlik_kayitlari: [9, 2, 5].map((id) => ({ etkinlik_id: id, uye_id: 1, durum: 'kayitli', geldi: false })), anket_yanitlari: [], uyelik_dondurmalari: [], ayarlar: [] },
       rpc: { etkinlik_doluluk: () => [200, []], dekont_bekliyor: () => [200, false] } }, oturum('uye-1', 'deniz@posta.test'));
     await u.page.route('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', headers: { 'access-control-allow-origin': '*' }, body: QG }));
     await u.page.setViewportSize({ width: 390, height: 844 });
     await u.page.goto(`${SITE}/uye/`);
     await u.page.getByText('Merhaba Deniz').waitFor({ timeout: 15000 });
-    dogru(await u.page.getByRole('button', { name: /Yakın Buluşma/ }).count() === 0, 'karekod: liste kapalı başlıyor');
-    await u.page.getByRole('button', { name: 'Etkinlik seç' }).click();
-    const sirali = await u.page.locator('[aria-label="Etkinlik seç"][role="group"] button').evaluateAll((b) => b.map((x) => x.innerText.split('\n')[1]));
-    dogru(JSON.stringify(sirali) === JSON.stringify(['Yakın Buluşma', 'Orta Buluşma', 'Uzak Buluşma']), `karekod: açılan liste tarih sırasında (${sirali.join(', ')})`);
-    await u.page.getByRole('button', { name: /Orta Buluşma/ }).click();
-    dogru(await u.page.getByRole('button', { name: /Orta Buluşma ·/ }).count() === 1, 'karekod: seçilen etkinlik düğmede, liste kapandı');
+    const rv = await u.page.locator('section').filter({ hasText: 'Randevularım' }).first().locator('strong').evaluateAll((x) => x.map((e) => e.textContent).filter((t) => /Buluşma/.test(t)));
+    dogru(JSON.stringify(rv) === JSON.stringify(['Yakın Buluşma', 'Orta Buluşma', 'Uzak Buluşma']), `Randevularım: yeri ayrılanlar tarih sırasında (${rv.join(', ')})`);
     await sekme(u.page, 'Etkinlikler');
     const kartlar = await u.page.locator('article.fu-kart').evaluateAll((a) => a.map((x) => (x.innerText.match(/(Yakın|Orta|Uzak) Buluşma/) || [''])[0]));
     dogru(JSON.stringify(kartlar) === JSON.stringify(['Yakın Buluşma', 'Orta Buluşma', 'Uzak Buluşma']), `etkinlikler: yakından uzağa (${kartlar.join(', ')})`);
