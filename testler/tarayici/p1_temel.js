@@ -223,7 +223,12 @@ function yonetimVerisi() {
       const { page, konsol } = await sayfaAc(tarayici, v, null);
       await page.goto(`${SITE}/`);
       await page.getByText('Kötü Bağlantı').first().waitFor({ timeout: 15000 });
-      const hrefler = await page.locator('a', { hasText: "Instagram'da gör" }).evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+      // Bağlantılar kart açılınca görünür: kartları sırayla açıp topla
+      const hrefler = [];
+      for (const ad of ['Kötü Bağlantı', 'İyi Bağlantı']) {
+        await page.locator('li.fs-urun h3', { hasText: ad }).click();
+        hrefler.push(...await page.locator('a', { hasText: "Instagram'da gör" }).evaluateAll((as) => as.map((a) => a.getAttribute('href'))));
+      }
       dogru(hrefler.includes('#') && hrefler.includes('https://www.instagram.com/p/x/') && !hrefler.some((h) => /javascript/i.test(h)), `G5: javascript: bağlantısı # oldu (${hrefler.join(', ')})`);
       dogru(!konsol.some((x) => /Content Security Policy|integrity/i.test(x)), 'G4: SRI ve CSP ile site yüklendi');
     }
