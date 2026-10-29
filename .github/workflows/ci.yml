@@ -44,7 +44,7 @@ jobs:
         with:
           version: latest
       - name: Yerel Supabase (bütün göçler + örnek veri)
-        run: supabase start -x realtime,studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
+        run: supabase start -x realtime,studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit
       - name: pgTAP testleri
         run: supabase test db
 
