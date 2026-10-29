@@ -37,9 +37,9 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     await s1.page.route(`${SB}/functions/v1/form-gonder`, (r) => { formlar.push(r.request().postData()); r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: '{"sonuc":"tamam"}' }); });
     await s1.page.goto(`${SITE}/`);
     await s1.page.getByText('Yakında açılıyoruz 🌲').waitFor({ timeout: 15000 });
-    dogru(await s1.page.getByText('Üyelik başvuruları ve tanışma biletleri açılışla birlikte başlıyor.').count() === 1, 'yakında şeridi görünüyor');
+    dogru(await s1.page.getByText('Üyelik başvuruları ve tanışma rezervasyonları açılışla birlikte başlıyor.').count() === 1, 'yakında şeridi görünüyor');
     dogru(await s1.page.getByText(/Örnek duyuru/).count() === 0, 'canlıda örnek duyuru yok');
-    dogru(await s1.page.getByRole('button', { name: 'Tanışma biletini al' }).count() === 0, 'yakında: tanışma bileti bandı yok');
+    dogru(await s1.page.getByRole('button', { name: 'Tanışma biletimle rezervasyon oluştur' }).count() === 0, 'yakında: tanışma bileti bandı yok');
     const bilet = s1.page.getByRole('button', { name: 'Açılışta satışta' }).first();
     dogru(await bilet.count() === 1 && await bilet.isDisabled(), 'yakında: bilet satışı kapalı');
     await s1.page.locator('#basvuru').getByRole('button', { name: 'Aramıza katıl' }).click();
@@ -70,7 +70,7 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     dogru(await s2.page.getByText('Yakında açılıyoruz 🌲').count() === 0, 'açılışta şerit yok');
     const s2Metin = await s2.page.locator('body').textContent();
     dogru(!/Önizleme|önizlemesi|ornek\.com/.test(s2Metin), 'canlıda tasarım önizlemesi notları ve örnek e-postalar yok');
-    dogru(await s2.page.getByRole('button', { name: 'Tanışma biletini al' }).count() === 1 && await s2.page.getByRole('button', { name: 'Randevu oluştur' }).count() === 1,
+    dogru(await s2.page.getByRole('button', { name: 'Tanışma biletimle rezervasyon oluştur' }).count() === 1 && await s2.page.getByRole('button', { name: 'Randevu oluştur' }).count() === 1,
       'açılışta tanışma bileti ve bilet satışı açık');
     await s2.page.getByRole('button', { name: 'Tamam' }).first().click();
     dogru(await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').count() === 0, 'duyuru "Tamam" ile kapanıyor');
