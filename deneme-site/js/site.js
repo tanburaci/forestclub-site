@@ -69,6 +69,49 @@
     if (k) k.classList.add('goster');
   }
 
+  // Gökyüzü (ana sayfanın üstü): Urla'da güneşin doğuş / batışına göre gündüz, şafak, gece; Open-Meteo'dan anlık hava
+  // (bulutlu, yağmur, kar). Sınıflar <html>'de: gok-gunduz | gok-safak | gok-gece ve hava-acik | hava-bulutlu | hava-yagmur |
+  // hava-kar. Hava alınamazsa yalnız gündüz / gece. Deneme: window.FC_GOK_TEST = 'gece,kar'
+  const URLA = { enlem: 38.32, boylam: 26.76 };
+  function gunesSaatleri(t) {
+    // NOAA'nın sadeleştirilmiş formülü: doğuş ve batış (UTC dakika)
+    const rad = Math.PI / 180;
+    const gun = Math.floor((Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()) - Date.UTC(t.getUTCFullYear(), 0, 0)) / 864e5);
+    const g = (2 * Math.PI / 365) * (gun - 1);
+    const denk = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+    const egim = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+    const ha = Math.acos(Math.cos(90.833 * rad) / (Math.cos(URLA.enlem * rad) * Math.cos(egim)) - Math.tan(URLA.enlem * rad) * Math.tan(egim)) / rad;
+    return { dogus: 720 - 4 * (URLA.boylam + ha) - denk, batis: 720 - 4 * (URLA.boylam - ha) - denk };
+  }
+  let hava = 'acik';
+  function gokSinifi() {
+    const test = String(window.FC_GOK_TEST || '').split(',');
+    let evre = ['gunduz', 'safak', 'gece'].find((x) => test.includes(x));
+    if (!evre) {
+      const t = new Date();
+      const dk = t.getUTCHours() * 60 + t.getUTCMinutes();
+      const { dogus, batis } = gunesSaatleri(t);
+      evre = dk < dogus - 30 || dk > batis + 30 ? 'gece' : Math.abs(dk - dogus) <= 40 || Math.abs(dk - batis) <= 40 ? 'safak' : 'gunduz';
+    }
+    const h = ['acik', 'bulutlu', 'yagmur', 'kar'].find((x) => test.includes(x)) || hava;
+    const k = document.documentElement.classList;
+    ['gok-gunduz', 'gok-safak', 'gok-gece', 'hava-acik', 'hava-bulutlu', 'hava-yagmur', 'hava-kar'].forEach((x) => k.remove(x));
+    k.add(`gok-${evre}`, `hava-${h}`);
+  }
+  async function havaGetir() {
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${URLA.enlem}&longitude=${URLA.boylam}&current=weather_code`);
+      const kod = (await r.json()).current.weather_code;
+      hava = [71, 73, 75, 77, 85, 86].includes(kod) ? 'kar'
+        : (kod >= 51 && kod <= 67) || (kod >= 80 && kod <= 82) || kod >= 95 ? 'yagmur'
+          : [2, 3, 45, 48].includes(kod) ? 'bulutlu' : 'acik';
+    } catch (h) { /* hava alınamadı: açık say */ }
+    gokSinifi();
+  }
+  gokSinifi();
+  if (!window.FC_GOK_TEST) { havaGetir(); setInterval(havaGetir, 15 * 60 * 1000); }
+  setInterval(gokSinifi, 60 * 1000);
+
   async function basla() {
     const kok = document.getElementById('kok');
     try {
