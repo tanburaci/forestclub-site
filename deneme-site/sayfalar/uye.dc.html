@@ -169,64 +169,41 @@ a{color:#111111}a:hover{color:#000000}
             </section>
           </sc-if>
 
+          <!-- RANDEVULARIM: biletli, yeri ayrılmış etkinliklerin giriş karekodları; okutulan karekod buradan kalkar -->
           <section class="fu-kart" style="display: flex; flex-direction: column; gap: 16px">
             <div>
-              <h2 style="margin: 0; font-size: 22px">Etkinlik giriş karekodu</h2>
-              <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 15px">Üyelere ücretsiz buluşmalardan gideceğini seç, karekodunu oluştur; girişte göstermen yeterli. Ücretli etkinliklerde girişte bilet kodun geçer.</p>
+              <h2 style="margin: 0; font-size: 22px">Randevularım</h2>
+              <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 15px">Biletini aldığın ya da yerini ayırdığın etkinlikler. Girişte karekodunu okut; okutulan karekod buradan kalkar. Bilet karekodların e-postanda da var.</p>
             </div>
-
-            <sc-if value="{{ aktif }}" hint-placeholder-val="{{ true }}">
-              <div style="display: flex; flex-direction: column; gap: 16px">
-                <!-- Etkinlik seç: dokununca aşağı açılır (üyelere ücretsiz ve yerin ayrılmış buluşmalar, tarih sırasıyla) -->
-                <button type="button" onClick="{{ secimAcDegis }}" aria-expanded="{{ secimAcikYazi }}" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; text-align: left; font: 700 16px Figtree, sans-serif; color: #111111; background: #FFFFFF; border: 2.5px solid #111111; border-radius: 12px; padding: 14px 16px; min-height: 52px; cursor: pointer; box-sizing: border-box">
-                  <span>{{ secimYazi }}</span><span aria-hidden="true">{{ secimOk }}</span>
-                </button>
-                <sc-if value="{{ secimAcik }}" hint-placeholder-val="{{ false }}">
-                <sc-if value="{{ secimYok }}" hint-placeholder-val="{{ false }}">
-                  <p style="margin: 0; color: #5E5E5E">Şu an karekodla girilen yaklaşan buluşma yok.</p>
+            <sc-if value="{{ randevuYok }}" hint-placeholder-val="{{ false }}">
+              <div style="background: #F0F0EE; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start">
+                <span style="color: #3A3A3A">Yaklaşan randevun yok. “Etkinlikler” sekmesinden yerini ayırabilir ya da bilet alabilirsin.</span>
+                <button type="button" class="fu-btn" onClick="{{ etkinliklereGit }}">Etkinliklere git</button>
+              </div>
+            </sc-if>
+            <sc-for list="{{ randevular }}" as="r" hint-placeholder-count="1">
+              <div style="border: 2.5px dashed #111111; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+                <div>
+                  <strong style="font-size: 20px">{{ r.ad }}</strong>
+                  <div style="font-size: 15px; color: #3A3A3A">{{ r.zaman }} · Pinya, Urla</div>
+                  <div style="font-size: 13px; font-weight: 700; letter-spacing: .04em; color: #5E5E5E; margin-top: 2px">{{ r.tur }}</div>
+                </div>
+                <sc-if value="{{ r.inceleniyor }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin: 0; background: #F6E7B8; border-radius: 10px; padding: 10px 12px; font-size: 14px">Bilet dekontun inceleniyor; onaylanınca karekodun burada ve e-postanda olacak.</p>
                 </sc-if>
-                <div role="group" aria-label="Etkinlik seç" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px">
-                  <sc-for list="{{ secimEtk }}" as="e" hint-placeholder-count="2">
-                    <button type="button" aria-pressed="{{ e.basili }}" onClick="{{ e.sec }}" style="{{ e.stil }}">
-                      <span style="display: block; font-size: 13px; font-weight: 700; letter-spacing: .04em">{{ e.tarihYazi }}</span>
-                      <span style="display: block; font-size: 17px; font-weight: 700; margin-top: 2px">{{ e.ad }}</span>
-                      <span style="display: block; font-size: 13px; margin-top: 4px; opacity: .8">{{ e.durum }}</span>
-                    </button>
+                <div style="display: flex; flex-wrap: wrap; gap: 16px">
+                  <sc-for list="{{ r.kodlar }}" as="q" hint-placeholder-count="1">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+                      <div role="img" aria-label="{{ q.etiket }}" style="{{ q.izgara }}">
+                        <sc-for list="{{ q.karekod }}" as="k" hint-placeholder-count="441"><span style="{{ k }}"></span></sc-for>
+                      </div>
+                      <strong style="font-size: 15px; letter-spacing: .06em">{{ q.kod }}</strong>
+                      <span style="font-size: 12px; color: #5E5E5E">{{ q.not }}</span>
+                    </div>
                   </sc-for>
                 </div>
-                </sc-if>
-                <sc-if value="{{ kodHata }}" hint-placeholder-val="{{ false }}">
-                  <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ kodHata }}</p>
-                </sc-if>
-                <button type="button" class="fu-btn" onClick="{{ kodOlustur }}" style="align-self: flex-start">Karekod oluştur</button>
-
-                <sc-if value="{{ biletVar }}" hint-placeholder-val="{{ false }}">
-                  <div role="status" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center; border: 2.5px dashed #111111; border-radius: 16px; padding: 20px">
-                    <div role="img" aria-label="Giriş karekodu" style="{{ bilet.izgara }}">
-                      <sc-for list="{{ bilet.karekod }}" as="k" hint-placeholder-count="441">
-                        <span style="{{ k }}"></span>
-                      </sc-for>
-                    </div>
-                    <div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px">
-                      <span style="font-size: 12px; font-weight: 700; letter-spacing: .08em; color: #5E5E5E">GİRİŞ KAREKODU · TEK KİŞİLİK</span>
-                      <strong style="font-size: 22px">{{ bilet.etkinlik }}</strong>
-                      <span style="font-size: 15px">{{ bilet.zaman }} · Pinya, Urla</span>
-                      <span style="font-size: 15px">{{ ben.ad }}</span>
-                      <strong style="font-size: 16px; letter-spacing: .06em">{{ bilet.kod }}</strong>
-                      <span style="color: #5E5E5E; font-size: 13px">{{ bilet.not }}</span>
-                    </div>
-                  </div>
-                </sc-if>
               </div>
-            </sc-if>
-
-            <sc-if value="{{ pasif }}" hint-placeholder-val="{{ false }}">
-              <div style="background: #F0F0EE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start">
-                <strong style="font-size: 17px">Karekod yalnız aktif üyeler için</strong>
-                <span style="color: #3A3A3A; font-size: 15px; line-height: 1.5">{{ uyari.metin }}</span>
-                <sc-if value="{{ uyari.dugme }}" hint-placeholder-val="{{ true }}"><button type="button" class="fu-btn" onClick="{{ odemeyeGit }}">{{ uyari.dugme }}</button></sc-if>
-              </div>
-            </sc-if>
+            </sc-for>
           </section>
         </div>
       </sc-if>
@@ -875,7 +852,7 @@ class Component extends DCLogic {
 
     const profil = this.state.profil || { telefon: '', dogum: '', kutlama: false, foto: false, ilgi: [], ozel: [] };
     const sekmeler = [
-      { id: 'ana', ad: 'Karekodum' }, { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'katildiklarim', ad: 'Katıldıklarım' },
+      { id: 'ana', ad: 'Randevularım' }, { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'katildiklarim', ad: 'Katıldıklarım' },
       { id: 'uyelik', ad: 'Üyeliğim' }, { id: 'profil', ad: 'Profilim' }, { id: 'veri', ad: 'Verilerim' },
     ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fu-sekme fu-sekme-aktif' : 'fu-sekme', sec: () => this.setState({ sekme: s.id }) }));
 
@@ -947,6 +924,27 @@ class Component extends DCLogic {
       // Canlıda (kartla ödeme gelene kadar) ödeme havale + dekont sayfasından
       odemeyeGit: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ sekme: 'uyelik', odeme: 'ozet' })),
       anaSayfayaGit: () => this.setState({ sekme: 'ana', odeme: 'yok' }),
+      ...(() => {
+        // Randevularım: yeri ayrılmış (gelmediği) etkinlikler için üye karekodu, satın alınmış biletlerin karekodları
+        const izgara = (n, h2) => `display:grid;grid-template-columns:repeat(${n},${h2}px);grid-auto-rows:${h2}px;padding:${h2 * 4}px;background:#FFFFFF;border:2px solid #111111;border-radius:12px`;
+        const qrYap = (kod, etiket, not) => {
+          const qr = window.FCKarekod ? window.FCKarekod(kod) : null;
+          return qr ? { kod, etiket, not, karekod: qr.hucreler.map((k) => `display:block;background:${k ? '#111111' : '#FFFFFF'}`), izgara: izgara(qr.n, qr.n > 25 ? 5 : 6) }
+            : { kod, etiket, not: 'Önizleme: desen örnektir.', karekod: karekodDesen(kod), izgara: izgara(21, 7) };
+        };
+        const sira = (e) => `${e.tarih} ${String(e.saat || '').replace(/^(\d)[.:]/, '0$1.')}`;
+        const liste = Object.values(kayit).sort((a, b) => sira(a).localeCompare(sira(b))).map((e) => {
+          const [, m, d] = e.tarih.split('-');
+          const uyeKayit = aktif && e.ben === 'kayitli' && !e.geldi;
+          const biletler = e.biletler || [];
+          const kodlar = [...(uyeKayit ? [qrYap(`${h.kod}-${m}${d}`, 'Üye giriş karekodu', 'Üye girişi · tek kişilik')] : []),
+            ...biletler.map((b, i) => qrYap(b, `Bilet karekodu ${i + 1}`, `Bilet ${biletler.length > 1 ? `${i + 1}/${biletler.length}` : ''}`.trim()))];
+          if (!kodlar.length && !e.biletInceleniyor) return null;
+          return { ad: e.ad, zaman: `${Number(d)} ${AY_UZUN[Number(m) - 1]} · ${e.saat}`, kodlar, inceleniyor: !!e.biletInceleniyor,
+            tur: [uyeKayit ? 'Yerin ayrıldı' : '', biletler.length ? `${biletler.length} bilet` : ''].filter(Boolean).join(' · ') || 'Bilet' };
+        }).filter(Boolean);
+        return { randevular: liste, randevuYok: !liste.length, etkinliklereGit: () => this.setState({ sekme: 'etkinlikler' }) };
+      })(),
       secimEtk, kodOlustur,
       secimAcik: !!this.state.secimAcik, secimAcikYazi: this.state.secimAcik ? 'true' : 'false', secimOk: this.state.secimAcik ? '▲' : '▼', secimYok: !secimEtk.length,
       secimYazi: seciliEtk ? `${seciliEtk.ad} · ${tarihYaz(seciliEtk.tarih)}` : 'Etkinlik seç',
