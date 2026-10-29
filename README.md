@@ -31,3 +31,7 @@ Aidattan muaf üye (yönetim ekibi): Yönetim › Üyeler › Profil › "Aidatt
 yenileme hatırlatması gitmez; işaret kaldırılınca bugünden 30 gün verilir.
 
 Ödeme: IBAN + dekont; iyzico (kartla aidat) yönetim panelinden açılınca kart da. Gerçek veri (Google Sheets) yayın günü boş veritabanına aktarılacak.
+
+## Eski Vercel adresi
+
+forestcluburla.vercel.app kökteki `vercel.json` ile https://www.forestcluburla.com/#basvuru adresine yönlenir (Netlify bu dosyayı kullanmaz).
