@@ -52,6 +52,7 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
         dogru(/dekontunu yükle; onaylanınca üyeliğin başlar/.test(m) && !/üyeliğin hemen başlar/.test(m), 'kart kapalı: üye paneli havale + dekont diyor');
       }
       dogru(!u.konsol.some((x) => /pageerror/.test(x)), `üye (${bekliyor ? 'dekont bekliyor' : 'ödeme yok'}): sayfa hatası yok`);
+      if (!bekliyor) dogru(await u.page.locator('footer img[src="/_blob/odeme/logo-band.png"]').count() === 1 && await u.page.locator('footer a[href="/mesafeli-satis/"]').count() === 1, 'üye paneli: altta sözleşmeler ve iyzico / Visa / Mastercard logoları');
     }
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;

@@ -96,9 +96,16 @@
         turnstileKutu.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:100';
         document.body.appendChild(turnstileKutu);
       }
-      const sure = setTimeout(() => red(new Error('Doğrulama zaman aşımına uğradı; tekrar dene.')), 90000);
-      const bitir = (f) => (x) => { clearTimeout(sure); f(x); };
+      // Doğrulama bitince kutu kaldırılır: ekranda kalıp altındaki düğmelere tıklanmasını engellemesin
+      const kaldir = () => {
+        if (turnstileNo !== null) { try { window.turnstile.remove(turnstileNo); } catch (h) { /* zaten kalkmış */ } }
+        turnstileNo = null;
+        turnstileKutu.style.display = 'none';
+      };
+      const sure = setTimeout(() => { kaldir(); red(new Error('Doğrulama zaman aşımına uğradı; tekrar dene.')); }, 90000);
+      const bitir = (f) => (x) => { clearTimeout(sure); setTimeout(kaldir, 0); f(x); };
       if (turnstileNo !== null) window.turnstile.remove(turnstileNo);
+      turnstileKutu.style.display = '';
       turnstileNo = window.turnstile.render(turnstileKutu, {
         sitekey: A.turnstile, appearance: 'interaction-only', language: 'tr',
         callback: bitir(tamam),

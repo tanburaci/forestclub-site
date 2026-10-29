@@ -114,6 +114,7 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
     await d.page.getByText('Tutar:').first().waitFor({ timeout: 15000 });
     dogru(/3\.500 TL/.test(await d.page.evaluate(() => document.body.innerText)), 'dekont: aidat ayardan (3.500 TL)');
     dogru(!d.konsol.some((x) => /pageerror/.test(x)), 'dekont: sayfa hatası yok');
+    dogru(await d.page.locator('footer img[src="/_blob/odeme/logo-band.png"]').count() === 1 && await d.page.locator('footer a[href="/teslimat-iade/"]').count() === 1, 'dekont: altta sözleşmeler ve ödeme logoları');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
   } finally {

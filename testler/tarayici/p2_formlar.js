@@ -76,6 +76,8 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
     await page.evaluate(() => window.FCSCagri({ ad: 'Deniz', iletisim: '0532', uyeOl: false }));
     const hata = await page.evaluate(() => window.FCSBasvuru('Ç', 'cok@posta.test', '05321112233', true, true, true, false).then(() => '', (h) => h.message));
     dogru(b === 'tamam' && t === 'verildi', `başvuru ve tanışma form-gonder'den döndü (${b}, ${t})`);
+    await page.waitForTimeout(100);
+    dogru(await page.evaluate(() => ((k) => k.length > 0 && k.every((e) => e.style.display === 'none'))([...document.body.children].filter((e) => e.style.position === 'fixed' && e.style.bottom === '16px'))), 'doğrulama bitince Turnstile kutusu ekrandan kalkıyor');
     dogru(formlar[0].tur === 'basvuru' && formlar[0].jeton === 'jeton-1' && formlar[0].veri.eposta === 'gercek@posta.test' && formlar[0].veri.kvkk === true,
       `başvuru gövdesi ve Turnstile jetonu (${JSON.stringify(formlar[0])})`);
     dogru(formlar[1].tur === 'tanisma' && formlar[1].veri.etkinlik === 7 && formlar[1].jeton === 'jeton-2', 'tanışma: etkinlik numarası ve yeni jeton');
