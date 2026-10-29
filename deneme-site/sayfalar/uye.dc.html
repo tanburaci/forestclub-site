@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <style>
-body{margin:0;background:#FFFFFF}
+body{margin:0;background:#FFFFFF;overflow-wrap:break-word}
 a{color:#111111}a:hover{color:#000000}
 .fu-btn{font:700 15px Figtree,sans-serif;border-radius:10px;padding:11px 18px;min-height:44px;cursor:pointer;border:2.5px solid #111111;background:#111111;color:#FFFFFF;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
 .fu-btn:hover{background:#000000;color:#FFFFFF}
@@ -140,7 +140,7 @@ a{color:#111111}a:hover{color:#000000}
             <div style="font-weight: 700; font-size: 18px">{{ uyari.baslik }}</div>
             <div style="font-size: 15px; margin-top: 4px; line-height: 1.5">{{ uyari.metin }}</div>
           </div>
-          <button type="button" class="fu-btn" onClick="{{ odemeyeGit }}">{{ uyari.dugme }}</button>
+          <sc-if value="{{ uyari.dugme }}" hint-placeholder-val="{{ true }}"><button type="button" class="fu-btn" onClick="{{ odemeyeGit }}">{{ uyari.dugme }}</button></sc-if>
         </div>
       </sc-if>
 
@@ -211,7 +211,7 @@ a{color:#111111}a:hover{color:#000000}
               <div style="background: #F0F0EE; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start">
                 <strong style="font-size: 17px">Karekod yalnız aktif üyeler için</strong>
                 <span style="color: #3A3A3A; font-size: 15px; line-height: 1.5">{{ uyari.metin }}</span>
-                <button type="button" class="fu-btn" onClick="{{ odemeyeGit }}">{{ uyari.dugme }}</button>
+                <sc-if value="{{ uyari.dugme }}" hint-placeholder-val="{{ true }}"><button type="button" class="fu-btn" onClick="{{ odemeyeGit }}">{{ uyari.dugme }}</button></sc-if>
               </div>
             </sc-if>
           </section>
@@ -289,7 +289,7 @@ a{color:#111111}a:hover{color:#000000}
                 </div>
               </sc-for>
               <sc-if value="{{ sepetOdemede }}" hint-placeholder-val="{{ false }}">
-                <p style="margin: 0; font-size: 14px; color: #3A3A3A; line-height: 1.5">{{ sepetOdemeNotu }}</p>
+                <p style="margin: 0; font-size: 14px; color: #3A3A3A; line-height: 1.5; overflow-wrap: anywhere">{{ sepetOdemeNotu }}</p>
               </sc-if>
               <sc-if value="{{ sepetDekontta }}" hint-placeholder-val="{{ false }}">
                 <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1.5px solid #111111; padding-top: 12px">
@@ -398,19 +398,19 @@ a{color:#111111}a:hover{color:#000000}
             <sc-if value="{{ odemeYok }}" hint-placeholder-val="{{ true }}">
               <div style="display: flex; flex-direction: column; gap: 10px">
                 <p style="margin: 0; color: #3A3A3A; font-size: 15px; line-height: 1.5">{{ odemeAciklama }}</p>
-                <button type="button" class="fu-btn" onClick="{{ odemeBasla }}" style="align-self: flex-start">{{ odemeDugme }}</button>
+                <sc-if value="{{ odemeDugme }}" hint-placeholder-val="{{ true }}"><button type="button" class="fu-btn" onClick="{{ odemeBasla }}" style="align-self: flex-start">{{ odemeDugme }}</button></sc-if>
               </div>
             </sc-if>
             <sc-if value="{{ odemeOzet }}" hint-placeholder-val="{{ false }}">
               <div style="border: 2px solid #111111; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-bottom: 1.5px solid #111111; padding-bottom: 12px; flex-wrap: wrap">
                   <span>{{ odemeTuru }} · 30 gün</span>
-                  <span style="font-size: 28px; font-weight: 700">3.000 TL</span>
+                  <span style="font-size: 28px; font-weight: 700">{{ aidatYazi }}</span>
                 </div>
                 <p style="margin: 0; font-size: 15px; color: #3A3A3A">Ödemeden sonra bitiş: <strong>{{ yeniBitisYazi }}</strong></p>
                 <p style="margin: 0; font-size: 14px; color: #3A3A3A; line-height: 1.5">“Kartla öde”ye basınca iyzico’nun güvenli ödeme penceresi açılır; kart bilgilerin bize gelmez.</p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap">
-                  <button type="button" class="fu-btn" onClick="{{ ode }}">Kartla öde · 3.000 TL</button>
+                  <button type="button" class="fu-btn" onClick="{{ ode }}">Kartla öde · {{ aidatYazi }}</button>
                   <button type="button" class="fu-btn fu-btn-ikincil" onClick="{{ odemeVazgec }}">Vazgeç</button>
                 </div>
                 <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
@@ -670,9 +670,15 @@ class Component extends DCLogic {
     const durumTur = aktif ? 'aktif' : bitis ? 'doldu' : 'basvuru';
     const kalan = aktif && bitis ? gunFark(bitis, BUGUN) : 0;
     const dond = this.state.dondurma;
-    const uyari = durumTur === 'doldu'
-      ? { baslik: 'Üyeliğinin süresi doldu', metin: `Üyeliğin ${tarihYaz(bitis)} tarihinde sona erdi. Buluşmalara katılmak ve giriş karekodu almak için üyeliğini yenile.`, dugme: 'Üyeliğini yenile · 3.000 TL' }
-      : { baslik: 'Üyeliğin henüz başlamadı', metin: 'Başvurun bize ulaştı. Buluşmalara katılmak ve giriş karekodu almak için üyelik ödemesini tamamla; üyeliğin hemen başlar.', dugme: 'Üye ol · 3.000 TL' };
+    const AIDAT = TL(canli ? window.FCU.aidat || 3000 : 3000);
+    const dekontBekliyor = !aktif && !!h.dekontBekliyor;  // yüklediği dekont incelemede: yeniden ödeme istenmez
+    const uyari = dekontBekliyor
+      ? { baslik: 'Dekontun inceleniyor', metin: 'Dekontun bize ulaştı, inceleniyor. Onaylanınca üyeliğin başlar ve e-postayla haber veririz.', dugme: '' }
+      : durumTur === 'doldu'
+        ? { baslik: 'Üyeliğinin süresi doldu', metin: `Üyeliğin ${tarihYaz(bitis)} tarihinde sona erdi. Buluşmalara katılmak ve giriş karekodu almak için üyeliğini yenile.`, dugme: `Üyeliğini yenile · ${AIDAT}` }
+        : { baslik: 'Üyeliğin henüz başlamadı', metin: canli && !kartla
+          ? 'Başvurun bize ulaştı. Buluşmalara katılmak ve giriş karekodu almak için üyelik ödemesini yap ve dekontunu yükle; onaylanınca üyeliğin başlar.'
+          : 'Başvurun bize ulaştı. Buluşmalara katılmak ve giriş karekodu almak için üyelik ödemesini tamamla; üyeliğin hemen başlar.', dugme: `Üye ol · ${AIDAT}` };
     const yeniBitis = gunEkle(aktif && bitis ? bitis : BUGUN, 30);
     const ben = {
       ad: h.ad, ilkAd: h.ad.split(' ')[0], harf: h.ad[0], eposta: this.state.hesap,
@@ -961,8 +967,12 @@ class Component extends DCLogic {
       // Ödeme (ilk üyelik, yeniden başlatma ya da yenileme)
       odemeYok: odeme === 'yok' && !muaf, odemeOzet: odeme === 'ozet', odemeBasarili: odeme === 'basarili', odemeHata: odeme === 'hata',
       odemeTuru: aktif ? 'Üyelik yenileme' : durumTur === 'doldu' ? 'Üyeliği yeniden başlatma' : 'İlk üyelik',
-      odemeDugme: aktif ? (canli && !kartla ? 'Yenile · havale / EFT' : 'Kartla yenile · 3.000 TL') : uyari.dugme,
-      odemeAciklama: aktif ? 'Erken yenilersen kalan günlerin kaybolmaz; yeni 30 gün mevcut bitişinden sonra başlar. Otomatik ücret çekilmez.' : 'Ödemen geçtiği anda üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.',
+      odemeDugme: aktif ? (canli && !kartla ? 'Yenile · havale / EFT' : `Kartla yenile · ${AIDAT}`) : uyari.dugme,
+      odemeAciklama: aktif ? 'Erken yenilersen kalan günlerin kaybolmaz; yeni 30 gün mevcut bitişinden sonra başlar. Otomatik ücret çekilmez.'
+        : dekontBekliyor ? uyari.metin
+        : canli && !kartla ? 'Dekontun onaylandığında üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.'
+        : 'Ödemen geçtiği anda üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.',
+      aidatYazi: AIDAT,
       yeniBitisYazi: tarihYaz(yeniBitis),
       odemeBasla: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ odeme: 'ozet' })),
       odemeVazgec: () => this.setState({ odeme: 'yok' }),
@@ -972,7 +982,7 @@ class Component extends DCLogic {
         odeme: 'basarili', bitis: yeniBitis,
         odemeler: [{ tarih: BUGUN, yol: 'Kart · iyzico' }, ...s.odemeler],
       }))),
-      odemeler: this.state.odemeler.map((o) => ({ ad: 'Üyelik · 30 gün', detay: `${tarihYaz(o.tarih)} · ${o.yol}`, tutar: o.tutar ? TL(o.tutar) : '3.000 TL' })),
+      odemeler: this.state.odemeler.map((o) => ({ ad: 'Üyelik · 30 gün', detay: `${tarihYaz(o.tarih)} · ${o.yol}`, tutar: o.tutar ? TL(o.tutar) : AIDAT })),
       odemeGecmisiYok: !this.state.odemeler.length,
       // Dondurma
       dondurulmus: !!dond, dondurmaSecimde: !dond && this.state.dondurmaSecim, dondurmaDugme: !dond && !this.state.dondurmaSecim,
