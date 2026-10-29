@@ -57,6 +57,8 @@
     const { data: yon } = await sb.from('yoneticiler').select('ad').eq('user_id', user.id).maybeSingle();
     // Yüklediği dekont incelemede mi (göç uygulanmadıysa yok sayılır)
     const dekontBekliyor = await sb.rpc('dekont_bekliyor').then((r) => r.data === true, () => false);
+    // Randevularım: üyenin bilet kodları (onaylı) ve incelemedeki istekleri; göç yoksa boş
+    const biletlerim = await sb.rpc('uye_biletlerim').then((r) => r.data || [], () => []);
     const formlar = (frm.data || []).map((f) => ({ id: f.id, baslik: f.baslik, doldu: doldurulan.has(f.id) }));
     [ods, kys, etks, ank, don, ayr].forEach((r) => { if (r.error) throw r.error; });
     const ayar = Object.fromEntries(ayr.data.map((a) => [a.anahtar, a.deger]));
@@ -71,7 +73,9 @@
         ad: e.ad, tarih: e.tarih, saat: bas, bitisSaat: son,
         bilgi: `${GUNLER[new Date(`${e.tarih}T12:00:00`).getDay()]} ${bas}`,
         kontenjan: e.kontenjan, kayitli: d.kayitli + e.satilan_bilet,
-        ben: k ? k.durum : 'yok', sira: k && k.sira ? k.sira : 0,
+        ben: k ? k.durum : 'yok', sira: k && k.sira ? k.sira : 0, geldi: !!(k && k.geldi),
+        biletler: biletlerim.filter((b) => Number(b.etkinlik_id) === Number(e.id) && b.kod).map((b) => b.kod),
+        biletInceleniyor: biletlerim.some((b) => Number(b.etkinlik_id) === Number(e.id) && b.durum === 'inceleniyor'),
         fiyat: Number(e.bilet_fiyati || 0), uye: e.bilet_fiyati ? e.uyelere || 'tam' : 'ucretsiz',
         aciklama: e.aciklama || '', kim: e.kim || '', afis: e.afis || '',
         satilan: e.satilan_bilet,

@@ -269,7 +269,7 @@ class Component extends DCLogic {
 
     const profil = this.state.profil || { telefon: '', dogum: '', kutlama: false, foto: false, ilgi: [], ozel: [] };
     const sekmeler = [
-      { id: 'ana', ad: 'Karekodum' }, { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'katildiklarim', ad: 'Katıldıklarım' },
+      { id: 'ana', ad: 'Randevularım' }, { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'katildiklarim', ad: 'Katıldıklarım' },
       { id: 'uyelik', ad: 'Üyeliğim' }, { id: 'profil', ad: 'Profilim' }, { id: 'veri', ad: 'Verilerim' },
     ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fu-sekme fu-sekme-aktif' : 'fu-sekme', sec: () => this.setState({ sekme: s.id }) }));
 
@@ -341,6 +341,27 @@ class Component extends DCLogic {
       // Canlıda (kartla ödeme gelene kadar) ödeme havale + dekont sayfasından
       odemeyeGit: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ sekme: 'uyelik', odeme: 'ozet' })),
       anaSayfayaGit: () => this.setState({ sekme: 'ana', odeme: 'yok' }),
+      ...(() => {
+        // Randevularım: yeri ayrılmış (gelmediği) etkinlikler için üye karekodu, satın alınmış biletlerin karekodları
+        const izgara = (n, h2) => `display:grid;grid-template-columns:repeat(${n},${h2}px);grid-auto-rows:${h2}px;padding:${h2 * 4}px;background:#FFFFFF;border:2px solid #111111;border-radius:12px`;
+        const qrYap = (kod, etiket, not) => {
+          const qr = window.FCKarekod ? window.FCKarekod(kod) : null;
+          return qr ? { kod, etiket, not, karekod: qr.hucreler.map((k) => `display:block;background:${k ? '#111111' : '#FFFFFF'}`), izgara: izgara(qr.n, qr.n > 25 ? 5 : 6) }
+            : { kod, etiket, not: 'Önizleme: desen örnektir.', karekod: karekodDesen(kod), izgara: izgara(21, 7) };
+        };
+        const sira = (e) => `${e.tarih} ${String(e.saat || '').replace(/^(\d)[.:]/, '0$1.')}`;
+        const liste = Object.values(kayit).sort((a, b) => sira(a).localeCompare(sira(b))).map((e) => {
+          const [, m, d] = e.tarih.split('-');
+          const uyeKayit = aktif && e.ben === 'kayitli' && !e.geldi;
+          const biletler = e.biletler || [];
+          const kodlar = [...(uyeKayit ? [qrYap(`${h.kod}-${m}${d}`, 'Üye giriş karekodu', 'Üye girişi · tek kişilik')] : []),
+            ...biletler.map((b, i) => qrYap(b, `Bilet karekodu ${i + 1}`, `Bilet ${biletler.length > 1 ? `${i + 1}/${biletler.length}` : ''}`.trim()))];
+          if (!kodlar.length && !e.biletInceleniyor) return null;
+          return { ad: e.ad, zaman: `${Number(d)} ${AY_UZUN[Number(m) - 1]} · ${e.saat}`, kodlar, inceleniyor: !!e.biletInceleniyor,
+            tur: [uyeKayit ? 'Yerin ayrıldı' : '', biletler.length ? `${biletler.length} bilet` : ''].filter(Boolean).join(' · ') || 'Bilet' };
+        }).filter(Boolean);
+        return { randevular: liste, randevuYok: !liste.length, etkinliklereGit: () => this.setState({ sekme: 'etkinlikler' }) };
+      })(),
       secimEtk, kodOlustur,
       secimAcik: !!this.state.secimAcik, secimAcikYazi: this.state.secimAcik ? 'true' : 'false', secimOk: this.state.secimAcik ? '▲' : '▼', secimYok: !secimEtk.length,
       secimYazi: seciliEtk ? `${seciliEtk.ad} · ${tarihYaz(seciliEtk.tarih)}` : 'Etkinlik seç',
