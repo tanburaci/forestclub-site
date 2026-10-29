@@ -60,6 +60,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     await u.page.getByText('Merhaba Deniz').waitFor({ timeout: 15000 });
 
     // Gerçek karekod: ekrandaki hücreler tuvale çizilip jsQR ile okunur
+    await u.page.getByRole('button', { name: 'Etkinlik seç' }).click();  // liste dokununca açılır
     await u.page.getByRole('button', { name: /Yoga/ }).first().click();
     await u.page.getByRole('button', { name: 'Karekod oluştur' }).click();
     await u.page.locator('[aria-label="Giriş karekodu"]').waitFor({ timeout: 4000 });

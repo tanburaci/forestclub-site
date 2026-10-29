@@ -119,7 +119,9 @@ class Component extends DCLogic {
     // Yaklaşan buluşmalar (kayıt + kontenjan + bekleme)
     const kayit = this.state.kayit;
     const kGuncelle = (id, deg) => this.setState((s) => ({ kayit: { ...s.kayit, [id]: { ...s.kayit[id], ...deg } } }));
-    const yaklasan = Object.entries(kayit).map(([id, e]) => {
+    // Tarih sırası (yakından uzağa): kayit'in anahtarları sayısal olduğu için nesne sırası etkinlik numarasına göredir
+    const sira = (e) => `${e.tarih} ${String(e.saat || '').replace(/^(\d)[.:]/, '0$1.')}`;  // 9.30 < 10.00
+    const yaklasan = Object.entries(kayit).sort(([, a], [, b]) => sira(a).localeCompare(sira(b))).map(([id, e]) => {
       const dolu = e.kayitli >= e.kontenjan;
       const [, m, d] = e.tarih.split('-');
       let durum, rozet, dugme, islem, dugmeSinif = 'fu-btn';
@@ -175,7 +177,8 @@ class Component extends DCLogic {
     // Ana sayfa: etkinlik seç → karekod (kayıtlı değilse yer ayrılır, doluysa uyarır)
     const secili = this.state.secili;
     // Üye karekodu yalnız üyelere ücretsiz buluşmalarda; ücretli etkinlikte girişte bilet kodu (FC-B) geçer
-    const secimEtk = Object.entries(kayit).filter(([, e]) => e.uye === 'ucretsiz').map(([id, e]) => {
+    const secimEtk = Object.entries(kayit).filter(([, e]) => e.uye === 'ucretsiz' || e.ben === 'kayitli')
+      .sort(([, a], [, b]) => sira(a).localeCompare(sira(b))).map(([id, e]) => {
       const [, m, d] = e.tarih.split('-');
       const on = id === secili;
       return {
@@ -183,9 +186,10 @@ class Component extends DCLogic {
         durum: e.ben === 'kayitli' ? 'Yerin ayrıldı' : e.ben === 'bekleme' ? 'Bekleme listesindesin' : e.kayitli >= e.kontenjan ? 'Dolu' : `${e.kontenjan - e.kayitli} yer kaldı`,
         basili: on ? 'true' : 'false',
         stil: `text-align:left;font-family:Figtree,sans-serif;border-radius:12px;padding:14px 16px;min-height:44px;cursor:pointer;border:2.5px solid #111111;${on ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}`,
-        sec: () => this.setState({ secili: id, kodHata: '', bilet: null }),
+        sec: () => this.setState({ secili: id, kodHata: '', bilet: null, secimAcik: false }),
       };
     });
+    const seciliEtk = kayit[secili];
     const karekodDesen = (tohumYazi) => {
       let t = 0;
       for (const c of tohumYazi) t = (t * 31 + c.charCodeAt(0)) >>> 0;
@@ -337,7 +341,10 @@ class Component extends DCLogic {
       // Canlıda (kartla ödeme gelene kadar) ödeme havale + dekont sayfasından
       odemeyeGit: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ sekme: 'uyelik', odeme: 'ozet' })),
       anaSayfayaGit: () => this.setState({ sekme: 'ana', odeme: 'yok' }),
-      secimEtk, kodOlustur, kodHata: this.state.kodHata, bilet: this.state.bilet || { karekod: [], izgara: '', not: '' }, biletVar: !!this.state.bilet,
+      secimEtk, kodOlustur,
+      secimAcik: !!this.state.secimAcik, secimAcikYazi: this.state.secimAcik ? 'true' : 'false', secimOk: this.state.secimAcik ? '▲' : '▼', secimYok: !secimEtk.length,
+      secimYazi: seciliEtk ? `${seciliEtk.ad} · ${tarihYaz(seciliEtk.tarih)}` : 'Etkinlik seç',
+      secimAcDegis: () => this.setState((st) => ({ secimAcik: !st.secimAcik })), kodHata: this.state.kodHata, bilet: this.state.bilet || { karekod: [], izgara: '', not: '' }, biletVar: !!this.state.bilet,
       yaklasan,
       sepetVar: sepetIdler.length > 0, sepetOdemede: this.state.sepetAdim === 'odeme', satinTamam: this.state.sepetAdim === 'tamam' && !sepetIdler.length,
       sepetDekontta: this.state.sepetAdim === 'dekont', biletGonderildi: this.state.sepetAdim === 'gonderildi' && !sepetIdler.length,

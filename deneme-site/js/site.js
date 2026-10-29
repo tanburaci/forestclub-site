@@ -20,7 +20,9 @@
     if (etk.error) throw etk.error;
     const d = new Map((dol.data || []).map((x) => [x.etkinlik_id, x]));
     const anahtar = {};
-    const etkinlikler = etk.data.map((e) => {
+    // Tarih ve saat sırası (9.30, 10.00'dan önce gelsin; veritabanı saati metin olarak sıralar)
+    const sira = (e) => `${e.tarih} ${String(e.saat || '').replace(/^(\d)[.:]/, '0$1.')}`;
+    const etkinlikler = [...etk.data].sort((a, b) => sira(a).localeCompare(sira(b))).map((e) => {
       const [, m, g] = e.tarih.split('-');
       anahtar[`${e.tarih}|${e.ad}`] = e.id;
       const satis = e.bilet_fiyati && e.tarih >= B ? {
@@ -46,6 +48,7 @@
     return sonuc;
   };
   window.FCSCagri = (alanlar) => formGonder('cagri', alanlar);
+  window.FCSGonullu = (veri) => formGonder('gonullu', veri);
   // Destek ol (kartla): sunucu iyzico ödeme sayfasının adresini döndürür
   window.FCSDestek = async (tutar) => (await formGonder('destek', { tutar })).sayfa;
   window.FCSTanisma = async (ad, eposta, etkAnahtar) => {
@@ -78,6 +81,7 @@
       window.FCSBasvuru = null;
       window.FCSTanisma = null;
       window.FCSCagri = null;
+      window.FCSGonullu = null;
       window.FCSDestek = null;
     }
     kok.textContent = '';

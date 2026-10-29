@@ -74,8 +74,11 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
     await y.page.goto(`${SITE}/yonetim/`);
     await y.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
     await y.page.locator('button').filter({ hasText: /^Etkinlikler$/ }).first().click();
-    const bolum = y.page.locator('section').filter({ hasText: 'Aylık duyuru (sitedeki sarı rozet)' });
+    const bolum = y.page.locator('section').filter({ hasText: 'Aylık duyuru (sitedeki rozet)' });
     await bolum.waitFor({ timeout: 5000 });
+    dogru(await bolum.getByLabel('Ay', { exact: true }).count() === 0 && (await bolum.innerText()).includes('AÇIK ÇAĞRI!'), 'yönetim: aylık duyuru kapalı, kısa özet görünüyor');
+    await bolum.getByRole('button', { name: 'Düzenle' }).click();
+    await bolum.getByRole('radio', { name: 'Nane' }).click();
     await bolum.getByLabel('Ay', { exact: true }).selectOption('Aralık');
     await bolum.getByLabel('Üst yazı', { exact: true }).fill('{ay} programı');
     await bolum.getByLabel('Büyük yazı', { exact: true }).fill('YAYINDA!!');
@@ -84,18 +87,19 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
     await bolum.getByRole('button', { name: 'Kaydet' }).click();
     await bolum.getByText('Kaydedildi ✓').waitFor({ timeout: 3000 });
     const kayit = y.istekler.filter((x) => x.yontem === 'PATCH' && /anahtar=eq\.aylik_duyuru/.test(x.ara)).pop();
-    dogru(kayit && kayit.govde.deger.ay === 'Aralık' && kayit.govde.deger.ust === '{ay} programı' && kayit.govde.deger.tur === 'form' && kayit.govde.deger.formId === '5',
+    dogru(kayit && kayit.govde.deger.ay === 'Aralık' && kayit.govde.deger.ust === '{ay} programı' && kayit.govde.deger.tur === 'form' && kayit.govde.deger.formId === '5' && kayit.govde.deger.renk === 'nane',
       `yönetim: aylık duyuru kaydedildi (${JSON.stringify(kayit && kayit.govde.deger)})`);
-    dogru(await bolum.getByText('Aralık programı').count() === 1, 'yönetim: rozet önizlemesinde {ay} = Aralık');
+    dogru(await bolum.getByText('Aralık programı', { exact: true }).count() >= 1, 'yönetim: rozet önizlemesinde {ay} = Aralık');
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
 
     const aylikSite = (deger) => sayfaAc(tarayici, { tablolar: { etkinlikler: [etk], ayarlar: [{ anahtar: 'yakinda', deger: false }, { anahtar: 'aylik_duyuru', deger }] },
       rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null] } }, null);
-    const a1 = await aylikSite({ goster: true, ay: 'Aralık', ust: '{ay} programı', ana: 'YAYINDA!!', alt: 'Tıkla, gör', tur: 'resim', resim: AFIS });
+    const a1 = await aylikSite({ goster: true, ay: 'Aralık', ust: '{ay} programı', ana: 'YAYINDA!!', alt: 'Tıkla, gör', tur: 'resim', resim: AFIS, renk: 'lila' });
     await a1.page.goto(`${SITE}/`);
     const rozet = a1.page.locator('.fs-cagri-rozet');
     await rozet.waitFor({ timeout: 15000 });
     dogru((await rozet.innerText()).replace(/\s+/g, ' ').includes('Aralık programı YAYINDA!!'), 'site: rozet yönetimdeki yazıyla ({ay} = Aralık)');
+    dogru(await rozet.evaluate((e) => getComputedStyle(e).backgroundColor === 'rgb(216, 201, 241)' && getComputedStyle(e).color === 'rgb(17, 17, 17)'), 'site: rozet seçilen pastel renkte (lila), yazı siyah');
     dogru(await a1.page.locator('#bulusmalar button').filter({ hasText: 'YAYINDA!!' }).count() === 1, 'site: etkinliklerin üstünde aynı duyuru şeridi');
     await rozet.click({ force: true });  // rozet sürekli sallanıyor (animasyon)
     dogru((await a1.page.locator('.fs-tam img').getAttribute('src')) === AFIS, 'site: resim seçiliyse tıklayınca tam ekran');

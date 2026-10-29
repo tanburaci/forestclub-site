@@ -107,6 +107,7 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     dogru(csv.includes(";'=1+1;"), 'CSV: formül gibi başlayan hücre metne çevrildi');
 
     await sekme(page, 'Başvurular');
+    await page.getByRole('button', { name: /Onay bekleyen dekontlar/ }).click();  // bölüm kapalı başlar
     await page.getByRole('button', { name: /Reddet/ }).first().click();
     await page.waitForTimeout(500);
     const red = v.rpcler.find((x) => x[0] === 'dekont_karar');
