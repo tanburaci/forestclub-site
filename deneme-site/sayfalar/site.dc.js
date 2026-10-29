@@ -155,7 +155,7 @@ class Component extends DCLogic {
     const igAd = String(IL.instagram || '').replace(/^@/, '').trim();
     const ilt = {
       eposta: IL.eposta || 'forestcluburla@gmail.com', alan: IL.alan || 'Pinya, Urla',
-      instagramLink: igAd ? `https://www.instagram.com/${encodeURIComponent(igAd)}/` : '#', instagramYazi: igAd ? `Instagram: @${igAd}` : '[Instagram]',
+      instagramLink: igAd ? `https://www.instagram.com/${encodeURIComponent(igAd)}/` : '#', instagramYazi: igAd ? `@${igAd}` : '[Instagram]',
       instagramVar: !!igAd || !(window.FCS || window.FCS_HATA), toplulukVar: /^https:\/\//.test(IL.topluluk || '') || !(window.FCS || window.FCS_HATA),
       toplulukLink: /^https:\/\//.test(IL.topluluk || '') ? IL.topluluk : '#', toplulukYazi: /^https:\/\//.test(IL.topluluk || '') ? 'WhatsApp topluluğu' : '[WhatsApp topluluğu]',
     };
@@ -534,8 +534,8 @@ class Component extends DCLogic {
         };
       })(),
       haklar: [
-        'Aylık Breakfast Club buluşmaları',
-        'Aylık Sunset Club etkinlikleri',
+        'Breakfast buluşması',
+        'Sunset buluşması',
         'Topluluğa özel buluşmalar',
         'Özel atölyelerde %50 indirim',
       ],
