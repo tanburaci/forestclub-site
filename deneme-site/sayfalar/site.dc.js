@@ -143,6 +143,7 @@ class Component extends DCLogic {
     const ilt = {
       eposta: IL.eposta || 'forestcluburla@gmail.com', alan: IL.alan || 'Pinya, Urla',
       instagramLink: igAd ? `https://www.instagram.com/${encodeURIComponent(igAd)}/` : '#', instagramYazi: igAd ? `Instagram: @${igAd}` : '[Instagram]',
+      instagramVar: !!igAd || !(window.FCS || window.FCS_HATA), toplulukVar: /^https:\/\//.test(IL.topluluk || '') || !(window.FCS || window.FCS_HATA),
       toplulukLink: /^https:\/\//.test(IL.topluluk || '') ? IL.topluluk : '#', toplulukYazi: /^https:\/\//.test(IL.topluluk || '') ? 'WhatsApp topluluğu' : '[WhatsApp topluluğu]',
     };
     ilt.epostaLink = `mailto:${ilt.eposta}`;
@@ -279,7 +280,7 @@ class Component extends DCLogic {
           ? `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Havale / EFT ile ödersin, dekontunu sitedeki dekont sayfasından yüklersin; onaylanınca üyeliğin başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.`
           : `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Kartla ödersin, üyeliğin hemen başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.` },
         { soru: 'Üye olmadan gelebilir miyim?', cevap: 'İlk buluşman bizden: sitedeki “Tanışma biletini al” ile bir etkinliğe ücretsiz gelebilirsin. Her e-posta için bir kez geçerli.' },
-        { soru: 'Etkinliklere nasıl kayıt oluyorum?', cevap: 'Üye panelinde “Geliyorum” de. Kontenjan doluysa bekleme listesine yazılırsın; yer açılınca e-postayla haber veririz.' },
+        { soru: 'Etkinliklere nasıl kayıt oluyorum?', cevap: 'Üye panelinde etkinliğin altındaki “Randevu oluştur”a bas. Kontenjan doluysa bekleme listesine yazılırsın; yer açılınca e-postayla haber veririz.' },
         { soru: 'Yağmur yağarsa ne olur?', cevap: 'Etkinlik iptal edilir ya da ertelenirse sitenin en üstünde duyuru çıkar ve kayıtlı herkese e-posta göndeririz.' },
         { soru: 'Üyeliğimi dondurabilir miyim?', cevap: canli
           ? `Evet, üye panelinden. Bir seferde ${((AYAR.dondurma && AYAR.dondurma.gunler) || [7, 14]).join(' ya da ')} gün dondurabilirsin, yılda en çok ${(AYAR.dondurma && AYAR.dondurma.yillik) || 2} kez. Dondurduğun günler üyelik sürenden düşmez, bitiş tarihine eklenir.`
@@ -371,7 +372,15 @@ class Component extends DCLogic {
       ibanKopyaYazi: this.state.dsKopya === 'iban' ? 'Kopyalandı ✓' : 'Kopyala',
       aliciKopyala: () => kopyala('alici', odemeBilgi.alici),
       ibanKopyala: () => kopyala('iban', odemeBilgi.iban.replace(/\s/g, '')),
-      waYazi: waHam || '[WHATSAPP NUMARASI]',
+      waYazi: waHam || '[WHATSAPP NUMARASI]', waVar: !!waHam || !canli,
+      // Üyelik metinleri ödeme yoluna göre (kart kapalıyken havale + dekont)
+      kartliUyelik: kartAcik,
+      uyelikMetin: kartAcik
+        ? 'Üyeliğin, kartla ödemeni yaptığın anda başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin. Süren bitmeden yenilersen yeni dönem bitiş tarihinden başlar.'
+        : 'Üyeliğin, ödemen onaylandığında başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin. Süren bitmeden yenilersen yeni dönem bitiş tarihinden başlar.',
+      katilMetin: kartAcik
+        ? 'Bilgilerini yaz, kartla öde; üyeliğin hemen başlar ve e-postayla haber veririz.'
+        : 'Bilgilerini yaz, aidatı havale / EFT ile gönder ve dekontunu yükle; onaylanınca üyeliğin başlar ve e-postayla haber veririz.',
       uyeFormda: this.state.uyeAdim === 'form',
       uyeOdemede: this.state.uyeAdim === 'odeme',
       uyeTamam: this.state.uyeAdim === 'tamam',

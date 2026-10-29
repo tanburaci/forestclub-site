@@ -55,6 +55,8 @@
     const doldurulan = new Set((fyn.data || []).map((y) => y.form_id));
     // Yönetici mi (herkes yoneticiler'de yalnız kendi satırını görür): üst menüde "Yönetim paneli" geçişi
     const { data: yon } = await sb.from('yoneticiler').select('ad').eq('user_id', user.id).maybeSingle();
+    // Yüklediği dekont incelemede mi (göç uygulanmadıysa yok sayılır)
+    const dekontBekliyor = await sb.rpc('dekont_bekliyor').then((r) => r.data === true, () => false);
     const formlar = (frm.data || []).map((f) => ({ id: f.id, baslik: f.baslik, doldu: doldurulan.has(f.id) }));
     [ods, kys, etks, ank, don, ayr].forEach((r) => { if (r.error) throw r.error; });
     const ayar = Object.fromEntries(ayr.data.map((a) => [a.anahtar, a.deger]));
@@ -85,9 +87,9 @@
     });
     return {
       bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket, formlar, yonetici: !!yon,
-      kartOdeme: ayar.kart_odeme === true, dondurmaKurali: ayar.dondurma || { gunler: [7, 14], yillik: 2 },
+      kartOdeme: ayar.kart_odeme === true, aidat: Number(ayar.aidat) || 3000, dondurmaKurali: ayar.dondurma || { gunler: [7, 14], yillik: 2 },
       hesap: {
-        ad: u.ad, kod: u.kod, bitis: u.bitis || '', muaf: !!u.aidat_muaf,
+        ad: u.ad, kod: u.kod, bitis: u.bitis || '', muaf: !!u.aidat_muaf, dekontBekliyor,
         odemeler: ods.data.map((o) => ({ tarih: o.tarih, yol: ({ kart: 'Kart', havale: 'Havale · dekont', elden: 'Elden' })[o.yol] || o.yol, tutar: Number(o.tutar) })),
         profil: { telefon: u.tel || '', dogum: u.dogum_gunu || '', kutlama: u.kutlama_izni, foto: u.foto_izni,
           ilgi: u.ilgi_alanlari || [], ozel: u.ozel_gunler || [] },
