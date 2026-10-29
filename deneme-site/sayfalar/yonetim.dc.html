@@ -39,6 +39,10 @@ a{color:#111111}a:hover{color:#000000}
 .fc-tablo th{text-align:left;font-weight:600;color:#5E5E5E;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:12px 14px;border-bottom:1px solid #DADAD8;white-space:nowrap}
 .fc-tablo td{padding:14px;border-bottom:1px solid #ECECEA;white-space:nowrap}
 .fc-tablo tr:last-child td{border-bottom:0}
+/* Üyeler: satıra dokununca profil açılır; telefonda yalnız ad soyad ve telefon (ayrıntılar profilde) */
+.fc-uye-tablo tbody tr{cursor:pointer}
+.fc-uye-tablo tbody tr:hover td{background:#F6F6F4}
+@media (max-width: 700px){.fc-uye-tablo th:nth-child(n+3),.fc-uye-tablo td:nth-child(n+3){display:none}.fc-uye-tablo td:first-child{white-space:normal}}
 /* Telefonda: menü 3 sütunlu küçük düğmeler (dokuz sekme dört satır tutuyordu), form sorusunda metin ve tür alt alta */
 @media (max-width: 640px){
   .fc-menu{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px !important;flex:1 1 100% !important}
@@ -314,10 +318,14 @@ a{color:#111111}a:hover{color:#000000}
                   </div>
                   <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
                     <span style="{{ profil.rozet }}">{{ profil.durum }}</span>
+                    <button type="button" class="fc-btn" onClick="{{ profilElden }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Elden ödeme</button>
                     <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ profilKapat }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Kapat</button>
                   </div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px">
+                  <div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5E5E5E; font-size: 13px; font-weight: 600">Başvuru</span><span>{{ profil.basvuru }}</span></div>
+                  <div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5E5E5E; font-size: 13px; font-weight: 600">Üyelik bitişi</span><span>{{ profil.bitis }}</span></div>
+                  <div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5E5E5E; font-size: 13px; font-weight: 600">Ödeme sayısı</span><span>{{ profil.odemeSayisi }}</span></div>
                   <div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5E5E5E; font-size: 13px; font-weight: 600">Doğum günü</span><span>{{ profil.dogum }}</span></div>
                   <div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5E5E5E; font-size: 13px; font-weight: 600">Özel günler</span><span>{{ profil.ozel }}</span></div>
                   <div style="display: flex; flex-direction: column; gap: 4px"><span style="color: #5E5E5E; font-size: 13px; font-weight: 600">Kutlama mesajı</span><span>{{ profil.kutlama }}</span></div>
@@ -351,11 +359,11 @@ a{color:#111111}a:hover{color:#000000}
             </sc-if>
 
             <div style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; overflow: auto; max-height: 640px">
-              <table class="fc-tablo">
+              <table class="fc-tablo fc-uye-tablo">
                 <thead><tr><th>Ad soyad</th><th>Telefon</th><th>E-posta</th><th>Başvuru</th><th>Ödeme</th><th>Üyelik bitişi</th><th>Durum</th><th><span style="position: absolute; left: -9999px">İşlem</span></th></tr></thead>
                 <tbody>
                   <sc-for list="{{ uyeler }}" as="u" hint-placeholder-count="12">
-                    <tr>
+                    <tr onClick="{{ u.satirTikla }}">
                       <td style="font-weight: 600">{{ u.ad }}</td>
                       <td>{{ u.tel }}</td>
                       <td style="color: #3A3A3A">{{ u.eposta }}</td>
@@ -2027,6 +2035,11 @@ class Component extends DCLogic {
     window.FCAyarKaydet(anahtar, yeni).then(() => window.FC_ORTAK.bildir(`${etiket} ${yeni ? 'açık' : 'kapalı'} ✓`),
       (h) => { this.setState({ [alan]: !yeni }); window.FC_ORTAK.bildir(h.message, true); });
   }
+  // Üye profili: açılır ve ekrana kaydırılır (telefonda profil tablonun üstünde kalıyordu)
+  profilAc(id) {
+    this.setState({ profilSecili: id });
+    setTimeout(() => { const p = document.querySelector('section[aria-label="Üye profili"]'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  }
   // Aylık duyuru (ayarlar.aylik_duyuru): sitedeki sarı rozet ve etkinlik şeridi
   aylikGorunum() {
     const a = this.state.aylik || {};
@@ -2406,6 +2419,7 @@ class Component extends DCLogic {
       dogum: pr.dogum ? gunAy(pr.dogum) : 'Girilmedi', ozel: pr.ozel.length ? pr.ozel.map((g) => `${g.ad} · ${gunAy(g.tarih)}`).join(', ') : 'Yok',
       kutlama: pr.kutlama ? 'Gönderilsin' : 'Gönderilmesin', foto: pr.foto ? 'Var' : 'Yok', tanisma: pr.tanisma, baslangic: pr.baslangic,
       ilgi: pr.ilgi, not: this.state.notlar[profilUye.id] || '', muaf: profilUye.muaf,
+      basvuru: profilUye.basvuru || '—', bitis: profilUye.bitis || '—', odemeSayisi: String(profilUye.odemeSayisi ?? 0),
     } : {};
     const bugunT = new Date(`${BUGUN_SABIT}T12:00:00Z`);
     const ozelGunler = [];
@@ -2973,7 +2987,8 @@ class Component extends DCLogic {
       uyeDaha: () => this.setState((s) => ({ uyeSayisi: s.uyeSayisi + 100 })),
       uyeler: uyeGoster.map((u) => ({
         ...u, elden: () => this.setState((s) => ({ sekme: 'ana', anaMesaj: '', elden: { ...s.elden, acik: true, ad: `${u.ad} · ${u.kod}`, hata: '' } })),
-        profilAc: () => this.setState({ profilSecili: u.id }),
+        profilAc: () => this.profilAc(u.id),
+        satirTikla: (e) => { if (!e.target.closest('button, a, input')) this.profilAc(u.id); },
       })),
       profilAcik: !!profilUye, profil: profilGorunum,
       ...(window.FCVeriTalepGorunum ? (() => {
@@ -2995,6 +3010,7 @@ class Component extends DCLogic {
         }),
       }),
       profilKapat: () => this.setState({ profilSecili: null }),
+      profilElden: () => profilUye && this.setState((s) => ({ sekme: 'ana', anaMesaj: '', elden: { ...s.elden, acik: true, ad: `${profilUye.ad} · ${profilUye.kod}`, hata: '' } })),
       profilNotYaz: (e) => { const v = e.target.value; this.setState((s) => ({ notlar: { ...s.notlar, [s.profilSecili]: v } })); },
       profilBaglaMesaj: this.state.profilBaglaMesaj || 'Kendi üyeliğinizse basın; üst menüdeki “Üye paneli” ile şifresiz geçersiniz.',
       profilBagla: () => {
