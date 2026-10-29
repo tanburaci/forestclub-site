@@ -7,6 +7,7 @@
 !/araclar/
 !/testler/
 !/.github/
+!/vercel.json
 testler/node_modules/
 
 # Gizli / yerel dosyalar (asla depoya girmez)
