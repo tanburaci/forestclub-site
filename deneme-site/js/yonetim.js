@@ -303,7 +303,7 @@
   };
 
   // Ayar kaydı (ayarlar tablosu; site ve üye paneli herkese açık olanları okur)
-  const AYAR_HERKESE = ['yakinda', 'site_duyurusu', 'iletisim', 'kart_odeme', 'aidat', 'dondurma', 'tanisma_acik'];
+  const AYAR_HERKESE = ['yakinda', 'site_duyurusu', 'iletisim', 'kart_odeme', 'aidat', 'dondurma', 'tanisma_acik', 'aylik_duyuru'];
   window.FCAyarKaydet = async (anahtar, deger) => {
     const { data, error } = await sb.from('ayarlar').update({ deger }).eq('anahtar', anahtar).select('anahtar');
     if (error) throw new Error(error.message);

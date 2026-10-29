@@ -4,6 +4,8 @@ window.DC.sinif('/sayfalar/site.dc.html', function (DCLogic) {
 class Component extends DCLogic {
   constructor(props) {
     super(props);
+    // Tam ekran afiş Esc ile kapanır
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.state.afisTam) this.setState({ afisTam: '' }); });
     this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', hak: null, sDosya: null, satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, cv: {}, cagriKvkk: false, cagriHata: '', duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, secim: {}, cagriGitti: false, cagriAcik: false, cagriAdim: 'afis', destek: '', dsTutar: 1000, dsElle: false, dsTutarYazi: '', dsHata: '', dsKopya: '', waSecAcik: false };
     this.bekle = null;
     this.kaydir = () => {
@@ -75,8 +77,17 @@ class Component extends DCLogic {
       const takvim = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Forest Club · ${b.ad}`)}&dates=${tarihler}&ctz=Europe/Istanbul&location=${encodeURIComponent('Pinya, Urla')}`;
       // Satış (örnek): fiyat TL, üye: ucretsiz | yuzde50 | tam; kontenjan ve kayıtlı (üye + satılan bilet)
       const sat = !gecti ? (b.satis || (!window.FCS && b.ad === 'The Common Table' ? { fiyat: 750, uye: 'ucretsiz', kontenjan: 35, kayitli: 20 } : null)) : null;
+      // Kart önce kısa özet; karta (düğme ve bağlantılar dışında) dokununca açılır / kapanır
+      const kartKey = `${b.tarih}|${b.ad}`;
+      const acik = this.state.acikEtk === kartKey;
       return {
         ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
+        acik, acikYazi: acik ? 'true' : 'false', metinSinif: acik ? '' : 'fs-ozet', acYazi: acik ? 'Kapat ▲' : 'Ayrıntılar ▼',
+        kartTikla: (e) => {
+          if (e.target.closest('a, button, input, select, textarea, label')) return;
+          this.setState((st) => ({ acikEtk: st.acikEtk === kartKey ? null : kartKey }));
+        },
+        afisAc: () => this.setState({ afisTam: b.afis, afisTamAlt: `${b.ad} afişi` }),
         etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : 'Yaklaşan',
         rozet: gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : pill('#111111', '#FFFFFF'),
         kart: `background:#FFFFFF;border-radius:20px;border:2.5px solid #111111;box-shadow:${bugun ? '7px 7px 0 #111111' : '4px 4px 0 #111111'};padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;${gecti ? 'opacity:.78' : ''}`,
@@ -90,6 +101,10 @@ class Component extends DCLogic {
       stil: `font:600 14px Figtree,sans-serif;border-radius:999px;padding:10px 16px;min-height:44px;cursor:pointer;border:1px solid #111111;${f.id === tur ? 'background:#111111;color:#FFFFFF' : 'background:transparent;color:#111111'}`,
     }));
     const acik = this.state.asagi && !this.state.kapali;
+    // Aylık duyuru (rozet + etkinlik şeridi): yönetim › Etkinlikler'den; {ay} seçilen ayla değişir
+    const AYLIK = window.FC_AYLIK ? window.FC_AYLIK.oku(window.FCS && window.FCS.ayar && window.FCS.ayar.aylik_duyuru)
+      : { goster: true, ay: 'Kasım', ust: 'Kasım programı için', ana: 'AÇIK ÇAĞRI!', alt: 'Fikrin mi var? Tıkla ✨', tur: 'cagri', formId: '', resim: '' };
+    const ayDoldur = (m) => String(m || '').replace(/\{ay\}/g, AYLIK.ay);
     // Açık Çağrı: seçenek düğmeleri (tek seçim / çoklu seçim)
     const secim = this.state.secim;
     const secenekStil = (on) => `font:600 14px Figtree,sans-serif;border-radius:999px;padding:9px 15px;min-height:42px;cursor:pointer;border:2px solid #111111;${on ? 'background:#111111;color:#FFFFFF;box-shadow:3px 3px 0 #F08A24' : 'background:#FFFFFF;color:#111111'}`;
@@ -132,7 +147,7 @@ class Component extends DCLogic {
         secimAlani('sure', 'Buluşma ne kadar sürer?', ['1 saat', '1,5 saat', '2 saat', 'Yarım gün'], false),
         secimAlani('kisi', 'Kaç kişiyle gerçekleştirmek istersin?', ['5–10', '10–20', '20+'], false),
         uzun('İhtiyaç duyduğun malzemeler veya alan var mı?', 'Matlar, ses sistemi, gölgelik…', 'ihtiyac'),
-        secimAlani('gun', 'Kasım ayında hangi günler uygunsun?', ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
+        secimAlani('gun', `${AYLIK.ay} ayında hangi günler uygunsun?`, ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
       ] },
     ];
     // WhatsApp numarası (Tweaks › İletişim): 0532… ya da 532… yazılırsa wa.me için 90 eklenir
@@ -451,6 +466,16 @@ class Component extends DCLogic {
       cagriForm: () => this.setState({ cagriAdim: 'form' }),
       cagriAfiseDon: () => this.setState({ cagriAdim: 'afis' }),
       yuzenSinif: acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
+      aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),
+      cagriOzelAfis: AYLIK.tur === 'cagri' && !!AYLIK.resim, cagriHazirAfis: !(AYLIK.tur === 'cagri' && AYLIK.resim),
+      aylikTikla: () => {
+        if (AYLIK.tur === 'form' && AYLIK.formId) { location.href = `/form/?id=${encodeURIComponent(AYLIK.formId)}`; return; }
+        if (AYLIK.tur === 'resim' && AYLIK.resim) { this.setState({ afisTam: AYLIK.resim, afisTamAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim() }); return; }
+        if (AYLIK.tur === 'cagri') this.setState({ cagriAcik: true, cagriAdim: 'afis' });
+      },
+      afisTamVar: !!this.state.afisTam, afisTam: this.state.afisTam || '', afisTamAlt: this.state.afisTamAlt || 'Afiş',
+      afisKapat: () => this.setState({ afisTam: '' }),
       yuzenGizli: acik ? 'false' : 'true',
       basaDon: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
       yuzenKapat: () => this.setState({ kapali: true }),

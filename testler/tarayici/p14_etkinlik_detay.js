@@ -33,7 +33,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     dogru(await y.page.locator('input[type="date"]').first().isDisabled() && await y.page.getByLabel('Etkinlik adı *').inputValue() === 'Breakfast Club', 'düzenle: form dolu, tarih kilitli');
     await y.page.getByLabel('Saat').fill('09.30–11.30');
     await y.page.getByLabel('Açıklama').fill('Ağaçların altında kahvaltı; çay ve kahve bizden.');
-    await y.page.locator('input[type="file"][accept^="image/"]').setInputFiles({ name: 'afis.png', mimeType: 'image/png', buffer: PNG });
+    await y.page.locator('input[type="file"][accept="image/jpeg,image/png,image/webp"]').setInputFiles({ name: 'afis.png', mimeType: 'image/png', buffer: PNG });
     await y.page.getByText('Afiş yüklendi ✓', { exact: false }).waitFor({ timeout: 5000 });
     await y.page.getByRole('button', { name: 'Etkinliği kaydet' }).click();
     await y.page.getByText('“Breakfast Club” güncellendi.').waitFor({ timeout: 5000 });
