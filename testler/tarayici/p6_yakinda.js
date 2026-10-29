@@ -42,13 +42,13 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     dogru(await s1.page.getByRole('button', { name: 'Tanışma biletini al' }).count() === 0, 'yakında: tanışma bileti bandı yok');
     const bilet = s1.page.getByRole('button', { name: 'Açılışta satışta' }).first();
     dogru(await bilet.count() === 1 && await bilet.isDisabled(), 'yakında: bilet satışı kapalı');
-    await s1.page.getByRole('button', { name: 'Ödemeye geç' }).click();
+    await s1.page.locator('#basvuru').getByRole('button', { name: 'Aramıza katıl' }).click();
     await s1.page.getByText('Üyelik başvuruları açılışla birlikte başlıyor. Instagram\'dan takipte kal!').waitFor({ timeout: 3000 });
     dogru(formlar.length === 0, 'yakında: başvuru sunucuya gönderilmedi');
     // İçerik: hazır olmayanlar görünmez, SSS ayarlardan
     const metin = await s1.page.locator('body').innerText();
     dogru(!/\[(Fotoğraf|Reels|KULÜBÜN|DONDURMA)/.test(await s1.page.locator('body').textContent()) && !metin.includes('Ağaçların altından'), 'boş galeri ve cevapsız SSS görünmüyor');
-    dogru(await s1.page.getByRole('link', { name: 'KVKK aydınlatma metni' }).count() === 0, 'boş metin bağlantıları görünmüyor');
+    dogru(await s1.page.getByRole('link', { name: 'KVKK aydınlatma metni', exact: true }).count() === 0, 'boş metin bağlantıları görünmüyor');
     const tumMetin = await s1.page.locator('body').textContent();  // SSS cevapları kapalı <details> içinde
     dogru(tumMetin.includes('Bir seferde 10 ya da 20 gün dondurabilirsin, yılda en çok 3 kez'), 'SSS: dondurma kuralı ayarlardan');
     dogru(tumMetin.includes('30 günlük üyelik 3.500 TL. Havale / EFT ile ödersin') && !tumMetin.includes('Kartla ödersin'), 'SSS: kart kapalıyken havale / EFT, aidat ayarlardan');

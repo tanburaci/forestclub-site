@@ -15,7 +15,7 @@ import { fiyat, iyzico } from '../_ortak/iyzico.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
 const SINIR: Record<string, number> = {
-  basvuru: 5, tanisma: 5, cagri: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, hepsi: 30,
+  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, hepsi: 30,
 };
 // yol zaten Turnstile'lı "dekont_adres" / "bilet_adres" adımında verildi
 const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet', 'bilet_kaydet']);
@@ -99,7 +99,7 @@ async function destekBaslat(tutarHam: unknown, ip: string): Promise<{ sayfa: str
 }
 
 async function isle(tur: string, v: Record<string, unknown>, ip: string): Promise<unknown> {
-  if (tur === 'basvuru' || tur === 'tanisma' || tur === 'bilet_adres') await acildiMi();
+  if (tur === 'basvuru' || tur === 'tanisma' || tur === 'bilet_adres' || tur === 'gonullu') await acildiMi();
   switch (tur) {
     case 'basvuru':
       return rpc('basvuru_yap', {
@@ -150,6 +150,12 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
       return rpc('bilet_kaydet', { p_id: Number(v.id) || 0, p_eposta: metin(v.eposta, 200) });
     case 'destek':
       return destekBaslat(v.tutar, ip);
+    case 'gonullu':
+      return rpc('gonullu_kaydet', {
+        p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60),
+        p_alanlar: (Array.isArray(v.alanlar) ? v.alanlar : []).slice(0, 10).map((x: unknown) => metin(x, 60)),
+        p_not: metin(v.not, 1000), p_kvkk: v.kvkk === true,
+      });
     default:
       throw new KullaniciHatasi('Bilinmeyen form.');
   }
