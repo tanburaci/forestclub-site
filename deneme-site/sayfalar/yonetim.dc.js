@@ -259,7 +259,16 @@ class Component extends DCLogic {
           sil: () => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: s.fmDuz.sorular.filter((_, j) => j !== i) } })),
         })) : [],
         fmSoruEkle: () => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: [...s.fmDuz.sorular, yeniSoru()] } })),
-        fmVazgec: () => this.setState({ fmDuz: null, fmHata: '' }),
+        fmVazgec: () => this.setState({ fmDuz: null, fmHata: '', fmOniz: false }),
+        fmOnizAcik: !!(duz && st.fmOniz), fmOnizAc: () => this.setState({ fmOniz: true }), fmOnizKapat: () => this.setState({ fmOniz: false }),
+        fmOniz: duz ? {
+          baslik: duz.baslik.trim() || 'Başlıksız form', aciklama: duz.aciklama || '', aciklamaVar: !!String(duz.aciklama || '').trim(),
+          sorular: duz.sorular.filter((x) => x.metin.trim()).map((x, i) => ({
+            metin: x.metin.trim(), yildiz: x.zorunlu ? ' *' : '', kisa: x.tur === 'kisa', uzun: x.tur === 'uzun',
+            secimli: x.tur === 'tek' || x.tur === 'coklu', girdi: x.tur === 'coklu' ? 'checkbox' : 'radio', ad: `oniz-${i}`,
+            secenekler: [...new Set((x.secenekler || []).map((o) => o.trim()).filter(Boolean))],
+          })),
+        } : { baslik: '', aciklama: '', aciklamaVar: false, sorular: [] },
         fmKaydet: () => {
           const f = this.state.fmDuz;
           const sorular = f.sorular.map((x) => ({ id: x.id, metin: x.metin.trim(), tur: x.tur, zorunlu: !!x.zorunlu,
@@ -409,6 +418,15 @@ class Component extends DCLogic {
     const formlar = window.FC ? (window.FC.formlar || []) : [{ id: 1, baslik: 'Kasım ayı önerileri', acik: true }];
     return {
       aylikV: a, aylikAylar: (window.FC_AYLIK && window.FC_AYLIK.aylar) || [],
+      aylikAcik: !!this.state.aylikAcik, aylikAcikYazi: this.state.aylikAcik ? 'true' : 'false', aylikDugme: this.state.aylikAcik ? 'Kapat' : 'Düzenle',
+      aylikAcDegis: () => this.setState((s) => ({ aylikAcik: !s.aylikAcik, aylikMesaj: '' })),
+      aylikOzet: a.goster === false ? 'Sitede gösterilmiyor.'
+        : `“${[ay(a.ust), ay(a.ana)].filter(Boolean).join(' · ')}” · tıklayınca: ${({ cagri: 'Açık Çağrı formu', form: 'üye formu', resim: 'resim', yok: 'hiçbir şey' })[a.tur] || '—'}`,
+      aylikRenkler: ((window.FC_AYLIK && window.FC_AYLIK.renkler) || []).map((r) => ({
+        ad: r.ad, secili: (a.renk || 'sari') === r.id ? 'true' : 'false', sec: () => degis('renk', r.id),
+        stil: `width:36px;height:36px;border-radius:50%;background:${r.kod};border:${(a.renk || 'sari') === r.id ? '3px solid #111111;box-shadow:2px 2px 0 #111111' : '2px solid #BDBDBD'};cursor:pointer;padding:0`,
+      })),
+      aylikOnStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(a.renk) : '#F6C945'}`,
       aylikAlan: Object.fromEntries(['ay', 'ust', 'ana', 'alt', 'tur', 'formId'].map((k) => [k, (e) => degis(k, e.target.value)])),
       aylikGosterDegis: () => degis('goster', a.goster === false),
       aylikFormda: a.tur === 'form', aylikResimli: a.tur === 'resim' || a.tur === 'cagri',
@@ -429,7 +447,7 @@ class Component extends DCLogic {
       aylikKaydet: () => {
         if (a.tur === 'form' && !a.formId) return this.setState({ aylikMesaj: 'Bir form seç.' });
         if (a.tur === 'resim' && !a.resim) return this.setState({ aylikMesaj: 'Bir resim yükle.' });
-        const deger = { goster: a.goster !== false, ay: a.ay, ust: String(a.ust || '').trim(), ana: String(a.ana || '').trim(), alt: String(a.alt || '').trim(), tur: a.tur, formId: a.formId || '', resim: a.resim || '' };
+        const deger = { goster: a.goster !== false, ay: a.ay, ust: String(a.ust || '').trim(), ana: String(a.ana || '').trim(), alt: String(a.alt || '').trim(), tur: a.tur, formId: a.formId || '', resim: a.resim || '', renk: a.renk || 'sari' };
         if (!window.FCAyarKaydet) return this.setState({ aylikMesaj: 'Önizleme: kaydedildi.' });
         window.FCAyarKaydet('aylik_duyuru', deger).then(() => this.setState({ aylikMesaj: 'Kaydedildi ✓ Sitede bir sonraki açılışta görünür.' }),
           (h) => this.setState({ aylikMesaj: h.message }));
@@ -660,8 +678,9 @@ class Component extends DCLogic {
       return {
         id: k.id, ad: k.ad, tel: k.tel, eposta: k.eposta, kod: k.kod, profil: k.profil, basvuru: tYaz(k.basvuru), odemeSayisi: String(k.odemeler.length),
         bitis: muaf ? 'Süresiz' : tYaz(bitis), tur, bitisSira: muaf ? MUAF_BITIS : bitis || '0', muaf,
-        durum: muaf ? 'Aidattan muaf' : tur === 'aktif' ? (kalan <= 3 ? `Aktif · ${kalan} gün kaldı` : 'Aktif') : tur === 'doldu' ? 'Süresi doldu' : 'Hiç ödemedi',
-        rozet: muaf ? AKTIF : tur === 'aktif' ? (kalan <= 3 ? BEKLER : AKTIF) : tur === 'doldu' ? DOLDU : TASLAK,
+        // Durum yalnız Aktif / Pasif: aidattan muaf ve süresi devam eden aktif; süresi dolmuş ve hiç ödememiş pasif
+        durum: tur === 'aktif' ? 'Aktif' : 'Pasif',
+        rozet: muaf ? AKTIF : tur === 'aktif' ? (kalan <= 3 ? BEKLER : AKTIF) : TASLAK,
       };
     });
     const sayac = { aktif: 0, doldu: 0, basvuru: 0 };
@@ -821,13 +840,13 @@ class Component extends DCLogic {
     const SIRA = { aktif: 0, doldu: 1, basvuru: 2 };
     const adSira = this.adSira || (this.adSira = new Intl.Collator('tr').compare);
     const uyeListesi = sekme !== 'uyeler' ? [] : tumUyeler
-      .filter((u) => filtre === 'tumu' || u.tur === filtre)
+      .filter((u) => filtre === 'tumu' || (filtre === 'pasif' ? u.tur !== 'aktif' : u.tur === filtre))
       .filter((u) => !ara || `${u.ad} ${u.eposta} ${u.tel} ${u.kod}`.toLocaleLowerCase('tr').includes(ara))
       .sort((a, b) => SIRA[a.tur] - SIRA[b.tur] || (a.tur === 'aktif' ? (a.bitisSira < b.bitisSira ? -1 : a.bitisSira > b.bitisSira ? 1 : 0)
         : (a.bitisSira > b.bitisSira ? -1 : a.bitisSira < b.bitisSira ? 1 : 0)) || adSira(a.ad, b.ad));
     const uyeGoster = uyeListesi.slice(0, this.state.uyeSayisi);
     const filtreler = [
-      { id: 'tumu', ad: `Tümü · ${tumUyeler.length}` }, { id: 'aktif', ad: `Aktif · ${sayac.aktif}` }, { id: 'doldu', ad: `Süresi doldu · ${sayac.doldu}` }, { id: 'basvuru', ad: `Hiç ödemedi · ${sayac.basvuru}` },
+      { id: 'tumu', ad: `Tümü · ${tumUyeler.length}` }, { id: 'aktif', ad: `Aktif · ${sayac.aktif}` }, { id: 'pasif', ad: `Pasif · ${sayac.doldu + sayac.basvuru}` },
     ].map((f) => ({ ...f, sinif: f.id === filtre ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ filtre: f.id, uyeSayisi: 100 }) }));
     const secimler = (liste, secili, alan) => liste.map((x) => ({
       ...x, sinif: x.id === secili ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ [alan]: x.id }),
@@ -1141,9 +1160,37 @@ class Component extends DCLogic {
       hareketYok: !hareketSatirlari.length,
       faturaRehberi: mFiltre === 'fatura',
       hareketYokMetin: mFiltre === 'fatura' ? 'Faturası kesilecek gelir yok ✓' : mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
-      mEtkFiltre: [{ id: '', ad: 'Tüm kayıtlar' }, ...etkGorunum.filter((x) => x.tarih.startsWith(mAy) || `${x.tarih}|${x.ad}` === mEtk)
-        .map((x) => ({ id: `${x.tarih}|${x.ad}`, ad: `${x.gun}.${x.tarih.slice(5, 7)} ${x.ad}` }))]
-        .map((o) => ({ ...o, sinif: o.id === mEtk ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ mEtk: o.id }) })),
+      ...(() => {
+        // Etkinlik seçme penceresi: yaklaşanlar (yakından uzağa), sonra geçmiş (yeniden eskiye)
+        const P = this.state.etkPencere;
+        const ara = String(this.state.etkPencereAra || '').toLocaleLowerCase('tr');
+        const ad = (key) => { const x = etkGorunum.find((y) => `${y.tarih}|${y.ad}` === key); return x ? `${x.ad} · ${tarihYaz(x.tarih)}` : ''; };
+        const secili = P === 'form' ? mForm.etk : mEtk;
+        const sec = (key) => (P === 'form'
+          ? this.setState((st) => ({ mForm: { ...st.mForm, etk: key }, etkPencere: null, etkPencereAra: '' }))
+          : this.setState({ mEtk: key, mGorunum: 'hareketler', etkPencere: null, etkPencereAra: '' }));
+        const satir = (x) => {
+          const key = `${x.tarih}|${x.ad}`;
+          return { ad: x.ad, tarih: tarihYaz(x.tarih), sec: () => sec(key),
+            stil: `display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;font:inherit;color:#111111;background:${key === secili ? '#F0F0EE' : '#FFFFFF'};border:${key === secili ? '2.5px' : '1.5px'} solid #111111;border-radius:10px;padding:10px 12px;min-height:44px;cursor:pointer` };
+        };
+        const uyan = etkGorunum.filter((x) => !ara || `${x.ad} ${tarihYaz(x.tarih)}`.toLocaleLowerCase('tr').includes(ara));
+        const yaklasan = uyan.filter((x) => x.tarih >= BUGUN).map(satir);
+        const gecmis = uyan.filter((x) => x.tarih < BUGUN).reverse().map(satir);
+        return {
+          etkPencereAcik: !!P, etkPencereAra: this.state.etkPencereAra || '', etkPencereGenel: P === 'form',
+          etkPencereAraYaz: (e) => this.setState({ etkPencereAra: e.target.value }),
+          etkPencereKapat: () => this.setState({ etkPencere: null, etkPencereAra: '' }),
+          etkPencereGenelSec: () => sec(''),
+          etkPencereGruplar: [{ ad: `Yaklaşan · ${yaklasan.length}`, liste: yaklasan, bos: !yaklasan.length }, { ad: `Geçmiş · ${gecmis.length}`, liste: gecmis, bos: !gecmis.length }],
+          mEtkAd: mEtk ? ad(mEtk) : 'Tüm kayıtlar',
+          mEtkPencereAc: () => this.setState({ etkPencere: 'filtre', etkPencereAra: '' }),
+          mEtkTemizle: () => this.setState({ mEtk: '' }),
+          mFormEtkAd: mForm.etk ? ad(mForm.etk) : 'Genel', mFormEtkVar: !!mForm.etk,
+          mFormEtkPencereAc: () => this.setState({ etkPencere: 'form', etkPencereAra: '' }),
+          mFormEtkGenel: () => this.setState((st) => ({ mForm: { ...st.mForm, etk: '' } })),
+        };
+      })(),
       mEtkSecili: !!mEtk,
       mEtkOzet: (() => {
         if (!mEtk) return {};
@@ -1235,7 +1282,7 @@ class Component extends DCLogic {
         yeni.forEach((e) => { kayitlar[`${e.tarih}|${e.ad}`] = { kontenjan: e.kontenjan, kayitli: [], bekleme: [], gelen: [] }; });
         return { etkinlikler: [...s.etkinlikler, ...yeni], kayitlar, csv: null, eklendiMesaj: `${yeni.length} etkinlik eklendi; sitede ve üye panelinde görünür.` };
       }),
-      basvurularaGit: () => this.setState({ sekme: 'basvurular' }),
+      basvurularaGit: () => this.setState((st) => ({ sekme: 'basvurular', bvrAcik: { ...(st.bvrAcik || {}), dekont: true, bilet: true } })),
       formAc: () => this.setState({ formAcik: true, eklendiMesaj: '', duzKey: null, form: { ...this.BOS }, afisDurum: '' }),
       formKapat: () => this.setState({ formAcik: false, form: { ...this.BOS }, formHata: '', duzKey: null, afisDurum: '' }),
       formBaslik: this.state.duzKey ? 'Etkinliği düzenle' : 'Yeni etkinlik', duzenlemede: !!this.state.duzKey,
@@ -1324,6 +1371,34 @@ class Component extends DCLogic {
       ...this.formlarGorunum(),
       basvuruSekme: sekme === 'basvurular',
       bvr,
+      // Başvurular: bölümler kapalı başlar, başlığa tıklayınca açılır
+      ...(() => {
+        const A = this.state.bvrAcik || {};
+        const k = ['dekont', 'bilet', 'cagri', 'gonullu'];
+        return {
+          bvrAcik: Object.fromEntries(k.map((x) => [x, !!A[x]])),
+          bvrAcikYazi: Object.fromEntries(k.map((x) => [x, A[x] ? 'true' : 'false'])),
+          bvrOk: Object.fromEntries(k.map((x) => [x, A[x] ? '▲' : '▼'])),
+          bvrAc: Object.fromEntries(k.map((x) => [x, () => this.setState((st) => ({ bvrAcik: { ...(st.bvrAcik || {}), [x]: !(st.bvrAcik || {})[x] } }))])),
+          ...(() => {
+            const liste = window.FC ? (window.FC.gonulluler || []) : [{ id: 1, ad: 'Deniz Yılmaz', eposta: 'deniz@ornek.com', tel: '0532 000 00 00', alanlar: ['Mutfak / ikram'], notlar: 'Hafta sonları uygunum.', durum: 'yeni', created_at: '2026-10-29T10:00:00Z' }];
+            void this.state.gnlSurum;  // durum değişince yeniden çiz
+            return {
+              gnlSayi: String(liste.filter((g) => g.durum === 'yeni').length), gnlYok: !liste.length,
+              gnlListe: liste.map((g) => ({
+                ad: g.ad, eposta: g.eposta, mailto: `mailto:${g.eposta}`, tel: g.tel || 'telefon yok', alanlar: (g.alanlar || []).join(', ') || 'alan seçilmedi',
+                notlar: g.notlar || '', notVar: !!g.notlar, tarih: String(g.created_at || '').slice(0, 10).split('-').reverse().join('.'),
+                dugme: g.durum === 'iletisim' ? 'İletişime geçildi ✓' : 'İletişime geçildi', sinif: g.durum === 'iletisim' ? 'fc-btn fc-btn-ikincil' : 'fc-btn',
+                degis: () => {
+                  const yeni = g.durum === 'iletisim' ? 'yeni' : 'iletisim';
+                  if (!window.FCGonulluDurum) { g.durum = yeni; return this.setState((st) => ({ gnlSurum: (st.gnlSurum || 0) + 1 })); }
+                  window.FCGonulluDurum(g.id, yeni).then(() => this.setState((st) => ({ gnlSurum: (st.gnlSurum || 0) + 1 })), (h) => window.FC_ORTAK.bildir(h.message, true));
+                },
+              })),
+            };
+          })(),
+        };
+      })(),
       ozet: [
         { baslik: 'Aktif üye', sayi: String(sayac.aktif), alt: `${this.DEMO.kisiler.filter((k) => k.bas && k.bas >= `${BUGUN_SABIT.slice(0, 7)}-01`).length} kişi bu ay katıldı · ${tumUyeler.length} kayıt` },
         // Kart kapalıyken ödemeler dekontla gelir: ana sayfada onay bekleyenler görünür
@@ -1340,7 +1415,7 @@ class Component extends DCLogic {
         return { gun: x.gun, ay: x.ay, ad: x.ad, durum: k ? `${k.kayitli.length} kayıt · ${k.kontenjan} kişilik` : 'Kayıt açılmadı' };
       }),
       filtreler,
-      uyeOzet: `${sayac.aktif} aktif · ${sayac.doldu} süresi dolmuş · ${sayac.basvuru} hiç ödememiş · toplam ${tumUyeler.length} kayıt`,
+      uyeOzet: `${sayac.aktif} aktif · ${sayac.doldu + sayac.basvuru} pasif · toplam ${tumUyeler.length} kayıt`,
       arama: this.state.arama,
       aramaYaz: (e) => this.setState({ arama: e.target.value, uyeSayisi: 100 }),
       uyeDahaVar: uyeListesi.length > uyeGoster.length,

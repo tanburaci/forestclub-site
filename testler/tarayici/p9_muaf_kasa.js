@@ -43,21 +43,21 @@ const aidat = (id, ad) => ({ id, tarih: gun(-id), tur: 'gelir', tutar: 3000, kas
     const pelin = satirlar.filter({ hasText: 'Pelin Muaf' });
     await pelin.waitFor({ timeout: 5000 });
     const pm = await pelin.innerText();
-    dogru(pm.includes('Süresiz') && pm.includes('Aidattan muaf') && !pm.includes('2099'), `muaf üye listede süresiz (${pm.replace(/\s+/g, ' ')})`);
+    dogru(pm.includes('Süresiz') && pm.includes('Aktif') && !pm.includes('Pasif') && !pm.includes('2099'), `muaf üye listede süresiz ve aktif (${pm.replace(/\s+/g, ' ')})`);
 
     // Üye 5'i muaf yap, Pelin'in muafiyetini kaldır
     await satirlar.filter({ hasText: 'Üye 5' }).getByRole('button', { name: 'Profil' }).click();
     const kutu = y.page.getByRole('checkbox', { name: /Aidattan muaf/ });
     dogru(!(await kutu.isChecked()), 'muaf olmayan üyede işaret boş');
     await kutu.check();
-    await satirlar.filter({ hasText: 'Üye 5' }).filter({ hasText: 'Aidattan muaf' }).waitFor({ timeout: 3000 });
+    await satirlar.filter({ hasText: 'Üye 5' }).filter({ hasText: 'Süresiz' }).waitFor({ timeout: 3000 });
     await y.page.getByRole('button', { name: 'Kapat' }).click();
     await pelin.getByRole('button', { name: 'Profil' }).click();
     dogru(await kutu.isChecked(), 'muaf üyede işaret dolu');
     await kutu.uncheck();
     await y.page.waitForTimeout(600);
     const pm2 = await pelin.innerText();
-    dogru(!pm2.includes('Aidattan muaf') && !pm2.includes('2099') && pm2.includes('Aktif'), `muafiyet kalkınca 30 gün aktif (${pm2.replace(/\s+/g, ' ')})`);
+    dogru(!pm2.includes('Süresiz') && !pm2.includes('2099') && pm2.includes('Aktif'), `muafiyet kalkınca 30 gün aktif (${pm2.replace(/\s+/g, ' ')})`);
     const yazilan = y.istekler.filter((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/uyeler');
     const p5 = yazilan.find((x) => /id=eq\.5\b/.test(x.ara));
     const p4 = yazilan.find((x) => /id=eq\.4\b/.test(x.ara));

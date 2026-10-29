@@ -18,7 +18,11 @@ window.FC_AYAR = {
 // ayarlanır (ayarlar.aylik_duyuru). Yazılarda {ay} seçilen ayla değişir. Tıklayınca: Açık Çağrı formu, üye formu
 // (/form/?id=) ya da tam ekran resim (ör. ayın programı).
 window.FC_AYLIK = {
-  varsayilan: { goster: true, ay: 'Kasım', ust: '{ay} programı için', ana: 'AÇIK ÇAĞRI!', alt: 'Fikrin mi var? Tıkla ✨', tur: 'cagri', formId: '', resim: '' },
+  varsayilan: { goster: true, ay: 'Kasım', ust: '{ay} programı için', ana: 'AÇIK ÇAĞRI!', alt: 'Fikrin mi var? Tıkla ✨', tur: 'cagri', formId: '', resim: '', renk: 'sari' },
+  // Rozet rengi (pastel); yazılar her zaman siyah
+  renkler: [{ id: 'sari', ad: 'Sarı', kod: '#F6C945' }, { id: 'seftali', ad: 'Şeftali', kod: '#F9C6A6' }, { id: 'nane', ad: 'Nane', kod: '#BFE6CC' },
+    { id: 'lila', ad: 'Lila', kod: '#D8C9F1' }, { id: 'mavi', ad: 'Gök mavisi', kod: '#BFDDF4' }],
+  renkKodu(id) { return (this.renkler.find((r) => r.id === id) || this.renkler[0]).kod; },
   aylar: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
   oku(deger) { return { ...this.varsayilan, ...(deger && typeof deger === 'object' ? deger : {}) }; },
   doldur(metin, ay) { return String(metin || '').replace(/\{ay\}/g, ay || ''); },

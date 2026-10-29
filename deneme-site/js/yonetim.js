@@ -42,7 +42,7 @@
       hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'), hepsi('formlar'), hepsi('form_yanitlari', ['form_id', 'uye_id']),
     ]);
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
-    const [kuyruk, saglik, ayarlar, veriTalepleri, uyeNotlari] = await Promise.all([
+    const [kuyruk, saglik, ayarlar, veriTalepleri, uyeNotlari, gonulluler] = await Promise.all([
       sb.from('eposta_kuyrugu').select('id, sablon, alici, durum, deneme, son_hata, created_at, gonderim_at')
         .order('id', { ascending: false }).limit(200).then((r) => r.data || [], () => []),
       sb.rpc('saglik_ozeti').then((r) => r.data || null, () => null),
@@ -50,6 +50,8 @@
       sb.from('veri_talepleri').select('*').order('id', { ascending: false }).limit(200).then((r) => r.data || [], () => []),
       // Yönetici notları ayrı tabloda (üye kendi satırında göremesin); göç uygulanmadıysa eski sütun okunur
       sb.from('uye_notlari').select('uye_id, metin').then((r) => (r.error ? null : r.data), () => null),
+      // Gönüllü başvuruları (ana sayfadaki "Gönüllü ol"); göç uygulanmadıysa boş
+      sb.from('gonulluler').select('*').order('id', { ascending: false }).limit(300).then((r) => r.data || [], () => []),
     ]);
     const B = bugun();
     const grupla = (xs, alan) => {
@@ -140,7 +142,7 @@
         }),
       })),
       etkDurum,
-      kuyruk, saglik, ayarlar, veriTalepleri,
+      kuyruk, saglik, ayarlar, veriTalepleri, gonulluler,
       eksik: eksikler,
       _keyEtk: keyEtk,
       basvurular: { dekontlar, cagri, biletIstekleri, etkinlikAd: new Map(etkinlikler.map((e) => [e.id, `${e.ad} (${trTarih(e.tarih)})`])), uyeler: new Map(uyeler.map((u) => [u.id, u])) },
@@ -300,6 +302,14 @@
     const { error } = await sb.rpc('eposta_deneme', { p_sablon: sablon.id });
     if (error) throw new Error(error.message);
     return window.FC.eposta;
+  };
+
+  // Gönüllü: "İletişime geçildi" işareti
+  window.FCGonulluDurum = async (id, durum) => {
+    const { error } = await sb.from('gonulluler').update({ durum }).eq('id', id);
+    if (error) throw new Error(error.message);
+    const g = window.FC.gonulluler.find((x) => x.id === id);
+    if (g) g.durum = durum;
   };
 
   // Ayar kaydı (ayarlar tablosu; site ve üye paneli herkese açık olanları okur)
