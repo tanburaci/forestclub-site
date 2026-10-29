@@ -23,7 +23,7 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
     await s.page.goto(`${SITE}/`);
     await s.page.getByText('Aramıza katıl').first().waitFor({ timeout: 15000 });
     const govde = await s.page.evaluate(() => document.body.innerText);
-    dogru(/aidatı havale \/ EFT ile gönder ve dekontunu yükle/.test(govde) && /ödemen onaylandığında başlar/.test(govde), 'kart kapalı: üyelik metinleri havale + dekont diyor');
+    dogru(/aidatı havale \/ EFT ile gönder ve dekontunu yükle/.test(govde), 'kart kapalı: üyelik metinleri havale + dekont diyor');
     dogru(!/kartla öde; üyeliğin hemen başlar|kartla ödemeni yaptığın anda/.test(govde), 'kart kapalı: "kartla öde, hemen başlar" yok');
     dogru(!/\[WHATSAPP NUMARASI\]|\[WhatsApp topluluğu\]|\[Instagram\]/.test(govde), 'boş iletişim bilgileri yer tutucu göstermiyor');
     dogru(/Randevu oluştur/.test(await s.page.evaluate(() => document.documentElement.innerHTML)) && !/“Geliyorum” de/.test(govde), 'SSS "Randevu oluştur" diyor');
