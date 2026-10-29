@@ -276,7 +276,7 @@ a{color:#111111}a:hover{color:#000000}
             <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Telefon *
               <input type="tel" value="{{ sTel }}" onChange="{{ sTelYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
             </label>
-            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ sOnay }}" onChange="{{ sOnayDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="/mesafeli-satis/" target="_blank" rel="noopener">Mesafeli satış sözleşmesi</a>, <a href="/teslimat-iade/" target="_blank" rel="noopener">teslimat ve iade şartları</a>, doğal alan beyanı ve <a href="/gizlilik/" target="_blank" rel="noopener">KVKK metnini</a> okudum. *</span></label>
+            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ sOnay }}" onChange="{{ sOnayDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="/mesafeli-satis/" target="_blank" rel="noopener">Mesafeli satış sözleşmesi</a>, <a href="/teslimat-iade/" target="_blank" rel="noopener">teslimat ve iade şartları</a>, <a href="/dogal-alan/" target="_blank" rel="noopener">doğal alan beyanı</a> ve <a href="/gizlilik/" target="_blank" rel="noopener">KVKK metnini</a> okudum. *</span></label>
             <sc-if value="{{ uyeIndirimi }}" hint-placeholder-val="{{ false }}">
               <p role="status" style="margin: 0; background: #C9E33A; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600">Aktif üyeliğin bulundu 🌲 Üye fiyatı uygulandı.</p>
             </sc-if>
@@ -547,9 +547,9 @@ a{color:#111111}a:hover{color:#000000}
                         <div style="display: flex; flex-direction: column; gap: 10px">
                           <input type="email" placeholder="E-posta adresin *" value="{{ a.uyeEposta }}" onChange="{{ a.uyeEpostaYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
                           <input type="tel" placeholder="Telefon numaran *" value="{{ a.uyeTel }}" onChange="{{ a.uyeTelYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
-                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeKosul }}" onChange="{{ a.uyeKosulDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Üyelik koşullarını okudum, kabul ediyorum. <a href="#">Metin</a> *</span></label>
-                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeDogal }}" onChange="{{ a.uyeDogalDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Doğal alan beyanını kabul ediyorum. <a href="#">Metin</a> *</span></label>
-                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeFoto }}" onChange="{{ a.uyeFotoDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Fotoğraf/video iznim var (isteğe bağlı). <a href="#">Metin</a></span></label>
+                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeKosul }}" onChange="{{ a.uyeKosulDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Üyelik koşullarını okudum, kabul ediyorum. <a href="/uyelik-kosullari/" target="_blank" rel="noopener">Metin</a> *</span></label>
+                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeDogal }}" onChange="{{ a.uyeDogalDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Doğal alan beyanını kabul ediyorum. <a href="/dogal-alan/" target="_blank" rel="noopener">Metin</a> *</span></label>
+                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeFoto }}" onChange="{{ a.uyeFotoDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Fotoğraf/video iznim var (isteğe bağlı). <a href="/gizlilik/" target="_blank" rel="noopener">Metin</a></span></label>
                           <span style="font-size: 13px; color: #5E5E5E">Ödeme bilgisi (IBAN) e-postana gelecek. 🌲</span>
                         </div>
                       </sc-if>
@@ -566,7 +566,7 @@ a{color:#111111}a:hover{color:#000000}
               </sc-for>
             </fieldset>
           </sc-for>
-          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ cagriKvkk }}" onChange="{{ cagriKvkkDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>KVKK Aydınlatma Metni'ni okudum ve bilgilendirildim. <a href="#">Metnin tamamı</a></span></label>
+          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ cagriKvkk }}" onChange="{{ cagriKvkkDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>KVKK Aydınlatma Metni'ni okudum ve bilgilendirildim. <a href="/gizlilik/" target="_blank" rel="noopener">Metnin tamamı</a></span></label>
           <sc-if value="{{ cagriHata }}" hint-placeholder-val="{{ false }}">
             <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ cagriHata }}</p>
           </sc-if>
@@ -912,9 +912,9 @@ a{color:#111111}a:hover{color:#000000}
               <input type="email" autocomplete="email" value="{{ bEposta }}" onChange="{{ bEpostaYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 12px; min-height: 46px; box-sizing: border-box">
             </label>
           </div>
-          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ bKosul }}" onChange="{{ bKosulDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>Üyelik koşullarını okudum ve kabul ediyorum. <a href="#">Metnin tamamı</a></span></label>
-          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ bDogal }}" onChange="{{ bDogalDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>Doğal alan riskleri ve katılım beyanını kabul ediyorum. <a href="#">Metnin tamamı</a></span></label>
-          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ bKvkk }}" onChange="{{ bKvkkDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>KVKK Aydınlatma Metni'ni okudum. <a href="#">Metnin tamamı</a></span></label>
+          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ bKosul }}" onChange="{{ bKosulDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span><a href="/uyelik-kosullari/" target="_blank" rel="noopener">Üyelik koşullarını</a>, <a href="/mesafeli-satis/" target="_blank" rel="noopener">mesafeli satış sözleşmesini</a> ve <a href="/teslimat-iade/" target="_blank" rel="noopener">teslimat ve iade şartlarını</a> okudum, kabul ediyorum.</span></label>
+          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ bDogal }}" onChange="{{ bDogalDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>Doğal alan riskleri ve katılım beyanını kabul ediyorum. <a href="/dogal-alan/" target="_blank" rel="noopener">Metnin tamamı</a></span></label>
+          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ bKvkk }}" onChange="{{ bKvkkDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>KVKK Aydınlatma Metni'ni okudum. <a href="/gizlilik/" target="_blank" rel="noopener">Metnin tamamı</a></span></label>
           <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ bFoto }}" onChange="{{ bFotoDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>Fotoğraf ve videolarımın Forest Club Urla'nın sosyal medya hesaplarında, web sitesinde ve dijital reklamlarında yayımlanmasına açık rıza veriyorum (isteğe bağlı).</span></label>
           <sc-if value="{{ bHata }}" hint-placeholder-val="{{ false }}">
             <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ bHata }}</p>
@@ -1008,10 +1008,10 @@ a{color:#111111}a:hover{color:#000000}
         <!-- Metin sayfaları hazır olana kadar deneme sitesinde gizli -->
         <sc-if value="{{ metinlerVar }}" hint-placeholder-val="{{ true }}">
         <h3 style="margin: 0 0 4px; font-size: 16px">Metinler</h3>
-        <a href="#">Üyelik koşulları</a>
-        <a href="#">Doğal alan beyanı</a>
-        <a href="#">KVKK aydınlatma metni</a>
-        <a href="#">Fotoğraf ve video izni</a>
+        <a href="/uyelik-kosullari/">Üyelik koşulları</a>
+        <a href="/dogal-alan/">Doğal alan beyanı</a>
+        <a href="/gizlilik/">KVKK aydınlatma metni</a>
+        <a href="/gizlilik/">Fotoğraf ve video izni</a>
         </sc-if>
         <!-- Satış ve gizlilik sayfaları (iyzico şartı): her zaman görünür -->
         <h3 style="margin: 8px 0 4px; font-size: 16px">Sözleşmeler</h3>
