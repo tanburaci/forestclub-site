@@ -81,7 +81,7 @@ a{color:#111111}a:hover{color:#000000}
             </label>
             <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
               <input type="checkbox" checked="{{ hatirla }}" onChange="{{ hatirlaDegis }}" style="width: 20px; height: 20px">
-              Beni hatırla
+              Beni 30 gün hatırla (kod bu cihazda 30 günde bir sorulur)
             </label>
             <sc-if value="{{ girisHata }}" hint-placeholder-val="{{ false }}">
               <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ girisHata }}</p>
@@ -341,6 +341,11 @@ a{color:#111111}a:hover{color:#000000}
                 <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Yönetici notu (üye görmez)
                   <textarea class="fc-input" rows="2" value="{{ profil.not }}" onChange="{{ profilNotYaz }}" style="resize: vertical"></textarea>
                 </label>
+                <!-- Yöneticinin kendi üyeliği: hesabına bağlanınca "Üye paneli" düğmesiyle doğrudan geçer -->
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+                  <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ profilBagla }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Bu üyelik benim (hesabıma bağla)</button>
+                  <span style="color: #5E5E5E; font-size: 13px">{{ profilBaglaMesaj }}</span>
+                </div>
                 <p style="margin: 0; color: #5E5E5E; font-size: 13px">Profil bilgilerini üye kendi panelinden girer ve değiştirir.</p>
               </section>
             </sc-if>
@@ -2887,6 +2892,14 @@ class Component extends DCLogic {
       }),
       profilKapat: () => this.setState({ profilSecili: null }),
       profilNotYaz: (e) => { const v = e.target.value; this.setState((s) => ({ notlar: { ...s.notlar, [s.profilSecili]: v } })); },
+      profilBaglaMesaj: this.state.profilBaglaMesaj || 'Kendi üyeliğinizse basın; üst menüdeki “Üye paneli” ile şifresiz geçersiniz.',
+      profilBagla: () => {
+        const id = this.state.profilSecili;
+        if (!window.FCUyeligiBagla) return this.setState({ profilBaglaMesaj: 'Önizlemede bağlanmaz.' });
+        this.setState({ profilBaglaMesaj: 'Bağlanıyor…' });
+        window.FCUyeligiBagla(id).then(() => this.setState({ profilBaglaMesaj: 'Bağlandı ✓ Artık “Üye paneli” ile doğrudan geçebilirsiniz.' }),
+          (h) => this.setState({ profilBaglaMesaj: `Bağlanamadı: ${h.message}` }));
+      },
       profilMuafDegis: (e) => { const v = e.target.checked; this.setState((s) => ({ muaflar: { ...s.muaflar, [s.profilSecili]: v } })); },
       ozelGunler,
       tanismaSunuluyor: this.state.tanismaSunuluyor,

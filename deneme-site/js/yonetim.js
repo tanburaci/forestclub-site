@@ -179,6 +179,16 @@
     bildir(onay ? `${i.ad}: ${data.adet} bilet onaylandı, kodlar e-postayla gidiyor ✓` : 'Bilet dekontu reddedildi; gerekçeli mail gidecek');
     setTimeout(() => { location.hash = 'basvurular'; location.reload(); }, 900);
   }
+  // Yöneticinin kendi üyeliğini hesabına bağlar (önce başka kayıttaki bağ kaldırılır; user_id tekil)
+  window.FCUyeligiBagla = async (uyeId) => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) throw new Error('Oturum yok; yeniden girin.');
+    const uid = session.user.id;
+    const { error: e1 } = await sb.from('uyeler').update({ user_id: null }).eq('user_id', uid).neq('id', uyeId);
+    if (e1) throw new Error(e1.message);
+    const { error: e2 } = await sb.from('uyeler').update({ user_id: uid }).eq('id', uyeId).select('id').single();
+    if (e2) throw new Error(e2.message);
+  };
   // Etkinlik düzenleme (tarih ve ad değişmez) ve afiş yükleme (herkese açık "afisler" deposu). Dönüş: afişin adresi
   window.FCEtkinlikGuncelle = async (id, e) => {
     const { error } = await sb.from('etkinlikler').update({
@@ -727,17 +737,33 @@
         const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: faktorId, code: kod });
         dugme.disabled = false;
         if (error) { mesaj.textContent = /invalid|expired/i.test(error.message) ? 'Kod tutmadı; uygulamadaki güncel kodu yaz.' : error.message; kutu.select(); return; }
+        mfaZamaniYaz();
         tamam();
       });
       kok.appendChild(kart);
       kutu.focus();
     });
   }
+  // Kod girildikten sonra oturum açık kaldıkça (Beni hatırla) yeniden sorulmaz; 30 günde bir oturum kapanır, giriş ve
+  // kod yeniden istenir. Tarih bu cihazda tutulur (depo okunamazsa yalnız oturum süresince geçerli)
+  const MFA_SURE = 30 * 24 * 3600 * 1000;
+  const mfaZamaniYaz = () => { try { localStorage.setItem('fc_mfa_son', String(Date.now())); } catch (h) { /* gizli pencere */ } };
+  const mfaZamani = () => { try { return Number(localStorage.getItem('fc_mfa_son')) || 0; } catch (h) { return 0; } };
   // Oturum aal2 değilse kodu ister; hesapta doğrulama uygulaması yoksa önce kurdurur
   async function ikinciAdimGerekirse(kok) {
     const { data: seviye, error } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
     if (error) throw error;
-    if (seviye.currentLevel === 'aal2') return;
+    if (seviye.currentLevel === 'aal2') {
+      const son = mfaZamani();
+      if (!son) mfaZamaniYaz();
+      else if (Date.now() - son > MFA_SURE) {
+        try { localStorage.removeItem('fc_mfa_son'); } catch (h) { /* gizli pencere */ }  // çıkış olmazsa döngüye girmesin
+        await sb.auth.signOut();
+        location.replace('/yonetim');
+        await new Promise(() => {});  // yönlendirme bitene kadar panel açılmasın
+      }
+      return;
+    }
     const { data: f, error: fHata } = await sb.auth.mfa.listFactors();
     if (fHata) throw fHata;
     const dogrulanmis = (f.totp || []).find((x) => x.status === 'verified');
