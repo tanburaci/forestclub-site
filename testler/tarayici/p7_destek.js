@@ -68,12 +68,9 @@ async function sahteSunucu(page) {
     await pencere.getByRole('button', { name: 'Kapat' }).first().click();
     dogru(await pencere.count() === 0, 'pencere kapandı');
 
-    // Biz Kimiz? › WhatsApp'tan yaz
-    await s1.page.getByRole('button', { name: "WhatsApp'tan yaz" }).click();
-    const kisiler = s1.page.locator('.fs-wa-sec a');
-    const linkler = await kisiler.evaluateAll((l) => l.map((a) => `${[...a.children].map((c) => c.textContent.trim()).join(' ')}|${a.href}|${a.target}`));
-    dogru(JSON.stringify(linkler) === JSON.stringify(['Pelin 0[numara kaldırıldı]|https://wa.me/90[numara kaldırıldı]|_blank', 'Ezgi 0[numara kaldırıldı]|https://wa.me/90[numara kaldırıldı]|_blank']),
-      `WhatsApp: Pelin ve Ezgi seçilebiliyor (${linkler})`);
+    // WhatsApp numaraları sitede hiçbir yerde yok (Pelin / Ezgi)
+    const html = await s1.page.content();
+    dogru(!/wa\.me/.test(html) && await s1.page.getByRole('button', { name: "WhatsApp'tan yaz" }).count() === 0, 'sitede WhatsApp numarası ve "WhatsApp\'tan yaz" yok');
     dogru(!s1.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'kart kapalı: sayfa / CSP hatası yok');
 
     // ---------- Kart açık: iyzico'ya gider ----------
