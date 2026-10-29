@@ -905,32 +905,6 @@ a{color:#111111}a:hover{color:#000000}
     </section>
     </sc-if>
 
-    <!-- ÜYELİK -->
-    <section id="uyelik" style="position: relative; max-width: 1200px; margin: 0 auto; padding: 60px 20px; display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch">
-      <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px; justify-content: center">
-        <h2 class="fs-baslik" style="font-size: 64px">Üyelik</h2>
-        <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">{{ uyelikMetin }}</p>
-        <div style="display: flex; align-items: flex-end; gap: 18px"><div style="width: 120px"><svg viewBox="0 0 130 130" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="65" cy="65" r="56" fill="#111111"/><circle cx="65" cy="65" r="44" fill="none" stroke="#3A3A3A" stroke-width="2"/><circle cx="65" cy="65" r="34" fill="none" stroke="#3A3A3A" stroke-width="2"/><circle cx="65" cy="65" r="18" fill="#C9E33A"/><circle cx="65" cy="65" r="3" fill="#111111"/></g></svg></div><div style="width: 54px; transform: rotate(12deg)"><svg viewBox="0 0 110 100" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M30 78V22l50-12v56" fill="none"/><path d="M30 22l50-12v12L30 34z" fill="#111111"/><ellipse cx="20" cy="80" rx="12" ry="9" fill="#111111"/><ellipse cx="70" cy="68" rx="12" ry="9" fill="#111111"/></g></svg></div><div style="width: 40px; transform: rotate(-8deg) translateY(-30px)"><svg viewBox="0 0 110 100" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M30 78V22l50-12v56" fill="none"/><path d="M30 22l50-12v12L30 34z" fill="#111111"/><ellipse cx="20" cy="80" rx="12" ry="9" fill="#111111"/><ellipse cx="70" cy="68" rx="12" ry="9" fill="#111111"/></g></svg></div></div>
-      </div>
-      <div style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border-radius: 16px; padding: 32px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; display: flex; flex-direction: column; gap: 18px">
-        <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap">
-          <span style="font-size: 52px; font-weight: 700; color: #000000">3.000 TL</span>
-          <span style="color: #5E5E5E; font-size: 17px">/ 30 gün</span>
-        </div>
-        <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 17px">
-          <sc-for list="{{ haklar }}" as="h" hint-placeholder-count="4">
-            <li style="display: flex; gap: 12px; align-items: flex-start">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 13l4 4L19 7"></path></svg>
-              <span>{{ h }}</span>
-            </li>
-          </sc-for>
-        </ul>
-        <a class="fs-btn" href="#basvuru">Başvur</a>
-      </div>
-    </section>
-
-
-
     <!-- BAŞVURU -->
     <section id="basvuru" style="position: relative; overflow: hidden; background: #FFFFFF; border-top: 3px solid #111111; border-bottom: 3px solid #111111">
       <div style="max-width: 1200px; margin: 0 auto; padding: 72px 20px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center">
@@ -938,17 +912,11 @@ a{color:#111111}a:hover{color:#000000}
           <h2 class="fs-baslik" style="font-size: 56px">Aramıza katıl, kulübümüze üye ol.</h2>
           <div style="display: flex; align-items: flex-end; gap: 14px" aria-hidden="true"><div style="width: 44px"><svg viewBox="0 0 80 140" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10h52q4 46-26 54Q10 56 14 10z" fill="#FFFFFF"/><path d="M15 30h50q-2 28-25 32Q15 58 15 30z" fill="#9E2B3A"/><path d="M40 64v52M20 126h40" fill="none"/></g></svg></div><div style="width: 62px"><svg viewBox="0 0 100 150" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M50 8 L80 50 H64 L88 88 H70 L94 126 H6 L30 88 H12 L36 50 H20 Z" fill="#2F5A35"/><rect x="43" y="126" width="14" height="18" fill="#7A4A2A"/></g></svg></div><div style="width: 46px"><svg viewBox="0 0 100 150" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M50 8 L80 50 H64 L88 88 H70 L94 126 H6 L30 88 H12 L36 50 H20 Z" fill="#2F5A35"/><rect x="43" y="126" width="14" height="18" fill="#7A4A2A"/></g></svg></div><div style="width: 80px; transform: rotate(-6deg)"><svg viewBox="0 0 120 120" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M60 8v12M60 100v12M8 60h12M100 60h12M23 23l9 9M88 88l9 9M97 23l-9 9M32 88l-9 9" fill="none"/><circle cx="60" cy="60" r="34" fill="#EE6B2F"/><path d="M30 64h60M33 75h54M40 86h40" stroke="#FFFFFF" stroke-width="4"/></g></svg></div></div>
           <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">{{ katilMetin }}</p>
-          <!-- Ücret ve üyelik hakları -->
-          <div style="border: 2.5px solid #111111; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; background: #F7F7F4">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap">
-              <span style="font-weight: 700">Aylık üyelik · 30 gün</span>
-              <span style="font-size: 26px; font-weight: 700">{{ aidatYazi }}</span>
-            </div>
-            <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; color: #3A3A3A">
-              <sc-for list="{{ haklar }}" as="h" hint-placeholder-count="4"><li>{{ h }}</li></sc-for>
-            </ul>
-            <span style="font-size: 13px; color: #5E5E5E">Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.</span>
-          </div>
+          <!-- Ücret ve üyelik hakları (sol sütunda düz metin) -->
+          <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #111111"><strong>Aylık üyelik: {{ aidatYazi }}</strong> · 30 gün geçerli. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.</p>
+          <ul style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; font-size: 17px; line-height: 1.5; color: #3A3A3A">
+            <sc-for list="{{ haklar }}" as="h" hint-placeholder-count="4"><li>{{ h }}</li></sc-for>
+          </ul>
           <sc-if value="{{ kartliUyelik }}" hint-placeholder-val="{{ true }}">
             <p style="margin: 0; color: #5E5E5E">Ödeme iyzico güvencesiyle yapılır; kart bilgilerin bize gelmez.</p>
           </sc-if>
