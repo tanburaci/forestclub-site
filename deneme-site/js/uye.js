@@ -180,7 +180,11 @@
     else if (session) {
       try {
         window.FCU = await veriYukle(session.user);
-        if (!window.FCU) hata = `${session.user.email} ile bir üyelik başvurusu bulamadık. Başvuruda yazdığın e-postayla gir.`;
+        if (!window.FCU) {
+          const { data: yon } = await sb.from('yoneticiler').select('ad').eq('user_id', session.user.id).maybeSingle();
+          hata = yon ? `Yönetici hesabın (${session.user.email}) bir üyelik kaydına bağlı değil. Yönetim › Üyeler'de kendi profilini aç ve “Bu üyelik benim”e bas; sonra “Üye paneli” ile doğrudan geçersin.`
+            : `${session.user.email} ile bir üyelik başvurusu bulamadık. Başvuruda yazdığın e-postayla gir.`;
+        }
       } catch (h) {
         hata = `Bilgilerin yüklenemedi: ${h.message}`;
       }

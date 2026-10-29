@@ -1323,6 +1323,14 @@ class Component extends DCLogic {
       }),
       profilKapat: () => this.setState({ profilSecili: null }),
       profilNotYaz: (e) => { const v = e.target.value; this.setState((s) => ({ notlar: { ...s.notlar, [s.profilSecili]: v } })); },
+      profilBaglaMesaj: this.state.profilBaglaMesaj || 'Kendi üyeliğinizse basın; üst menüdeki “Üye paneli” ile şifresiz geçersiniz.',
+      profilBagla: () => {
+        const id = this.state.profilSecili;
+        if (!window.FCUyeligiBagla) return this.setState({ profilBaglaMesaj: 'Önizlemede bağlanmaz.' });
+        this.setState({ profilBaglaMesaj: 'Bağlanıyor…' });
+        window.FCUyeligiBagla(id).then(() => this.setState({ profilBaglaMesaj: 'Bağlandı ✓ Artık “Üye paneli” ile doğrudan geçebilirsiniz.' }),
+          (h) => this.setState({ profilBaglaMesaj: `Bağlanamadı: ${h.message}` }));
+      },
       profilMuafDegis: (e) => { const v = e.target.checked; this.setState((s) => ({ muaflar: { ...s.muaflar, [s.profilSecili]: v } })); },
       ozelGunler,
       tanismaSunuluyor: this.state.tanismaSunuluyor,
