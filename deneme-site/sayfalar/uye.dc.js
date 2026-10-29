@@ -313,7 +313,7 @@ class Component extends DCLogic {
       sekmeler,
       sAna: sekme === 'ana', sEtkinlikler: sekme === 'etkinlikler', sKatildiklarim: sekme === 'katildiklarim',
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
-      ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf,
+      ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf, yoneticiMi: !!(window.FCU && window.FCU.yonetici),
       formVar: !!(window.FCU && window.FCU.formlar && window.FCU.formlar.length),
       formlar: ((window.FCU && window.FCU.formlar) || []).map((f) => ({
         baslik: f.baslik, durum: f.doldu ? '· doldurdun ✓' : '', link: `/form/?id=${f.id}`,

@@ -40,6 +40,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     const g = y.istekler.find((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/etkinlikler');
     dogru(yuklenen.length === 1 && g && g.govde.saat === '09.30–11.30' && g.govde.aciklama.startsWith('Ağaçların altında') && /\/afisler\/.+\.png$/.test(g.govde.afis) && !('tarih' in g.govde) && !('ad' in g.govde),
       `düzenleme ve afiş kaydedildi (${JSON.stringify(g && g.govde)})`);
+    dogru(await y.page.getByRole('link', { name: 'Üye paneli' }).getAttribute('href') === '/uye', 'yönetim: tek tuşla üye paneline geçiş');
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
 
     // ---------- Üye paneli: açılır kart ----------
@@ -47,13 +48,14 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
       ozel_gunler: [], ilgi_alanlari: [], kutlama_izni: false, foto_izni: false, user_id: 'uye-1' };
     const etk = { id: 3, tarih: gun(4), saat: '10.00', tur: 'bulusma', ad: 'Breakfast Club', kim: 'DJ Orman', kontenjan: 20, bilet_fiyati: null, uyelere: null,
       satilan_bilet: 0, durum: 'yayinda', aciklama: 'Ağaçların altında kahvaltı.', afis: AFIS };
-    const uv = { tablolar: { uyeler: [uye], odemeler: [], etkinlikler: [etk], etkinlik_kayitlari: [], anket_yanitlari: [], uyelik_dondurmalari: [], ayarlar: [] },
+    const uv = { tablolar: { uyeler: [uye], odemeler: [], etkinlikler: [etk], etkinlik_kayitlari: [], anket_yanitlari: [], uyelik_dondurmalari: [], ayarlar: [], yoneticiler: [{ ad: 'Deniz', user_id: 'uye-1' }] },
       rpc: { etkinlik_doluluk: () => [200, []] } };
     const u = await sayfaAc(tarayici, uv, oturum('uye-1', 'deniz@posta.test'));
     await u.page.route(`${SB}/auth/v1/user`, (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ id: 'uye-1', email: 'deniz@posta.test', aud: 'authenticated' }) }));
     await u.page.route(AFIS, (r) => r.fulfill({ status: 200, contentType: 'image/png', body: PNG }));
     await u.page.goto(`${SITE}/uye/`);
     await u.page.getByText('Merhaba Deniz').waitFor({ timeout: 15000 });
+    dogru(await u.page.getByRole('link', { name: 'Yönetim paneli' }).getAttribute('href') === '/yonetim', 'üye: yönetici olan üyede yönetim paneline geçiş');
     await u.page.locator('button').filter({ hasText: /^Etkinlikler$/ }).first().click();
     dogru(await u.page.getByRole('img', { name: 'Breakfast Club afişi' }).count() === 0, 'üye: afiş kapalı kartta görünmüyor');
     await u.page.getByRole('button', { name: /Ayrıntılar ve afiş/ }).click();
