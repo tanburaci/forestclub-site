@@ -15,11 +15,11 @@
 <meta property="og:locale" content="tr_TR">
 <link rel="icon" href="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
-<script src="/js/dc.js?v=202611171200"></script>
-<script src="/sayfalar/site.dc.js?v=202611171200"></script>
-<script src="/js/ayar.js?v=202611171200"></script>
-<script src="/js/ortak.js?v=202611171200"></script>
-<script src="/js/site.js?v=202611171200" defer></script>
+<script src="/js/dc.js?v=202611181300"></script>
+<script src="/sayfalar/site.dc.js?v=202611181300"></script>
+<script src="/js/ayar.js?v=202611181300"></script>
+<script src="/js/ortak.js?v=202611181300"></script>
+<script src="/js/site.js?v=202611181300" defer></script>
 <!-- YAKINDA KAPAĞI: site görünür ve kaydırılır ama hiçbir yeri tıklanmaz, klavyeyle de ulaşılmaz (#kok inert);
      tıklananlar karttaki Instagram ve sözleşme bağlantıları (WhatsApp numaraları açılışa kadar görünmez).
      Yönetim › İletişim › Site durumu'nda "Yakında" modu kapatılınca site.js kapağı kaldırır; ayar okunamazsa kapak kalır. -->
@@ -28,15 +28,17 @@
 #fc-yakinda .kart{max-width:440px;width:100%;box-sizing:border-box;background:#FFFFFF;border:3px solid #111111;border-radius:18px;box-shadow:6px 6px 0 #111111;padding:26px 24px;text-align:center;font:16px Figtree,sans-serif;color:#111111;transform:rotate(-1.5deg)}
 #fc-yakinda h1{font-family:'Amatic SC',cursive;font-weight:700;font-size:56px;line-height:1;margin:0 0 10px}
 #fc-yakinda p{margin:0 0 16px;line-height:1.5;color:#3A3A3A}
-#fc-yakinda .ig{display:inline-block;font:700 15px Figtree,sans-serif;color:#FFFFFF;background:#111111;border:2.5px solid #111111;border-radius:999px;padding:10px 18px;text-decoration:none}
+#fc-yakinda .ig{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;color:#FFFFFF;background:#111111;border:2.5px solid #111111;border-radius:50%;text-decoration:none}
 #fc-yakinda .ig:hover{background:#FFFFFF;color:#111111}
-#fc-yakinda .yasal{display:flex;flex-wrap:wrap;gap:0 10px;justify-content:center;margin-top:16px;font-size:13px}
+#fc-yakinda .alt{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;justify-content:center;padding:10px 16px;background:#FFFFFF;border-top:2px solid #111111;font:13px Figtree,sans-serif}
+#fc-yakinda .yasal{display:flex;flex-wrap:wrap;gap:0 12px;justify-content:center}
 #fc-yakinda .yasal a{color:#3A3A3A;display:inline-block;padding:6px 2px}
-#fc-yakinda .logo{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px;font:700 12px Figtree,sans-serif}
-#fc-yakinda .logo span{border:2px solid #111111;border-radius:7px;padding:3px 8px}
+#fc-yakinda .logo img{display:block;height:22px;width:auto;max-width:100%}
 @media (max-width:480px){#fc-yakinda h1{font-size:44px}}
-/* Yatay telefonda kart ekrana sığmıyordu: kapak kendi içinde kayar, kart üstten başlar */
-@media (max-height:520px){#fc-yakinda{align-items:flex-start;overflow-y:auto}}
+/* Kart alttaki şeridin üstünde kalsın */
+#fc-yakinda{padding-bottom:96px}
+/* Yatay telefonda kart ekrana sığmıyordu: kapak kendi içinde kayar, kart üstten başlar; şerit kartın altına */
+@media (max-height:520px){#fc-yakinda{padding-bottom:16px;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto}#fc-yakinda .alt{position:static;margin-top:16px;width:100%;box-sizing:border-box}}
 /* Tasarımdan kalan "Örnek duyuru" şeridi açılışa kadar gizli (gerçek duyuru yönetim panelinden gelecek) */
 #kok [role="alert"][style*="F6C945"]{display:none !important}
 /* Açılışa kadar yalnız ilk ekran ve "Biz Kimiz?" görünür: etkinlikler, fiyatlar, üyelik, başvuru, SSS ve alt bilgi gizli */
@@ -56,10 +58,13 @@
   <div class="kart">
     <h1 id="fc-yakinda-baslik">Yakında yayındayız 🌲</h1>
     <p>Forest Club Urla'nın yeni sitesi hazırlanıyor. O zamana kadar buluşmalarımızı Instagram'dan takip edebilir, bize oradan yazabilirsin.</p>
-    <a class="ig" href="https://www.instagram.com/forestcluburla/" target="_blank" rel="noopener">Instagram · @forestcluburla</a>
-    <nav class="yasal" aria-label="Sözleşmeler"><a href="/hakkimizda/">Hakkımızda</a><a href="/teslimat-iade/">Teslimat ve iade</a><a href="/gizlilik/">Gizlilik ve KVKK</a><a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a></nav>
-    <div class="logo" aria-label="Ödeme yöntemleri"><span>VISA</span><span>Mastercard</span><span>iyzico ile Öde</span></div>
+    <a class="ig" href="https://www.instagram.com/forestcluburla/" target="_blank" rel="noopener" aria-label="Instagram · @forestcluburla" title="@forestcluburla"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"></rect><circle cx="12" cy="12" r="4.2"></circle><circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none"></circle></svg></a>
   </div>
+  <!-- Sitenin alt bilgisindeki sözleşmeler ve ödeme logoları: kapak dururken de ekranın altında (iyzico şartı) -->
+  <footer class="alt">
+    <nav class="yasal" aria-label="Sözleşmeler"><a href="/hakkimizda/">Hakkımızda</a><a href="/teslimat-iade/">Teslimat ve iade</a><a href="/gizlilik/">Gizlilik ve KVKK</a><a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a></nav>
+    <div class="logo"><img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32"></div>
+  </footer>
 </div>
 <!-- /YAKINDA KAPAĞI -->
 <div id="kok" inert style="font:16px Figtree,sans-serif;padding:24px">Yükleniyor…</div>
