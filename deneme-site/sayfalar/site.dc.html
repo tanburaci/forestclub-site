@@ -794,7 +794,9 @@ a{color:#111111}a:hover{color:#000000}
               <div style="color: #111111; font-weight: 600; font-size: 15px">{{ b.saat }} · Pinya, Urla</div>
               <div style="color: #5E5E5E; font-size: 15px; line-height: 1.5">{{ b.metin }}</div>
               <sc-if value="{{ b.afisVar }}" hint-placeholder-val="{{ false }}">
-                <img src="{{ b.afis }}" alt="{{ b.afisAlt }}" loading="lazy" style="width: 100%; max-width: 260px; border: 2px solid #111111; border-radius: 12px">
+                <a href="{{ b.afis }}" target="_blank" rel="noopener" style="display: block; width: 100%; max-width: 360px; margin-top: 4px">
+                  <img src="{{ b.afis }}" alt="{{ b.afisAlt }}" loading="lazy" style="display: block; width: 100%; height: auto; border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.18)">
+                </a>
               </sc-if>
               <sc-if value="{{ b.linkVar }}" hint-placeholder-val="{{ true }}">
                 <a href="{{ b.link }}" style="font-weight: 600; font-size: 14px; margin-top: 2px">Instagram'da gör</a>
