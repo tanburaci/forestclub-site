@@ -13,7 +13,7 @@
 <style>
 body{margin:0;background:#FFFFFF;overflow-wrap:break-word}
 a{color:#111111}a:hover{color:#000000}
-.fc-kok{position:relative;min-height:100vh;overflow:hidden;cursor:url(/_blob/5c9344a739e115de8ef68ca564188862) 8 6,auto}
+.fc-kok{position:relative;min-height:100vh;overflow:hidden;overflow:clip;cursor:url(/_blob/5c9344a739e115de8ef68ca564188862) 8 6,auto}
 .fc-kok button,.fc-kok a{cursor:url(/_blob/5c9344a739e115de8ef68ca564188862) 8 6,pointer}
 .fc-kok input{cursor:text}
 .fc-arka{position:absolute;inset:0;pointer-events:none;z-index:0}
@@ -2038,7 +2038,7 @@ class Component extends DCLogic {
   // Üye profili: açılır ve ekrana kaydırılır (telefonda profil tablonun üstünde kalıyordu)
   profilAc(id) {
     this.setState({ profilSecili: id });
-    setTimeout(() => { const p = document.querySelector('section[aria-label="Üye profili"]'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    setTimeout(() => { const p = document.querySelector('section[aria-label="Üye profili"]'); if (p) scrollTo({ top: p.getBoundingClientRect().top + scrollY - 12, left: 0, behavior: 'smooth' }); }, 50);  // yalnız dikey
   }
   // Aylık duyuru (ayarlar.aylik_duyuru): sitedeki sarı rozet ve etkinlik şeridi
   aylikGorunum() {
