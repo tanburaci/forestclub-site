@@ -413,6 +413,68 @@ a{color:#111111}a:hover{color:#000000}
               </div>
             </div>
 
+            <!-- Aylık duyuru: ana sayfadaki sarı rozet ve etkinliklerin üstündeki şerit; tıklayınca form ya da resim -->
+            <section style="background: #FFFFFF; border-radius: 14px; border: 2px solid #111111; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center">
+                <h3 style="margin: 0; font-size: 18px">Aylık duyuru (sitedeki sarı rozet)</h3>
+                <label style="display: flex; gap: 8px; align-items: center; font-weight: 600"><input type="checkbox" checked="{{ aylikV.goster }}" onChange="{{ aylikGosterDegis }}" style="width: 20px; height: 20px; accent-color: #111111"> Sitede göster</label>
+              </div>
+              <p style="margin: 0; color: #5E5E5E; font-size: 14px">Yazılarda <strong>{ay}</strong> seçtiğin ayla değişir. Örn. "{ay} programı için · AÇIK ÇAĞRI!" ya da "{ay} programı · YAYINDA!!"</p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px">
+                <label style="display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px">Ay
+                  <select aria-label="Ay" class="fc-input" value="{{ aylikV.ay }}" onChange="{{ aylikAlan.ay }}">
+                    <sc-for list="{{ aylikAylar }}" as="a" hint-placeholder-count="3"><option value="{{ a }}">{{ a }}</option></sc-for>
+                  </select>
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px">Üst yazı
+                  <input class="fc-input" type="text" maxlength="60" aria-label="Üst yazı" value="{{ aylikV.ust }}" onChange="{{ aylikAlan.ust }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px">Büyük yazı
+                  <input class="fc-input" type="text" maxlength="30" aria-label="Büyük yazı" value="{{ aylikV.ana }}" onChange="{{ aylikAlan.ana }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px">Alt yazı
+                  <input class="fc-input" type="text" maxlength="60" aria-label="Alt yazı" value="{{ aylikV.alt }}" onChange="{{ aylikAlan.alt }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px">Tıklayınca
+                  <select aria-label="Tıklayınca" class="fc-input" value="{{ aylikV.tur }}" onChange="{{ aylikAlan.tur }}">
+                    <option value="cagri">Açık Çağrı formu (herkese açık)</option>
+                    <option value="form">Üye formu (Formlar sekmesinden)</option>
+                    <option value="resim">Resim (ör. ayın programı)</option>
+                    <option value="yok">Hiçbir şey</option>
+                  </select>
+                </label>
+                <sc-if value="{{ aylikFormda }}" hint-placeholder-val="{{ false }}">
+                  <label style="display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px">Form
+                    <select aria-label="Form" class="fc-input" value="{{ aylikV.formId }}" onChange="{{ aylikAlan.formId }}">
+                      <option value="">Form seç…</option>
+                      <sc-for list="{{ aylikFormlar }}" as="f" hint-placeholder-count="2"><option value="{{ f.id }}">{{ f.ad }}</option></sc-for>
+                    </select>
+                  </label>
+                </sc-if>
+              </div>
+              <sc-if value="{{ aylikResimli }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+                  <label class="fc-btn fc-btn-ikincil" style="display: inline-flex; align-items: center; position: relative">{{ aylikResimYazi }}
+                    <input type="file" accept="image/png,image/jpeg,image/webp" onChange="{{ aylikResimSec }}" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+                  </label>
+                  <sc-if value="{{ aylikV.resim }}" hint-placeholder-val="{{ false }}">
+                    <img src="{{ aylikV.resim }}" alt="Seçilen resim" style="height: 80px; width: auto; border-radius: 8px; border: 1.5px solid #111111">
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ aylikResimSil }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Resmi kaldır</button>
+                  </sc-if>
+                  <span style="color: #5E5E5E; font-size: 13px">{{ aylikResimNot }}</span>
+                </div>
+              </sc-if>
+              <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+                <span style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 120px; height: 120px; border-radius: 50%; border: 3px solid #111111; background: #F6C945; text-align: center; padding: 8px; box-sizing: border-box">
+                  <span style="font-size: 10px; font-weight: 700">{{ aylikOnUst }}</span>
+                  <span style="font-family: 'Amatic SC', cursive; font-size: 26px; font-weight: 700; line-height: .95">{{ aylikOnAna }}</span>
+                  <span style="font-size: 10px; font-weight: 700">{{ aylikOnAlt }}</span>
+                </span>
+                <button type="button" class="fc-btn" onClick="{{ aylikKaydet }}">Kaydet</button>
+                <span role="status" style="font-weight: 600">{{ aylikMesaj }}</span>
+              </div>
+            </section>
+
             <!-- Aylık dosya: önizleme; geçerli satırlar tek tıkla eklenir (biçim: etkinlik_sablonu.csv) -->
             <sc-if value="{{ aylikVar }}" hint-placeholder-val="{{ false }}">
               <section style="background: #FFFFFF; border-radius: 14px; border: 2px solid #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
@@ -1676,6 +1738,7 @@ class Component extends DCLogic {
       iltMesaj: '', kameraAcik: false,
       yakinda: window.FC ? window.FC.ayarlar.yakinda === true : false,
       siteDuyurusu: window.FC ? String(window.FC.ayarlar.site_duyurusu || '') : '', duyuruMesaj: '',
+      aylik: window.FC_AYLIK ? window.FC_AYLIK.oku(window.FC && window.FC.ayarlar.aylik_duyuru) : {}, aylikMesaj: '', aylikYukleniyor: false,
       biletler: this.DEMO.biletler,
       komisyonOran: '',
       anaMesaj: '',
@@ -1963,6 +2026,41 @@ class Component extends DCLogic {
     if (!window.FCAyarKaydet) return;
     window.FCAyarKaydet(anahtar, yeni).then(() => window.FC_ORTAK.bildir(`${etiket} ${yeni ? 'açık' : 'kapalı'} ✓`),
       (h) => { this.setState({ [alan]: !yeni }); window.FC_ORTAK.bildir(h.message, true); });
+  }
+  // Aylık duyuru (ayarlar.aylik_duyuru): sitedeki sarı rozet ve etkinlik şeridi
+  aylikGorunum() {
+    const a = this.state.aylik || {};
+    const ay = (m) => String(m || '').replace(/\{ay\}/g, a.ay || '');
+    const degis = (alan, v) => this.setState((s) => ({ aylik: { ...s.aylik, [alan]: v }, aylikMesaj: '' }));
+    const formlar = window.FC ? (window.FC.formlar || []) : [{ id: 1, baslik: 'Kasım ayı önerileri', acik: true }];
+    return {
+      aylikV: a, aylikAylar: (window.FC_AYLIK && window.FC_AYLIK.aylar) || [],
+      aylikAlan: Object.fromEntries(['ay', 'ust', 'ana', 'alt', 'tur', 'formId'].map((k) => [k, (e) => degis(k, e.target.value)])),
+      aylikGosterDegis: () => degis('goster', a.goster === false),
+      aylikFormda: a.tur === 'form', aylikResimli: a.tur === 'resim' || a.tur === 'cagri',
+      aylikFormlar: formlar.map((f) => ({ id: String(f.id), ad: `${f.baslik}${f.acik ? '' : ' (kapalı)'}` })),
+      aylikResimYazi: this.state.aylikYukleniyor ? 'Yükleniyor…' : a.resim ? 'Resmi değiştir' : 'Resim yükle',
+      aylikResimNot: a.tur === 'cagri' ? 'Açık Çağrı penceresinde hazır afiş yerine bu resim çıkar (isteğe bağlı).' : 'Rozete tıklayınca tam ekran açılır.',
+      aylikResimSec: (e) => {
+        const dosya = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!dosya) return;
+        if (!window.FCAfisYukle) return degis('resim', URL.createObjectURL(dosya));
+        this.setState({ aylikYukleniyor: true });
+        window.FCAfisYukle(dosya).then((url) => this.setState((s) => ({ aylik: { ...s.aylik, resim: url }, aylikYukleniyor: false, aylikMesaj: 'Resim yüklendi; Kaydet\'e bas.' })),
+          (h) => this.setState({ aylikYukleniyor: false, aylikMesaj: h.message }));
+      },
+      aylikResimSil: () => degis('resim', ''),
+      aylikOnUst: ay(a.ust), aylikOnAna: ay(a.ana), aylikOnAlt: ay(a.alt), aylikMesaj: this.state.aylikMesaj,
+      aylikKaydet: () => {
+        if (a.tur === 'form' && !a.formId) return this.setState({ aylikMesaj: 'Bir form seç.' });
+        if (a.tur === 'resim' && !a.resim) return this.setState({ aylikMesaj: 'Bir resim yükle.' });
+        const deger = { goster: a.goster !== false, ay: a.ay, ust: String(a.ust || '').trim(), ana: String(a.ana || '').trim(), alt: String(a.alt || '').trim(), tur: a.tur, formId: a.formId || '', resim: a.resim || '' };
+        if (!window.FCAyarKaydet) return this.setState({ aylikMesaj: 'Önizleme: kaydedildi.' });
+        window.FCAyarKaydet('aylik_duyuru', deger).then(() => this.setState({ aylikMesaj: 'Kaydedildi ✓ Sitede bir sonraki açılışta görünür.' }),
+          (h) => this.setState({ aylikMesaj: h.message }));
+      },
+    };
   }
   // Sitenin en üstündeki duyuru (ayarlar.site_duyurusu); boş metin kaldırır
   duyuruYaz(metin) {
@@ -2845,6 +2943,7 @@ class Component extends DCLogic {
       anaSayfa: sekme === 'ana',
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
+      ...this.aylikGorunum(),
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',
       ...this.formlarGorunum(),
