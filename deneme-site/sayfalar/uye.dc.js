@@ -95,9 +95,15 @@ class Component extends DCLogic {
     const durumTur = aktif ? 'aktif' : bitis ? 'doldu' : 'basvuru';
     const kalan = aktif && bitis ? gunFark(bitis, BUGUN) : 0;
     const dond = this.state.dondurma;
-    const uyari = durumTur === 'doldu'
-      ? { baslik: 'Üyeliğinin süresi doldu', metin: `Üyeliğin ${tarihYaz(bitis)} tarihinde sona erdi. Buluşmalara katılmak ve giriş karekodu almak için üyeliğini yenile.`, dugme: 'Üyeliğini yenile · 3.000 TL' }
-      : { baslik: 'Üyeliğin henüz başlamadı', metin: 'Başvurun bize ulaştı. Buluşmalara katılmak ve giriş karekodu almak için üyelik ödemesini tamamla; üyeliğin hemen başlar.', dugme: 'Üye ol · 3.000 TL' };
+    const AIDAT = TL(canli ? window.FCU.aidat || 3000 : 3000);
+    const dekontBekliyor = !aktif && !!h.dekontBekliyor;  // yüklediği dekont incelemede: yeniden ödeme istenmez
+    const uyari = dekontBekliyor
+      ? { baslik: 'Dekontun inceleniyor', metin: 'Dekontun bize ulaştı, inceleniyor. Onaylanınca üyeliğin başlar ve e-postayla haber veririz.', dugme: '' }
+      : durumTur === 'doldu'
+        ? { baslik: 'Üyeliğinin süresi doldu', metin: `Üyeliğin ${tarihYaz(bitis)} tarihinde sona erdi. Buluşmalara katılmak ve giriş karekodu almak için üyeliğini yenile.`, dugme: `Üyeliğini yenile · ${AIDAT}` }
+        : { baslik: 'Üyeliğin henüz başlamadı', metin: canli && !kartla
+          ? 'Başvurun bize ulaştı. Buluşmalara katılmak ve giriş karekodu almak için üyelik ödemesini yap ve dekontunu yükle; onaylanınca üyeliğin başlar.'
+          : 'Başvurun bize ulaştı. Buluşmalara katılmak ve giriş karekodu almak için üyelik ödemesini tamamla; üyeliğin hemen başlar.', dugme: `Üye ol · ${AIDAT}` };
     const yeniBitis = gunEkle(aktif && bitis ? bitis : BUGUN, 30);
     const ben = {
       ad: h.ad, ilkAd: h.ad.split(' ')[0], harf: h.ad[0], eposta: this.state.hesap,
@@ -386,8 +392,12 @@ class Component extends DCLogic {
       // Ödeme (ilk üyelik, yeniden başlatma ya da yenileme)
       odemeYok: odeme === 'yok' && !muaf, odemeOzet: odeme === 'ozet', odemeBasarili: odeme === 'basarili', odemeHata: odeme === 'hata',
       odemeTuru: aktif ? 'Üyelik yenileme' : durumTur === 'doldu' ? 'Üyeliği yeniden başlatma' : 'İlk üyelik',
-      odemeDugme: aktif ? (canli && !kartla ? 'Yenile · havale / EFT' : 'Kartla yenile · 3.000 TL') : uyari.dugme,
-      odemeAciklama: aktif ? 'Erken yenilersen kalan günlerin kaybolmaz; yeni 30 gün mevcut bitişinden sonra başlar. Otomatik ücret çekilmez.' : 'Ödemen geçtiği anda üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.',
+      odemeDugme: aktif ? (canli && !kartla ? 'Yenile · havale / EFT' : `Kartla yenile · ${AIDAT}`) : uyari.dugme,
+      odemeAciklama: aktif ? 'Erken yenilersen kalan günlerin kaybolmaz; yeni 30 gün mevcut bitişinden sonra başlar. Otomatik ücret çekilmez.'
+        : dekontBekliyor ? uyari.metin
+        : canli && !kartla ? 'Dekontun onaylandığında üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.'
+        : 'Ödemen geçtiği anda üyeliğin başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez.',
+      aidatYazi: AIDAT,
       yeniBitisYazi: tarihYaz(yeniBitis),
       odemeBasla: () => (canli && !kartla ? location.assign('/dekont') : this.setState({ odeme: 'ozet' })),
       odemeVazgec: () => this.setState({ odeme: 'yok' }),
@@ -397,7 +407,7 @@ class Component extends DCLogic {
         odeme: 'basarili', bitis: yeniBitis,
         odemeler: [{ tarih: BUGUN, yol: 'Kart · iyzico' }, ...s.odemeler],
       }))),
-      odemeler: this.state.odemeler.map((o) => ({ ad: 'Üyelik · 30 gün', detay: `${tarihYaz(o.tarih)} · ${o.yol}`, tutar: o.tutar ? TL(o.tutar) : '3.000 TL' })),
+      odemeler: this.state.odemeler.map((o) => ({ ad: 'Üyelik · 30 gün', detay: `${tarihYaz(o.tarih)} · ${o.yol}`, tutar: o.tutar ? TL(o.tutar) : AIDAT })),
       odemeGecmisiYok: !this.state.odemeler.length,
       // Dondurma
       dondurulmus: !!dond, dondurmaSecimde: !dond && this.state.dondurmaSecim, dondurmaDugme: !dond && !this.state.dondurmaSecim,

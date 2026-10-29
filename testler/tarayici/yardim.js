@@ -103,7 +103,7 @@ function yonetimVerisi() {
   return {
     rpcler,
     tablolar: {
-      yoneticiler: [{ ad: 'Yönetici', user_id: 'yon-1' }], uyeler, odemeler: [], etkinlikler: [etk],
+      yoneticiler: [{ ad: 'Yönetici', user_id: 'yon-1' }], uyeler, odemeler: [], etkinlikler: [etk], uye_notlari: [{ uye_id: 2, metin: 'eski not' }],
       eposta_sablonlari: [{ id: 'basvuru', ad: 'Başvuru', ne_zaman: 'x', acik: true, gun: null, konu: 'k', metin: 'm', alanlar: ['ad'] }],
       etkinlik_kayitlari: [{ etkinlik_id: 10, uye_id: 2, durum: 'kayitli', geldi: false, sira: null }, { etkinlik_id: 10, uye_id: 5, durum: 'kayitli', geldi: false, sira: null }],
     },

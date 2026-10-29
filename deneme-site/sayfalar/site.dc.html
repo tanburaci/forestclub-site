@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <style>
-body{margin:0;background:#FFFFFF}
+body{margin:0;background:#FFFFFF;overflow-wrap:break-word}
 a{color:#111111}a:hover{color:#000000}
 .fs-kok{position:relative;overflow:hidden;cursor:url(/_blob/5c9344a739e115de8ef68ca564188862) 8 6,auto}
 .fs-kok a,.fs-kok button{cursor:url(/_blob/5c9344a739e115de8ef68ca564188862) 8 6,pointer}
@@ -78,6 +78,8 @@ a{color:#111111}a:hover{color:#000000}
 .fs-destek svg{flex:none;transform-origin:50% 90%;animation:fs-yaprak 3.2s ease-in-out infinite}
 @keyframes fs-yaprak{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}
 @media (max-width: 640px){.fs-destek{left:12px;bottom:12px;padding:7px 13px 7px 8px;min-height:42px;font-size:14px}}
+/* Telefonda yüzen mini TV etkinlik başlıklarının üstüne biniyordu: yalnız geniş ekranda */
+@media (max-width: 640px){.fs-yuzen{display:none}}
 @media (prefers-reduced-motion: reduce){.fs-destek svg{animation:none}}
 .fs-tutar{font:700 15px Figtree,sans-serif;border-radius:999px;padding:10px 16px;min-height:44px;cursor:pointer;border:2px solid #111111;background:#FFFFFF;color:#111111}
 .fs-tutar[aria-pressed="true"]{background:#2F6B3F;color:#FFFFFF;box-shadow:3px 3px 0 #111111}
@@ -291,7 +293,9 @@ a{color:#111111}a:hover{color:#000000}
             <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
               <p style="margin: 0; background: #F0F0EE; border: 1.5px dashed #111111; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5">Önizleme: <strong>deniz@ornek.com</strong> aktif üye olarak indirim alır. Ödeme iyzico'nun güvenli penceresinde yapılır; kart bilgileri bize gelmez.</p>
             </sc-if>
-            <button type="button" onClick="{{ sOdemeHata }}" style="align-self: flex-start; font: 600 13px Figtree, sans-serif; color: #3A3A3A; background: transparent; border: 0; padding: 8px 4px; min-height: 40px; cursor: pointer; text-decoration: underline">Önizleme: başarısız ödemeyi göster</button>
+            <sc-if value="{{ onizleme }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ sOdemeHata }}" style="align-self: flex-start; font: 600 13px Figtree, sans-serif; color: #3A3A3A; background: transparent; border: 0; padding: 8px 4px; min-height: 40px; cursor: pointer; text-decoration: underline">Önizleme: başarısız ödemeyi göster</button>
+            </sc-if>
           </div>
         </sc-if>
 
@@ -862,7 +866,7 @@ a{color:#111111}a:hover{color:#000000}
     <section id="uyelik" style="position: relative; max-width: 1200px; margin: 0 auto; padding: 60px 20px; display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch">
       <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px; justify-content: center">
         <h2 class="fs-baslik" style="font-size: 64px">Üyelik</h2>
-        <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">Üyeliğin, kartla ödemeni yaptığın anda başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin. Süren bitmeden yenilersen yeni dönem bitiş tarihinden başlar.</p>
+        <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">{{ uyelikMetin }}</p>
         <div style="display: flex; align-items: flex-end; gap: 18px"><div style="width: 120px"><svg viewBox="0 0 130 130" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="65" cy="65" r="56" fill="#111111"/><circle cx="65" cy="65" r="44" fill="none" stroke="#3A3A3A" stroke-width="2"/><circle cx="65" cy="65" r="34" fill="none" stroke="#3A3A3A" stroke-width="2"/><circle cx="65" cy="65" r="18" fill="#C9E33A"/><circle cx="65" cy="65" r="3" fill="#111111"/></g></svg></div><div style="width: 54px; transform: rotate(12deg)"><svg viewBox="0 0 110 100" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M30 78V22l50-12v56" fill="none"/><path d="M30 22l50-12v12L30 34z" fill="#111111"/><ellipse cx="20" cy="80" rx="12" ry="9" fill="#111111"/><ellipse cx="70" cy="68" rx="12" ry="9" fill="#111111"/></g></svg></div><div style="width: 40px; transform: rotate(-8deg) translateY(-30px)"><svg viewBox="0 0 110 100" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M30 78V22l50-12v56" fill="none"/><path d="M30 22l50-12v12L30 34z" fill="#111111"/><ellipse cx="20" cy="80" rx="12" ry="9" fill="#111111"/><ellipse cx="70" cy="68" rx="12" ry="9" fill="#111111"/></g></svg></div></div>
       </div>
       <div style="flex: 1 1 420px; min-width: 0; background: #FFFFFF; border-radius: 16px; padding: 32px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; display: flex; flex-direction: column; gap: 18px">
@@ -890,8 +894,10 @@ a{color:#111111}a:hover{color:#000000}
         <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
           <h2 class="fs-baslik" style="font-size: 64px">Aramıza katıl</h2>
           <div style="display: flex; align-items: flex-end; gap: 14px" aria-hidden="true"><div style="width: 44px"><svg viewBox="0 0 80 140" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10h52q4 46-26 54Q10 56 14 10z" fill="#FFFFFF"/><path d="M15 30h50q-2 28-25 32Q15 58 15 30z" fill="#9E2B3A"/><path d="M40 64v52M20 126h40" fill="none"/></g></svg></div><div style="width: 62px"><svg viewBox="0 0 100 150" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M50 8 L80 50 H64 L88 88 H70 L94 126 H6 L30 88 H12 L36 50 H20 Z" fill="#2F5A35"/><rect x="43" y="126" width="14" height="18" fill="#7A4A2A"/></g></svg></div><div style="width: 46px"><svg viewBox="0 0 100 150" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M50 8 L80 50 H64 L88 88 H70 L94 126 H6 L30 88 H12 L36 50 H20 Z" fill="#2F5A35"/><rect x="43" y="126" width="14" height="18" fill="#7A4A2A"/></g></svg></div><div style="width: 80px; transform: rotate(-6deg)"><svg viewBox="0 0 120 120" aria-hidden="true"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M60 8v12M60 100v12M8 60h12M100 60h12M23 23l9 9M88 88l9 9M97 23l-9 9M32 88l-9 9" fill="none"/><circle cx="60" cy="60" r="34" fill="#EE6B2F"/><path d="M30 64h60M33 75h54M40 86h40" stroke="#FFFFFF" stroke-width="4"/></g></svg></div></div>
-          <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">Bilgilerini yaz, kartla öde; üyeliğin hemen başlar ve e-postayla haber veririz.</p>
-          <p style="margin: 0; color: #5E5E5E">Ödeme iyzico güvencesiyle yapılır; kart bilgilerin bize gelmez.</p>
+          <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">{{ katilMetin }}</p>
+          <sc-if value="{{ kartliUyelik }}" hint-placeholder-val="{{ true }}">
+            <p style="margin: 0; color: #5E5E5E">Ödeme iyzico güvencesiyle yapılır; kart bilgilerin bize gelmez.</p>
+          </sc-if>
         </div>
         <sc-if value="{{ uyeFormda }}" hint-placeholder-val="{{ true }}">
         <form style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
@@ -994,9 +1000,9 @@ a{color:#111111}a:hover{color:#000000}
         <h3 style="margin: 0 0 4px; font-size: 16px">İletişim</h3>
         <a href="{{ ilt.epostaLink }}">{{ ilt.eposta }}</a>
         <span style="color: #3A3A3A">{{ ilt.alan }}</span>
-        <a href="{{ ilt.instagramLink }}">{{ ilt.instagramYazi }}</a>
-        <a href="{{ waLink }}">WhatsApp: {{ waYazi }}</a>
-        <a href="{{ ilt.toplulukLink }}">{{ ilt.toplulukYazi }}</a>
+        <sc-if value="{{ ilt.instagramVar }}" hint-placeholder-val="{{ true }}"><a href="{{ ilt.instagramLink }}">{{ ilt.instagramYazi }}</a></sc-if>
+        <sc-if value="{{ waVar }}" hint-placeholder-val="{{ true }}"><a href="{{ waLink }}">WhatsApp: {{ waYazi }}</a></sc-if>
+        <sc-if value="{{ ilt.toplulukVar }}" hint-placeholder-val="{{ true }}"><a href="{{ ilt.toplulukLink }}">{{ ilt.toplulukYazi }}</a></sc-if>
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px">
         <!-- Metin sayfaları hazır olana kadar deneme sitesinde gizli -->
@@ -1169,6 +1175,7 @@ class Component extends DCLogic {
     const ilt = {
       eposta: IL.eposta || 'forestcluburla@gmail.com', alan: IL.alan || 'Pinya, Urla',
       instagramLink: igAd ? `https://www.instagram.com/${encodeURIComponent(igAd)}/` : '#', instagramYazi: igAd ? `Instagram: @${igAd}` : '[Instagram]',
+      instagramVar: !!igAd || !(window.FCS || window.FCS_HATA), toplulukVar: /^https:\/\//.test(IL.topluluk || '') || !(window.FCS || window.FCS_HATA),
       toplulukLink: /^https:\/\//.test(IL.topluluk || '') ? IL.topluluk : '#', toplulukYazi: /^https:\/\//.test(IL.topluluk || '') ? 'WhatsApp topluluğu' : '[WhatsApp topluluğu]',
     };
     ilt.epostaLink = `mailto:${ilt.eposta}`;
@@ -1305,7 +1312,7 @@ class Component extends DCLogic {
           ? `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Havale / EFT ile ödersin, dekontunu sitedeki dekont sayfasından yüklersin; onaylanınca üyeliğin başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.`
           : `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Kartla ödersin, üyeliğin hemen başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.` },
         { soru: 'Üye olmadan gelebilir miyim?', cevap: 'İlk buluşman bizden: sitedeki “Tanışma biletini al” ile bir etkinliğe ücretsiz gelebilirsin. Her e-posta için bir kez geçerli.' },
-        { soru: 'Etkinliklere nasıl kayıt oluyorum?', cevap: 'Üye panelinde “Geliyorum” de. Kontenjan doluysa bekleme listesine yazılırsın; yer açılınca e-postayla haber veririz.' },
+        { soru: 'Etkinliklere nasıl kayıt oluyorum?', cevap: 'Üye panelinde etkinliğin altındaki “Randevu oluştur”a bas. Kontenjan doluysa bekleme listesine yazılırsın; yer açılınca e-postayla haber veririz.' },
         { soru: 'Yağmur yağarsa ne olur?', cevap: 'Etkinlik iptal edilir ya da ertelenirse sitenin en üstünde duyuru çıkar ve kayıtlı herkese e-posta göndeririz.' },
         { soru: 'Üyeliğimi dondurabilir miyim?', cevap: canli
           ? `Evet, üye panelinden. Bir seferde ${((AYAR.dondurma && AYAR.dondurma.gunler) || [7, 14]).join(' ya da ')} gün dondurabilirsin, yılda en çok ${(AYAR.dondurma && AYAR.dondurma.yillik) || 2} kez. Dondurduğun günler üyelik sürenden düşmez, bitiş tarihine eklenir.`
@@ -1397,7 +1404,15 @@ class Component extends DCLogic {
       ibanKopyaYazi: this.state.dsKopya === 'iban' ? 'Kopyalandı ✓' : 'Kopyala',
       aliciKopyala: () => kopyala('alici', odemeBilgi.alici),
       ibanKopyala: () => kopyala('iban', odemeBilgi.iban.replace(/\s/g, '')),
-      waYazi: waHam || '[WHATSAPP NUMARASI]',
+      waYazi: waHam || '[WHATSAPP NUMARASI]', waVar: !!waHam || !canli,
+      // Üyelik metinleri ödeme yoluna göre (kart kapalıyken havale + dekont)
+      kartliUyelik: kartAcik,
+      uyelikMetin: kartAcik
+        ? 'Üyeliğin, kartla ödemeni yaptığın anda başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin. Süren bitmeden yenilersen yeni dönem bitiş tarihinden başlar.'
+        : 'Üyeliğin, ödemen onaylandığında başlar ve 30 gün geçerlidir. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin. Süren bitmeden yenilersen yeni dönem bitiş tarihinden başlar.',
+      katilMetin: kartAcik
+        ? 'Bilgilerini yaz, kartla öde; üyeliğin hemen başlar ve e-postayla haber veririz.'
+        : 'Bilgilerini yaz, aidatı havale / EFT ile gönder ve dekontunu yükle; onaylanınca üyeliğin başlar ve e-postayla haber veririz.',
       uyeFormda: this.state.uyeAdim === 'form',
       uyeOdemede: this.state.uyeAdim === 'odeme',
       uyeTamam: this.state.uyeAdim === 'tamam',

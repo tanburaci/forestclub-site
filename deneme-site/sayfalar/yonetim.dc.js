@@ -819,6 +819,8 @@ class Component extends DCLogic {
         yol: { kart: 'Kart · iyzico', havale: 'Havale · dekont', elden: 'Elden' }[h.odeme] || 'Elden', rozet: h.odeme === 'elden' ? TASLAK : AKTIF,
       }));
     const buAyKart = kartH.filter((h) => h.kategori === 'Aidat' && h.tarih.startsWith(BUGUN.slice(0, 7)));
+    const bvr = window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' };
+    const kartKapali = !!window.FC && window.FC.ayarlar.kart_odeme !== true;
     const elden = this.state.elden;
     const eldenAlan = {};
     ['ad', 'tutar', 'tarih'].forEach((k) => {
@@ -1278,10 +1280,13 @@ class Component extends DCLogic {
       formlarSekme: sekme === 'formlar',
       ...this.formlarGorunum(),
       basvuruSekme: sekme === 'basvurular',
-      bvr: window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' },
+      bvr,
       ozet: [
         { baslik: 'Aktif üye', sayi: String(sayac.aktif), alt: `${this.DEMO.kisiler.filter((k) => k.bas && k.bas >= `${BUGUN_SABIT.slice(0, 7)}-01`).length} kişi bu ay katıldı · ${tumUyeler.length} kayıt` },
-        { baslik: 'Bu ay kart ödemesi', sayi: String(buAyKart.length), alt: `${TL(topla(buAyKart))} · kendiliğinden işlendi` },
+        // Kart kapalıyken ödemeler dekontla gelir: ana sayfada onay bekleyenler görünür
+        kartKapali
+          ? { baslik: 'Onay bekleyen dekont', sayi: String(Number(bvr.bekleyenSayi) + Number(bvr.biletSayi)), alt: `${bvr.bekleyenSayi} aidat · ${bvr.biletSayi} bilet · Başvurular sekmesinde` }
+          : { baslik: 'Bu ay kart ödemesi', sayi: String(buAyKart.length), alt: `${TL(topla(buAyKart))} · kendiliğinden işlendi` },
         { baslik: 'Bu hafta biten üyelik', sayi: String(this.DEMO.kisiler.filter((k) => k.durum === 'aktif' && kalanGun(k.bitis) <= 7).length), alt: 'Yenileme hatırlatması kendiliğinden gider' },
         { baslik: 'Yaklaşan etkinlik', sayi: String(etkGorunum.filter((x) => x.tarih > BUGUN).length), alt: (() => { const y = etkGorunum.filter((x) => x.tarih > BUGUN); const sat = y.reduce((t, x) => t + (x.satis ? x.satis.satilan : 0), 0); return y.length ? `En yakını ${y[0].gun} ${y[0].ay.charAt(0)}${y[0].ay.slice(1).toLocaleLowerCase('tr')} · ${sat} bilet satıldı` : 'Planlanan yok'; })() },
       ],

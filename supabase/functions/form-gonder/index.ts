@@ -69,7 +69,7 @@ async function acildiMi(): Promise<void> {
   const { data, error } = await servisIstemcisi().from('ayarlar').select('deger').eq('anahtar', 'yakinda').maybeSingle();
   if (error) throw error;
   if (data && data.deger === true) {
-    throw new KullaniciHatasi('Üyelik başvuruları ve tanışma biletleri açılışla birlikte başlıyor. Instagram\'dan takipte kal!', 403);
+    throw new KullaniciHatasi('Üyelik başvuruları, biletler ve tanışma biletleri açılışla birlikte başlıyor. Instagram\'dan takipte kal!', 403);
   }
 }
 
@@ -99,7 +99,7 @@ async function destekBaslat(tutarHam: unknown, ip: string): Promise<{ sayfa: str
 }
 
 async function isle(tur: string, v: Record<string, unknown>, ip: string): Promise<unknown> {
-  if (tur === 'basvuru' || tur === 'tanisma') await acildiMi();
+  if (tur === 'basvuru' || tur === 'tanisma' || tur === 'bilet_adres') await acildiMi();
   switch (tur) {
     case 'basvuru':
       return rpc('basvuru_yap', {
