@@ -358,6 +358,7 @@ class Component extends DCLogic {
       sepetOdeDugme: this.state.sepetAdim === 'dekont' ? 'Dekontu gönder' : this.state.sepetAdim !== 'odeme' ? 'Ödemeye geç'
         : canli ? 'Devam · havale / EFT' : `Kartla öde · ${TL(sepetToplamTL)}`,
       sepetBosalt: () => this.setState({ sepet: {}, sepetAdim: 'yok', hak: null, sepetHata: '' }),
+      sepetOnay: !!this.state.sepetOnay, sepetOnayDegis: () => this.setState((st) => ({ sepetOnay: !st.sepetOnay, sepetHata: '' })),
       // Gerçek sitede iyzico; başarılı ödemede biletler kesinleşir, üye bileti alınan etkinlikte yerin ayrılır
       sepetOde: () => {
         // Canlıda: 1) sunucu isteği açar ve tutarı söyler, 2) dekont yüklenir; yönetici onaylayınca biletler e-postayla
@@ -368,6 +369,7 @@ class Component extends DCLogic {
             .catch((h) => this.setState({ sepetHata: h.message }));
         }
         if (this.state.sepetAdim !== 'odeme') return this.setState({ sepetAdim: 'odeme', sepetHata: '' });
+        if (!this.state.sepetOnay) return this.setState({ sepetHata: 'Devam etmek için sözleşmeleri onayla.' });
         if (canli) {
           this.setState({ sepetHata: 'Hazırlanıyor…' });
           const kalemler = sepetIdler.map((id) => ({ etkinlik: Number(id), adet: this.state.sepet[id] }));
