@@ -107,6 +107,7 @@ class Component extends DCLogic {
       iltMesaj: '', kameraAcik: false,
       yakinda: window.FC ? window.FC.ayarlar.yakinda === true : false,
       siteDuyurusu: window.FC ? String(window.FC.ayarlar.site_duyurusu || '') : '', duyuruMesaj: '',
+      aylik: window.FC_AYLIK ? window.FC_AYLIK.oku(window.FC && window.FC.ayarlar.aylik_duyuru) : {}, aylikMesaj: '', aylikYukleniyor: false,
       biletler: this.DEMO.biletler,
       komisyonOran: '',
       anaMesaj: '',
@@ -394,6 +395,41 @@ class Component extends DCLogic {
     if (!window.FCAyarKaydet) return;
     window.FCAyarKaydet(anahtar, yeni).then(() => window.FC_ORTAK.bildir(`${etiket} ${yeni ? 'açık' : 'kapalı'} ✓`),
       (h) => { this.setState({ [alan]: !yeni }); window.FC_ORTAK.bildir(h.message, true); });
+  }
+  // Aylık duyuru (ayarlar.aylik_duyuru): sitedeki sarı rozet ve etkinlik şeridi
+  aylikGorunum() {
+    const a = this.state.aylik || {};
+    const ay = (m) => String(m || '').replace(/\{ay\}/g, a.ay || '');
+    const degis = (alan, v) => this.setState((s) => ({ aylik: { ...s.aylik, [alan]: v }, aylikMesaj: '' }));
+    const formlar = window.FC ? (window.FC.formlar || []) : [{ id: 1, baslik: 'Kasım ayı önerileri', acik: true }];
+    return {
+      aylikV: a, aylikAylar: (window.FC_AYLIK && window.FC_AYLIK.aylar) || [],
+      aylikAlan: Object.fromEntries(['ay', 'ust', 'ana', 'alt', 'tur', 'formId'].map((k) => [k, (e) => degis(k, e.target.value)])),
+      aylikGosterDegis: () => degis('goster', a.goster === false),
+      aylikFormda: a.tur === 'form', aylikResimli: a.tur === 'resim' || a.tur === 'cagri',
+      aylikFormlar: formlar.map((f) => ({ id: String(f.id), ad: `${f.baslik}${f.acik ? '' : ' (kapalı)'}` })),
+      aylikResimYazi: this.state.aylikYukleniyor ? 'Yükleniyor…' : a.resim ? 'Resmi değiştir' : 'Resim yükle',
+      aylikResimNot: a.tur === 'cagri' ? 'Açık Çağrı penceresinde hazır afiş yerine bu resim çıkar (isteğe bağlı).' : 'Rozete tıklayınca tam ekran açılır.',
+      aylikResimSec: (e) => {
+        const dosya = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!dosya) return;
+        if (!window.FCAfisYukle) return degis('resim', URL.createObjectURL(dosya));
+        this.setState({ aylikYukleniyor: true });
+        window.FCAfisYukle(dosya).then((url) => this.setState((s) => ({ aylik: { ...s.aylik, resim: url }, aylikYukleniyor: false, aylikMesaj: 'Resim yüklendi; Kaydet\'e bas.' })),
+          (h) => this.setState({ aylikYukleniyor: false, aylikMesaj: h.message }));
+      },
+      aylikResimSil: () => degis('resim', ''),
+      aylikOnUst: ay(a.ust), aylikOnAna: ay(a.ana), aylikOnAlt: ay(a.alt), aylikMesaj: this.state.aylikMesaj,
+      aylikKaydet: () => {
+        if (a.tur === 'form' && !a.formId) return this.setState({ aylikMesaj: 'Bir form seç.' });
+        if (a.tur === 'resim' && !a.resim) return this.setState({ aylikMesaj: 'Bir resim yükle.' });
+        const deger = { goster: a.goster !== false, ay: a.ay, ust: String(a.ust || '').trim(), ana: String(a.ana || '').trim(), alt: String(a.alt || '').trim(), tur: a.tur, formId: a.formId || '', resim: a.resim || '' };
+        if (!window.FCAyarKaydet) return this.setState({ aylikMesaj: 'Önizleme: kaydedildi.' });
+        window.FCAyarKaydet('aylik_duyuru', deger).then(() => this.setState({ aylikMesaj: 'Kaydedildi ✓ Sitede bir sonraki açılışta görünür.' }),
+          (h) => this.setState({ aylikMesaj: h.message }));
+      },
+    };
   }
   // Sitenin en üstündeki duyuru (ayarlar.site_duyurusu); boş metin kaldırır
   duyuruYaz(metin) {
@@ -1276,6 +1312,7 @@ class Component extends DCLogic {
       anaSayfa: sekme === 'ana',
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
+      ...this.aylikGorunum(),
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',
       ...this.formlarGorunum(),

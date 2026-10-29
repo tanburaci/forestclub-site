@@ -4,6 +4,8 @@ window.DC.sinif('/sayfalar/uye.dc.html', function (DCLogic) {
 class Component extends DCLogic {
   constructor(props) {
     super(props);
+    // Tam ekran afiş Esc ile kapanır
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.state.afisTam) this.setState({ afisTam: '' }); });
     this.BUGUN = window.FCU ? window.FCU.bugun : '2026-10-24';  // deneme sitesinde gerçek bugün
     // Önizleme hesapları: yönetici panelindeki demo verisiyle aynı kişiler ve durumlar
     this.HESAPLAR = window.FCU ? { [window.FCU.eposta]: window.FCU.hesap } : {
@@ -143,6 +145,11 @@ class Component extends DCLogic {
         acik: this.state.acikEtk === id, acikYazi: this.state.acikEtk === id ? 'true' : 'false',
         acYazi: this.state.acikEtk === id ? 'Ayrıntıları gizle ▲' : 'Ayrıntılar ▼',
         ac: () => this.setState((s) => ({ acikEtk: s.acikEtk === id ? null : id })),
+        kartTikla: (e) => {
+          if (e.target.closest('a, button:not(.fu-kart-bas), input, select, textarea, label')) return;
+          this.setState((s) => ({ acikEtk: s.acikEtk === id ? null : id }));
+        },
+        afisAc: () => this.setState({ afisTam: e.afis, afisTamAlt: `${e.ad} afişi` }),
         satisVar: !!e.fiyat, afisVar: !!e.afis, afis: e.afis || '', afisAlt: `${e.ad} afişi`, kimVar: !!e.kim, kim: e.kim || '',
         aciklama: e.aciklama || 'Ayrıntılar yakında.',
         // Ücretsiz (üyelik kapsamında) etkinlikte aktif üye "Geliyorum" der; sepet misafir bileti içindir
@@ -319,6 +326,8 @@ class Component extends DCLogic {
       sekmeler,
       sAna: sekme === 'ana', sEtkinlikler: sekme === 'etkinlikler', sKatildiklarim: sekme === 'katildiklarim',
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
+      afisTamVar: !!this.state.afisTam, afisTam: this.state.afisTam || '', afisTamAlt: this.state.afisTamAlt || 'Afiş',
+      afisKapat: () => this.setState({ afisTam: '' }),
       ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf, yoneticiMi: !!(window.FCU && window.FCU.yonetici),
       formVar: !!(window.FCU && window.FCU.formlar && window.FCU.formlar.length),
       formlar: ((window.FCU && window.FCU.formlar) || []).map((f) => ({
