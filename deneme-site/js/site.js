@@ -61,12 +61,18 @@
     document.getElementById('kok').removeAttribute('inert');
   }
 
+  function kapagiGoster() {
+    const k = document.getElementById('fc-yakinda');
+    if (k) k.classList.add('goster');
+  }
+
   async function basla() {
     const kok = document.getElementById('kok');
     try {
       window.FCS = await veriYukle();
-      if (window.FCS.ayar.yakinda === false) kapagiKaldir();
+      if (window.FCS.ayar.yakinda === false) kapagiKaldir(); else kapagiGoster();
     } catch (h) {
+      kapagiGoster();
       console.error(h); // veri gelmezse örnek liste değil "Etkinlikler şu an yüklenemiyor" görünür
       window.FCS_HATA = true;
       window.FCSBasvuru = null;
