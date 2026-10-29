@@ -93,6 +93,12 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     const katil = await s.page.locator('#basvuru').innerText();
     dogru(katil.includes('3.000 TL') && katil.includes('Aylık Breakfast Club') && katil.includes('%50'), 'site: ücret ve üyelik hakları yazıyor');
     dogru(await s.page.locator('#basvuru').getByRole('button', { name: 'Aramıza katıl' }).count() === 1 && !katil.includes('Ödemeye geç'), 'site: düğme "Aramıza katıl"');
+    // Tanışma: site bilet dağıtmaz; rezervasyon formu, açık etkinlik yoksa açıklama
+    dogru(!/Tanışma biletini al|Biletimi al|İlk buluşman bizden/.test(await s.page.content()), 'tanışma: "bileti al" hiçbir yerde yok');
+    await s.page.getByRole('button', { name: 'Tanışma biletimle rezervasyon oluştur' }).click();
+    const td = s.page.getByRole('dialog', { name: 'Tanışma biletimle rezervasyon' });
+    dogru(await td.getByText('Şu an tanışma rezervasyonuna açık etkinlik yok').count() === 1 && await td.getByRole('button', { name: 'Rezervasyonu oluştur' }).isDisabled(), 'tanışma: açık etkinlik yoksa açıklama, düğme pasif');
+    await td.getByRole('button', { name: 'Kapat' }).click();
     const g = s.page.locator('#gonullu');
     dogru(await g.count() === 1 && await g.evaluate((x) => x.compareDocumentPosition(document.getElementById('basvuru')) & Node.DOCUMENT_POSITION_PRECEDING), 'site: Gönüllü ol, Aramıza katıl\'ın altında');
     await g.getByLabel('Ad Soyad').fill('Ayşe Gönüllü');
