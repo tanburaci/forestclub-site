@@ -96,7 +96,8 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
       return r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ sonuc: 'tamam' }) });
     });
     await s.page.goto(`${SITE}/`);
-    await s.page.getByText('Aramıza katıl, kulübümüze üye ol.').waitFor({ timeout: 15000 });
+    await s.page.locator('#basvuru h2', { hasText: 'kulübümüze üye ol.' }).waitFor({ timeout: 15000 });
+    dogru(await s.page.locator('#basvuru h2').evaluate((h) => h.innerHTML.includes('Aramıza katıl,<br>kulübümüze üye ol.')), 'başlık iki satır: "Aramıza katıl," / "kulübümüze üye ol."');
     dogru(await s.page.locator('a.fs-menu', { hasText: 'Üyelik' }).getAttribute('href') === '#basvuru', 'site: menüdeki Üyelik başvuru bölümüne gider');
     dogru(await s.page.locator('#uyelik').count() === 0, 'site: ayrı Üyelik bölümü yok (Aramıza katıl yeterli)');
     const katil = await s.page.locator('#basvuru').innerText();
