@@ -151,7 +151,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     dogru(await s1.page.getByRole('button', { name: 'Tanışma biletini al' }).count() === 0, 'tanışma kapalıysa sitede bant yok');
     dogru(await s1.page.locator('a[href="mailto:merhaba@posta.test"]').count() === 1 && await s1.page.getByText('Zeytinlik, Urla').count() === 1, 'iletişim e-postası ve alan ayarlardan');
     dogru(await s1.page.locator('a[href="https://www.instagram.com/forestcluburla/"]').count() === 1 && await s1.page.locator('a[href="https://chat.whatsapp.com/abc"]').count() === 1, 'Instagram ve WhatsApp topluluğu bağlantıları');
-    dogru(await s1.page.locator('a[href^="https://wa.me/905321112233"]').count() > 0, 'WhatsApp numarası ayarlardan (wa.me/90…)');
+    dogru(await s1.page.locator('a[href*="wa.me"]').count() === 0 && !(await s1.page.content()).includes('5321112233'), 'ayarda numara olsa da sitede WhatsApp numarası gösterilmez');
 
     const sv2 = { ...sv, tablolar: { ...sv.tablolar, ayarlar: [] } };
     const s2 = await sayfaAc(tarayici, sv2, null);
@@ -240,7 +240,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
 
     // İletişim
     await sekme(y.page, 'İletişim');
-    await y.page.locator('input[type=tel]').fill('0532 000 00 00');
+    dogru(await y.page.locator('input[type=tel]').count() === 0, 'iletişim ayarlarında WhatsApp numarası alanı yok');
     await y.page.locator('input[type=url]').fill('http://kotu');
     await y.page.getByRole('button', { name: 'Kaydet' }).click();
     await y.page.getByText('WhatsApp topluluğu bağlantısı https:// ile başlamalı.').waitFor({ timeout: 3000 });
@@ -248,7 +248,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     await y.page.getByRole('button', { name: 'Kaydet' }).click();
     await y.page.getByText(/Kaydedildi ✓/).waitFor({ timeout: 3000 });
     const ay3 = y.istekler.filter((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/ayarlar').pop();
-    dogru(ay3 && ay3.govde.deger.whatsapp === '0532 000 00 00' && ay3.govde.deger.instagram === 'forestcluburla' && /iletisim/.test(ay3.ara), `iletişim kaydedildi (${JSON.stringify(ay3 && ay3.govde)})`);
+    dogru(ay3 && !('whatsapp' in ay3.govde.deger) && ay3.govde.deger.instagram === 'forestcluburla' && /iletisim/.test(ay3.ara), `iletişim kaydedildi (${JSON.stringify(ay3 && ay3.govde)})`);
 
     // KVKK silme
     await sekme(y.page, 'Üyeler');

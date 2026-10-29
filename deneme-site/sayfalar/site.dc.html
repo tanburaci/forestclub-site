@@ -411,7 +411,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
             <span class="fs-baslik" style="font-size: 44px">Ödeme tamamlanamadı</span>
             <p style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 12px 14px; font-size: 15px; line-height: 1.5">Kartından para çekilmedi, sepetin duruyor. Kart bilgilerini ya da limitini kontrol edip tekrar deneyebilirsin.</p>
             <button type="button" class="fs-btn" onClick="{{ tekrarDene }}">Tekrar dene</button>
-            <a class="fs-btn fs-btn-acik" href="{{ waLink }}">Sorun sürüyorsa WhatsApp'tan yaz</a>
+            <a class="fs-btn fs-btn-acik" href="{{ ilt.epostaLink }}">Sorun sürüyorsa bize e-posta gönder</a>
           </div>
         </sc-if>
       </div>
@@ -914,21 +914,6 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
           <p style="margin: 0; font-size: 18px; line-height: 1.65; color: #FFFFFF; font-weight: 600">Biz yalnızca etkinlik düzenlemiyoruz.<br>İnsanların kendileriyle, doğayla ve birbirleriyle bağ kurabilecekleri deneyimler tasarlıyoruz.</p>
           <p style="margin: 0; font-size: 18px; line-height: 1.65; color: #D9D9D9">Çünkü bizim için önemli olan yalnızca ne yaptığımız değil, bir aradayken nasıl hissettiğimiz.</p>
           <a href="https://www.instagram.com/p/Dao6AihsUyr/" style="color: #FFFFFF; font-weight: 600">Instagram'da gör</a>
-          <!-- WhatsApp'tan yaz: kime yazılacağı seçilir -->
-          <div class="fs-wa-yaz" style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start">
-            <button type="button" class="fs-btn fs-btn-beyaz" onClick="{{ waSecDegis }}" aria-expanded="{{ waSecAcikYazi }}" style="display: inline-flex; align-items: center; gap: 8px">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.1A8 8 0 1 1 20 11.5z"></path><path d="M9 9.5c.3 2 2 4 4.5 4.6l1-1.2 1.8.8c-.2 1-1 1.6-2 1.6-3.3 0-6.3-3-6.3-6.3 0-1 .7-1.8 1.6-2l.8 1.8z"></path></svg>
-              WhatsApp'tan yaz
-            </button>
-            <sc-if value="{{ waSecAcik }}" hint-placeholder-val="{{ false }}">
-              <div class="fs-wa-sec" role="group" aria-label="Kime yazmak istersin?">
-                <span style="font-size: 13px; color: #5E5E5E; font-weight: 600">Kime yazmak istersin?</span>
-                <sc-for list="{{ waKisiler }}" as="k" hint-placeholder-count="2">
-                  <a href="{{ k.link }}" target="_blank" rel="noopener"><span>{{ k.ad }}</span><span style="font-weight: 400; font-size: 14px; color: #3A3A3A">{{ k.yazi }}</span></a>
-                </sc-for>
-              </div>
-            </sc-if>
-          </div>
         </div>
         <div style="flex: 1 1 420px; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
           <sc-for list="{{ ozellikler }}" as="o" hint-placeholder-count="4">
@@ -1018,7 +1003,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
             </sc-if>
             <button type="button" class="fs-btn" onClick="{{ dekontGonder }}">Dekontu gönder</button>
             <button type="button" class="fs-btn fs-btn-acik" onClick="{{ dekontSonra }}">Ödemeyi sonra yapacağım</button>
-            <p style="margin: 0; font-size: 14px; color: #3A3A3A">Dekontu sonra da <a href="/dekont">dekont sayfasından</a> gönderebilirsin. Sorun mu var? <a href="{{ waLink }}">WhatsApp'tan yaz</a></p>
+            <p style="margin: 0; font-size: 14px; color: #3A3A3A">Dekontu sonra da <a href="/dekont">dekont sayfasından</a> gönderebilirsin. Sorun mu var? <a href="{{ ilt.epostaLink }}">Bize e-posta gönder</a></p>
           </div>
         </sc-if>
 
@@ -1035,7 +1020,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
             <h3 style="margin: 0; font-size: 22px">Ödeme tamamlanamadı</h3>
             <p style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 12px 14px; font-size: 15px; line-height: 1.5">Kartından para çekilmedi. Kart bilgilerini ya da limitini kontrol edip tekrar deneyebilirsin. Başvurun kaydedildi; ödeme bağlantısı e-postana da geldi.</p>
             <button type="button" class="fs-btn" onClick="{{ uyeTekrar }}">Tekrar dene</button>
-            <a class="fs-btn fs-btn-acik" href="{{ waLink }}">Sorun sürüyorsa WhatsApp'tan yaz</a>
+            <a class="fs-btn fs-btn-acik" href="{{ ilt.epostaLink }}">Sorun sürüyorsa bize e-posta gönder</a>
           </div>
         </sc-if>
       </div>
@@ -1119,7 +1104,6 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
         <a href="{{ ilt.epostaLink }}">{{ ilt.eposta }}</a>
         <span style="color: #3A3A3A">{{ ilt.alan }}</span>
         <sc-if value="{{ ilt.instagramVar }}" hint-placeholder-val="{{ true }}"><a href="{{ ilt.instagramLink }}">{{ ilt.instagramYazi }}</a></sc-if>
-        <sc-if value="{{ waVar }}" hint-placeholder-val="{{ true }}"><a href="{{ waLink }}">WhatsApp: {{ waYazi }}</a></sc-if>
         <sc-if value="{{ ilt.toplulukVar }}" hint-placeholder-val="{{ true }}"><a href="{{ ilt.toplulukLink }}">{{ ilt.toplulukYazi }}</a></sc-if>
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px">
@@ -1150,7 +1134,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"whatsapp":{"editor":"text","default":"","section":"İletişim"},"duyuru":{"editor":"text","default":"Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.","section":"Duyuru"},"$preview":{"width":1440,"height":3400}}'>
+<script type="text/x-dc" data-dc-script data-props='{"duyuru":{"editor":"text","default":"Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.","section":"Duyuru"},"$preview":{"width":1440,"height":3400}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -1300,10 +1284,8 @@ class Component extends DCLogic {
         secimAlani('gun', `${AYLIK.ay} ayında hangi günler uygunsun?`, ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
       ] },
     ];
-    // WhatsApp numarası (Tweaks › İletişim): 0532… ya da 532… yazılırsa wa.me için 90 eklenir
     // Deneme sitesi: iletişim bilgileri yönetim panelindeki ayarlardan (ayarlar.iletisim)
     const IL = (window.FCS && window.FCS.ayar && window.FCS.ayar.iletisim) || {};
-    const waHam = String(IL.whatsapp || this.props.whatsapp || '').trim();
     const igAd = String(IL.instagram || '').replace(/^@/, '').trim();
     const ilt = {
       eposta: IL.eposta || 'forestcluburla@gmail.com', alan: IL.alan || 'Pinya, Urla',
@@ -1312,9 +1294,6 @@ class Component extends DCLogic {
       toplulukLink: /^https:\/\//.test(IL.topluluk || '') ? IL.topluluk : '#', toplulukYazi: /^https:\/\//.test(IL.topluluk || '') ? 'WhatsApp topluluğu' : '[WhatsApp topluluğu]',
     };
     ilt.epostaLink = `mailto:${ilt.eposta}`;
-    let waNo = waHam.replace(/\D/g, '');
-    if (waNo.startsWith('0')) waNo = `90${waNo.slice(1)}`;
-    else if (waNo.length === 10) waNo = `90${waNo}`;
     // Tanışma bileti: önizlemede örnek listeler; gerçekte üyeler ve verilmiş biletler veritabanından bakılır
     const UYE_EPOSTA = ['deniz@ornek.com', 'ece@ornek.com', 'selin@ornek.com', 'can@ornek.com'];
     const BILETLI = ['misafir@ornek.com'];
@@ -1500,15 +1479,6 @@ class Component extends DCLogic {
       },
       // Tasarım önizlemesine özel notlar (örnek e-postalar, örnek fiyatlar) canlıda görünmez
       onizleme: !canli,
-      waLink: waNo ? `https://wa.me/${waNo}` : '#iletisim',
-      // Biz Kimiz? › WhatsApp'tan yaz: kişi seçilir (numaralar ayar.js'te)
-      waSecAcik: this.state.waSecAcik, waSecAcikYazi: this.state.waSecAcik ? 'true' : 'false',
-      waSecDegis: () => this.setState((s) => ({ waSecAcik: !s.waSecAcik })),
-      waKisiler: ((window.FC_AYAR && window.FC_AYAR.whatsapp) || [{ ad: 'Pelin', tel: '05435926654' }, { ad: 'Ezgi', tel: '05350359146' }]).map((k) => {
-        const r = String(k.tel).replace(/\D/g, '');
-        const no = r.startsWith('0') ? `90${r.slice(1)}` : r.length === 10 ? `90${r}` : r;
-        return { ad: k.ad, link: `https://wa.me/${no}`, yazi: r.replace(/^(\d{4})(\d{3})(\d{2})(\d{2})$/, '$1 $2 $3 $4') };
-      }),
       // DESTEK OL: hazır tutarlar ya da elle; kart iyzico'ya gider (kart_odeme açıkken), yoksa IBAN
       destekAcik: !!this.state.destek, destekForm: this.state.destek === 'form',
       destekTamam: this.state.destek === 'tamam', destekBasarisiz: this.state.destek === 'hata',
@@ -1537,7 +1507,6 @@ class Component extends DCLogic {
       ibanKopyaYazi: this.state.dsKopya === 'iban' ? 'Kopyalandı ✓' : 'Kopyala',
       aliciKopyala: () => kopyala('alici', odemeBilgi.alici),
       ibanKopyala: () => kopyala('iban', odemeBilgi.iban.replace(/\s/g, '')),
-      waYazi: waHam || '[WHATSAPP NUMARASI]', waVar: !!waHam || !canli,
       // Üyelik metinleri ödeme yoluna göre (kart kapalıyken havale + dekont)
       kartliUyelik: kartAcik,
       uyelikMetin: kartAcik
