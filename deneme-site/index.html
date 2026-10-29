@@ -15,11 +15,11 @@
 <meta property="og:locale" content="tr_TR">
 <link rel="icon" href="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
-<script src="/js/dc.js?v=202611191300"></script>
-<script src="/sayfalar/site.dc.js?v=202611191300"></script>
-<script src="/js/ayar.js?v=202611191300"></script>
-<script src="/js/ortak.js?v=202611191300"></script>
-<script src="/js/site.js?v=202611191300" defer></script>
+<script src="/js/dc.js?v=202610290338"></script>
+<script src="/sayfalar/site.dc.js?v=202610290338"></script>
+<script src="/js/ayar.js?v=202610290338"></script>
+<script src="/js/ortak.js?v=202610290338"></script>
+<script src="/js/site.js?v=202610290338" defer></script>
 <!-- YAKINDA KAPAĞI: site görünür ve kaydırılır ama hiçbir yeri tıklanmaz, klavyeyle de ulaşılmaz (#kok inert);
      tıklananlar karttaki Instagram ve sözleşme bağlantıları (WhatsApp numaraları açılışa kadar görünmez).
      Yönetim › İletişim › Site durumu'nda "Yakında" modu kapatılınca site.js kapağı kaldırır; ayar okunamazsa kapak kalır. -->
@@ -37,6 +37,11 @@
 @media (max-width:480px){#fc-yakinda h1{font-size:44px}}
 /* Kart alttaki şeridin üstünde kalsın */
 #fc-yakinda{padding-bottom:96px}
+/* Sitenin en altı şeridin arkasında kalmasın: sayfa sonuna şerit kadar boşluk (kapak kalkınca bu stil de kalkar) */
+body{padding-bottom:48px}
+@media (max-width:799px){body{padding-bottom:76px}}
+@media (max-width:489px){body{padding-bottom:103px}}
+@media (max-height:520px){body{padding-bottom:0}}
 /* Yatay telefonda kart ekrana sığmıyordu: kapak kendi içinde kayar, kart üstten başlar; şerit kartın altına */
 @media (max-height:520px){#fc-yakinda{padding-bottom:16px;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto}#fc-yakinda .alt{position:static;margin-top:16px;width:100%;box-sizing:border-box}}
 /* Tasarımdan kalan "Örnek duyuru" şeridi açılışa kadar gizli (gerçek duyuru yönetim panelinden gelecek) */
