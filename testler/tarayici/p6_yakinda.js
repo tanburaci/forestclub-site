@@ -99,6 +99,35 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     const dy = y.istekler.filter((x) => x.yontem === 'PATCH' && /anahtar=eq.site_duyurusu/.test(x.ara)).map((x) => x.govde.deger);
     dogru(JSON.stringify(dy) === JSON.stringify(['Bu pazar buluşma 10.00 yerine 11.00\'de.', '']), `duyuru yayınlandı ve kaldırıldı (${JSON.stringify(dy)})`);
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
+
+    // Canlıda "yakinda" satırı eksikse kutu boş görünür; işaretlenince satır herkese açık olarak oluşturulur
+    const v2 = yonetimVerisi();
+    v2.tablolar.ayarlar = [{ anahtar: 'site_duyurusu', deger: '' }];
+    v2.yaz = (yontem, tablo) => (yontem === 'PATCH' && tablo === 'ayarlar' ? [200, []] : null);  // güncellenecek satır yok
+    const y2 = await sayfaAc(tarayici, v2, oturum('yon-1', 'yonetici@posta.test'));
+    await y2.page.goto(`${SITE}/yonetim/`);
+    await y2.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
+    await y2.page.locator('button').filter({ hasText: /^İletişim$/ }).first().click();
+    const kutu2 = y2.page.locator('label').filter({ hasText: '“Yakında açılıyoruz” modu' }).locator('input');
+    await kutu2.click();
+    await y2.page.waitForTimeout(800);
+    const ek = y2.istekler.filter((x) => x.yontem === 'POST' && x.yol === '/rest/v1/ayarlar');
+    const eklenen = ek.length && (Array.isArray(ek[0].govde) ? ek[0].govde[0] : ek[0].govde);
+    dogru(eklenen && eklenen.anahtar === 'yakinda' && eklenen.deger === true && eklenen.herkese_acik === true, `eksik satır oluşturuldu (${JSON.stringify(eklenen)})`);
+    dogru(await y2.page.getByText(/Ayar bulunamadı/).count() === 0, 'eksik satırda hata çıkmıyor');
+
+    // Sunucu yetkiyi reddederse (iki adımlı doğrulama düşmüş) anlaşılır mesaj
+    const vr = yonetimVerisi();
+    vr.tablolar.ayarlar = [{ anahtar: 'yakinda', deger: true }];
+    vr.yaz = (yontem, tablo) => (tablo !== 'ayarlar' ? null : yontem === 'PATCH' ? [200, []]
+      : [403, { code: '42501', message: 'new row violates row-level security policy for table "ayarlar"' }]);
+    const yr = await sayfaAc(tarayici, vr, oturum('yon-1', 'yonetici@posta.test'));
+    await yr.page.goto(`${SITE}/yonetim/`);
+    await yr.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
+    await yr.page.locator('button').filter({ hasText: /^İletişim$/ }).first().click();
+    yr.page.once('dialog', (d) => d.accept());
+    await yr.page.locator('label').filter({ hasText: '“Yakında açılıyoruz” modu' }).locator('input').click();
+    dogru(await yr.page.getByText(/yönetici yetkisi doğrulanamadı\. Çıkış yapıp yeniden gir/).first().waitFor({ timeout: 5000 }).then(() => true, () => false), 'yetki reddinde anlaşılır mesaj');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
   } finally {
