@@ -118,6 +118,9 @@ a{color:#111111}a:hover{color:#000000}
           <span style="width: 36px; height: 36px; border-radius: 50%; background: #111111; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">{{ ben.harf }}</span>
           <span class="fu-ad" style="font-size: 14px; font-weight: 600">{{ ben.ad }}</span>
           <a class="fu-siteye" href="Site.dc.html">← Siteye dön</a>
+          <sc-if value="{{ yoneticiMi }}" hint-placeholder-val="{{ false }}">
+            <a class="fu-btn fu-btn-ikincil" href="/yonetim" style="padding: 8px 14px; min-height: 40px; font-size: 14px; text-decoration: none">Yönetim paneli</a>
+          </sc-if>
           <button type="button" class="fu-sade" onClick="{{ cikis }}">Çıkış</button>
         </div>
         <nav class="fu-menu" aria-label="Üye menüsü" style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 4px">
@@ -881,7 +884,7 @@ class Component extends DCLogic {
       sekmeler,
       sAna: sekme === 'ana', sEtkinlikler: sekme === 'etkinlikler', sKatildiklarim: sekme === 'katildiklarim',
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
-      ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf,
+      ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf, yoneticiMi: !!(window.FCU && window.FCU.yonetici),
       formVar: !!(window.FCU && window.FCU.formlar && window.FCU.formlar.length),
       formlar: ((window.FCU && window.FCU.formlar) || []).map((f) => ({
         baslik: f.baslik, durum: f.doldu ? '· doldurdun ✓' : '', link: `/form/?id=${f.id}`,

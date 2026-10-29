@@ -53,6 +53,8 @@
       sb.from('form_yanitlari').select('form_id').eq('uye_id', u.id),
     ]);
     const doldurulan = new Set((fyn.data || []).map((y) => y.form_id));
+    // Yönetici mi (herkes yoneticiler'de yalnız kendi satırını görür): üst menüde "Yönetim paneli" geçişi
+    const { data: yon } = await sb.from('yoneticiler').select('ad').eq('user_id', user.id).maybeSingle();
     const formlar = (frm.data || []).map((f) => ({ id: f.id, baslik: f.baslik, doldu: doldurulan.has(f.id) }));
     [ods, kys, etks, ank, don, ayr].forEach((r) => { if (r.error) throw r.error; });
     const ayar = Object.fromEntries(ayr.data.map((a) => [a.anahtar, a.deger]));
@@ -82,7 +84,7 @@
       anket[String(e.id)] = a ? { puan: a.puan, yorum: a.yorum || '', bitti: true } : { puan: 0, yorum: '', bitti: false };
     });
     return {
-      bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket, formlar,
+      bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket, formlar, yonetici: !!yon,
       kartOdeme: ayar.kart_odeme === true, dondurmaKurali: ayar.dondurma || { gunler: [7, 14], yillik: 2 },
       hesap: {
         ad: u.ad, kod: u.kod, bitis: u.bitis || '', muaf: !!u.aidat_muaf,
