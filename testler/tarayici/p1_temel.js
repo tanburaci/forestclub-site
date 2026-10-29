@@ -155,7 +155,7 @@ function yonetimVerisi() {
       const d = v.rpcler.find((x) => x[0] === 'etkinlik_durum_degistir');
       dogru(d && d[1].p_id === 10 && d[1].p_durum === 'iptal', `D5: etkinlik_durum_degistir (${JSON.stringify(d && d[1])})`);
       dogru(!(await page.content()).includes('mail gitti'), 'D5: "mail gitti" yazısı yok');
-      dogru(await page.locator('input[type=checkbox]').filter({ has: page.locator('xpath=..') }).first().isEnabled(), 'D5: "Sitede sunulsun" (tanışma) artık ayarlardan, açılabilir');
+      dogru(await page.locator('input[type=checkbox]').filter({ has: page.locator('xpath=..') }).first().isEnabled(), 'D5: "Tanışma rezervasyonu açık" ayarlardan, açılabilir');
       // Profil notu: üye numarasıyla
       await page.locator('nav button, button').filter({ hasText: /^Üyeler$/ }).first().click();
       await page.locator('input[type=search]').fill('u2@ornek.com');

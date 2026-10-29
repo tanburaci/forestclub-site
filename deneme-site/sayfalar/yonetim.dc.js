@@ -34,7 +34,7 @@ class Component extends DCLogic {
       { id: 'ozelgun', ad: 'Özel gün kutlaması', ne: 'Üyenin profilindeki özel günlerde gider (üye izin verdiyse).', acik: true,
         konu: 'Kutlu olsun {ad} 🌿', alanlar: ['ad', 'ozelGun'],
         metin: 'Merhaba {ad},\n\n{ozelGun} kutlu olsun! Bu güzel gününde seni düşündük.\n\nForest Club Urla' },
-      { id: 'tanisma', ad: 'Tanışma bileti', ne: 'Biri sitede tanışma biletini alınca gider.', acik: true,
+      { id: 'tanisma', ad: 'Tanışma rezervasyonu', ne: 'Tanışma biletiyle rezervasyon yapan kişiye gider.', acik: true,
         konu: 'İlk buluşman bizden: biletin hazır 🎟️', alanlar: ['ad', 'biletKodu', 'etkinlik', 'tarih', 'saat'],
         metin: 'Merhaba {ad},\n\nForest Club Urla’ya hoş geldin! Tanışma biletin: {biletKodu}\n\n{etkinlik} ({tarih}, {saat}) için yerin ayrıldı. Bilet ücretsiz, tek kullanımlık ve yalnız bu buluşmada geçerli; girişte kodunu göstermen yeterli.\n\nOrmanda görüşmek üzere,\nForest Club Urla' },
       { id: 'iptal', ad: 'Etkinlik iptal / erteleme', ne: 'Yönetici “İptal / ertele” ile duyurunca kayıtlılara ve bekleme listesine gider.', acik: true,
@@ -1502,6 +1502,7 @@ class Component extends DCLogic {
       ],
       biletler: [...this.state.biletler].sort((a, b) => b.alinis.localeCompare(a.alinis)).map((b) => ({
         ad: b.ad, eposta: b.eposta, alinis: b.alinis.split('-').reverse().join('.'), etkinlik: b.etkinlik || '—',
+        referans: b.referans || '—', biletNo: b.biletNo ? `No ${b.biletNo}` : '', tel: b.tel ? `· ${b.tel}` : '',
         durum: { uye: 'Üye oldu', geldi: 'Geldi', bekliyor: 'Henüz gelmedi' }[b.durum],
         rozet: b.durum === 'uye' ? AKTIF : b.durum === 'geldi' ? BEKLER : TASLAK,
         bekliyor: b.durum === 'bekliyor',
