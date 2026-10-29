@@ -396,6 +396,11 @@ class Component extends DCLogic {
     window.FCAyarKaydet(anahtar, yeni).then(() => window.FC_ORTAK.bildir(`${etiket} ${yeni ? 'açık' : 'kapalı'} ✓`),
       (h) => { this.setState({ [alan]: !yeni }); window.FC_ORTAK.bildir(h.message, true); });
   }
+  // Üye profili: açılır ve ekrana kaydırılır (telefonda profil tablonun üstünde kalıyordu)
+  profilAc(id) {
+    this.setState({ profilSecili: id });
+    setTimeout(() => { const p = document.querySelector('section[aria-label="Üye profili"]'); if (p) scrollTo({ top: p.getBoundingClientRect().top + scrollY - 12, left: 0, behavior: 'smooth' }); }, 50);  // yalnız dikey
+  }
   // Aylık duyuru (ayarlar.aylik_duyuru): sitedeki sarı rozet ve etkinlik şeridi
   aylikGorunum() {
     const a = this.state.aylik || {};
@@ -775,6 +780,7 @@ class Component extends DCLogic {
       dogum: pr.dogum ? gunAy(pr.dogum) : 'Girilmedi', ozel: pr.ozel.length ? pr.ozel.map((g) => `${g.ad} · ${gunAy(g.tarih)}`).join(', ') : 'Yok',
       kutlama: pr.kutlama ? 'Gönderilsin' : 'Gönderilmesin', foto: pr.foto ? 'Var' : 'Yok', tanisma: pr.tanisma, baslangic: pr.baslangic,
       ilgi: pr.ilgi, not: this.state.notlar[profilUye.id] || '', muaf: profilUye.muaf,
+      basvuru: profilUye.basvuru || '—', bitis: profilUye.bitis || '—', odemeSayisi: String(profilUye.odemeSayisi ?? 0),
     } : {};
     const bugunT = new Date(`${BUGUN_SABIT}T12:00:00Z`);
     const ozelGunler = [];
@@ -1342,7 +1348,8 @@ class Component extends DCLogic {
       uyeDaha: () => this.setState((s) => ({ uyeSayisi: s.uyeSayisi + 100 })),
       uyeler: uyeGoster.map((u) => ({
         ...u, elden: () => this.setState((s) => ({ sekme: 'ana', anaMesaj: '', elden: { ...s.elden, acik: true, ad: `${u.ad} · ${u.kod}`, hata: '' } })),
-        profilAc: () => this.setState({ profilSecili: u.id }),
+        profilAc: () => this.profilAc(u.id),
+        satirTikla: (e) => { if (!e.target.closest('button, a, input')) this.profilAc(u.id); },
       })),
       profilAcik: !!profilUye, profil: profilGorunum,
       ...(window.FCVeriTalepGorunum ? (() => {
@@ -1364,6 +1371,7 @@ class Component extends DCLogic {
         }),
       }),
       profilKapat: () => this.setState({ profilSecili: null }),
+      profilElden: () => profilUye && this.setState((s) => ({ sekme: 'ana', anaMesaj: '', elden: { ...s.elden, acik: true, ad: `${profilUye.ad} · ${profilUye.kod}`, hata: '' } })),
       profilNotYaz: (e) => { const v = e.target.value; this.setState((s) => ({ notlar: { ...s.notlar, [s.profilSecili]: v } })); },
       profilBaglaMesaj: this.state.profilBaglaMesaj || 'Kendi üyeliğinizse basın; üst menüdeki “Üye paneli” ile şifresiz geçersiniz.',
       profilBagla: () => {

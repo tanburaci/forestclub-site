@@ -122,7 +122,7 @@ const denetle = async (page, ad) => {
     dogru(menu < 160, `yönetim: menü telefonda derli toplu (${Math.round(menu)}px)`);
     for (const t of ['Üyeler', 'Etkinlikler', 'Muhasebe', 'Envanter', 'E-postalar', 'Başvurular', 'Formlar', 'İletişim']) { await sekme(y.page, t); await denetle(y.page, `yönetim: ${t}`); }
     await sekme(y.page, 'Üyeler');
-    await y.page.getByRole('button', { name: 'Profil' }).first().click();
+    await y.page.locator('table.fc-uye-tablo tbody tr td').first().click();  // telefonda Profil düğmesi gizli: satıra dokunulur
     await denetle(y.page, 'yönetim: üye profili');
     await sekme(y.page, 'Etkinlikler');
     await y.page.getByRole('button', { name: 'Yeni etkinlik' }).first().click();
