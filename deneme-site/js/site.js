@@ -86,5 +86,17 @@
       if (!sayildi.has('onaylar') && s.bKosul && s.bDogal && s.bKvkk) { sayildi.add('onaylar'); sayac('onaylar'); }
     };
   }
+  // Küçük TV alttakileri örtmesin: kapak dururken alttaki logo şeridinin üstünde, sayfa sonunda ise alt bilginin
+  // (logolar, bağlantılar) üstündeki lamba dizisinin üstünde durur; o görünür olduğunda TV o kadar yukarı kalkar
+  function tvYeri() {
+    const iletisim = document.getElementById('iletisim');
+    const serit = document.querySelector('#fc-yakinda .alt') || (iletisim && iletisim.previousElementSibling);
+    const ust = serit ? serit.getBoundingClientRect().top : innerHeight;
+    const alt = ust < innerHeight ? Math.ceil(innerHeight - ust) + 8 : 0;
+    document.documentElement.style.setProperty('--fs-yuzen-alt', `${alt}px`);
+  }
+  addEventListener('scroll', tvYeri, { passive: true });
+  addEventListener('resize', tvYeri);
+  setInterval(tvYeri, 1000);  // kapak kalkınca ya da sayfa çizilince de güncellensin
   basla().catch((h) => { document.getElementById('kok').textContent = `Sayfa açılamadı: ${h.message}`; console.error(h); });
 })();
