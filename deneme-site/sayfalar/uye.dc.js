@@ -135,9 +135,9 @@ class Component extends DCLogic {
         id, gun: d, ay: AYLAR[Number(m) - 1], ad: e.ad, bilgi: `${e.bilgi} · Pinya, Urla · ${e.kayitli}/${e.kontenjan} kişi`,
         durum, rozet, dugme, islem, dugmeSinif, takvim: takvimLink(e.ad, e.tarih, e.saat, e.bitisSaat),
         acik: this.state.acikEtk === id, acikYazi: this.state.acikEtk === id ? 'true' : 'false',
-        acYazi: this.state.acikEtk === id ? 'Ayrıntıları gizle' : 'Ayrıntılar ve afiş',
+        acYazi: this.state.acikEtk === id ? 'Ayrıntıları gizle ▲' : 'Ayrıntılar ▼',
         ac: () => this.setState((s) => ({ acikEtk: s.acikEtk === id ? null : id })),
-        afisVar: !!e.afis, afis: e.afis || '', afisAlt: `${e.ad} afişi`, kimVar: !!e.kim, kim: e.kim || '',
+        satisVar: !!e.fiyat, afisVar: !!e.afis, afis: e.afis || '', afisAlt: `${e.ad} afişi`, kimVar: !!e.kim, kim: e.kim || '',
         aciklama: e.aciklama || 'Ayrıntılar yakında.',
         // Ücretsiz (üyelik kapsamında) etkinlikte aktif üye "Geliyorum" der; sepet misafir bileti içindir
         geliyorVar: aktif && (!ucretli || e.ben === 'kayitli'),

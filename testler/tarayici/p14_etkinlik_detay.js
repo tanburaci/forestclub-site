@@ -41,7 +41,26 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     dogru(yuklenen.length === 1 && g && g.govde.saat === '09.30–11.30' && g.govde.aciklama.startsWith('Ağaçların altında') && /\/afisler\/.+\.png$/.test(g.govde.afis) && !('tarih' in g.govde) && !('ad' in g.govde),
       `düzenleme ve afiş kaydedildi (${JSON.stringify(g && g.govde)})`);
     dogru(await y.page.getByRole('link', { name: 'Üye paneli' }).getAttribute('href') === '/uye', 'yönetim: tek tuşla üye paneline geçiş');
+    // Yöneticinin kendi üyeliğini hesabına bağlaması
+    await y.page.locator('button').filter({ hasText: /^Üyeler$/ }).first().click();
+    await y.page.locator('table.fc-tablo tbody tr').filter({ hasText: 'Üye 4' }).getByRole('button', { name: 'Profil' }).click();
+    await y.page.getByRole('button', { name: 'Bu üyelik benim (hesabıma bağla)' }).click();
+    await y.page.getByText('Bağlandı ✓', { exact: false }).waitFor({ timeout: 4000 });
+    const bag = y.istekler.filter((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/uyeler' && 'user_id' in x.govde);
+    dogru(bag.length === 2 && bag[0].govde.user_id === null && bag[1].govde.user_id === 'yon-1' && /id=eq\.4/.test(bag[1].ara), `üyelik yönetici hesabına bağlandı (${bag.map((x) => x.ara).join(' | ')})`);
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
+
+    // ---------- İki adımlı kod: bu cihazda 30 günde bir ----------
+    const y3 = await sayfaAc(tarayici, yonetimVerisi(), oturum('yon-1', 'yonetici@posta.test'));
+    await y3.ctx.addInitScript(() => { localStorage.setItem('fc_mfa_son', String(Date.now() - 2 * 24 * 3600 * 1000)); });
+    await y3.page.goto(`${SITE}/yonetim/`);
+    await y3.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
+    dogru(true, '2 gün önce kod girilmiş oturum: panel kodsuz açılır');
+    const y4 = await sayfaAc(tarayici, yonetimVerisi(), oturum('yon-1', 'yonetici@posta.test'));
+    await y4.ctx.addInitScript(() => { if (!sessionStorage.getItem('ilk')) { sessionStorage.setItem('ilk', '1'); localStorage.setItem('fc_mfa_son', String(Date.now() - 31 * 24 * 3600 * 1000)); } });
+    await y4.page.goto(`${SITE}/yonetim/`);
+    await y4.page.waitForTimeout(2500);
+    dogru(y4.istekler.filter((x) => x.yol === '/auth/v1/logout').length === 1, '31 gün önce kod girilmiş oturum bir kez kapanır (giriş ve kod yeniden istenir)');
 
     // ---------- Üye paneli: açılır kart ----------
     const uye = { id: 1, kod: 'FC-U-0001', ad: 'Deniz Yılmaz', eposta: 'deniz@posta.test', tel: null, bitis: gun(20), baslangic: gun(-10), dogum_gunu: null,
@@ -58,10 +77,11 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     dogru(await u.page.getByRole('link', { name: 'Yönetim paneli' }).getAttribute('href') === '/yonetim', 'üye: yönetici olan üyede yönetim paneline geçiş');
     await u.page.locator('button').filter({ hasText: /^Etkinlikler$/ }).first().click();
     dogru(await u.page.getByRole('img', { name: 'Breakfast Club afişi' }).count() === 0, 'üye: afiş kapalı kartta görünmüyor');
-    await u.page.getByRole('button', { name: /Ayrıntılar ve afiş/ }).click();
+    await u.page.getByRole('button', { name: /Ayrıntılar ▼/ }).click();
     await u.page.getByRole('img', { name: 'Breakfast Club afişi' }).waitFor({ timeout: 3000 });
     dogru(await u.page.getByText('Ağaçların altında kahvaltı.').count() === 1 && await u.page.getByText('DJ Orman').count() === 1, 'üye: kart açılınca afiş, kim ve açıklama');
-    dogru(await u.page.getByRole('button', { name: 'Randevu oluştur' }).count() === 1 && await u.page.getByText('Takvime ekle').count() === 0, 'üye: "Randevu oluştur" var, "Takvime ekle" yok');
+    dogru(await u.page.getByRole('button', { name: 'Randevu oluştur' }).count() === 1 && await u.page.getByText('Takvime ekle').count() === 0
+      && await u.page.getByText('Bilet satışı yok').count() === 0, 'üye: "Randevu oluştur" var; "Takvime ekle" ve boş bilet düğmesi yok');
     dogru(!u.konsol.some((x) => /pageerror/.test(x)), 'üye: sayfa hatası yok');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
