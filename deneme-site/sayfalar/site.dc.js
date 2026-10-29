@@ -78,6 +78,7 @@ class Component extends DCLogic {
       // Satış (örnek): fiyat TL, üye: ucretsiz | yuzde50 | tam; kontenjan ve kayıtlı (üye + satılan bilet)
       const sat = !gecti ? (b.satis || (!window.FCS && b.ad === 'The Common Table' ? { fiyat: 750, uye: 'ucretsiz', kontenjan: 35, kayitli: 20 } : null)) : null;
       // Kart önce kısa özet; karta (düğme ve bağlantılar dışında) dokununca açılır / kapanır
+      const yakinda15 = !gecti && !bugun && (new Date(`${b.tarih}T12:00:00Z`) - new Date(`${BUGUN}T12:00:00Z`)) / 864e5 <= 15;
       const kartKey = `${b.tarih}|${b.ad}`;
       const acik = this.state.acikEtk === kartKey;
       return {
@@ -88,8 +89,9 @@ class Component extends DCLogic {
           this.setState((st) => ({ acikEtk: st.acikEtk === kartKey ? null : kartKey }));
         },
         afisAc: () => this.setState({ afisTam: b.afis, afisTamAlt: `${b.ad} afişi` }),
-        etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : 'Yaklaşan',
-        rozet: gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : pill('#111111', '#FFFFFF'),
+        // "Yakında" yalnız 15 gün içindeki etkinliklerde; daha uzaktakilerde etiket yok
+        etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : yakinda15 ? 'Yakında' : '',
+        rozet: gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : yakinda15 ? pill('#111111', '#FFFFFF') : 'display:none',
         kart: `background:#FFFFFF;border-radius:20px;border:2.5px solid #111111;box-shadow:${bugun ? '7px 7px 0 #111111' : '4px 4px 0 #111111'};padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;${gecti ? 'opacity:.78' : ''}`,
       };
     });

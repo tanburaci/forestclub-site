@@ -138,6 +138,11 @@ a{color:#111111}a:hover{color:#000000}
 .fs-modal{position:fixed;z-index:61;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,94vw);max-height:92vh;overflow-y:auto;background:#FFFFFF;border:3px solid #111111;border-radius:16px;box-shadow:8px 8px 0 #111111;box-sizing:border-box}
 .fs-modal-kapat{position:absolute;top:10px;right:10px;z-index:2;width:40px;height:40px;border-radius:50%;border:2.5px solid #111111;background:#FFFFFF;font:700 20px Figtree,sans-serif;cursor:pointer}
 .fs-afis{position:relative}
+.fs-gonullu-1,.fs-gonullu-2,.fs-gonullu-fidan{transform-box:fill-box;transform-origin:50% 100%;animation:fs-gonullu 2.8s ease-in-out infinite}
+.fs-gonullu-2{animation-delay:-1.4s}
+.fs-gonullu-fidan{animation-name:fs-fidan}
+@keyframes fs-gonullu{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-6px) rotate(2deg)}}
+@keyframes fs-fidan{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
 /* GÖKYÜZÜ: html.gok-gunduz / gok-safak / gok-gece ve hava-bulutlu / hava-yagmur / hava-kar (site.js) */
 .fs-gok{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;--bulut:#FFFFFF;background:linear-gradient(to bottom,#A9D8F2 0%,#D3ECF8 55%,#F2FAFD 100%);transition:background 2s}
@@ -180,7 +185,7 @@ html.gok-gece .fs-gece-sahne{opacity:1}
 .fs-nota-2{animation-delay:-1.4s}
 @keyframes fs-nota{0%{transform:translateY(6px);opacity:0}30%{opacity:1}100%{transform:translateY(-18px);opacity:0}}
 html.gok-gece .fs-mekan .fs-yoga,html.gok-gece .fs-ucan-balon,html.gok-gece .fs-ucan-yerde{display:none}
-html.gok-gece .fs-ucan-orta{filter:drop-shadow(0 0 10px rgba(255,243,184,.95)) drop-shadow(0 0 26px rgba(255,243,184,.6))}
+html.gok-gece .fs-ucan-orta,html.gok-gece .fs-ucan-yakin{filter:drop-shadow(0 0 10px rgba(255,243,184,.95)) drop-shadow(0 0 26px rgba(255,243,184,.6))}
 html.gok-gece .fs-ilk-ekran header .fs-baslik,html.gok-gece .fs-ilk-ekran header .fs-menu,html.gok-gece #ust .fs-hero-yazi h1,html.gok-gece #ust .fs-hero-yazi>span{color:#FFFFFF !important}
 html.gok-gece #ust .fs-hero-yazi p{color:#E4E7F2 !important}
 html.gok-gece .fs-ilk-ekran header img{filter:invert(1)}
@@ -973,7 +978,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
           </sc-if>
         </div>
         <sc-if value="{{ uyeFormda }}" hint-placeholder-val="{{ true }}">
-        <form style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+        <form style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
           <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Ad Soyad
             <input type="text" autocomplete="name" value="{{ bAd }}" onChange="{{ bAdYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 12px; min-height: 46px; box-sizing: border-box">
           </label>
@@ -1042,13 +1047,30 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
     </section>
 
     <!-- GÖNÜLLÜ OL: etkinliklerde yardım edecek gönüllüler; form yönetim › Başvurular › Gönüllüler'e düşer -->
-    <section id="gonullu" style="max-width: 1200px; margin: 0 auto; padding: 56px 20px; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
-      <div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+    <section id="gonullu" style="max-width: 1200px; margin: 0 auto; padding: 56px 20px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+      <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
         <h2 class="fs-baslik" style="font-size: 52px">Gönüllü ol</h2>
         <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">Etkinliklerimizde bize yardım edecek gönüllüler arıyoruz. Kurulumdan mutfağa, karşılamadan fotoğrafa; elini taşın altına koymak istersen formu doldur, seninle e-postayla iletişime geçelim.</p>
+        <!-- Gönüllü sahnesi: iki karakter birlikte fidan taşıyor (manzara çizim tarzında ağaçlar, çimen) -->
+        <div class="fs-gonullu-sahne" aria-hidden="true" style="max-width: 460px; width: 100%">
+          <svg viewBox="0 0 460 260" style="display: block; width: 100%; height: auto; overflow: visible"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M0 222 Q120 206 230 214 T460 210 V260 H0 Z" fill="#C7DBA0" stroke="none"/>
+            <path d="M0 222 Q120 206 230 214 T460 210" fill="none" stroke-width="2.5"/>
+            <path d="M44 214 v-14" stroke="#6B4426" stroke-width="5"/><path d="M44 78 L82 150 H64 L92 204 H-4 L24 150 H6 Z" fill="#3F6B3F"/>
+            <path d="M414 212 v-12" stroke="#6B4426" stroke-width="5"/><path d="M414 100 L446 160 H431 L456 202 H372 L397 160 H382 Z" fill="#4E7F45"/>
+            <path d="M372 214 c-16 0 -18 -22 2 -24 c2 -16 26 -16 30 -2 c16 -2 22 22 4 26 Z" fill="#7FAE5A"/>
+            <path d="M100 216 c-14 0 -14 -18 2 -20 c4 -12 22 -12 24 0 c14 0 16 18 2 20 Z" fill="#8DBA62"/>
+            <g class="fs-gonullu-fidan"><path d="M206 176 h48 l-6 34 h-36 Z" fill="#C8693F"/><path d="M204 176 h52" stroke-width="3.5"/>
+              <path d="M230 176 V128" stroke="#6B4426" stroke-width="3"/><path d="M230 150 c-18 -2 -24 -16 -18 -24 c12 2 18 12 18 24 Z" fill="#8DBA62"/><path d="M230 140 c16 -4 24 -18 18 -26 c-12 4 -18 14 -18 26 Z" fill="#7FAE5A"/><path d="M230 128 c-4 -10 0 -20 0 -20 c4 6 6 14 0 20 Z" fill="#8DBA62"/></g>
+            <path d="M168 168 Q190 172 208 184" fill="none" stroke-width="3"/><path d="M292 168 Q270 172 252 184" fill="none" stroke-width="3"/>
+          </g>
+          <image href="/_blob/426f104f4634b69c53f59c397459ea29" x="54" y="62" width="150" height="150" class="fs-gonullu-1"/>
+          <image href="/_blob/aacfc64535d44efe49b190182753b4af" x="256" y="62" width="150" height="150" class="fs-gonullu-2"/>
+          </svg>
+        </div>
       </div>
       <sc-if value="{{ gnFormda }}" hint-placeholder-val="{{ true }}">
-        <form style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box">
+        <form style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
           <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Ad Soyad
             <input type="text" autocomplete="name" value="{{ gn.ad }}" onChange="{{ gnYaz.ad }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 12px; min-height: 46px; box-sizing: border-box">
           </label>
@@ -1109,17 +1131,17 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
         </div>
         <p style="margin: 0; color: #5E5E5E; font-style: italic">We listen carefully.<br>To the trees. To the music. To each other.</p>
       </div>
+      <!-- Nasıl gelinir: diğer sütunlarla aynı görünüm; Google Haritalar'da Pinya, Urla -->
+      <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px">
+        <h3 style="margin: 0 0 4px; font-size: 16px">Nasıl gelinir?</h3>
+        <span style="display: inline-flex; align-items: center; gap: 8px; color: #111111"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>{{ ilt.alan }}</span>
+        <a href="https://www.google.com/maps/search/?api=1&amp;query=Pinya%2C%20Urla" target="_blank" rel="noopener" style="color: #111111">Google Haritalar'da aç</a>
+      </div>
       <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px">
         <h3 style="margin: 0 0 4px; font-size: 16px">İletişim</h3>
         <sc-if value="{{ ilt.instagramVar }}" hint-placeholder-val="{{ true }}"><a href="{{ ilt.instagramLink }}" target="_blank" rel="noopener" aria-label="Instagram" style="display: inline-flex; align-items: center; gap: 8px; color: #111111"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none"/></svg><span>{{ ilt.instagramYazi }}</span></a></sc-if>
         <a href="{{ ilt.epostaLink }}" aria-label="E-posta" style="display: inline-flex; align-items: center; gap: 8px; color: #111111"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="M3.5 6.5 L12 13 L20.5 6.5"/></svg><span>{{ ilt.eposta }}</span></a>
         <sc-if value="{{ ilt.toplulukVar }}" hint-placeholder-val="{{ true }}"><a href="{{ ilt.toplulukLink }}" target="_blank" rel="noopener" aria-label="WhatsApp topluluğu" style="display: inline-flex; align-items: center; gap: 8px; color: #111111"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.6-4.2A8.5 8.5 0 1 1 20.5 11.6z"/><path d="M8.6 8.4c.3-.6.7-.6 1-.6h.5c.2 0 .4.1.5.4l.7 1.7c.1.2 0 .5-.1.7l-.5.6c.6 1.2 1.6 2.1 2.8 2.7l.6-.5c.2-.2.4-.2.7-.1l1.7.7c.3.1.4.3.4.5v.5c0 .4-.1.7-.6 1-.6.3-1.6.4-3-.2a9.5 9.5 0 0 1-4.6-4.6c-.6-1.4-.5-2.4-.2-3z" fill="currentColor" stroke="none"/></svg><span>{{ ilt.toplulukYazi }}</span></a></sc-if>
-        <!-- Nasıl gelinir: Google Haritalar'da Pinya, Urla -->
-        <div style="margin-top: 8px; background: #111111; color: #FFFFFF; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
-          <span class="fs-baslik" style="font-size: 30px; color: #FFFFFF">Nasıl gelinir?</span>
-          <span style="display: inline-flex; align-items: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>{{ ilt.alan }}</span>
-          <a class="fs-btn" href="https://www.google.com/maps/search/?api=1&amp;query=Pinya%2C%20Urla" target="_blank" rel="noopener" style="background: #FFFFFF; color: #111111; border-color: #FFFFFF; padding: 10px 16px; min-height: 44px; font-size: 15px; align-self: flex-start">Google Haritalar'da aç</a>
-        </div>
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px; flex: 1 1 220px">
         <!-- Metin sayfaları hazır olana kadar deneme sitesinde gizli -->
@@ -1131,13 +1153,16 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
         <a href="/gizlilik/">Fotoğraf ve video izni</a>
         </sc-if>
         <!-- Satış ve gizlilik sayfaları (iyzico şartı): her zaman görünür -->
-        <h3 style="margin: 8px 0 4px; font-size: 16px">Sözleşmeler</h3>
+        <h3 style="margin: 0 0 4px; font-size: 16px">Sözleşmeler</h3>
         <a href="/hakkimizda/">Hakkımızda</a>
         <a href="/teslimat-iade/">Teslimat ve iade şartları</a>
         <a href="/gizlilik/">Gizlilik sözleşmesi ve KVKK</a>
         <a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a>
-        <div style="margin-top: 6px"><img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32" style="height: 28px; width: auto; max-width: 100%"></div>
-        <a href="Main.dc.html" style="margin-top: 8px; color: #5E5E5E; font-size: 14px">Yönetici girişi</a>
+      </div>
+      <!-- Ödeme logoları (iyzico şartı) sayfanın en altında, ortada -->
+      <div style="flex: 1 1 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 1.5px solid #E2E2DE; padding-top: 22px">
+        <img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32" style="height: 28px; width: auto; max-width: 100%">
+        <a href="Main.dc.html" style="color: #5E5E5E; font-size: 14px">Yönetici girişi</a>
       </div>
     </footer>
 
@@ -1227,6 +1252,7 @@ class Component extends DCLogic {
       // Satış (örnek): fiyat TL, üye: ucretsiz | yuzde50 | tam; kontenjan ve kayıtlı (üye + satılan bilet)
       const sat = !gecti ? (b.satis || (!window.FCS && b.ad === 'The Common Table' ? { fiyat: 750, uye: 'ucretsiz', kontenjan: 35, kayitli: 20 } : null)) : null;
       // Kart önce kısa özet; karta (düğme ve bağlantılar dışında) dokununca açılır / kapanır
+      const yakinda15 = !gecti && !bugun && (new Date(`${b.tarih}T12:00:00Z`) - new Date(`${BUGUN}T12:00:00Z`)) / 864e5 <= 15;
       const kartKey = `${b.tarih}|${b.ad}`;
       const acik = this.state.acikEtk === kartKey;
       return {
@@ -1237,8 +1263,9 @@ class Component extends DCLogic {
           this.setState((st) => ({ acikEtk: st.acikEtk === kartKey ? null : kartKey }));
         },
         afisAc: () => this.setState({ afisTam: b.afis, afisTamAlt: `${b.ad} afişi` }),
-        etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : 'Yaklaşan',
-        rozet: gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : pill('#111111', '#FFFFFF'),
+        // "Yakında" yalnız 15 gün içindeki etkinliklerde; daha uzaktakilerde etiket yok
+        etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : yakinda15 ? 'Yakında' : '',
+        rozet: gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : yakinda15 ? pill('#111111', '#FFFFFF') : 'display:none',
         kart: `background:#FFFFFF;border-radius:20px;border:2.5px solid #111111;box-shadow:${bugun ? '7px 7px 0 #111111' : '4px 4px 0 #111111'};padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;${gecti ? 'opacity:.78' : ''}`,
       };
     });
