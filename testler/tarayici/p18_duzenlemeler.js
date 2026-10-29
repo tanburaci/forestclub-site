@@ -20,6 +20,9 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     v.tablolar.uyeler = v.tablolar.uyeler.slice(0, 8);
     v.tablolar.uyeler[2] = { ...v.tablolar.uyeler[2], baslangic: null, bitis: null, durum: 'basvuru' };
     v.tablolar.etkinlikler.push({ ...v.tablolar.etkinlikler[0], id: 11, tarih: gun(45), ad: 'Uzak Atölye' });
+    v.tablolar.etkinlikler.push({ ...v.tablolar.etkinlikler[0], id: 12, tarih: gun(1), ad: 'Altın Tohum', bilet_fiyati: 1500, uyelere: 'yuzde50', satilan_bilet: 1 });
+    v.tablolar.muhasebe_hareketleri = [{ id: 1, tarih: gun(0), tur: 'gelir', tutar: 750, kasa: 'banka', hedef_kasa: null, kategori: 'Etkinlik katılım ücreti', etkinlik_id: 12, aciklama: 'Bilet · Deniz · 1 kişi', belge: 'bilet:5', otomatik: true, odeme: 'havale', fatura_durum: null, fatura_no: null, fatura_tarih: null }];
+    v.tablolar.bilet_istekleri = [{ id: 5, uye_id: 1, ad: 'Deniz Yılmaz', eposta: 'deniz@posta.test', tel: null, kalemler: [{ etkinlik_id: 12, adet: 1, birim: 1500, indirim: 750, tutar: 750 }], tutar: 750, dosya: 'yeni/x', yuklendi: true, durum: 'onaylandi', created_at: '2026-10-29T10:00:00Z' }];
     v.tablolar.gonulluler = [{ id: 1, ad: 'Gönüllü Kişi', eposta: 'gonullu@posta.test', tel: null, alanlar: ['Karşılama'], notlar: null, durum: 'yeni', created_at: '2026-10-29T10:00:00Z' }];
     const y = await sayfaAc(tarayici, v, oturum('yon-1', 'yonetici@posta.test'));
     await y.page.goto(`${SITE}/yonetim/`);
@@ -29,6 +32,16 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     dogru(/Aktif/.test(tablo) && /Pasif/.test(tablo) && !/Süresi doldu|Hiç ödemedi|Aidattan muaf/.test(tablo), 'üyeler: durum yalnız Aktif / Pasif');
     dogru(await y.page.locator('button').filter({ hasText: /^Pasif · \d+$/ }).count() === 1, 'üyeler: Pasif süzgeci');
     dogru(await y.page.locator('table.fc-uye-tablo').getByRole('button', { name: 'Elden ödeme' }).count() === 0, 'üyeler: Elden ödeme satırda değil (profilde)');
+
+    await sekme(y.page, 'Etkinlikler');
+    const kart = y.page.locator('article').filter({ has: y.page.locator('h3', { hasText: 'Altın Tohum' }) });
+    await kart.waitFor({ timeout: 5000 });
+    dogru(/1 satıldı \(750 TL\)/.test(await kart.innerText()), 'etkinlik: satış tutarı üye indirimiyle (750 TL)');
+    await kart.getByRole('button', { name: 'Katılımcılar · yoklama' }).click();
+    const panel = y.page.locator('#etk-panel');
+    await panel.waitFor({ timeout: 3000 });
+    await y.page.waitForTimeout(500);
+    dogru((await panel.innerText()).includes('Bilet alanlar') && (await panel.innerText()).includes('Deniz Yılmaz') && await panel.evaluate((e) => e.getBoundingClientRect().top < innerHeight), 'katılımcılar: bilet alanlar listede, panel ekranda');
 
     await sekme(y.page, 'Muhasebe');
     await y.page.getByRole('button', { name: 'Etkinlik seç…' }).first().click();
@@ -91,7 +104,7 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     dogru(await s.page.locator('a.fs-menu', { hasText: 'Üyelik' }).getAttribute('href') === '#basvuru', 'site: menüdeki Üyelik başvuru bölümüne gider');
     dogru(await s.page.locator('#uyelik').count() === 0, 'site: ayrı Üyelik bölümü yok (Aramıza katıl yeterli)');
     const katil = await s.page.locator('#basvuru').innerText();
-    dogru(katil.includes('3.000 TL') && katil.includes('Aylık Breakfast Club') && katil.includes('%50'), 'site: ücret ve üyelik hakları yazıyor');
+    dogru(katil.includes('3.000 TL') && katil.includes('Breakfast buluşması') && katil.includes('Sunset buluşması') && !katil.includes('Aylık Breakfast') && katil.includes('%50'), 'site: ücret ve üyelik hakları yazıyor');
     dogru(await s.page.locator('#basvuru').getByRole('button', { name: 'Aramıza katıl' }).count() === 1 && !katil.includes('Ödemeye geç'), 'site: düğme "Aramıza katıl"');
     // Tanışma: site bilet dağıtmaz; rezervasyon formu, açık etkinlik yoksa açıklama
     dogru(!/Tanışma biletini al|Biletimi al|İlk buluşman bizden/.test(await s.page.content()), 'tanışma: "bileti al" hiçbir yerde yok');
@@ -99,6 +112,9 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     const td = s.page.getByRole('dialog', { name: 'Tanışma biletimle rezervasyon' });
     dogru(await td.getByText('Şu an tanışma rezervasyonuna açık etkinlik yok').count() === 1 && await td.getByRole('button', { name: 'Rezervasyonu oluştur' }).isDisabled(), 'tanışma: açık etkinlik yoksa açıklama, düğme pasif');
     await td.getByRole('button', { name: 'Kapat' }).click();
+    const ilet = s.page.locator('#iletisim');
+    dogru(await ilet.getByRole('link', { name: 'E-posta' }).count() === 1 && await ilet.locator('a[aria-label="E-posta"] svg').count() === 1, 'iletişim: e-posta simgesiyle');
+    dogru(await ilet.getByText('Nasıl gelinir?').count() === 1 && await ilet.locator('a[href^="https://www.google.com/maps/"]').count() === 1 && await s.page.locator('#sss').getByText('Nasıl gelinir?').count() === 0, 'iletişim: Nasıl gelinir altta, Google Haritalar');
     const g = s.page.locator('#gonullu');
     dogru(await g.count() === 1 && await g.evaluate((x) => x.compareDocumentPosition(document.getElementById('basvuru')) & Node.DOCUMENT_POSITION_PRECEDING), 'site: Gönüllü ol, Aramıza katıl\'ın altında');
     await g.getByLabel('Ad Soyad').fill('Ayşe Gönüllü');

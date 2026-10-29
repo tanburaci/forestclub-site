@@ -405,6 +405,10 @@ class Component extends DCLogic {
     window.FCAyarKaydet(anahtar, yeni).then(() => window.FC_ORTAK.bildir(`${etiket} ${yeni ? 'açık' : 'kapalı'} ✓`),
       (h) => { this.setState({ [alan]: !yeni }); window.FC_ORTAK.bildir(h.message, true); });
   }
+  // Etkinlik paneli (katılımcılar / iptal) listenin altında açılır: ekrana kaydırılır (uzun listede görünmüyordu)
+  paneleKay() {
+    setTimeout(() => { const p = document.getElementById('etk-panel'); if (p) scrollTo({ top: p.getBoundingClientRect().top + scrollY - 12, left: 0, behavior: 'smooth' }); }, 60);
+  }
   // Üye profili: açılır ve ekrana kaydırılır (telefonda profil tablonun üstünde kalıyordu)
   profilAc(id) {
     this.setState({ profilSecili: id });
@@ -721,6 +725,20 @@ class Component extends DCLogic {
               degis: () => kGuncelle({ gelen: geldi ? k.gelen.filter((x) => x !== i) : [...k.gelen, i] }),
             };
           }),
+          // Bilet alanlar (onaylı ve dekontu incelemede) ve tanışma rezervasyonları: yalnız yönetim görür
+          ...(() => {
+            const etkId = (this.state.etkinlikler.find((x) => `${x.tarih}|${x.ad}` === p.key) || {}).id;
+            const istekler = ((window.FC && window.FC.basvurular && window.FC.basvurular.biletIstekleri) || [])
+              .filter((i) => i.yuklendi && (i.durum === 'onaylandi' || i.durum === 'bekliyor'))
+              .map((i) => ({ i, k: (i.kalemler || []).find((x) => Number(x.etkinlik_id) === Number(etkId)) })).filter((x) => x.k);
+            const tanisma = this.state.biletler.filter((b) => etkId && b.etkinlikId === etkId);
+            return {
+              biletliVar: istekler.length > 0, tanismaVar: tanisma.length > 0,
+              biletliler: istekler.map(({ i, k }) => ({ ad: i.ad, eposta: i.eposta, adet: `${k.adet} kişi`, durum: i.durum === 'onaylandi' ? 'Bilet onaylı' : 'Dekont incelemede' })),
+              tanismalar: tanisma.map((b) => ({ ad: b.ad, eposta: b.eposta, referans: b.referans ? `Referans: ${b.referans}` : '', durum: b.durum === 'geldi' ? 'Geldi ✓' : b.durum === 'uye' ? 'Üye oldu' : 'Gelmedi' })),
+              hepsiSayi: `${k.kayitli.length} üye · ${istekler.reduce((t, x) => t + Number(x.k.adet || 0), 0)} bilet · ${tanisma.length} tanışma`,
+            };
+          })(),
           beklemeListe: k.bekleme.length ? `Bekleme listesi: ${k.bekleme.map((i) => this.KISILER[i]).join(', ')} — yer açılınca sıradaki aktif üye kendiliğinden kayda geçer ve mail alır.` : 'Bekleme listesi boş.',
           alicilar: `Duyuru metni ${k.kayitli.length} kayıtlı${k.bekleme.length ? ` ve ${k.bekleme.length} bekleme listesindeki` : ''} kişiye maille gider.`,
         },
@@ -1318,7 +1336,14 @@ class Component extends DCLogic {
             return `${k.kayitli.length} üye${sat ? ` + ${sat} bilet` : ''}${tn ? ` + ${tn} tanışma` : ''}${bos <= 0 ? ' · dolu' : ` · ${bos} yer var`}`;
           })() : 'Kayıt açılmadı',
           biletYazi: x.satis
-            ? `Bilet ${x.satis.fiyat.toLocaleString('tr-TR')} TL · ${{ ucretsiz: 'üyelere ücretsiz', yuzde50: 'üyelere %50', tam: 'üyelere tam fiyat' }[x.satis.uye]} · ${x.satis.satilan} satıldı (${(x.satis.fiyat * x.satis.satilan).toLocaleString('tr-TR')} TL)`
+            ? (() => {
+              // Satış tutarı muhasebedeki gerçek bilet gelirinden (üye indirimi dahil); kayıt yoksa liste fiyatından
+              const key = `${x.tarih}|${x.ad}`;
+              const gercek = hareketler.filter((h) => h.etk === key && h.tur === 'gelir' && /katılım|Bilet/i.test(`${h.kategori || ''} ${h.aciklama || ''}`))
+                .reduce((t, h) => t + Number(h.tutar || 0), 0);
+              const tutar = gercek || x.satis.fiyat * x.satis.satilan;
+              return `Bilet ${x.satis.fiyat.toLocaleString('tr-TR')} TL · ${{ ucretsiz: 'üyelere ücretsiz', yuzde50: 'üyelere %50', tam: 'üyelere tam fiyat' }[x.satis.uye]} · ${x.satis.satilan} satıldı (${tutar.toLocaleString('tr-TR')} TL)`;
+            })()
             : 'Bilet satışı yok (yalnız üyeler)',
           beklemeYazi: k && k.bekleme.length ? `Bekleme listesi: ${k.bekleme.length}` : '',
           ...(() => {
@@ -1339,8 +1364,8 @@ class Component extends DCLogic {
               return { kayitlar: { ...s.kayitlar, [key]: { ...kk, kontenjan: yeni, kayitli: [...kk.kayitli, ...kk.bekleme.slice(0, bos)], bekleme: kk.bekleme.slice(bos) } } };
             });
           },
-          yoklamaAc: () => this.setState({ etkPanel: { key, mod: 'yoklama' }, kod: '', kodMesaj: '' }),
-          iptalAc: () => this.setState({ etkPanel: { key, mod: 'iptal' }, iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '' }),
+          yoklamaAc: () => { this.setState({ etkPanel: { key, mod: 'yoklama' }, kod: '', kodMesaj: '' }); this.paneleKay(); },
+          iptalAc: () => { this.setState({ etkPanel: { key, mod: 'iptal' }, iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '' }); this.paneleKay(); },
           duyuruDuzenle: () => this.setState({ sekme: 'eposta', sSecili: 'duyuru', sMesaj: '' }),
           // Düzenle: aynı form, tarih ve ad kilitli (kayıtlar tarih|ad ile bağlı)
           duzenle: () => {
