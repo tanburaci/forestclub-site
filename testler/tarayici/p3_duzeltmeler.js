@@ -139,7 +139,7 @@ const sekme = (page, ad) => page.locator('button').filter({ hasText: new RegExp(
     // Şifre sıfırlama bağlantısıyla gelen üye yeni şifresini belirler
     const s2 = await sayfaAc(tarayici, uv, oturum('uye-1', 'deniz@posta.test'));
     await s2.page.route('https://gflabqnazkstsyafzdmn.supabase.co/auth/v1/user', (r) => { s2.istekler.push({ yol: 'user', yontem: r.request().method(), govde: r.request().postDataJSON() }); r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ id: 'uye-1', email: 'deniz@posta.test', aud: 'authenticated' }) }); });
-    await s2.page.goto(`${SITE}/uye/#type=recovery`);
+    await s2.page.goto(`${SITE}/uye/#type=recovery`, { waitUntil: 'domcontentloaded' });  // sonraki satır metni bekler; yavaş makinede 'load' takılabiliyor
     await s2.page.getByText('Yeni şifreni belirle.').waitFor({ timeout: 15000 });
     await s2.page.locator('input[autocomplete="new-password"]').nth(0).fill('kisa');
     await s2.page.locator('input[autocomplete="new-password"]').nth(1).fill('kisa');
