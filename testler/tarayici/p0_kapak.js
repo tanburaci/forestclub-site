@@ -39,7 +39,7 @@ const veri = {
       const baglantilar = await page.locator('#fc-yakinda a, #fc-yakinda button').evaluateAll((l) => l.map((a) => `${a.getAttribute('href')}|${a.target}`));
       dogru(JSON.stringify(baglantilar) === JSON.stringify(['https://www.instagram.com/forestcluburla/|_blank', '/hakkimizda/|', '/teslimat-iade/|', '/gizlilik/|', '/mesafeli-satis/|']),
         `${ad}: kapakta yalnız Instagram (yeni sekmede) ve sözleşme bağlantıları var (${baglantilar})`);
-      dogru(await page.locator('#fc-yakinda .logo').innerText() === 'VISA\nMastercard\niyzico ile Öde' || /VISA\s*Mastercard\s*iyzico ile Öde/.test(await page.locator('#fc-yakinda .logo').innerText()), `${ad}: kapakta ödeme logoları`);
+      dogru(await page.locator('#fc-yakinda .logo img').evaluate((i) => i.complete && i.naturalWidth > 0 && /iyzico ile Öde/.test(i.alt)), `${ad}: kapakta iyzico logo bandı yüklendi`);
       const ig = page.locator('#fc-yakinda a.ig');
       await page.context().route('https://www.instagram.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>instagram</p>' }));
       const [sekme] = await Promise.all([page.context().waitForEvent('page'), ig.click()]);
@@ -62,7 +62,8 @@ const veri = {
       const { page, konsol } = await sayfaAc(tarayici, veri);
       const y = await page.goto(`${SITE}/${yol}/`);
       dogru(y.status() === 200 && await page.locator('h1').innerText() === baslik && await page.locator('nav[aria-label="Sözleşmeler"] a').count() === 5
-        && !konsol.some((x) => /pageerror|Content Security Policy/.test(x)), `${yol}: sayfa açılıyor, başlık ve bağlantılar var`);
+        && await page.locator('.logolar img').evaluate((i) => i.complete && i.naturalWidth > 0)
+        && !konsol.some((x) => /pageerror|Content Security Policy/.test(x)), `${yol}: sayfa açılıyor, başlık, bağlantılar ve logo bandı var`);
     }
     // Açılış: "Yakında" modu kapalı → kapak kalkar, site tıklanır, bölümler görünür
     const acik = { ...veri, tablolar: { ...veri.tablolar, ayarlar: [{ anahtar: 'yakinda', deger: false }] } };
