@@ -300,10 +300,16 @@
   };
 
   // Ayar kaydı (ayarlar tablosu; site ve üye paneli herkese açık olanları okur)
+  const AYAR_HERKESE = ['yakinda', 'site_duyurusu', 'iletisim', 'kart_odeme', 'aidat', 'dondurma', 'tanisma_acik'];
   window.FCAyarKaydet = async (anahtar, deger) => {
     const { data, error } = await sb.from('ayarlar').update({ deger }).eq('anahtar', anahtar).select('anahtar');
     if (error) throw new Error(error.message);
-    if (!data.length) throw new Error('Ayar bulunamadı; veritabanı güncellemesi (göç) uygulanmamış olabilir.');
+    if (!data.length) {
+      // Satır hiç yoksa (canlıda eksik kalmışsa) oluşturulur; site ve üye panelinin okuduğu ayarlar herkese açık
+      const { error: eHata } = await sb.from('ayarlar').insert({ anahtar, deger, herkese_acik: AYAR_HERKESE.includes(anahtar) });
+      if (eHata) throw new Error(/row-level security|permission/i.test(eHata.message)
+        ? 'Ayar kaydedilemedi: yönetici yetkisi doğrulanamadı. Çıkış yapıp yeniden gir.' : eHata.message);
+    }
     window.FC.ayarlar[anahtar] = deger;
   };
 
@@ -801,6 +807,15 @@
     const panel = await window.DC.bagla('/sayfalar/yonetim.dc.html', kok, { varliklar: A.varliklar });
     if (hata) panel.setState({ girisHata: hata });
     if (window.FC) senkronKur(panel);
+    // Başka sekmede yeniden giriş ya da çıkış yapılırsa bu sekmenin oturumu da değişir; iki adımlı doğrulama düşerse
+    // sunucu kayıtları reddeder ("Ayar bulunamadı" gibi). Panel yenilenir, gerekirse kod yeniden sorulur.
+    if (window.FC) {
+      sb.auth.onAuthStateChange((olay, yeni) => {
+        let aal = '';
+        try { aal = JSON.parse(atob(yeni.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).aal; } catch (h) { /* oturum yok */ }
+        if (aal !== 'aal2') location.reload();
+      });
+    }
     if (window.FC && window.FC.eksik.length) {
       bildir(`Uyarı: bazı kayıtlar eksik yüklendi (${window.FC.eksik.join(', ')}). Sayfayı yenileyin; sürerse bize haber verin.`, true, 30000);
     }

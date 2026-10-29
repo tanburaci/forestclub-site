@@ -67,6 +67,8 @@ async function sayfaAc(tarayici, veri, oturumJson) {
       return json(status, body);
     }
     const tablo = u.pathname.split('/').pop();
+    const ozel = q.method() !== 'GET' && veri.yaz && veri.yaz(q.method(), tablo, u, govde);  // testin kendi yazma yanıtı
+    if (ozel) return json(ozel[0], ozel[1]);
     if (q.method() !== 'GET') return json(201, q.headers()['accept'].includes('vnd.pgrst.object') ? { id: 999 } : [{ id: 999 }]);
     if (veri.hata && veri.hata[tablo]) return json(500, { message: 'sunucu hatası' });
     let satirlar = typeof veri.tablolar[tablo] === 'function' ? veri.tablolar[tablo]() : (veri.tablolar[tablo] || []);
