@@ -56,7 +56,7 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
       }
       if (u.pathname.startsWith('/rest/v1/rpc/')) {
         const fn = u.pathname.split('/').pop();
-        if (['basvuru_yap', 'tanisma_bileti_al', 'cagri_gonder', 'dekont_kaydet'].includes(fn)) formlar.push({ dogrudan: fn });
+        if (['basvuru_yap', 'tanisma_bileti_al', 'tanisma_rezervasyon', 'cagri_gonder', 'dekont_kaydet'].includes(fn)) formlar.push({ dogrudan: fn });
         return json(200, fn === 'etkinlik_doluluk' ? [] : null);
       }
       if (u.pathname === '/rest/v1/etkinlikler') {
@@ -72,7 +72,7 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
     await page.getByText('Breakfast Club').first().waitFor({ timeout: 15000 });
     dogru(turnstileYuklendi === 0, 'Turnstile sayfa açılışında yüklenmiyor (yalnız gönderimde)');
     const b = await page.evaluate(() => window.FCSBasvuru('Gerçek Kişi', 'gercek@posta.test', '05321112233', true, true, true, false));
-    const t = await page.evaluate((k) => window.FCSTanisma('Misafir', 'misafir@posta.test', k), Object.keys(await page.evaluate(() => window.FCS.anahtar))[0]);
+    const t = await page.evaluate((k) => window.FCSTanisma({ ad: 'Misafir Kişi', eposta: 'misafir@posta.test', tel: '05320000000', referans: 'Pelin Küçükali', biletNo: 'FC-0042' }, k), Object.keys(await page.evaluate(() => window.FCS.anahtar))[0]);
     await page.evaluate(() => window.FCSCagri({ ad: 'Deniz', iletisim: '0532', uyeOl: false }));
     const hata = await page.evaluate(() => window.FCSBasvuru('Ç', 'cok@posta.test', '05321112233', true, true, true, false).then(() => '', (h) => h.message));
     dogru(b === 'tamam' && t === 'verildi', `başvuru ve tanışma form-gonder'den döndü (${b}, ${t})`);
@@ -80,7 +80,7 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
     dogru(await page.evaluate(() => ((k) => k.length > 0 && k.every((e) => e.style.display === 'none'))([...document.body.children].filter((e) => e.style.position === 'fixed' && e.style.bottom === '16px'))), 'doğrulama bitince Turnstile kutusu ekrandan kalkıyor');
     dogru(formlar[0].tur === 'basvuru' && formlar[0].jeton === 'jeton-1' && formlar[0].veri.eposta === 'gercek@posta.test' && formlar[0].veri.kvkk === true,
       `başvuru gövdesi ve Turnstile jetonu (${JSON.stringify(formlar[0])})`);
-    dogru(formlar[1].tur === 'tanisma' && formlar[1].veri.etkinlik === 7 && formlar[1].jeton === 'jeton-2', 'tanışma: etkinlik numarası ve yeni jeton');
+    dogru(formlar[1].tur === 'tanisma' && formlar[1].veri.etkinlik === 7 && formlar[1].veri.referans === 'Pelin Küçükali' && formlar[1].veri.biletNo === 'FC-0042' && formlar[1].jeton === 'jeton-2', 'tanışma: rezervasyon (referans, bilet no, etkinlik) ve yeni jeton');
     dogru(formlar[2].tur === 'cagri' && formlar[2].veri.ad === 'Deniz', 'Açık Çağrı form-gonder ile');
     dogru(/Çok fazla deneme/.test(hata), `sunucu hatası kullanıcıya iletilir (${hata})`);
     dogru(turnstileYuklendi === 1, 'Turnstile betiği bir kez yüklendi');

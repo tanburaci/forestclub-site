@@ -289,7 +289,7 @@ class Component extends DCLogic {
         { soru: 'Üyelik ne kadar, nasıl ödeniyor?', cevap: canli && AYAR.kart_odeme !== true
           ? `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Havale / EFT ile ödersin, dekontunu sitedeki dekont sayfasından yüklersin; onaylanınca üyeliğin başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.`
           : `30 günlük üyelik ${Number(AYAR.aidat || 3000).toLocaleString('tr-TR')} TL. Kartla ödersin, üyeliğin hemen başlar. Otomatik ücret çekilmez; devam etmek istediğinde yeni dönemi ödersin.` },
-        { soru: 'Üye olmadan gelebilir miyim?', cevap: 'İlk buluşman bizden: sitedeki “Tanışma biletini al” ile bir etkinliğe ücretsiz gelebilirsin. Her e-posta için bir kez geçerli.' },
+        { soru: 'Üye olmadan gelebilir miyim?', cevap: 'Bir üyemizden tanışma bileti aldıysan bir etkinliğe ücretsiz gelebilirsin: sitedeki “Tanışma biletimle rezervasyon oluştur” ile yerini ayır. Tanışma rezervasyonu etkinlikten 1 gün önce, yer varsa açılır; bilet bir kez kullanılır.' },
         { soru: 'Etkinliklere nasıl kayıt oluyorum?', cevap: 'Üye panelinde etkinliğin altındaki “Randevu oluştur”a bas. Kontenjan doluysa bekleme listesine yazılırsın; yer açılınca e-postayla haber veririz.' },
         { soru: 'Yağmur yağarsa ne olur?', cevap: 'Etkinlik iptal edilir ya da ertelenirse sitenin en üstünde duyuru çıkar ve kayıtlı herkese e-posta göndeririz.' },
         { soru: 'Üyeliğimi dondurabilir miyim?', cevap: canli
@@ -299,9 +299,10 @@ class Component extends DCLogic {
         { soru: 'Arkadaşımı, çocuğumu ya da köpeğimi getirebilir miyim?', cevap: '[KULÜBÜN CEVABI]' },
         { soru: 'Kişisel verilerim ne olacak?', cevap: 'Bilgilerin yalnız kulüp işleri için kullanılır. Üye panelinden verilerinin kopyasını isteyebilir ya da hesabının silinmesini talep edebilirsin.' },
       ].filter((x) => !canli || !/\[[A-ZÇĞİÖŞÜ ]+/.test(x.cevap)),
-      // Tanışma bileti yalnız seçilen yaklaşan buluşmada geçerli
-      // Tanışma bileti yalnız üyelere ücretsiz buluşmalarda (biletli etkinliklerde kural "ucretsiz" olmalı)
-      tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN && (!b.satis || b.satis.uye === 'ucretsiz')).map((b) => {
+      // Tanışma rezervasyonu: yalnız sunucunun açık dediği etkinlikler (24 saat kala, katılım kontenjanın yarısından azsa,
+      // üyelere ücretsiz buluşma); önizlemede üyelere ücretsiz yaklaşanlar
+      tEtkYok: !tumu.some((b) => b.tarih >= BUGUN && (canli ? b.tanisma : (!b.satis || b.satis.uye === 'ucretsiz'))),
+      tEtkSecenek: tumu.filter((b) => b.tarih >= BUGUN && (canli ? b.tanisma : (!b.satis || b.satis.uye === 'ucretsiz'))).map((b) => {
         const on = `${b.tarih}|${b.ad}` === this.state.tEtk;
         return {
           ad: `${b.gun} ${b.ay} · ${b.ad} · ${b.saat}`, basili: on ? 'true' : 'false',
@@ -318,6 +319,10 @@ class Component extends DCLogic {
         : 'Yerin ayrıldı ve biletini e-postana da gönderdik. Girişte kodunu göstermen yeterli.',
       tanismaAcik: !!t, tForm: t === 'form', tVerildi: t === 'verildi', tUye: t === 'uye', tKullanilmis: t === 'kullanilmis',
       tAd: this.state.tAd, tEposta: this.state.tEposta, tOnay: this.state.tOnay, tHata: this.state.tHata,
+      tRef: this.state.tRef || '', tNo: this.state.tNo || '', tTel: this.state.tTel || '',
+      tRefYaz: (e) => this.setState({ tRef: e.target.value, tHata: '' }),
+      tNoYaz: (e) => this.setState({ tNo: e.target.value, tHata: '' }),
+      tTelYaz: (e) => this.setState({ tTel: e.target.value, tHata: '' }),
       tAdYaz: (e) => this.setState({ tAd: e.target.value, tHata: '' }),
       tEpostaYaz: (e) => this.setState({ tEposta: e.target.value, tHata: '' }),
       tOnayDegis: () => this.setState((s) => ({ tOnay: !s.tOnay, tHata: '' })),
@@ -331,13 +336,16 @@ class Component extends DCLogic {
       tanismaGonder: (e) => {
         if (e && e.preventDefault) e.preventDefault();
         const ep = this.state.tEposta.trim().toLowerCase();
-        if (!this.state.tAd.trim()) return this.setState({ tHata: 'Adını yaz.' });
+        if (String(this.state.tRef || '').trim().length < 3) return this.setState({ tHata: 'Bileti veren kişinin adını ve soyadını yaz.' });
+        if (this.state.tAd.trim().length < 3) return this.setState({ tHata: 'Adını ve soyadını yaz.' });
+        if (String(this.state.tNo || '').trim().length < 3) return this.setState({ tHata: 'Tanışma bileti numarasını yaz.' });
+        if (String(this.state.tTel || '').replace(/\D/g, '').length < 10) return this.setState({ tHata: 'Telefon numaranı yaz.' });
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ep)) return this.setState({ tHata: 'Geçerli bir e-posta yaz.' });
-        if (!this.state.tEtk) return this.setState({ tHata: 'Geleceğin buluşmayı seç.' });
+        if (!this.state.tEtk) return this.setState({ tHata: 'Geleceğin etkinliği seç.' });
         if (!this.state.tOnay) return this.setState({ tHata: 'Devam etmek için metinleri onayla.' });
         if (window.FCSTanisma) {  // deneme sitesi: kural sunucuda (üye mi, daha önce bilet aldı mı)
           this.setState({ tHata: 'Gönderiliyor…' });
-          return window.FCSTanisma(this.state.tAd.trim(), ep, this.state.tEtk)
+          return window.FCSTanisma({ ad: this.state.tAd.trim(), eposta: ep, tel: this.state.tTel.trim(), referans: this.state.tRef.trim(), biletNo: this.state.tNo.trim() }, this.state.tEtk)
             .then((sonuc) => this.setState({ tanisma: sonuc, tHata: '' }))
             .catch((h) => this.setState({ tHata: h.message }));
         }

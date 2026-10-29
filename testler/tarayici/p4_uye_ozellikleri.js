@@ -148,12 +148,12 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     const s1 = await sayfaAc(tarayici, sv, null);
     await s1.page.goto(`${SITE}/`);
     await s1.page.getByText('Yoga').first().waitFor({ timeout: 15000 });
-    dogru(await s1.page.getByRole('button', { name: 'Tanışma biletini al' }).count() === 0, 'tanışma kapalıysa sitede bant yok');
+    dogru(await s1.page.getByRole('button', { name: 'Tanışma biletimle rezervasyon oluştur' }).count() === 0, 'tanışma kapalıysa sitede bant yok');
     dogru(await s1.page.locator('a[href="mailto:merhaba@posta.test"]').count() === 1 && await s1.page.getByText('Zeytinlik, Urla').count() === 1, 'iletişim e-postası ve alan ayarlardan');
     dogru(await s1.page.locator('a[href="https://www.instagram.com/forestcluburla/"]').count() === 1 && await s1.page.locator('a[href="https://chat.whatsapp.com/abc"]').count() === 1, 'Instagram ve WhatsApp topluluğu bağlantıları');
     dogru(await s1.page.locator('a[href*="wa.me"]').count() === 0 && !(await s1.page.content()).includes('5321112233'), 'ayarda numara olsa da sitede WhatsApp numarası gösterilmez');
 
-    const sv2 = { ...sv, tablolar: { ...sv.tablolar, ayarlar: [] } };
+    const sv2 = { ...sv, tablolar: { ...sv.tablolar, ayarlar: [] }, rpc: { ...sv.rpc, tanisma_etkinlikleri: () => [200, sv.tablolar.etkinlikler.map((e) => ({ etkinlik_id: e.id }))] } };
     const s2 = await sayfaAc(tarayici, sv2, null);
     await s2.page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: "window.turnstile = { render(el, o) { setTimeout(() => o.callback('jeton'), 10); return 1; }, remove() {} };" }));
     await s2.page.route(`${SB}/functions/v1/form-gonder`, (r) => {
@@ -161,14 +161,17 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
       r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ sonuc: 'verildi' }) });
     });
     await s2.page.goto(`${SITE}/`);
-    await s2.page.getByRole('button', { name: 'Tanışma biletini al' }).click();
-    await s2.page.getByRole('group', { name: 'Hangi buluşmaya geleceksin?' }).getByRole('button').first().click();
-    const tForm = s2.page.locator('form').filter({ has: s2.page.getByRole('button', { name: 'Biletimi al' }) });
-    await tForm.locator('input[type=text]').fill('Misafir Kişi');
-    await tForm.locator('input[type=email]').fill('misafir@posta.test');
+    await s2.page.getByRole('button', { name: 'Tanışma biletimle rezervasyon oluştur' }).click();
+    await s2.page.getByRole('group', { name: 'Hangi etkinliğe geleceksin?' }).getByRole('button').first().click();
+    const tForm = s2.page.getByRole('dialog', { name: 'Tanışma biletimle rezervasyon' });
+    await tForm.getByLabel('Bileti veren kişi (referans) · ad soyad *').fill('Pelin Küçükali');
+    await tForm.getByLabel('Ad Soyad *', { exact: true }).fill('Misafir Kişi');
+    await tForm.getByLabel('Tanışma bileti numarası *').fill('FC-0042');
+    await tForm.getByLabel('Telefon *').fill('0532 000 00 00');
+    await tForm.getByLabel('E-posta *').fill('misafir@posta.test');
     await tForm.locator('input[type=checkbox]').check();
-    await s2.page.getByRole('button', { name: 'Biletimi al' }).click();
-    await s2.page.getByText('Biletin hazır!').waitFor({ timeout: 6000 }).catch(async (h) => {
+    await s2.page.getByRole('button', { name: 'Rezervasyonu oluştur' }).click();
+    await s2.page.getByText('Rezervasyonun hazır!').waitFor({ timeout: 6000 }).catch(async (h) => {
       console.log('tanışma ekranı:', (await s2.page.locator('[role=alert]').allTextContents()).join(' | '));
       throw h;
     });
@@ -210,7 +213,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
 
     await sekme(y.page, 'Etkinlikler');
     dogru(await y.page.getByText('2 üye + 1 tanışma · 27 yer var').count() === 1, 'tanışma biletleri doluluğa sayılıyor');
-    const tanismaKutu = y.page.locator('label').filter({ hasText: 'Sitede sunulsun' }).locator('input');
+    const tanismaKutu = y.page.locator('label').filter({ hasText: 'Tanışma rezervasyonu açık' }).locator('input');
     dogru(await tanismaKutu.isEnabled() && await tanismaKutu.isChecked(), 'tanışma ayarı açık ve değiştirilebilir');
     await tanismaKutu.click();
     await y.page.waitForTimeout(500);

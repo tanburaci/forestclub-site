@@ -109,7 +109,7 @@
       bugun: B, eposta,
       DEMO: {
         kisiler, kayitlar: kayitHarita, anket, aidat: [],
-        biletler: biletler.map((b) => ({ id: b.id, ad: b.ad, eposta: b.eposta, alinis: b.alinis, kod: b.kod || '',
+        biletler: biletler.map((b) => ({ id: b.id, ad: b.ad, eposta: b.eposta, alinis: b.alinis, kod: b.kod || '', referans: b.referans || '', biletNo: b.bilet_no || '', tel: b.tel || '',
           etkinlik: b.etkinlik_id ? etkEtiket(etkById.get(b.etkinlik_id)) : '', durum: b.durum })),
       },
       etkinlikler: etkListe,

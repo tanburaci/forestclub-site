@@ -107,7 +107,11 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
         p_kosul: v.kosul === true, p_dogal: v.dogal === true, p_kvkk: v.kvkk === true, p_foto: v.foto === true,
       });
     case 'tanisma':
-      return rpc('tanisma_bileti_al', { p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_etkinlik: Number(v.etkinlik) || 0 });
+      // Tanışma biletiyle rezervasyon: referans, bilet numarası, telefon (kural sunucuda: 24 saat kala, katılım düşükse)
+      return rpc('tanisma_rezervasyon', {
+        p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60),
+        p_referans: metin(v.referans, 200), p_bilet_no: metin(v.biletNo, 60), p_etkinlik: Number(v.etkinlik) || 0,
+      });
     case 'cagri': {
       // cagri_gonder alanları kendisi kırpar; burada yalnız bilinen anahtarlar geçer
       const ANAHTAR = ['ad', 'iletisim', 'uye', 'alan', 'baslik', 'anlat', 'deneyim', 'sure', 'kisi', 'ihtiyac', 'gunler', 'uyeEposta', 'uyeTelefon'];

@@ -11,11 +11,13 @@
 
   async function veriYukle() {
     const B = window.FC_ORTAK.bugun();
-    const [etk, dol, oturum, ayr] = await Promise.all([
+    const [etk, dol, oturum, ayr, tan] = await Promise.all([
       sb.from('etkinlikler').select('*').eq('durum', 'yayinda').order('tarih').order('saat'),
       sb.rpc('etkinlik_doluluk'),
       sb.auth.getSession(),
       sb.from('ayarlar').select('anahtar, deger'),  // yalnız herkese açık ayarlar gelir
+      // Tanışma rezervasyonuna şu an açık etkinlikler (24 saat kala, katılım düşükse); göç yoksa boş
+      sb.rpc('tanisma_etkinlikleri').then((r) => r.data || [], () => []),
     ]);
     if (etk.error) throw etk.error;
     const d = new Map((dol.data || []).map((x) => [x.etkinlik_id, x]));
@@ -36,6 +38,8 @@
       };
     });
     const ayar = Object.fromEntries((ayr.data || []).map((a) => [a.anahtar, a.deger]));
+    const tanismaAcik = new Set((tan || []).map((x) => x.etkinlik_id));
+    etkinlikler.forEach((e) => { e.tanisma = tanismaAcik.has(anahtar[`${e.tarih}|${e.ad}`]); });
     return { bugun: B, etkinlikler, anahtar, ayar, oturum: !!(oturum.data && oturum.data.session) };
   }
 
@@ -51,10 +55,11 @@
   window.FCSGonullu = (veri) => formGonder('gonullu', veri);
   // Destek ol (kartla): sunucu iyzico ödeme sayfasının adresini döndürür
   window.FCSDestek = async (tutar) => (await formGonder('destek', { tutar })).sayfa;
-  window.FCSTanisma = async (ad, eposta, etkAnahtar) => {
+  // Tanışma biletiyle rezervasyon (bileti bir üye verir; site bilet dağıtmaz)
+  window.FCSTanisma = async (veri, etkAnahtar) => {
     const id = window.FCS && window.FCS.anahtar[etkAnahtar];
-    if (!id) throw new Error('Geleceğin buluşmayı seç.');
-    return formGonder('tanisma', { ad, eposta, etkinlik: id });
+    if (!id) throw new Error('Geleceğin etkinliği seç.');
+    return formGonder('tanisma', { ...veri, etkinlik: id });
   };
 
   // "Yakında yayındayız" kapağı (index.html) yalnız yönetimde "Yakında" modu kapatılınca kalkar; ayar okunamazsa kapak

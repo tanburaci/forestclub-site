@@ -717,12 +717,12 @@ a{color:#111111}a:hover{color:#000000}
             <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 16px; margin-top: 8px">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap">
                 <div>
-                  <h3 style="margin: 0; font-size: 20px">Tanışma biletleri</h3>
-                  <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 14px">Üyeliği hiç aktif olmamış her e-postaya bir kez, ücretsiz. Sitedeki “Tanışma biletini al” ile verilir.</p>
+                  <h3 style="margin: 0; font-size: 20px">Tanışma rezervasyonları</h3>
+                  <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 14px">Üyeden tanışma bileti alan kişi sitede “Tanışma biletimle rezervasyon” ile yerini ayırır: referans, bilet numarası, telefon. Etkinliğe 24 saatten az kala ve katılım kontenjanın yarısından azsa açılır; etkinliğin tanışma kontenjanı sınırdır.</p>
                 </div>
                 <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
                   <input type="checkbox" checked="{{ tanismaSunuluyor }}" onChange="{{ tanismaDegis }}" style="width: 20px; height: 20px">
-                  Sitede sunulsun
+                  Tanışma rezervasyonu açık
                 </label>
               </div>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px">
@@ -735,11 +735,12 @@ a{color:#111111}a:hover{color:#000000}
               </div>
               <div style="overflow-x: auto">
                 <table class="fc-tablo">
-                  <thead><tr><th>Kişi</th><th>Aldığı tarih</th><th>Geldiği etkinlik</th><th>Durum</th><th><span style="position: absolute; left: -9999px">İşlem</span></th></tr></thead>
+                  <thead><tr><th>Kişi</th><th>Referans · bilet no</th><th>Tarih</th><th>Etkinlik</th><th>Durum</th><th><span style="position: absolute; left: -9999px">İşlem</span></th></tr></thead>
                   <tbody>
                     <sc-for list="{{ biletler }}" as="b" hint-placeholder-count="4">
                       <tr>
-                        <td><div style="font-weight: 600">{{ b.ad }}</div><div style="color: #5E5E5E; font-size: 13px">{{ b.eposta }}</div></td>
+                        <td><div style="font-weight: 600">{{ b.ad }}</div><div style="color: #5E5E5E; font-size: 13px">{{ b.eposta }} {{ b.tel }}</div></td>
+                        <td><div>{{ b.referans }}</div><div style="color: #5E5E5E; font-size: 13px">{{ b.biletNo }}</div></td>
                         <td>{{ b.alinis }}</td>
                         <td>{{ b.etkinlik }}</td>
                         <td><span style="{{ b.rozet }}">{{ b.durum }}</span></td>
@@ -1774,7 +1775,7 @@ class Component extends DCLogic {
       { id: 'ozelgun', ad: 'Özel gün kutlaması', ne: 'Üyenin profilindeki özel günlerde gider (üye izin verdiyse).', acik: true,
         konu: 'Kutlu olsun {ad} 🌿', alanlar: ['ad', 'ozelGun'],
         metin: 'Merhaba {ad},\n\n{ozelGun} kutlu olsun! Bu güzel gününde seni düşündük.\n\nForest Club Urla' },
-      { id: 'tanisma', ad: 'Tanışma bileti', ne: 'Biri sitede tanışma biletini alınca gider.', acik: true,
+      { id: 'tanisma', ad: 'Tanışma rezervasyonu', ne: 'Tanışma biletiyle rezervasyon yapan kişiye gider.', acik: true,
         konu: 'İlk buluşman bizden: biletin hazır 🎟️', alanlar: ['ad', 'biletKodu', 'etkinlik', 'tarih', 'saat'],
         metin: 'Merhaba {ad},\n\nForest Club Urla’ya hoş geldin! Tanışma biletin: {biletKodu}\n\n{etkinlik} ({tarih}, {saat}) için yerin ayrıldı. Bilet ücretsiz, tek kullanımlık ve yalnız bu buluşmada geçerli; girişte kodunu göstermen yeterli.\n\nOrmanda görüşmek üzere,\nForest Club Urla' },
       { id: 'iptal', ad: 'Etkinlik iptal / erteleme', ne: 'Yönetici “İptal / ertele” ile duyurunca kayıtlılara ve bekleme listesine gider.', acik: true,
@@ -3242,6 +3243,7 @@ class Component extends DCLogic {
       ],
       biletler: [...this.state.biletler].sort((a, b) => b.alinis.localeCompare(a.alinis)).map((b) => ({
         ad: b.ad, eposta: b.eposta, alinis: b.alinis.split('-').reverse().join('.'), etkinlik: b.etkinlik || '—',
+        referans: b.referans || '—', biletNo: b.biletNo ? `No ${b.biletNo}` : '', tel: b.tel ? `· ${b.tel}` : '',
         durum: { uye: 'Üye oldu', geldi: 'Geldi', bekliyor: 'Henüz gelmedi' }[b.durum],
         rozet: b.durum === 'uye' ? AKTIF : b.durum === 'geldi' ? BEKLER : TASLAK,
         bekliyor: b.durum === 'bekliyor',
