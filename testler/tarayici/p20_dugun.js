@@ -16,6 +16,8 @@ const KATALOG = [
   { id: 5, tur: 'konsept', ad: 'Işıklı gece', aciklama: 'Mumlar ve ampuller.', resim: '/dugun/cizim/konsept-gece.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 2, acik: true },
   { id: 6, tur: 'urun', ad: 'Doğal keten', aciklama: null, resim: '/dugun/cizim/ortu.svg', grup: 'Örtü', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
   { id: 7, tur: 'urun', ad: 'Kır çiçekleri', aciklama: null, resim: '/dugun/cizim/cicek.svg', grup: 'Çiçek', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
+  { id: 10, tur: 'urun', ad: 'Jüt yol halısı', aciklama: null, resim: null, grup: 'Nikah alanı', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
+  { id: 11, tur: 'urun', ad: 'Altın peçete halkası', aciklama: null, resim: null, grup: 'Peçete', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
   { id: 8, tur: 'ekstra', ad: 'Fotoğraf ve video', aciklama: null, resim: '/dugun/cizim/foto.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
   { id: 9, tur: 'ekstra', ad: 'Düğün pastası', aciklama: null, resim: '/dugun/cizim/pasta.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 2, acik: true },
 ];
@@ -64,14 +66,25 @@ async function dugunAc(tarayici, genislik) {
       'adım 3: menü isteğe bağlı (Atla), yemek mekandan');
     await ileri();
     await p.locator('button.dg-sec', { hasText: 'Işıklı gece' }).click();
+    dogru(await p.locator('button.dg-hap', { hasText: 'Kır çiçekleri' }).count() === 0, 'adım 4: ürün grupları kapalı gelir');
+    const gruplar = await p.locator('.dg-grup-bas').allInnerTexts();
+    dogru(gruplar.length === 3 && gruplar[0].startsWith('Örtü') && gruplar[1].startsWith('Peçete') && gruplar[2].startsWith('Çiçek'), `adım 4: masa grupları sırayla (${gruplar.join(' | ')})`);
+    await p.locator('.dg-grup-bas', { hasText: 'Çiçek' }).click();
     await p.locator('button.dg-hap', { hasText: 'Kır çiçekleri' }).click();
+    await p.locator('.dg-grup-bas', { hasText: 'Peçete' }).click();
+    await p.locator('button.dg-hap', { hasText: 'Altın peçete halkası' }).click();
+    dogru((await p.locator('.dg-grup-bas', { hasText: 'Çiçek' }).innerText()).includes('1 seçili'), 'adım 4: grupta seçili sayısı');
+    await ileri();
+    await p.getByRole('heading', { name: 'Alan ve dekor' }).waitFor({ timeout: 3000 });
+    await p.locator('.dg-grup-bas', { hasText: 'Nikah alanı' }).click();
+    await p.locator('button.dg-hap', { hasText: 'Jüt yol halısı' }).click();
     await ileri();
     await p.locator('button.dg-sec', { hasText: 'Düğün pastası' }).click();
     await ileri();
     await p.getByRole('heading', { name: 'Son adım' }).waitFor({ timeout: 3000 });
     const ozet = await p.locator('#tasarla').innerText();
-    dogru(ozet.includes('Henüz belli değil') && ozet.includes('Nikah töreni') && ozet.includes('Işıklı gece') && ozet.includes('Kır çiçekleri') && ozet.includes('Düğün pastası'),
-      'adım 6: özet seçimleri gösteriyor');
+    dogru(ozet.includes('Henüz belli değil') && ozet.includes('Nikah töreni') && ozet.includes('Işıklı gece') && ozet.includes('Çiçek: Kır çiçekleri') && ozet.includes('Nikah alanı: Jüt yol halısı') && ozet.includes('Düğün pastası'),
+      'adım 7: özet seçimleri gruplarıyla gösteriyor');
     dogru(!/\d+\s*(TL|₺)/.test(await p.locator('body').innerText()), 'sayfada fiyat yok');
     await p.getByLabel('Adınız ve soyadınız *').fill('Ayşe ve Can');
     await p.getByLabel('E-posta *').fill('Cift@Posta.test');
@@ -83,7 +96,7 @@ async function dugunAc(tarayici, genislik) {
     await p.getByRole('heading', { name: /Teşekkür ederiz/ }).waitFor({ timeout: 5000 });
     const g = d.gonderilen[0] || {};
     dogru(d.gonderilen.length === 1 && g.tur === 'dugun' && g.jeton && g.veri.eposta === 'cift@posta.test' && g.veri.kisi === '50_100' && g.veri.tarih_esnek === true
-      && JSON.stringify(g.veri.secimler) === JSON.stringify({ mekan: 1, bolumler: [2], menu: null, konsept: 5, urunler: [7], ekstralar: [9] }) && g.veri.kvkk === true,
+      && JSON.stringify(g.veri.secimler) === JSON.stringify({ mekan: 1, bolumler: [2], menu: null, konsept: 5, urunler: [7, 11, 10], ekstralar: [9] }) && g.veri.kvkk === true,
       `talep form-gonder'e "dugun" olarak gitti (${JSON.stringify(g.veri)})`);
     dogru(!d.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'düğün sayfası: sayfa / CSP hatası yok');
 
@@ -134,6 +147,20 @@ async function dugunAc(tarayici, genislik) {
     await y.page.getByText('“Lavanta” kaydedildi.').waitFor({ timeout: 4000 });
     const ekle = y.istekler.find((x) => x.yontem === 'POST' && x.yol === '/rest/v1/dugun_katalog');
     dogru(ekle && ekle.govde.tur === 'konsept' && ekle.govde.ad === 'Lavanta', `katalog: yeni konsept eklendi (${JSON.stringify(ekle && ekle.govde)})`);
+    // Hızlı ekle: her satıra bir ürün, grupla; zaten olan atlanır
+    const urunler = y.page.locator('#fc-dugun section', { hasText: 'Ürünler' });
+    dogru((await urunler.innerText()).includes('PEÇETE') || (await urunler.innerText()).includes('Peçete'), 'katalog: ürünler grup başlıklarıyla');
+    dogru(await urunler.locator('.dy-satir', { hasText: 'Altın peçete halkası' }).getByText('Fotoğraf', { exact: true }).count() === 1 && (await urunler.locator('.dy-satir', { hasText: 'Altın peçete halkası' }).innerText()).includes('fotoğraf yok'),
+      'katalog: satırda doğrudan "Fotoğraf" yükleme, fotoğrafsız olan belli');
+    await urunler.getByRole('button', { name: 'Hızlı ekle' }).click();
+    await y.page.getByLabel('Grup *').fill('Peçete');
+    await y.page.getByLabel('Kalemler (her satıra bir tane)').fill('Keten peçete\nAltın peçete halkası\n\nPeçetede lavanta dalı');
+    const once = y.istekler.filter((x) => x.yontem === 'POST' && x.yol === '/rest/v1/dugun_katalog').length;
+    await y.page.getByRole('button', { name: 'Hepsini ekle' }).click();
+    await y.page.getByText('2 kalem eklendi (zaten olan 1 kalem atlandı).').waitFor({ timeout: 5000 });
+    const toplu = y.istekler.filter((x) => x.yontem === 'POST' && x.yol === '/rest/v1/dugun_katalog').slice(once);
+    dogru(toplu.length === 2 && toplu.every((x) => x.govde.tur === 'urun' && x.govde.grup === 'Peçete') && toplu.map((x) => x.govde.ad).join('|') === 'Keten peçete|Peçetede lavanta dalı',
+      `katalog: hızlı ekle iki ürünü Peçete grubuna ekledi (${toplu.map((x) => x.govde.ad).join(', ')})`);
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
     if (process.env.EKRAN) await y.page.screenshot({ path: process.env.EKRAN + '/dugun-yonetim.png', fullPage: true });
   } catch (h) {
