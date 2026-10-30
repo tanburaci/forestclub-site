@@ -88,7 +88,7 @@ class Component extends DCLogic {
     this.EBOS = { giris: 'satin', ad: '', kategori: 'Yoga / hareket', adet: '1', birim: 'adet', tarih: this.BUGUN, konum: '', tutar: '', kasa: 'banka', muhasebe: true, firma: '', karsilik: '', kaynak: '', not: '' };
     this.state = {
       adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
-      girildi: !!window.FC, sekme: ['#basvurular', '#uyeler'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
+      girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
       elden: { acik: false, ad: '', tutar: '3.000', tarih: this.BUGUN, hata: '' },
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
@@ -672,8 +672,9 @@ class Component extends DCLogic {
     const TASLAK = pill('#F0F0EE', '#3A3A3A');
     const sekmeler = [
       { id: 'ana', ad: 'Ana sayfa' }, { id: 'uyeler', ad: 'Üyeler' },
-      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'formlar', ad: 'Formlar' }, { id: 'iletisim', ad: 'İletişim' },
-    ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ sekme: s.id }) }));
+      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'formlar', ad: 'Formlar' }, { id: 'dugun', ad: 'Düğün' }, { id: 'iletisim', ad: 'İletişim' },
+    ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme',
+      sec: () => this.setState({ sekme: s.id }, () => { if (s.id === 'dugun' && window.FCDugunAc) window.FCDugunAc(); }) }));
     const BUGUN_SABIT = this.BUGUN;
     const tYaz = (t) => (t ? t.split('-').reverse().join('.') : '—');
     const kalanGun = (t) => Math.round((new Date(`${t}T12:00:00Z`) - new Date(`${BUGUN_SABIT}T12:00:00Z`)) / 86400000);
@@ -1399,6 +1400,7 @@ class Component extends DCLogic {
       ...this.aylikGorunum(),
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',
+      dugunStil: sekme === 'dugun' ? '' : 'display: none',
       ...this.formlarGorunum(),
       basvuruSekme: sekme === 'basvurular',
       bvr,
