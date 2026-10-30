@@ -47,9 +47,9 @@
       sb.from('uyelik_dondurmalari').select('bas, gun').eq('uye_id', u.id).is('bitti', null).order('id', { ascending: false }).limit(1),
       sb.from('ayarlar').select('anahtar, deger'),
     ]);
-    // Açık formlar (RLS yalnız açıkları gösterir) ve üyenin doldurdukları; tablo yoksa panel yine açılır
+    // Açık formlar (RLS yalnız açık, özel olmayanları gösterir; yönetici hepsini görür, süzülür) ve üyenin doldurdukları
     const [frm, fyn] = await Promise.all([
-      sb.from('formlar').select('id, baslik').order('created_at', { ascending: false }),
+      sb.from('formlar').select('*').order('created_at', { ascending: false }),
       sb.from('form_yanitlari').select('form_id').eq('uye_id', u.id),
     ]);
     const doldurulan = new Set((fyn.data || []).map((y) => y.form_id));
@@ -59,7 +59,7 @@
     const dekontBekliyor = await sb.rpc('dekont_bekliyor').then((r) => r.data === true, () => false);
     // Randevularım: üyenin bilet kodları (onaylı) ve incelemedeki istekleri; göç yoksa boş
     const biletlerim = await sb.rpc('uye_biletlerim').then((r) => r.data || [], () => []);
-    const formlar = (frm.data || []).map((f) => ({ id: f.id, baslik: f.baslik, doldu: doldurulan.has(f.id) }));
+    const formlar = (frm.data || []).filter((f) => f.acik && !f.ozel).map((f) => ({ id: f.id, baslik: f.baslik, doldu: doldurulan.has(f.id) }));
     [ods, kys, etks, ank, don, ayr].forEach((r) => { if (r.error) throw r.error; });
     const ayar = Object.fromEntries(ayr.data.map((a) => [a.anahtar, a.deger]));
     const yanit = new Map(ank.data.map((a) => [a.etkinlik_id, a]));
