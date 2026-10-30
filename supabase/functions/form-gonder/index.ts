@@ -8,7 +8,8 @@
 // Etkinlik bileti havale + dekontla: "bilet_adres" isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
 // imzalı yükleme adresi verir, dekont yüklenince "bilet_kaydet" isteği yöneticinin onayına düşürür.
 // "ozel_form": gizli bağlantılı özel form; girişsiz, ad + e-postayla (anahtar sunucuda denetlenir).
-// "dugun": /dugun/ sayfasındaki düğün tasarım talebi (seçimler kimlikle gelir, sunucuda adlarına çevrilir).
+// "dugun": /dugun/ sayfasındaki düğün tasarım talebi (seçimler kimlikle gelir, sunucuda adlarına çevrilir); özel davet
+// bağlantısından gelirse "davet" anahtarı talebi davete bağlar.
 //
 // Secrets: TURNSTILE_SECRET (zorunlu), IP_TUZU (isteğe bağlı; IP özetine katılır); destek için IYZICO_API_KEY,
 // IYZICO_SECRET_KEY, IYZICO_ADRES, isteğe bağlı IYZICO_TCKN
@@ -168,6 +169,7 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
       return rpc('dugun_talep_ac', {
         p_ad: metin(v.ad, 120), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 30), p_tarih: tarih,
         p_tarih_esnek: v.tarih_esnek === true, p_kisi: metin(v.kisi, 20), p_secimler: s, p_not: metin(v.not, 2000), p_kvkk: v.kvkk === true,
+        p_davet: v.davet ? metin(v.davet, 64) : null,
       });
     }
     case 'ozel_form':

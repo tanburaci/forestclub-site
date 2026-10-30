@@ -41,6 +41,38 @@
   <!-- TALEPLER -->
   <sc-if value="{{ taleplerSekme }}" hint-placeholder-val="{{ true }}">
     <div style="display: flex; flex-direction: column; gap: 14px">
+      <!-- Özel davet bağlantısı: tasarım formu çifte WhatsApp / Instagram'dan gönderilir -->
+      <section class="dy-kart" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap">
+          <div><h3 style="margin: 0; font-size: 19px">Özel davet bağlantısı</h3><span style="font-size: 13px; color: #5E5E5E">Tasarım formunu istediğiniz çifte gönderin: bağlantıda yalnız form açılır, çift adıyla selamlanır; dolduruldu mu buradan görürsünüz.</span></div>
+          <button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ davetFormAc }}">{{ davetFormYazi }}</button>
+        </div>
+        <sc-if value="{{ davetFormAcik }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; background: #F6EFE3; border-radius: 12px; padding: 14px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; flex: 1 1 220px">Çiftin adı
+              <input class="fc-input" type="text" maxlength="120" placeholder="Örn. Ayşe ve Can" value="{{ davetYeni.ad }}" onChange="{{ davetAd }}">
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; flex: 2 1 260px">Not (yalnız yönetim görür)
+              <input class="fc-input" type="text" maxlength="1000" placeholder="Örn. Instagram'dan yazdı, Haziran 2027" value="{{ davetYeni.notlar }}" onChange="{{ davetNot }}">
+            </label>
+            <button type="button" class="fc-btn dy-k" onClick="{{ davetOlustur }}">Bağlantı oluştur</button>
+          </div>
+        </sc-if>
+        <sc-for list="{{ davetler }}" as="d" hint-placeholder-count="1">
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; border-top: 1px solid #E4E4E2; padding-top: 10px">
+            <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <strong style="font-size: 15px">{{ d.ad }} <span style="{{ d.rozet }}">{{ d.durum }}</span></strong>
+              <span style="font-size: 13px; color: #5E5E5E">{{ d.alt }}</span>
+            </span>
+            <span style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end">
+              <sc-if value="{{ d.talepVar }}" hint-placeholder-val="{{ false }}"><button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ d.talebeGit }}">Talebi aç</button></sc-if>
+              <button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ d.kopyala }}">{{ d.kopyalaYazi }}</button>
+              <button type="button" class="fc-sekme" onClick="{{ d.sil }}" style="text-decoration: underline; font-size: 13px">Sil</button>
+            </span>
+            <input class="fc-input" type="text" readonly value="{{ d.link }}" onClick="{{ d.sec }}" aria-label="Davet bağlantısı" style="grid-column: 1 / -1; font-size: 13px; min-height: 38px; padding: 8px 10px">
+          </div>
+        </sc-for>
+      </section>
       <div style="display: flex; gap: 6px; flex-wrap: wrap" role="group" aria-label="Duruma göre">
         <sc-for list="{{ filtreler }}" as="f" hint-placeholder-count="5">
           <button type="button" class="{{ f.sinif }}" onClick="{{ f.sec }}">{{ f.ad }}</button>
@@ -69,6 +101,9 @@
                   <div style="display: flex; gap: 8px"><span style="color: #5E5E5E; min-width: 110px">{{ s.ad }}</span><span style="flex: 1">{{ s.deger }}</span></div>
                 </sc-for>
               </div>
+              <sc-if value="{{ t.renkVar }}" hint-placeholder-val="{{ false }}">
+                <span style="display: flex; max-width: 420px; border-radius: 10px; overflow: hidden; border: 2px solid #111111" aria-label="Renk paleti"><sc-for list="{{ t.renkler }}" as="r" hint-placeholder-count="5"><span style="{{ r }}"></span></sc-for></span>
+              </sc-if>
               <sc-if value="{{ t.notVar }}" hint-placeholder-val="{{ false }}">
                 <p style="margin: 0; background: #F6EFE3; border-radius: 10px; padding: 10px 12px; white-space: pre-line; font-size: 14px">“{{ t.notlar }}”</p>
               </sc-if>
@@ -115,6 +150,19 @@
                 <sc-for list="{{ mekanSecenek }}" as="m" hint-placeholder-count="1"><option value="{{ m.id }}">{{ m.ad }}</option></sc-for>
               </select>
             </label>
+          </sc-if>
+          <sc-if value="{{ duzPalet }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Renkler (1–6; ilk renk ana renk)
+              <span style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
+                <sc-for list="{{ duzRenkler }}" as="r" hint-placeholder-count="3">
+                  <span style="display: inline-flex; align-items: center; gap: 2px; border: 2px solid #111111; border-radius: 999px; padding: 3px 6px 3px 3px">
+                    <input type="color" value="{{ r.deger }}" onChange="{{ r.yaz }}" aria-label="{{ r.etiket }}" style="width: 34px; height: 34px; border: none; padding: 0; background: none">
+                    <button type="button" class="fc-sekme" onClick="{{ r.sil }}" aria-label="{{ r.silEtiket }}" style="padding: 0 4px">×</button>
+                  </span>
+                </sc-for>
+                <sc-if value="{{ duzRenkEkleVar }}" hint-placeholder-val="{{ true }}"><button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ duzRenkEkle }}">+ Renk</button></sc-if>
+              </span>
+            </div>
           </sc-if>
           <sc-if value="{{ duzMekan }}" hint-placeholder-val="{{ false }}">
             <label style="display: flex; align-items: center; gap: 8px; font-size: 14px"><input type="checkbox" checked="{{ duz.yemek_mekandan }}" onChange="{{ yemekDegis }}" style="width: 20px; height: 20px"> Yemeği mekan veriyor (menü yalnız tercih bilgisi)</label>
@@ -167,7 +215,8 @@
             <sc-if value="{{ a.baslik }}" hint-placeholder-val="{{ false }}"><h4 style="margin: 16px 0 0; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: #5E5E5E">{{ a.baslik }}</h4></sc-if>
             <sc-for list="{{ a.kalemler }}" as="k" hint-placeholder-count="2">
               <div class="dy-satir" style="{{ k.soluk }}">
-                <img src="{{ k.resim }}" alt="">
+                <sc-if value="{{ k.seritVar }}" hint-placeholder-val="{{ false }}"><span style="display: flex; width: 64px; height: 44px; border-radius: 8px; overflow: hidden; border: 1px solid #DADAD8"><sc-for list="{{ k.serit }}" as="r" hint-placeholder-count="5"><span style="{{ r }}"></span></sc-for></span></sc-if>
+                <sc-if value="{{ k.resimVar }}" hint-placeholder-val="{{ true }}"><img src="{{ k.resim }}" alt=""></sc-if>
                 <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><strong style="font-size: 15px">{{ k.ad }}</strong><span style="font-size: 13px; color: #5E5E5E; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ k.alt }}</span></span>
                 <span class="dy-dugmeler" style="display: flex; gap: 6px; flex-wrap: wrap">
                   <label class="fc-btn fc-btn-ikincil dy-k" style="cursor: pointer">{{ k.fotoYazi }}<input type="file" accept="image/jpeg,image/png,image/webp" onChange="{{ k.fotoSec }}" style="display: none"></label>
@@ -198,7 +247,8 @@ class Component extends DCLogic {
         notlar: 'Gün batımında nikah istiyoruz.', yonetici_notu: null, created_at: '2026-11-02T10:00:00Z' }],
       katalog: [{ id: 1, tur: 'konsept', ad: 'Kır sofrası', aciklama: 'Keten, kır çiçekleri.', resim: '/dugun/cizim/konsept-kir.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 1, acik: true }],
     };
-    this.state = { alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '', hizli: null, yukleniyor: null };
+    this.state = { davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
+      alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '', hizli: null, yukleniyor: null };
   }
   renderVals() {
     const st = this.state;
@@ -226,6 +276,8 @@ class Component extends DCLogic {
       ['konsept', 'Masa konseptleri', 'Ana sayfada vitrin, sihirbazda seçim.'],
       ['urun', 'Ürünler', 'Gruplara ayrılır; masa grupları "Masalarınız", Nikah alanı / Karşılama / Lounge / Işıklandırma "Alan ve dekor" adımında.'],
       ['ekstra', 'Ekstralar', 'Müzik, fotoğraf, ışık, pasta…'],
+      ['palet', 'Renk paletleri', '"Renkler ve his" adımında; çift ayrıca kendi renklerini ekleyebilir.'],
+      ['his', 'His', 'Düğünün hissi (doğal, romantik, bohem…); çift en çok 3 seçer.'],
     ];
     const kat = st.katalog;
     const duz = st.duz;
@@ -263,6 +315,7 @@ class Component extends DCLogic {
     const duzKaydet = () => {
       if (!duz.ad.trim()) return this.setState({ duzHata: 'Ad yazın.' });
       if (duz.tur === 'urun' && !String(duz.grup || '').trim()) return this.setState({ duzHata: 'Ürünün grubunu yazın (örn. Çiçek).' });
+      if (duz.tur === 'palet' && !(duz.renkler || []).length) return this.setState({ duzHata: 'Palete en az bir renk ekleyin.' });
       const kayit = { ...duz, ad: duz.ad.trim(), aciklama: (duz.aciklama || '').trim(), grup: (duz.grup || '').trim(), mekan_id: duz.mekan_id ? Number(duz.mekan_id) : null };
       const bitir = (donen) => this.setState((s) => {
         const satir = { ...kayit, ...donen };
@@ -277,7 +330,39 @@ class Component extends DCLogic {
     };
 
     const liste = st.talepler.filter(filtreF);
+    const davetLink = (d) => `${location.origin}/dugun/?k=${d.anahtar}`;
     return {
+      davetFormAcik: st.davetForm, davetFormYazi: st.davetForm ? 'Kapat' : '+ Yeni bağlantı', davetYeni: st.davetYeni,
+      davetFormAc: () => this.setState({ davetForm: !st.davetForm, davetYeni: { ad: '', notlar: '' } }),
+      davetAd: (e) => { const v = e.target.value; this.setState((s) => ({ davetYeni: { ...s.davetYeni, ad: v } })); },
+      davetNot: (e) => { const v = e.target.value; this.setState((s) => ({ davetYeni: { ...s.davetYeni, notlar: v } })); },
+      davetOlustur: () => {
+        const ad = st.davetYeni.ad.trim();
+        const notlar = st.davetYeni.notlar.trim();
+        const bitir = (d) => this.setState((s) => ({ davetler: [d, ...s.davetler], davetForm: false, mesaj: `Bağlantı hazır${d.ad ? ` (${d.ad})` : ''}: “Kopyala” ile alıp çifte gönderin.` }));
+        if (!Y) return bitir({ id: Date.now(), anahtar: 'deneme', ad, notlar, talep_id: null, created_at: new Date().toISOString() });
+        Y.davetOlustur(ad, notlar).then((d) => bitir({ ad, notlar, talep_id: null, created_at: new Date().toISOString(), ...d }), (h) => bilgi(`Oluşturulamadı: ${h.message}`));
+      },
+      davetler: st.davetler.map((d) => {
+        const talep = d.talep_id && st.talepler.find((t) => t.id === d.talep_id);
+        const link = davetLink(d);
+        return {
+          ad: d.ad || 'Adsız davet', link, talepVar: !!talep,
+          durum: d.talep_id ? 'Dolduruldu' : 'Bekliyor', rozet: d.talep_id ? pill('#DCE9C8', '#2F4A1F') : pill('#E4E4E2', '#111111'),
+          alt: [`oluşturuldu ${tYaz(d.created_at)}`, d.notlar].filter(Boolean).join(' · '),
+          sec: (e) => e.target.select(),
+          kopyalaYazi: st.kopya === d.id ? 'Kopyalandı ✓' : 'Kopyala',
+          kopyala: () => {
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(() => this.setState({ kopya: d.id }), () => bilgi(link));
+            else bilgi(link);
+          },
+          talebeGit: () => this.setState({ filtre: 'hepsi', acik: d.talep_id }),
+          sil: () => {
+            if (!window.confirm(`“${d.ad || 'Adsız davet'}” bağlantısı silinsin mi? Bağlantı artık açılmaz; gelen talep silinmez.`)) return;
+            yaz(() => Y.davetSil(d.id), () => this.setState((s) => ({ davetler: s.davetler.filter((x) => x.id !== d.id), mesaj: 'Bağlantı silindi.' })));
+          },
+        };
+      }),
       mesaj: st.mesaj,
       altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['katalog', 'Katalog']].map(([id, ad]) => ({
         ad, sinif: st.alt === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ alt: id, mesaj: '' }),
@@ -292,15 +377,18 @@ class Component extends DCLogic {
         const acik = st.acik === t.id;
         const yNot = st.notlar[t.id] !== undefined ? st.notlar[t.id] : t.yonetici_notu || '';
         return {
-          ad: t.ad, durum: t.durum, durumAd: d.ad, rozet: d.rozet, acik, acikYazi: acik ? 'true' : 'false', ok: acik ? '▴' : '▾',
+          ad: t.davet_id ? `${t.ad} · davetle` : t.ad, durum: t.durum, durumAd: d.ad, rozet: d.rozet, acik, acikYazi: acik ? 'true' : 'false', ok: acik ? '▴' : '▾',
           ozet: `${t.tarih ? tYaz(t.tarih) : 'Tarih belli değil'} · ${KISI[t.kisi] || ''} · talep ${tYaz(t.created_at)}`,
           ac: () => this.setState({ acik: acik ? null : t.id }),
           tel: t.tel, telLink: `tel:${String(t.tel || '').replace(/[^\d+]/g, '')}`, eposta: t.eposta, mailLink: `mailto:${t.eposta}`,
           secimler: [
-            ['Mekan', s.mekan], ['Akış', (s.bolumler || []).join(', ')], ['Menü', s.menu || 'Mekanın menüsü'], ['Masa konsepti', s.konsept || 'Birlikte seçilecek'],
+            ['Mekan', s.mekan], ['Akış', (s.bolumler || []).join(', ')],
+            ['Renkler', [s.palet, (s.renkler || []).length ? `kendi renkleri: ${s.renkler.join(' ')}` : ''].filter(Boolean).join(' + ')], ['His', (s.his || []).join(', ')], ['Menü', s.menu || 'Mekanın menüsü'], ['Masa konsepti', s.konsept || 'Birlikte seçilecek'],
             ['Ayrıntılar', (s.urunler || []).map((u) => (u.grup ? `${u.grup}: ${u.ad}` : u.ad)).join(', ')], ['Ekstralar', (s.ekstralar || []).join(', ')],
           ].map(([ad, deger]) => ({ ad, deger: deger || '—' })),
           notVar: !!t.notlar, notlar: t.notlar || '',
+          renkVar: !!((s.palet_renkler || []).length || (s.renkler || []).length),
+          renkler: [...(s.palet_renkler || []), ...(s.renkler || [])].map((r) => `flex:1;height:34px;background:${r}`),
           durumDegis: (e) => {
             const v = e.target.value;
             yaz(() => Y.durum(t.id, v), () => { talepGuncelle(t.id, { durum: v }); bilgi(`${t.ad}: ${(DURUM.find((x) => x.id === v) || d).ad}`); });
@@ -326,7 +414,9 @@ class Component extends DCLogic {
           baslik: g,
           kalemler: kat.filter((k) => k.tur === tur && (tur !== 'urun' || (k.grup || 'Diğer') === g)).sort((a, b) => a.sira - b.sira || a.id - b.id).map((k) => ({
           ad: k.ad, resim: FD.resim(k), soluk: k.acik ? '' : 'opacity: .45',
-          alt: [k.resim && !k.resim.startsWith('/dugun/cizim/') ? '' : 'fotoğraf yok', k.acik ? '' : 'gizli', k.aciklama].filter(Boolean).join(' · '),
+          alt: [k.tur === 'palet' ? (k.renkler || []).join(' ') : ['palet', 'his'].includes(k.tur) || (k.resim && !k.resim.startsWith('/dugun/cizim/')) ? '' : 'fotoğraf yok', k.acik ? '' : 'gizli', k.aciklama].filter(Boolean).join(' · '),
+          resimVar: k.tur !== 'palet',
+          serit: k.tur === 'palet' ? (k.renkler || []).map((r) => `flex:1;background:${r}`) : [], seritVar: k.tur === 'palet',
           fotoYazi: st.yukleniyor === k.id ? 'Yükleniyor…' : 'Fotoğraf',
           fotoSec: (e) => {
             const dosya = e.target.files && e.target.files[0];
@@ -352,7 +442,12 @@ class Component extends DCLogic {
         })),
       })),
       duzVar: !!duz, duz: duz || {}, duzBaslik: duz ? `${duz.id ? 'Düzenle' : 'Yeni'} · ${(TUR.find((x) => x[0] === duz.tur) || [0, ''])[1]}` : '',
-      duzUrun: !!duz && duz.tur === 'urun', duzMenu: !!duz && duz.tur === 'menu', duzMekan: !!duz && duz.tur === 'mekan',
+      duzUrun: !!duz && duz.tur === 'urun', duzMenu: !!duz && duz.tur === 'menu', duzMekan: !!duz && duz.tur === 'mekan', duzPalet: !!duz && duz.tur === 'palet',
+      duzRenkler: ((duz && duz.renkler) || []).map((r, i) => ({ deger: r, etiket: `Renk ${i + 1}`, silEtiket: `Renk ${i + 1}'i kaldır`,
+        yaz: (e) => { const x = String(e.target.value).toLowerCase(); this.setState((s) => ({ duz: { ...s.duz, renkler: s.duz.renkler.map((y, j) => (j === i ? x : y)) } })); },
+        sil: () => this.setState((s) => ({ duz: { ...s.duz, renkler: s.duz.renkler.filter((_, j) => j !== i) } })) })),
+      duzRenkEkleVar: !!duz && ((duz.renkler || []).length < 6),
+      duzRenkEkle: () => this.setState((s) => ({ duz: { ...s.duz, renkler: [...(s.duz.renkler || []), '#c8a15a'] } })),
       duzResim: duz ? FD.resim(duz) : '', duzHata: st.duzHata,
       mekanSecenek: kat.filter((k) => k.tur === 'mekan').map((m) => ({ id: String(m.id), ad: m.ad })),
       duzAlan: Object.fromEntries(['ad', 'aciklama', 'grup', 'mekan_id', 'sira'].map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ duz: { ...s.duz, [k]: v }, duzHata: '' })); }])),

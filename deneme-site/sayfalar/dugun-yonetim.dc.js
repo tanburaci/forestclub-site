@@ -11,7 +11,8 @@ class Component extends DCLogic {
         notlar: 'Gün batımında nikah istiyoruz.', yonetici_notu: null, created_at: '2026-11-02T10:00:00Z' }],
       katalog: [{ id: 1, tur: 'konsept', ad: 'Kır sofrası', aciklama: 'Keten, kır çiçekleri.', resim: '/dugun/cizim/konsept-kir.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 1, acik: true }],
     };
-    this.state = { alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '', hizli: null, yukleniyor: null };
+    this.state = { davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
+      alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '', hizli: null, yukleniyor: null };
   }
   renderVals() {
     const st = this.state;
@@ -39,6 +40,8 @@ class Component extends DCLogic {
       ['konsept', 'Masa konseptleri', 'Ana sayfada vitrin, sihirbazda seçim.'],
       ['urun', 'Ürünler', 'Gruplara ayrılır; masa grupları "Masalarınız", Nikah alanı / Karşılama / Lounge / Işıklandırma "Alan ve dekor" adımında.'],
       ['ekstra', 'Ekstralar', 'Müzik, fotoğraf, ışık, pasta…'],
+      ['palet', 'Renk paletleri', '"Renkler ve his" adımında; çift ayrıca kendi renklerini ekleyebilir.'],
+      ['his', 'His', 'Düğünün hissi (doğal, romantik, bohem…); çift en çok 3 seçer.'],
     ];
     const kat = st.katalog;
     const duz = st.duz;
@@ -76,6 +79,7 @@ class Component extends DCLogic {
     const duzKaydet = () => {
       if (!duz.ad.trim()) return this.setState({ duzHata: 'Ad yazın.' });
       if (duz.tur === 'urun' && !String(duz.grup || '').trim()) return this.setState({ duzHata: 'Ürünün grubunu yazın (örn. Çiçek).' });
+      if (duz.tur === 'palet' && !(duz.renkler || []).length) return this.setState({ duzHata: 'Palete en az bir renk ekleyin.' });
       const kayit = { ...duz, ad: duz.ad.trim(), aciklama: (duz.aciklama || '').trim(), grup: (duz.grup || '').trim(), mekan_id: duz.mekan_id ? Number(duz.mekan_id) : null };
       const bitir = (donen) => this.setState((s) => {
         const satir = { ...kayit, ...donen };
@@ -90,7 +94,39 @@ class Component extends DCLogic {
     };
 
     const liste = st.talepler.filter(filtreF);
+    const davetLink = (d) => `${location.origin}/dugun/?k=${d.anahtar}`;
     return {
+      davetFormAcik: st.davetForm, davetFormYazi: st.davetForm ? 'Kapat' : '+ Yeni bağlantı', davetYeni: st.davetYeni,
+      davetFormAc: () => this.setState({ davetForm: !st.davetForm, davetYeni: { ad: '', notlar: '' } }),
+      davetAd: (e) => { const v = e.target.value; this.setState((s) => ({ davetYeni: { ...s.davetYeni, ad: v } })); },
+      davetNot: (e) => { const v = e.target.value; this.setState((s) => ({ davetYeni: { ...s.davetYeni, notlar: v } })); },
+      davetOlustur: () => {
+        const ad = st.davetYeni.ad.trim();
+        const notlar = st.davetYeni.notlar.trim();
+        const bitir = (d) => this.setState((s) => ({ davetler: [d, ...s.davetler], davetForm: false, mesaj: `Bağlantı hazır${d.ad ? ` (${d.ad})` : ''}: “Kopyala” ile alıp çifte gönderin.` }));
+        if (!Y) return bitir({ id: Date.now(), anahtar: 'deneme', ad, notlar, talep_id: null, created_at: new Date().toISOString() });
+        Y.davetOlustur(ad, notlar).then((d) => bitir({ ad, notlar, talep_id: null, created_at: new Date().toISOString(), ...d }), (h) => bilgi(`Oluşturulamadı: ${h.message}`));
+      },
+      davetler: st.davetler.map((d) => {
+        const talep = d.talep_id && st.talepler.find((t) => t.id === d.talep_id);
+        const link = davetLink(d);
+        return {
+          ad: d.ad || 'Adsız davet', link, talepVar: !!talep,
+          durum: d.talep_id ? 'Dolduruldu' : 'Bekliyor', rozet: d.talep_id ? pill('#DCE9C8', '#2F4A1F') : pill('#E4E4E2', '#111111'),
+          alt: [`oluşturuldu ${tYaz(d.created_at)}`, d.notlar].filter(Boolean).join(' · '),
+          sec: (e) => e.target.select(),
+          kopyalaYazi: st.kopya === d.id ? 'Kopyalandı ✓' : 'Kopyala',
+          kopyala: () => {
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(() => this.setState({ kopya: d.id }), () => bilgi(link));
+            else bilgi(link);
+          },
+          talebeGit: () => this.setState({ filtre: 'hepsi', acik: d.talep_id }),
+          sil: () => {
+            if (!window.confirm(`“${d.ad || 'Adsız davet'}” bağlantısı silinsin mi? Bağlantı artık açılmaz; gelen talep silinmez.`)) return;
+            yaz(() => Y.davetSil(d.id), () => this.setState((s) => ({ davetler: s.davetler.filter((x) => x.id !== d.id), mesaj: 'Bağlantı silindi.' })));
+          },
+        };
+      }),
       mesaj: st.mesaj,
       altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['katalog', 'Katalog']].map(([id, ad]) => ({
         ad, sinif: st.alt === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ alt: id, mesaj: '' }),
@@ -105,15 +141,18 @@ class Component extends DCLogic {
         const acik = st.acik === t.id;
         const yNot = st.notlar[t.id] !== undefined ? st.notlar[t.id] : t.yonetici_notu || '';
         return {
-          ad: t.ad, durum: t.durum, durumAd: d.ad, rozet: d.rozet, acik, acikYazi: acik ? 'true' : 'false', ok: acik ? '▴' : '▾',
+          ad: t.davet_id ? `${t.ad} · davetle` : t.ad, durum: t.durum, durumAd: d.ad, rozet: d.rozet, acik, acikYazi: acik ? 'true' : 'false', ok: acik ? '▴' : '▾',
           ozet: `${t.tarih ? tYaz(t.tarih) : 'Tarih belli değil'} · ${KISI[t.kisi] || ''} · talep ${tYaz(t.created_at)}`,
           ac: () => this.setState({ acik: acik ? null : t.id }),
           tel: t.tel, telLink: `tel:${String(t.tel || '').replace(/[^\d+]/g, '')}`, eposta: t.eposta, mailLink: `mailto:${t.eposta}`,
           secimler: [
-            ['Mekan', s.mekan], ['Akış', (s.bolumler || []).join(', ')], ['Menü', s.menu || 'Mekanın menüsü'], ['Masa konsepti', s.konsept || 'Birlikte seçilecek'],
+            ['Mekan', s.mekan], ['Akış', (s.bolumler || []).join(', ')],
+            ['Renkler', [s.palet, (s.renkler || []).length ? `kendi renkleri: ${s.renkler.join(' ')}` : ''].filter(Boolean).join(' + ')], ['His', (s.his || []).join(', ')], ['Menü', s.menu || 'Mekanın menüsü'], ['Masa konsepti', s.konsept || 'Birlikte seçilecek'],
             ['Ayrıntılar', (s.urunler || []).map((u) => (u.grup ? `${u.grup}: ${u.ad}` : u.ad)).join(', ')], ['Ekstralar', (s.ekstralar || []).join(', ')],
           ].map(([ad, deger]) => ({ ad, deger: deger || '—' })),
           notVar: !!t.notlar, notlar: t.notlar || '',
+          renkVar: !!((s.palet_renkler || []).length || (s.renkler || []).length),
+          renkler: [...(s.palet_renkler || []), ...(s.renkler || [])].map((r) => `flex:1;height:34px;background:${r}`),
           durumDegis: (e) => {
             const v = e.target.value;
             yaz(() => Y.durum(t.id, v), () => { talepGuncelle(t.id, { durum: v }); bilgi(`${t.ad}: ${(DURUM.find((x) => x.id === v) || d).ad}`); });
@@ -139,7 +178,9 @@ class Component extends DCLogic {
           baslik: g,
           kalemler: kat.filter((k) => k.tur === tur && (tur !== 'urun' || (k.grup || 'Diğer') === g)).sort((a, b) => a.sira - b.sira || a.id - b.id).map((k) => ({
           ad: k.ad, resim: FD.resim(k), soluk: k.acik ? '' : 'opacity: .45',
-          alt: [k.resim && !k.resim.startsWith('/dugun/cizim/') ? '' : 'fotoğraf yok', k.acik ? '' : 'gizli', k.aciklama].filter(Boolean).join(' · '),
+          alt: [k.tur === 'palet' ? (k.renkler || []).join(' ') : ['palet', 'his'].includes(k.tur) || (k.resim && !k.resim.startsWith('/dugun/cizim/')) ? '' : 'fotoğraf yok', k.acik ? '' : 'gizli', k.aciklama].filter(Boolean).join(' · '),
+          resimVar: k.tur !== 'palet',
+          serit: k.tur === 'palet' ? (k.renkler || []).map((r) => `flex:1;background:${r}`) : [], seritVar: k.tur === 'palet',
           fotoYazi: st.yukleniyor === k.id ? 'Yükleniyor…' : 'Fotoğraf',
           fotoSec: (e) => {
             const dosya = e.target.files && e.target.files[0];
@@ -165,7 +206,12 @@ class Component extends DCLogic {
         })),
       })),
       duzVar: !!duz, duz: duz || {}, duzBaslik: duz ? `${duz.id ? 'Düzenle' : 'Yeni'} · ${(TUR.find((x) => x[0] === duz.tur) || [0, ''])[1]}` : '',
-      duzUrun: !!duz && duz.tur === 'urun', duzMenu: !!duz && duz.tur === 'menu', duzMekan: !!duz && duz.tur === 'mekan',
+      duzUrun: !!duz && duz.tur === 'urun', duzMenu: !!duz && duz.tur === 'menu', duzMekan: !!duz && duz.tur === 'mekan', duzPalet: !!duz && duz.tur === 'palet',
+      duzRenkler: ((duz && duz.renkler) || []).map((r, i) => ({ deger: r, etiket: `Renk ${i + 1}`, silEtiket: `Renk ${i + 1}'i kaldır`,
+        yaz: (e) => { const x = String(e.target.value).toLowerCase(); this.setState((s) => ({ duz: { ...s.duz, renkler: s.duz.renkler.map((y, j) => (j === i ? x : y)) } })); },
+        sil: () => this.setState((s) => ({ duz: { ...s.duz, renkler: s.duz.renkler.filter((_, j) => j !== i) } })) })),
+      duzRenkEkleVar: !!duz && ((duz.renkler || []).length < 6),
+      duzRenkEkle: () => this.setState((s) => ({ duz: { ...s.duz, renkler: [...(s.duz.renkler || []), '#c8a15a'] } })),
       duzResim: duz ? FD.resim(duz) : '', duzHata: st.duzHata,
       mekanSecenek: kat.filter((k) => k.tur === 'mekan').map((m) => ({ id: String(m.id), ad: m.ad })),
       duzAlan: Object.fromEntries(['ad', 'aciklama', 'grup', 'mekan_id', 'sira'].map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ duz: { ...s.duz, [k]: v }, duzHata: '' })); }])),
