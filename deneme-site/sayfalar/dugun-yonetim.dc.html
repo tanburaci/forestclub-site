@@ -28,6 +28,7 @@
     <a class="fc-btn fc-btn-ikincil" href="/dugun/" target="_blank" rel="noopener" style="text-decoration: none">Düğün sayfasını aç ↗</a>
   </div>
 
+  <datalist id="dy-gruplar"><sc-for list="{{ grupOneri }}" as="o" hint-placeholder-count="3"><option value="{{ o }}"></option></sc-for></datalist>
   <nav style="display: flex; gap: 6px; flex-wrap: wrap" aria-label="Düğün bölümleri">
     <sc-for list="{{ altSekmeler }}" as="s" hint-placeholder-count="2">
       <button type="button" class="{{ s.sinif }}" onClick="{{ s.sec }}">{{ s.ad }}</button>
@@ -123,11 +124,133 @@
     </div>
   </sc-if>
 
+  <!-- ENVANTER: düğün malzemeleri (etkinlik envanterinden ayrı). Gider ekle → muhasebe + envanter; hasarlı → düş -->
+  <sc-if value="{{ envanterSekme }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px">
+        <sc-for list="{{ envOzet }}" as="k" hint-placeholder-count="3">
+          <div class="dy-kart" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 4px">
+            <span style="color: #5E5E5E; font-size: 14px; font-weight: 600">{{ k.baslik }}</span>
+            <span style="font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums">{{ k.sayi }}</span>
+            <span style="color: #5E5E5E; font-size: 13px">{{ k.alt }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" class="fc-btn" onClick="{{ gAc }}">Gider ekle</button>
+        <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ oAc }}">Ödemesiz giriş (hediye, eldeki…)</button>
+      </div>
+
+      <!-- Gider: muhasebeye "Düğün" gideri; ödeme yapılan ürün istenirse envantere girer -->
+      <sc-if value="{{ gAcik }}" hint-placeholder-val="{{ false }}">
+        <section class="dy-kart" style="padding: 20px; display: flex; flex-direction: column; gap: 12px">
+          <h3 style="margin: 0; font-size: 19px">Gider ekle</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Tarih<input class="fc-input" type="date" value="{{ g.tarih }}" onChange="{{ gAlan.tarih }}"></label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Tutar (TL) *<input class="fc-input" type="text" inputmode="decimal" placeholder="Örn. 12.000" value="{{ g.tutar }}" onChange="{{ gAlan.tutar }}"></label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Kasa<select class="fc-input" value="{{ g.kasa }}" onChange="{{ gAlan.kasa }}"><option value="banka">Banka</option><option value="nakit">Nakit (elden)</option></select></label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Hangi düğün için?<select class="fc-input" value="{{ g.talep }}" onChange="{{ gAlan.talep }}"><option value="">Genel (düğüne bağlı değil)</option><sc-for list="{{ talepSecenek }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}">{{ t.ad }}</option></sc-for></select></label>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Açıklama *<input class="fc-input" type="text" maxlength="200" placeholder="Örn. 40 adet cam fanus" value="{{ g.aciklama }}" onChange="{{ gAlan.aciklama }}"></label>
+          <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px"><input type="checkbox" checked="{{ g.envantere }}" onChange="{{ gEnvDegis }}" style="width: 20px; height: 20px"> Ödeme yapılan ürünü envantere ekle</label>
+          <sc-if value="{{ g.envantere }}" hint-placeholder-val="{{ true }}">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: #F6EFE3; border-radius: 12px; padding: 14px">
+              <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Envanter kalemi<select class="fc-input" value="{{ g.kalem }}" onChange="{{ gAlan.kalem }}"><option value="">+ Yeni kalem</option><sc-for list="{{ kalemSecenek }}" as="k" hint-placeholder-count="2"><option value="{{ k.id }}">{{ k.ad }}</option></sc-for></select></label>
+              <sc-if value="{{ gYeniKalem }}" hint-placeholder-val="{{ true }}">
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Kalem adı *<input class="fc-input" type="text" maxlength="120" placeholder="Örn. Cam fanus" value="{{ g.ad }}" onChange="{{ gAlan.ad }}"></label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Grup<input class="fc-input" type="text" maxlength="40" list="dy-gruplar" placeholder="Örn. Mum" value="{{ g.grup }}" onChange="{{ gAlan.grup }}"></label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Birim<select class="fc-input" value="{{ g.birim }}" onChange="{{ gAlan.birim }}"><option value="adet">adet</option><option value="takım">takım</option><option value="metre">metre</option><option value="paket">paket</option><option value="kg">kg</option></select></label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Nerede duruyor?<input class="fc-input" type="text" maxlength="120" placeholder="Örn. Depo" value="{{ g.konum }}" onChange="{{ gAlan.konum }}"></label>
+              </sc-if>
+              <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Miktar *<input class="fc-input" type="number" min="1" inputmode="numeric" value="{{ g.adet }}" onChange="{{ gAlan.adet }}"></label>
+            </div>
+          </sc-if>
+          <sc-if value="{{ gHata }}" hint-placeholder-val="{{ false }}"><p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ gHata }}</p></sc-if>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap">
+            <button type="button" class="fc-btn" onClick="{{ gKaydet }}">Kaydet</button>
+            <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ formKapat }}">Vazgeç</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <!-- Ödemesiz giriş: hediye ya da zaten elde olan; muhasebeye yazılmaz -->
+      <sc-if value="{{ oAcik }}" hint-placeholder-val="{{ false }}">
+        <section class="dy-kart" style="padding: 20px; display: flex; flex-direction: column; gap: 12px">
+          <h3 style="margin: 0; font-size: 19px">Ödemesiz giriş</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Envanter kalemi<select class="fc-input" value="{{ o.kalem }}" onChange="{{ oAlan.kalem }}"><option value="">+ Yeni kalem</option><sc-for list="{{ kalemSecenek }}" as="k" hint-placeholder-count="2"><option value="{{ k.id }}">{{ k.ad }}</option></sc-for></select></label>
+            <sc-if value="{{ oYeniKalem }}" hint-placeholder-val="{{ true }}">
+              <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Kalem adı *<input class="fc-input" type="text" maxlength="120" value="{{ o.ad }}" onChange="{{ oAlan.ad }}"></label>
+              <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Grup<input class="fc-input" type="text" maxlength="40" list="dy-gruplar" value="{{ o.grup }}" onChange="{{ oAlan.grup }}"></label>
+              <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Birim<select class="fc-input" value="{{ o.birim }}" onChange="{{ oAlan.birim }}"><option value="adet">adet</option><option value="takım">takım</option><option value="metre">metre</option><option value="paket">paket</option><option value="kg">kg</option></select></label>
+              <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Nerede duruyor?<input class="fc-input" type="text" maxlength="120" value="{{ o.konum }}" onChange="{{ oAlan.konum }}"></label>
+            </sc-if>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Miktar *<input class="fc-input" type="number" min="1" inputmode="numeric" value="{{ o.adet }}" onChange="{{ oAlan.adet }}"></label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Nereden?<select class="fc-input" value="{{ o.neden }}" onChange="{{ oAlan.neden }}"><option value="diger">Zaten elde / diğer</option><option value="hediye">Hediye / bağış</option></select></label>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Not<input class="fc-input" type="text" maxlength="1000" value="{{ o.not }}" onChange="{{ oAlan.not }}"></label>
+          <sc-if value="{{ gHata }}" hint-placeholder-val="{{ false }}"><p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ gHata }}</p></sc-if>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap">
+            <button type="button" class="fc-btn" onClick="{{ oKaydet }}">Envantere ekle</button>
+            <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ formKapat }}">Vazgeç</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <!-- Düşüm: hasarlı / kullanılamaz / kayıp -->
+      <sc-if value="{{ dAcik }}" hint-placeholder-val="{{ false }}">
+        <section class="dy-kart" style="padding: 20px; display: flex; flex-direction: column; gap: 12px">
+          <h3 style="margin: 0; font-size: 19px">Envanterden düş: {{ dKalem.ad }} <span style="font-weight: 400; color: #5E5E5E; font-size: 14px">(elde {{ dKalem.miktar }})</span></h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Kaç tane? *<input class="fc-input" type="number" min="1" inputmode="numeric" value="{{ dF.adet }}" onChange="{{ dAlan.adet }}"></label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Neden?<select class="fc-input" value="{{ dF.neden }}" onChange="{{ dAlan.neden }}"><option value="hasarli">Hasarlı</option><option value="kullanilamaz">Kullanılamaz</option><option value="kayip">Kayıp</option></select></label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Hangi düğünde?<select class="fc-input" value="{{ dF.talep }}" onChange="{{ dAlan.talep }}"><option value="">Belirtme</option><sc-for list="{{ talepSecenek }}" as="t" hint-placeholder-count="2"><option value="{{ t.id }}">{{ t.ad }}</option></sc-for></select></label>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Not<input class="fc-input" type="text" maxlength="1000" placeholder="Örn. Taşırken kırıldı" value="{{ dF.not }}" onChange="{{ dAlan.not }}"></label>
+          <sc-if value="{{ gHata }}" hint-placeholder-val="{{ false }}"><p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ gHata }}</p></sc-if>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap">
+            <button type="button" class="fc-btn" onClick="{{ dKaydet }}">Envanterden düş</button>
+            <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ formKapat }}">Vazgeç</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{ envYok }}" hint-placeholder-val="{{ false }}"><p style="margin: 0; color: #5E5E5E">Henüz düğün envanteri yok. “Gider ekle” ile satın aldığınızı ya da “Ödemesiz giriş” ile elinizdekini ekleyin.</p></sc-if>
+      <sc-for list="{{ envGruplar }}" as="eg" hint-placeholder-count="2">
+        <section class="dy-kart" style="padding: 16px 20px">
+          <h3 style="margin: 0 0 4px; font-size: 17px">{{ eg.ad }}</h3>
+          <sc-for list="{{ eg.kalemler }}" as="x" hint-placeholder-count="2">
+            <div style="border-top: 1px solid #E4E4E2; padding: 10px 0; display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center">
+                <span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 15px">{{ x.ad }}</strong><span style="font-size: 13px; color: #5E5E5E">{{ x.alt }}</span></span>
+                <span style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+                  <span style="{{ x.rozet }}">{{ x.miktar }}</span>
+                  <button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ x.dus }}">Hasarlı / kullanılamaz</button>
+                  <button type="button" class="fc-sekme" onClick="{{ x.gecmisAc }}" style="text-decoration: underline; font-size: 13px">{{ x.gecmisYazi }}</button>
+                </span>
+              </div>
+              <sc-if value="{{ x.gecmisAcik }}" hint-placeholder-val="{{ false }}">
+                <div style="background: #F6EFE3; border-radius: 10px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px">
+                  <sc-for list="{{ x.gecmis }}" as="h" hint-placeholder-count="2">
+                    <div style="display: flex; justify-content: space-between; gap: 10px; font-size: 13px; flex-wrap: wrap; align-items: center">
+                      <span><b style="{{ h.renk }}">{{ h.isaret }}</b> {{ h.yazi }}</span>
+                      <button type="button" class="fc-sekme" onClick="{{ h.sil }}" style="text-decoration: underline; font-size: 12px">Geri al</button>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ x.gecmisYok }}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; color: #5E5E5E">Hareket yok.</span></sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </section>
+      </sc-for>
+    </div>
+  </sc-if>
+
   <!-- KATALOG -->
   <sc-if value="{{ katalogSekme }}" hint-placeholder-val="{{ false }}">
     <div style="display: flex; flex-direction: column; gap: 18px">
       <p style="margin: 0; color: #5E5E5E; font-size: 14px">Fotoğrafı olmayan kalemde grubun çizimi görünür; fotoğraf bulununca satırdaki “Fotoğraf” ile yükleyin. Çok kalemi birden eklemek için “Hızlı ekle”: her satıra bir kalem. Gizlenen kalem sitede görünmez.</p>
-      <datalist id="dy-gruplar"><sc-for list="{{ grupOneri }}" as="o" hint-placeholder-count="3"><option value="{{ o }}"></option></sc-for></datalist>
 
       <sc-if value="{{ duzVar }}" hint-placeholder-val="{{ false }}">
         <section class="dy-kart" style="padding: 22px; display: flex; flex-direction: column; gap: 12px">
@@ -247,8 +370,106 @@ class Component extends DCLogic {
         notlar: 'Gün batımında nikah istiyoruz.', yonetici_notu: null, created_at: '2026-11-02T10:00:00Z' }],
       katalog: [{ id: 1, tur: 'konsept', ad: 'Kır sofrası', aciklama: 'Keten, kır çiçekleri.', resim: '/dugun/cizim/konsept-kir.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 1, acik: true }],
     };
-    this.state = { davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
+    this.GBOS = { tarih: new Date().toISOString().slice(0, 10), tutar: '', kasa: 'banka', talep: '', aciklama: '', envantere: true, kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1' };
+    this.OBOS = { kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1', neden: 'diger', not: '' };
+    this.state = { envanter: V.envanter || [], hareketler: V.hareketler || [], form: null, g: { ...this.GBOS }, o: { ...this.OBOS }, dF: null, gHata: '', gecmis: null,
+      davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
       alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '', hizli: null, yukleniyor: null };
+  }
+  // Düğün envanteri (etkinlik envanterinden ayrı): özet, gider / ödemesiz giriş / düşüm formları, gruplu liste ve geçmiş
+  envanterVals(st, Y, bilgi, tYaz, pill, FD) {
+    const env = st.envanter;
+    const sayi = (x) => Number(String(x == null ? '' : x).trim().replace(/\./g, '').replace(',', '.'));
+    const NEDEN = { satin: 'satın alındı', hediye: 'hediye / bağış', diger: 'eldeki / diğer', hasarli: 'hasarlı', kullanilamaz: 'kullanılamaz', kayip: 'kayıp' };
+    const yenile = (mesaj) => {
+      const bitir = (v) => this.setState({ ...v, form: null, dF: null, gHata: '', g: { ...this.GBOS }, o: { ...this.OBOS }, mesaj });
+      if (!Y) return bitir({});
+      return Y.envanterOku().then(bitir, (h) => bilgi(`Yenilenemedi: ${h.message}`));
+    };
+    const hataGoster = (h) => this.setState({ gHata: h.message || String(h) });
+    const alanlar = (anahtar, BOS) => Object.fromEntries(Object.keys(BOS).map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ [anahtar]: { ...s[anahtar], [k]: v }, gHata: '' })); }]));
+    const ayBas = new Date().toISOString().slice(0, 7);
+    const buAyDusen = st.hareketler.filter((h) => h.tur === 'dusum' && String(h.tarih).slice(0, 7) === ayBas).reduce((t, h) => t + Number(h.adet), 0);
+    const g = st.g; const o = st.o; const dF = st.dF;
+    const dKalem = dF ? env.find((x) => x.id === dF.id) : null;
+    const gruplar = (FD.sirala ? FD.sirala([...new Set(env.map((x) => x.grup || 'Diğer'))]) : [...new Set(env.map((x) => x.grup || 'Diğer'))]);
+    return {
+      envOzet: [
+        { baslik: 'Kalem', sayi: String(env.length), alt: `${env.filter((x) => Number(x.adet) > 0).length} kalem elde var` },
+        { baslik: 'Toplam parça', sayi: String(env.reduce((t, x) => t + Number(x.adet), 0)), alt: 'Kullanılabilir durumda' },
+        { baslik: 'Bu ay düşülen', sayi: String(buAyDusen), alt: 'Hasarlı / kullanılamaz / kayıp' },
+      ],
+      envYok: !env.length,
+      talepSecenek: st.talepler.filter((t) => t.durum !== 'iptal').map((t) => ({ id: String(t.id), ad: `${t.ad}${t.tarih ? ` · ${tYaz(t.tarih)}` : ''}` })),
+      kalemSecenek: env.map((x) => ({ id: String(x.id), ad: `${x.ad} (${Number(x.adet)} ${x.birim})` })),
+      gAcik: st.form === 'gider', oAcik: st.form === 'odemesiz', dAcik: !!dKalem, gHata: st.gHata,
+      gAc: () => this.setState({ form: st.form === 'gider' ? null : 'gider', dF: null, gHata: '', g: { ...this.GBOS }, mesaj: '' }),
+      oAc: () => this.setState({ form: st.form === 'odemesiz' ? null : 'odemesiz', dF: null, gHata: '', o: { ...this.OBOS }, mesaj: '' }),
+      formKapat: () => this.setState({ form: null, dF: null, gHata: '' }),
+      g, gAlan: alanlar('g', this.GBOS), gYeniKalem: !g.kalem,
+      gEnvDegis: (e) => { const v = !!e.target.checked; this.setState((s) => ({ g: { ...s.g, envantere: v }, gHata: '' })); },
+      gKaydet: () => {
+        const tutar = sayi(g.tutar);
+        if (!(tutar > 0)) return this.setState({ gHata: 'Tutarı yazın (örn. 12.000).' });
+        if (!g.aciklama.trim()) return this.setState({ gHata: 'Kısa bir açıklama yazın.' });
+        if (g.envantere && !g.kalem && !g.ad.trim()) return this.setState({ gHata: 'Envanter kaleminin adını yazın ya da listeden seçin.' });
+        if (g.envantere && !(Number(g.adet) > 0)) return this.setState({ gHata: 'Envantere girecek miktarı yazın.' });
+        const p = { tarih: g.tarih, tutar, kasa: g.kasa, aciklama: g.aciklama.trim(), talep_id: g.talep ? Number(g.talep) : null, envantere: !!g.envantere,
+          envanter_id: g.kalem ? Number(g.kalem) : null, ad: g.ad.trim(), grup: g.grup.trim(), birim: g.birim, konum: g.konum.trim(), adet: Number(g.adet) };
+        const mesaj = `${tutar.toLocaleString('tr-TR')} TL gider muhasebeye yazıldı${g.envantere ? ', ürün envantere eklendi' : ''}.`;
+        if (!Y) return this.setState({ form: null, mesaj });
+        this.setState({ gHata: 'Kaydediliyor…' });
+        Y.giderEkle(p).then(() => yenile(mesaj), hataGoster);
+      },
+      o, oAlan: alanlar('o', this.OBOS), oYeniKalem: !o.kalem,
+      oKaydet: () => {
+        const adet = Number(o.adet);
+        if (!o.kalem && !o.ad.trim()) return this.setState({ gHata: 'Kalem adını yazın ya da listeden seçin.' });
+        if (!(adet > 0)) return this.setState({ gHata: 'Miktarı yazın.' });
+        if (!Y) return this.setState({ form: null, mesaj: 'Envantere eklendi.' });
+        this.setState({ gHata: 'Kaydediliyor…' });
+        (async () => {
+          const id = o.kalem ? Number(o.kalem) : await Y.kalemEkle({ ad: o.ad.trim(), grup: o.grup.trim() || null, birim: o.birim, konum: o.konum.trim() || null });
+          await Y.hareketEkle({ envanter_id: id, tur: 'giris', neden: o.neden, adet, notlar: o.not.trim() || null });
+        })().then(() => yenile(`${adet} parça envantere eklendi.`), hataGoster);
+      },
+      dKalem: dKalem ? { ad: dKalem.ad, miktar: `${Number(dKalem.adet)} ${dKalem.birim}` } : {}, dF: dF || {}, dAlan: alanlar('dF', { adet: '', neden: '', talep: '', not: '' }),
+      dKaydet: () => {
+        const adet = Number(dF.adet);
+        if (!(adet > 0)) return this.setState({ gHata: 'Kaç tane düşüleceğini yazın.' });
+        if (adet > Number(dKalem.adet)) return this.setState({ gHata: `Envanterde ${Number(dKalem.adet)} ${dKalem.birim} var; en çok o kadar düşülebilir.` });
+        const mesaj = `“${dKalem.ad}”: ${adet} ${dKalem.birim} ${NEDEN[dF.neden]} olarak envanterden düşüldü.`;
+        if (!Y) return this.setState((s) => ({ envanter: s.envanter.map((x) => (x.id === dKalem.id ? { ...x, adet: Number(x.adet) - adet } : x)), dF: null, mesaj }));
+        this.setState({ gHata: 'Kaydediliyor…' });
+        Y.hareketEkle({ envanter_id: dKalem.id, tur: 'dusum', neden: dF.neden, adet, talep_id: dF.talep ? Number(dF.talep) : null, notlar: dF.not.trim() || null })
+          .then(() => yenile(mesaj), hataGoster);
+      },
+      envGruplar: gruplar.map((ad) => ({
+        ad,
+        kalemler: env.filter((x) => (x.grup || 'Diğer') === ad).map((x) => {
+          const hs = st.hareketler.filter((h) => h.envanter_id === x.id);
+          const dusen = hs.filter((h) => h.tur === 'dusum').reduce((t, h) => t + Number(h.adet), 0);
+          const acik = st.gecmis === x.id;
+          const n = Number(x.adet);
+          return {
+            ad: x.ad, miktar: `${n} ${x.birim}`, rozet: n > 0 ? pill('#DCE9C8', '#2F4A1F') : pill('#F3DCD5', '#82301F'),
+            alt: [x.konum, dusen ? `${dusen} ${x.birim} düşüldü` : '', x.notlar].filter(Boolean).join(' · ') || ' ',
+            dus: () => this.setState({ dF: { id: x.id, adet: '1', neden: 'hasarli', talep: '', not: '' }, form: null, gHata: '', mesaj: '' }),
+            gecmisAcik: acik, gecmisYazi: acik ? 'Geçmişi gizle' : `Geçmiş (${hs.length})`, gecmisYok: !hs.length,
+            gecmisAc: () => this.setState({ gecmis: acik ? null : x.id }),
+            gecmis: hs.map((h) => ({
+              isaret: h.tur === 'giris' ? `+${Number(h.adet)}` : `−${Number(h.adet)}`, renk: h.tur === 'giris' ? 'color: #2F4A1F' : 'color: #82301F',
+              yazi: [tYaz(String(h.tarih)), NEDEN[h.neden], h.tutar ? `${Number(h.tutar).toLocaleString('tr-TR')} TL` : '', h.talep_id ? (st.talepler.find((t) => t.id === h.talep_id) || {}).ad : '', h.notlar].filter(Boolean).join(' · '),
+              sil: () => {
+                if (!window.confirm('Bu hareket geri alınsın mı? Adet buna göre düzelir; muhasebedeki gider silinmez (gerekirse Muhasebe\'den silin).')) return;
+                if (!Y) return;
+                Y.hareketSil(h.id).then(() => yenile('Hareket geri alındı.'), (e) => bilgi(e.message));
+              },
+            })),
+          };
+        }),
+      })),
+    };
   }
   renderVals() {
     const st = this.state;
@@ -364,10 +585,11 @@ class Component extends DCLogic {
         };
       }),
       mesaj: st.mesaj,
-      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['katalog', 'Katalog']].map(([id, ad]) => ({
+      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['envanter', 'Envanter'], ['katalog', 'Katalog']].map(([id, ad]) => ({
         ad, sinif: st.alt === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ alt: id, mesaj: '' }),
       })),
-      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog',
+      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog', envanterSekme: st.alt === 'envanter',
+      ...this.envanterVals(st, Y, bilgi, tYaz, pill, FD),
       filtreler: FILTRE.map(([id, ad, f]) => ({ ad: `${ad} (${st.talepler.filter(f).length})`, sinif: st.filtre === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ filtre: id }) })),
       talepYok: !liste.length,
       durumlar: DURUM,

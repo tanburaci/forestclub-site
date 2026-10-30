@@ -153,6 +153,10 @@ async function dugunAc(tarayici, genislik, adres = '/dugun/') {
       notlar: 'Gün batımında nikah', durum: 'yeni', yonetici_notu: null, created_at: '2026-11-02T10:00:00Z', updated_at: '2026-11-02T10:00:00Z' },
     { id: 12, ad: 'Eski Çift', eposta: 'eski@posta.test', tel: '0532 000 00 01', tarih: null, tarih_esnek: true, kisi: 'bilmiyorum', secimler: {}, notlar: null,
       durum: 'tamamlandi', yonetici_notu: null, created_at: '2026-10-02T10:00:00Z', updated_at: '2026-10-02T10:00:00Z' }];
+    v.tablolar.dugun_envanter = [{ id: 31, ad: 'Fanus DG', grup: 'Mum', adet: 5, birim: 'adet', konum: 'Depo', notlar: null, created_at: '2026-11-01T10:00:00Z' }];
+    v.tablolar.dugun_envanter_hareketleri = [{ id: 1, envanter_id: 31, tur: 'giris', neden: 'satin', adet: 5, tarih: '2026-11-01', tutar: 1500, kasa: 'banka', muhasebe_id: null, talep_id: null, notlar: null, created_at: '2026-11-01T10:00:00Z' }];
+    const gElde = [];
+    v.rpc.dugun_gider_ekle = (b) => { gElde.push(b); return [200, { muhasebe_id: 1, envanter_id: 32 }]; };
     const y = await sayfaAc(tarayici, v, oturum('yon-1', 'yonetici@posta.test'));
     await y.page.goto(`${SITE}/yonetim/`);
     await y.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
@@ -206,6 +210,29 @@ async function dugunAc(tarayici, genislik, adres = '/dugun/') {
     const toplu = y.istekler.filter((x) => x.yontem === 'POST' && x.yol === '/rest/v1/dugun_katalog').slice(once);
     dogru(toplu.length === 2 && toplu.every((x) => x.govde.tur === 'urun' && x.govde.grup === 'Peçete') && toplu.map((x) => x.govde.ad).join('|') === 'Keten peçete|Peçetede lavanta dalı',
       `katalog: hızlı ekle iki ürünü Peçete grubuna ekledi (${toplu.map((x) => x.govde.ad).join(', ')})`);
+    // Envanter: gider + envantere ekle (dugun_gider_ekle), hasarlı düşüm, fazlası düşülemez
+    await y.page.locator('#fc-dugun button', { hasText: /^Envanter$/ }).click();
+    await y.page.getByText('Fanus DG', { exact: false }).first().waitFor({ timeout: 4000 });
+    await y.page.getByRole('button', { name: 'Gider ekle' }).click();
+    await y.page.getByLabel('Tutar (TL) *').fill('12.000');
+    await y.page.getByLabel('Açıklama *').fill('40 adet cam fanus');
+    await y.page.getByLabel('Kalem adı *').fill('Cam fanus');
+    await y.page.getByLabel('Grup').first().fill('Mum');
+    await y.page.getByLabel('Miktar *').fill('40');
+    await y.page.locator('#fc-dugun').getByRole('button', { name: 'Kaydet' }).click();
+    await y.page.getByText('12.000 TL gider muhasebeye yazıldı, ürün envantere eklendi.').waitFor({ timeout: 4000 });
+    const gp = (gElde[0] || {}).p || {};
+    dogru(gp.tutar === 12000 && gp.envantere === true && gp.ad === 'Cam fanus' && gp.grup === 'Mum' && gp.adet === 40 && gp.envanter_id === null, `envanter: gider + envantere ekle tek istekte (${JSON.stringify(gp)})`);
+    const fanus = y.page.locator('#fc-dugun section', { hasText: 'Fanus DG' });
+    await fanus.getByRole('button', { name: 'Hasarlı / kullanılamaz' }).click();
+    await y.page.getByLabel('Kaç tane? *').fill('9');
+    await y.page.getByRole('button', { name: 'Envanterden düş' }).click();
+    dogru(await y.page.getByText('Envanterde 5 adet var; en çok o kadar düşülebilir.').count() === 1, 'envanter: mevcuttan fazlası düşülemez');
+    await y.page.getByLabel('Kaç tane? *').fill('2');
+    await y.page.getByRole('button', { name: 'Envanterden düş' }).click();
+    await y.page.getByText('“Fanus DG”: 2 adet hasarlı olarak envanterden düşüldü.').waitFor({ timeout: 4000 });
+    const dh = y.istekler.find((x) => x.yontem === 'POST' && x.yol === '/rest/v1/dugun_envanter_hareketleri');
+    dogru(dh && dh.govde.tur === 'dusum' && dh.govde.neden === 'hasarli' && dh.govde.adet === 2 && dh.govde.envanter_id === 31, `envanter: hasarlı düşüm hareketi yazıldı (${JSON.stringify(dh && dh.govde)})`);
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
     if (process.env.EKRAN) await y.page.screenshot({ path: process.env.EKRAN + '/dugun-yonetim.png', fullPage: true });
   } catch (h) {
