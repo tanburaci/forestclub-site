@@ -1407,6 +1407,14 @@ class Component extends DCLogic {
           yoklamaAc: () => { this.setState({ etkPanel: { key, mod: 'yoklama' }, kod: '', kodMesaj: '' }); this.paneleKay(); },
           iptalAc: () => { this.setState({ etkPanel: { key, mod: 'iptal' }, iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '' }); this.paneleKay(); },
           duyuruDuzenle: () => this.setState({ sekme: 'eposta', sSecili: 'duyuru', sMesaj: '' }),
+          // Paylaş: sitede bu etkinliğe giden bağlantı (WhatsApp / Instagram'a yapıştırılır)
+          linkYazi: this.state.etkLinkKopya === key ? 'Kopyalandı ✓' : 'Paylaşım bağlantısı',
+          linkKopyala: () => {
+            const u = window.FCEtkinlikLink ? window.FCEtkinlikLink(key) : `${location.origin}/#etkinlik-${encodeURIComponent(key)}`;
+            if (!u) return window.FC_ORTAK && window.FC_ORTAK.bildir('Etkinlik henüz kaydedilmedi; birkaç saniye sonra tekrar deneyin.', true);
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(() => this.setState({ etkLinkKopya: key }), () => window.prompt('Bağlantıyı kopyalayın:', u));
+            else window.prompt('Bağlantıyı kopyalayın:', u);
+          },
           // Düzenle: aynı form, tarih ve ad kilitli (kayıtlar tarih|ad ile bağlı)
           duzenle: () => {
             const o = this.state.etkinlikler.find((z) => `${z.tarih}|${z.ad}` === key);
