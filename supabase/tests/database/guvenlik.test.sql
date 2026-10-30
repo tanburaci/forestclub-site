@@ -29,7 +29,7 @@ select is_empty($$
   select p.oid::regprocedure::text from pg_proc p
   where p.pronamespace = 'public'::regnamespace and p.prokind = 'f' and has_function_privilege('anon', p.oid, 'execute')
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
-    and p.proname not in ('demo_adres_mi', 'etkinlik_doluluk', 'istanbul_bugun', 'sayac_artir', 'tanisma_etkinlikleri', 'ozel_form', 'tr_tarih', 'yonetici_mi') $$,
+    and p.proname not in ('demo_adres_mi', 'etkinlik_doluluk', 'istanbul_bugun', 'sayac_artir', 'tanisma_etkinlikleri', 'ozel_form', 'dugun_davet_bilgi', 'tr_tarih', 'yonetici_mi') $$,
   'ziyaretçi (anon) yalnız izinli işlevleri çalıştırabilir');
 
 select is_empty($$
@@ -38,7 +38,7 @@ select is_empty($$
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
     and p.proname not in ('demo_adres_mi', 'etkinlik_doluluk', 'istanbul_bugun', 'sayac_artir', 'tanisma_etkinlikleri', 'tr_tarih', 'yonetici_mi',
       'anket_gonder', 'dekont_karar', 'dondurma_bitir', 'elden_odeme', 'eposta_deneme', 'eposta_yeniden_dene',
-      'bilet_karar', 'dekont_bekliyor', 'uye_biletlerim', 'ozel_form', 'etkinlik_durum_degistir', 'etkinlik_kaydi', 'form_yanitla', 'giris_kaydet', 'kontenjan_degistir', 'profil_kaydet', 'saglik_ozeti',
+      'bilet_karar', 'dekont_bekliyor', 'uye_biletlerim', 'ozel_form', 'dugun_davet_bilgi', 'etkinlik_durum_degistir', 'etkinlik_kaydi', 'form_yanitla', 'giris_kaydet', 'kontenjan_degistir', 'profil_kaydet', 'saglik_ozeti',
       'uye_anonimlestir', 'uye_bagla', 'uyelik_dondur', 'veri_kopyasi', 'veri_talebi_ac', 'yoklama_isaretle') $$,
   'giriş yapmış kullanıcı yalnız izinli işlevleri çalıştırabilir');
 
