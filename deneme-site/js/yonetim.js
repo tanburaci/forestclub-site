@@ -135,7 +135,7 @@
       muaflar: Object.fromEntries(uyeler.filter((u) => u.aidat_muaf).map((u) => [u.id, true])),
       // Formlar ve cevapları (üye adıyla)
       formlar: [...formlar].sort((a, b) => b.created_at.localeCompare(a.created_at)).map((f) => ({
-        id: f.id, baslik: f.baslik, aciklama: f.aciklama || '', sorular: f.sorular || [], acik: f.acik,
+        id: f.id, baslik: f.baslik, aciklama: f.aciklama || '', sorular: f.sorular || [], acik: f.acik, ozel: !!f.ozel, anahtar: f.anahtar || '',
         yanitlar: formYanitlari.filter((y) => y.form_id === f.id).map((y) => {
           const u = uyeler.find((x) => x.id === y.uye_id);
           return { ad: u ? u.ad : `Üye #${y.uye_id}`, tarih: zaman(y.updated_at || y.created_at), cevaplar: y.cevaplar || {} };
@@ -209,13 +209,13 @@
     if (error) throw new Error(error.message);
     return sb.storage.from('afisler').getPublicUrl(yol).data.publicUrl;
   };
-  // Formlar: kaydet (yeni → insert, var → update) ve aç / kapat. Dönüş: form id
+  // Formlar: kaydet (yeni → insert, var → update) ve aç / kapat. Dönüş: { id, anahtar } (özel form bağlantısı için)
   window.FCFormKaydet = async (f) => {
-    const satir = { baslik: f.baslik, aciklama: f.aciklama || null, sorular: f.sorular };
-    const is = f.id ? sb.from('formlar').update(satir).eq('id', f.id).select('id').single() : sb.from('formlar').insert(satir).select('id').single();
+    const satir = { baslik: f.baslik, aciklama: f.aciklama || null, sorular: f.sorular, ozel: !!f.ozel };
+    const is = f.id ? sb.from('formlar').update(satir).eq('id', f.id).select('id, anahtar').single() : sb.from('formlar').insert(satir).select('id, anahtar').single();
     const { data, error } = await is;
     if (error) throw new Error(error.message);
-    return data.id;
+    return data;
   };
   window.FCFormAcKapa = async (id, acik) => {
     const { error } = await sb.from('formlar').update({ acik }).eq('id', id).select('id').single();

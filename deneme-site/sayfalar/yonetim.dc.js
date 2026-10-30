@@ -239,6 +239,8 @@ class Component extends DCLogic {
       const st = this.state;
       const liste = st.formlar || [];
       const yeniSoru = () => ({ id: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, metin: '', tur: 'kisa', secenekler: [], zorunlu: false });
+      // Özel form gizli anahtarla açılır; numarayla (/form/?id=N) üyeler ulaşamaz
+      const formLink = (f) => (f.ozel ? `${location.origin}/form/?k=${f.anahtar}` : `${location.origin}/form/?id=${f.id}`);
       const duz = st.fmDuz;
       const sDegis = (i, deg) => this.setState((s) => ({ fmDuz: { ...s.fmDuz, sorular: s.fmDuz.sorular.map((x, j) => (j === i ? { ...x, ...deg } : x)) }, fmHata: '' }));
       const acik = liste.find((f) => f.id === st.fmCevap);
@@ -246,10 +248,11 @@ class Component extends DCLogic {
       const cevapYazi = (s, v) => (Array.isArray(v) ? v.join(', ') : v || '');
       return {
         fmYok: !liste.length && !duz, fmMesaj: st.fmMesaj || '', fmHata: st.fmHata || '',
-        fmYeni: () => this.setState({ fmDuz: { id: null, baslik: '', aciklama: '', sorular: [yeniSoru()] }, fmHata: '', fmMesaj: '' }),
-        fmDuzVar: !!duz, fmDuz: duz || { baslik: '', aciklama: '' }, fmDuzBaslik: duz && duz.id ? 'Formu düzenle' : 'Yeni form',
+        fmYeni: () => this.setState({ fmDuz: { id: null, baslik: '', aciklama: '', ozel: false, sorular: [yeniSoru()] }, fmHata: '', fmMesaj: '' }),
+        fmDuzVar: !!duz, fmDuz: duz || { baslik: '', aciklama: '', ozel: false }, fmDuzBaslik: duz && duz.id ? 'Formu düzenle' : 'Yeni form',
         fmBaslikYaz: (e) => { const v = e.target.value; this.setState((s) => ({ fmDuz: { ...s.fmDuz, baslik: v }, fmHata: '' })); },
         fmAciklamaYaz: (e) => { const v = e.target.value; this.setState((s) => ({ fmDuz: { ...s.fmDuz, aciklama: v } })); },
+        fmOzelDegis: (e) => { const v = !!e.target.checked; this.setState((s) => ({ fmDuz: { ...s.fmDuz, ozel: v } })); },
         fmSorular: duz ? duz.sorular.map((x, i) => ({
           ...x, etiket: `Soru ${i + 1}`, secimli: x.tur === 'tek' || x.tur === 'coklu', seceneklerYazi: (x.secenekler || []).join('\n'),
           metinYaz: (e) => sDegis(i, { metin: e.target.value }),
@@ -279,32 +282,35 @@ class Component extends DCLogic {
           if (bos >= 0) return this.setState({ fmHata: `Soru ${bos + 1}: soru metnini yazın.` });
           const azSecenek = sorular.findIndex((x) => x.secenekler && x.secenekler.length < 2);
           if (azSecenek >= 0) return this.setState({ fmHata: `Soru ${azSecenek + 1}: en az iki seçenek yazın.` });
-          const kayit = { id: f.id, baslik: f.baslik.trim(), aciklama: f.aciklama.trim(), sorular };
-          const bitir = (id) => this.setState((s) => {
+          const kayit = { id: f.id, baslik: f.baslik.trim(), aciklama: f.aciklama.trim(), ozel: !!f.ozel, sorular };
+          const bitir = (d) => this.setState((s) => {
+            const id = d.id;
             const eski = (s.formlar || []).find((x) => x.id === id);
-            const yeni = { ...(eski || { acik: false, yanitlar: [] }), ...kayit, id };
+            const yeni = { ...(eski || { acik: false, yanitlar: [] }), ...kayit, id, anahtar: d.anahtar || (eski && eski.anahtar) || '' };
             return { formlar: eski ? s.formlar.map((x) => (x.id === id ? yeni : x)) : [yeni, ...(s.formlar || [])], fmDuz: null, fmHata: '',
-              fmMesaj: eski ? `“${kayit.baslik}” güncellendi.` : `“${kayit.baslik}” kaydedildi. Üyelere açmak için “Aç”a basın.` };
+              fmMesaj: eski ? `“${kayit.baslik}” güncellendi.` : `“${kayit.baslik}” kaydedildi. ${kayit.ozel ? 'Açmak için “Aç”a basın, sonra bağlantıyı üyeye gönderin.' : 'Üyelere açmak için “Aç”a basın.'}` };
           });
-          if (!window.FCFormKaydet) return bitir(f.id || Date.now());
+          if (!window.FCFormKaydet) return bitir({ id: f.id || Date.now(), anahtar: 'deneme' });
           this.setState({ fmHata: 'Kaydediliyor…' });
           window.FCFormKaydet(kayit).then(bitir, (h) => this.setState({ fmHata: h.message }));
         },
         fmListe: liste.map((f) => ({
-          baslik: f.baslik, durum: f.acik ? 'Açık' : 'Kapalı', rozet: f.acik ? PILL('#111111', '#FFFFFF') : PILL('#E4E4E2', '#111111'),
+          baslik: f.baslik, durum: `${f.ozel ? 'Özel · ' : ''}${f.acik ? 'Açık' : 'Kapalı'}`, rozet: f.acik ? PILL('#111111', '#FFFFFF') : PILL('#E4E4E2', '#111111'),
+          ozel: !!f.ozel, link: formLink(f), linkSec: (e) => e.target.select(),
           ozet: `${f.sorular.length} soru · ${f.yanitlar.length} cevap`,
           acKapaYazi: f.acik ? 'Kapat' : 'Aç',
           acKapa: () => {
             const yap = () => this.setState((s) => ({ formlar: s.formlar.map((x) => (x.id === f.id ? { ...x, acik: !f.acik } : x)),
-              fmMesaj: f.acik ? `“${f.baslik}” kapandı; üyeler artık cevap veremez.` : `“${f.baslik}” açıldı; üye panelinde görünüyor.` }));
+              fmMesaj: f.acik ? `“${f.baslik}” kapandı; üyeler artık cevap veremez.`
+                : f.ozel ? `“${f.baslik}” açıldı; panelde görünmez, yalnız bağlantıyı gönderdiğiniz üye doldurur.` : `“${f.baslik}” açıldı; üye panelinde görünüyor.` }));
             if (!window.FCFormAcKapa) return yap();
             window.FCFormAcKapa(f.id, !f.acik).then(yap, (h) => this.setState({ fmMesaj: `Kaydedilemedi: ${h.message}` }));
           },
-          duzenle: () => this.setState({ fmDuz: { id: f.id, baslik: f.baslik, aciklama: f.aciklama || '', sorular: f.sorular.map((x) => ({ ...x, secenekler: x.secenekler || [] })) }, fmHata: '', fmMesaj: '' }),
+          duzenle: () => this.setState({ fmDuz: { id: f.id, baslik: f.baslik, aciklama: f.aciklama || '', ozel: !!f.ozel, sorular: f.sorular.map((x) => ({ ...x, secenekler: x.secenekler || [] })) }, fmHata: '', fmMesaj: '' }),
           cevaplar: () => this.setState({ fmCevap: f.id }),
-          kopyalaYazi: st.fmKopya === f.id ? 'Kopyalandı ✓' : 'Bağlantıyı kopyala',
+          kopyalaYazi: st.fmKopya === f.id ? 'Kopyalandı ✓' : f.ozel ? 'Özel bağlantıyı kopyala' : 'Bağlantıyı kopyala',
           kopyala: () => {
-            const u = `${location.origin}/form/?id=${f.id}`;
+            const u = formLink(f);
             if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(() => this.setState({ fmKopya: f.id }), () => this.setState({ fmMesaj: u }));
             else this.setState({ fmMesaj: u });
           },
@@ -434,7 +440,7 @@ class Component extends DCLogic {
       aylikAlan: Object.fromEntries(['ay', 'ust', 'ana', 'alt', 'tur', 'formId'].map((k) => [k, (e) => degis(k, e.target.value)])),
       aylikGosterDegis: () => degis('goster', a.goster === false),
       aylikFormda: a.tur === 'form', aylikResimli: a.tur === 'resim' || a.tur === 'cagri',
-      aylikFormlar: formlar.map((f) => ({ id: String(f.id), ad: `${f.baslik}${f.acik ? '' : ' (kapalı)'}` })),
+      aylikFormlar: formlar.filter((f) => !f.ozel).map((f) => ({ id: String(f.id), ad: `${f.baslik}${f.acik ? '' : ' (kapalı)'}` })),
       aylikResimYazi: this.state.aylikYukleniyor ? 'Yükleniyor…' : a.resim ? 'Resmi değiştir' : 'Resim yükle',
       aylikResimNot: a.tur === 'cagri' ? 'Açık Çağrı penceresinde hazır afiş yerine bu resim çıkar (isteğe bağlı).' : 'Rozete tıklayınca tam ekran açılır.',
       aylikResimSec: (e) => {
