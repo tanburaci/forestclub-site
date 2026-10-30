@@ -1271,9 +1271,10 @@ class Component extends DCLogic {
       const yakinda15 = !gecti && !bugun && (new Date(`${b.tarih}T12:00:00Z`) - new Date(`${BUGUN}T12:00:00Z`)) / 864e5 <= 15;
       const kartKey = `${b.tarih}|${b.ad}`;
       const acik = this.state.acikEtk === kartKey;
-      // Paylaş: tek etkinliğin bağlantısı (/#etkinlik-<id>); telefonda paylaşım menüsü, değilse panoya kopyalanır
+      // Paylaş: tek etkinliğin bağlantısı (/e/<id>: önizlemede afiş görünür, sonra /#etkinlik-<id>'ye gider); telefonda
+      // paylaşım menüsü, değilse panoya kopyalanır
       const capa = b.id ? `etkinlik-${b.id}` : `etkinlik-${b.tarih}`;
-      const paylasLink = `${location.origin}/#${capa}`;
+      const paylasLink = b.id ? `${location.origin}/e/${b.id}` : `${location.origin}/#${capa}`;
       return {
         ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
         acik, acikYazi: acik ? 'true' : 'false', metinSinif: acik ? '' : 'fs-ozet', acYazi: acik ? 'Kapat ▲' : 'Ayrıntılar ▼',
