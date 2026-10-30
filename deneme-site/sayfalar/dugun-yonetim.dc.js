@@ -11,8 +11,106 @@ class Component extends DCLogic {
         notlar: 'Gün batımında nikah istiyoruz.', yonetici_notu: null, created_at: '2026-11-02T10:00:00Z' }],
       katalog: [{ id: 1, tur: 'konsept', ad: 'Kır sofrası', aciklama: 'Keten, kır çiçekleri.', resim: '/dugun/cizim/konsept-kir.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 1, acik: true }],
     };
-    this.state = { davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
+    this.GBOS = { tarih: new Date().toISOString().slice(0, 10), tutar: '', kasa: 'banka', talep: '', aciklama: '', envantere: true, kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1' };
+    this.OBOS = { kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1', neden: 'diger', not: '' };
+    this.state = { envanter: V.envanter || [], hareketler: V.hareketler || [], form: null, g: { ...this.GBOS }, o: { ...this.OBOS }, dF: null, gHata: '', gecmis: null,
+      davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
       alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '', hizli: null, yukleniyor: null };
+  }
+  // Düğün envanteri (etkinlik envanterinden ayrı): özet, gider / ödemesiz giriş / düşüm formları, gruplu liste ve geçmiş
+  envanterVals(st, Y, bilgi, tYaz, pill, FD) {
+    const env = st.envanter;
+    const sayi = (x) => Number(String(x == null ? '' : x).trim().replace(/\./g, '').replace(',', '.'));
+    const NEDEN = { satin: 'satın alındı', hediye: 'hediye / bağış', diger: 'eldeki / diğer', hasarli: 'hasarlı', kullanilamaz: 'kullanılamaz', kayip: 'kayıp' };
+    const yenile = (mesaj) => {
+      const bitir = (v) => this.setState({ ...v, form: null, dF: null, gHata: '', g: { ...this.GBOS }, o: { ...this.OBOS }, mesaj });
+      if (!Y) return bitir({});
+      return Y.envanterOku().then(bitir, (h) => bilgi(`Yenilenemedi: ${h.message}`));
+    };
+    const hataGoster = (h) => this.setState({ gHata: h.message || String(h) });
+    const alanlar = (anahtar, BOS) => Object.fromEntries(Object.keys(BOS).map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ [anahtar]: { ...s[anahtar], [k]: v }, gHata: '' })); }]));
+    const ayBas = new Date().toISOString().slice(0, 7);
+    const buAyDusen = st.hareketler.filter((h) => h.tur === 'dusum' && String(h.tarih).slice(0, 7) === ayBas).reduce((t, h) => t + Number(h.adet), 0);
+    const g = st.g; const o = st.o; const dF = st.dF;
+    const dKalem = dF ? env.find((x) => x.id === dF.id) : null;
+    const gruplar = (FD.sirala ? FD.sirala([...new Set(env.map((x) => x.grup || 'Diğer'))]) : [...new Set(env.map((x) => x.grup || 'Diğer'))]);
+    return {
+      envOzet: [
+        { baslik: 'Kalem', sayi: String(env.length), alt: `${env.filter((x) => Number(x.adet) > 0).length} kalem elde var` },
+        { baslik: 'Toplam parça', sayi: String(env.reduce((t, x) => t + Number(x.adet), 0)), alt: 'Kullanılabilir durumda' },
+        { baslik: 'Bu ay düşülen', sayi: String(buAyDusen), alt: 'Hasarlı / kullanılamaz / kayıp' },
+      ],
+      envYok: !env.length,
+      talepSecenek: st.talepler.filter((t) => t.durum !== 'iptal').map((t) => ({ id: String(t.id), ad: `${t.ad}${t.tarih ? ` · ${tYaz(t.tarih)}` : ''}` })),
+      kalemSecenek: env.map((x) => ({ id: String(x.id), ad: `${x.ad} (${Number(x.adet)} ${x.birim})` })),
+      gAcik: st.form === 'gider', oAcik: st.form === 'odemesiz', dAcik: !!dKalem, gHata: st.gHata,
+      gAc: () => this.setState({ form: st.form === 'gider' ? null : 'gider', dF: null, gHata: '', g: { ...this.GBOS }, mesaj: '' }),
+      oAc: () => this.setState({ form: st.form === 'odemesiz' ? null : 'odemesiz', dF: null, gHata: '', o: { ...this.OBOS }, mesaj: '' }),
+      formKapat: () => this.setState({ form: null, dF: null, gHata: '' }),
+      g, gAlan: alanlar('g', this.GBOS), gYeniKalem: !g.kalem,
+      gEnvDegis: (e) => { const v = !!e.target.checked; this.setState((s) => ({ g: { ...s.g, envantere: v }, gHata: '' })); },
+      gKaydet: () => {
+        const tutar = sayi(g.tutar);
+        if (!(tutar > 0)) return this.setState({ gHata: 'Tutarı yazın (örn. 12.000).' });
+        if (!g.aciklama.trim()) return this.setState({ gHata: 'Kısa bir açıklama yazın.' });
+        if (g.envantere && !g.kalem && !g.ad.trim()) return this.setState({ gHata: 'Envanter kaleminin adını yazın ya da listeden seçin.' });
+        if (g.envantere && !(Number(g.adet) > 0)) return this.setState({ gHata: 'Envantere girecek miktarı yazın.' });
+        const p = { tarih: g.tarih, tutar, kasa: g.kasa, aciklama: g.aciklama.trim(), talep_id: g.talep ? Number(g.talep) : null, envantere: !!g.envantere,
+          envanter_id: g.kalem ? Number(g.kalem) : null, ad: g.ad.trim(), grup: g.grup.trim(), birim: g.birim, konum: g.konum.trim(), adet: Number(g.adet) };
+        const mesaj = `${tutar.toLocaleString('tr-TR')} TL gider muhasebeye yazıldı${g.envantere ? ', ürün envantere eklendi' : ''}.`;
+        if (!Y) return this.setState({ form: null, mesaj });
+        this.setState({ gHata: 'Kaydediliyor…' });
+        Y.giderEkle(p).then(() => yenile(mesaj), hataGoster);
+      },
+      o, oAlan: alanlar('o', this.OBOS), oYeniKalem: !o.kalem,
+      oKaydet: () => {
+        const adet = Number(o.adet);
+        if (!o.kalem && !o.ad.trim()) return this.setState({ gHata: 'Kalem adını yazın ya da listeden seçin.' });
+        if (!(adet > 0)) return this.setState({ gHata: 'Miktarı yazın.' });
+        if (!Y) return this.setState({ form: null, mesaj: 'Envantere eklendi.' });
+        this.setState({ gHata: 'Kaydediliyor…' });
+        (async () => {
+          const id = o.kalem ? Number(o.kalem) : await Y.kalemEkle({ ad: o.ad.trim(), grup: o.grup.trim() || null, birim: o.birim, konum: o.konum.trim() || null });
+          await Y.hareketEkle({ envanter_id: id, tur: 'giris', neden: o.neden, adet, notlar: o.not.trim() || null });
+        })().then(() => yenile(`${adet} parça envantere eklendi.`), hataGoster);
+      },
+      dKalem: dKalem ? { ad: dKalem.ad, miktar: `${Number(dKalem.adet)} ${dKalem.birim}` } : {}, dF: dF || {}, dAlan: alanlar('dF', { adet: '', neden: '', talep: '', not: '' }),
+      dKaydet: () => {
+        const adet = Number(dF.adet);
+        if (!(adet > 0)) return this.setState({ gHata: 'Kaç tane düşüleceğini yazın.' });
+        if (adet > Number(dKalem.adet)) return this.setState({ gHata: `Envanterde ${Number(dKalem.adet)} ${dKalem.birim} var; en çok o kadar düşülebilir.` });
+        const mesaj = `“${dKalem.ad}”: ${adet} ${dKalem.birim} ${NEDEN[dF.neden]} olarak envanterden düşüldü.`;
+        if (!Y) return this.setState((s) => ({ envanter: s.envanter.map((x) => (x.id === dKalem.id ? { ...x, adet: Number(x.adet) - adet } : x)), dF: null, mesaj }));
+        this.setState({ gHata: 'Kaydediliyor…' });
+        Y.hareketEkle({ envanter_id: dKalem.id, tur: 'dusum', neden: dF.neden, adet, talep_id: dF.talep ? Number(dF.talep) : null, notlar: dF.not.trim() || null })
+          .then(() => yenile(mesaj), hataGoster);
+      },
+      envGruplar: gruplar.map((ad) => ({
+        ad,
+        kalemler: env.filter((x) => (x.grup || 'Diğer') === ad).map((x) => {
+          const hs = st.hareketler.filter((h) => h.envanter_id === x.id);
+          const dusen = hs.filter((h) => h.tur === 'dusum').reduce((t, h) => t + Number(h.adet), 0);
+          const acik = st.gecmis === x.id;
+          const n = Number(x.adet);
+          return {
+            ad: x.ad, miktar: `${n} ${x.birim}`, rozet: n > 0 ? pill('#DCE9C8', '#2F4A1F') : pill('#F3DCD5', '#82301F'),
+            alt: [x.konum, dusen ? `${dusen} ${x.birim} düşüldü` : '', x.notlar].filter(Boolean).join(' · ') || ' ',
+            dus: () => this.setState({ dF: { id: x.id, adet: '1', neden: 'hasarli', talep: '', not: '' }, form: null, gHata: '', mesaj: '' }),
+            gecmisAcik: acik, gecmisYazi: acik ? 'Geçmişi gizle' : `Geçmiş (${hs.length})`, gecmisYok: !hs.length,
+            gecmisAc: () => this.setState({ gecmis: acik ? null : x.id }),
+            gecmis: hs.map((h) => ({
+              isaret: h.tur === 'giris' ? `+${Number(h.adet)}` : `−${Number(h.adet)}`, renk: h.tur === 'giris' ? 'color: #2F4A1F' : 'color: #82301F',
+              yazi: [tYaz(String(h.tarih)), NEDEN[h.neden], h.tutar ? `${Number(h.tutar).toLocaleString('tr-TR')} TL` : '', h.talep_id ? (st.talepler.find((t) => t.id === h.talep_id) || {}).ad : '', h.notlar].filter(Boolean).join(' · '),
+              sil: () => {
+                if (!window.confirm('Bu hareket geri alınsın mı? Adet buna göre düzelir; muhasebedeki gider silinmez (gerekirse Muhasebe\'den silin).')) return;
+                if (!Y) return;
+                Y.hareketSil(h.id).then(() => yenile('Hareket geri alındı.'), (e) => bilgi(e.message));
+              },
+            })),
+          };
+        }),
+      })),
+    };
   }
   renderVals() {
     const st = this.state;
@@ -128,10 +226,11 @@ class Component extends DCLogic {
         };
       }),
       mesaj: st.mesaj,
-      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['katalog', 'Katalog']].map(([id, ad]) => ({
+      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['envanter', 'Envanter'], ['katalog', 'Katalog']].map(([id, ad]) => ({
         ad, sinif: st.alt === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ alt: id, mesaj: '' }),
       })),
-      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog',
+      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog', envanterSekme: st.alt === 'envanter',
+      ...this.envanterVals(st, Y, bilgi, tYaz, pill, FD),
       filtreler: FILTRE.map(([id, ad, f]) => ({ ad: `${ad} (${st.talepler.filter(f).length})`, sinif: st.filtre === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ filtre: id }) })),
       talepYok: !liste.length,
       durumlar: DURUM,

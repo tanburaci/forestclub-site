@@ -41,6 +41,10 @@
       hepsi('tanisma_biletleri'), hepsi('muhasebe_hareketleri'), hepsi('envanter'), hepsi('eposta_sablonlari'),
       hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'), hepsi('formlar'), hepsi('form_yanitlari', ['form_id', 'uye_id', 'created_at']),
     ]);
+    // Envanterden düşülenler (hasarlı / kullanılamaz / kayıp): kalem başına toplam; göç yoksa boş
+    const dusulen = {};
+    const dus = await sb.from('envanter_dusumleri').select('envanter_id, adet').limit(5000).then((r) => r.data || [], () => []);
+    dus.forEach((d) => { dusulen[d.envanter_id] = (dusulen[d.envanter_id] || 0) + Number(d.adet); });
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
     const [kuyruk, saglik, ayarlar, veriTalepleri, uyeNotlari, gonulluler] = await Promise.all([
       sb.from('eposta_kuyrugu').select('id, sablon, alici, durum, deneme, son_hata, created_at, gonderim_at')
@@ -119,6 +123,7 @@
         belge: h.belge || '', otomatik: h.otomatik, ...(h.odeme ? { odeme: h.odeme } : {}),
         fatura: h.fatura_durum || '', faturaNo: h.fatura_no || '', faturaTarih: h.fatura_tarih || '',
       })),
+      dusulen,
       envanter: envanter.map((e) => ({
         id: e.id, ad: e.ad, kategori: e.kategori, adet: Number(e.adet), birim: e.birim, giris: e.giris, tarih: e.tarih,
         tutar: Number(e.tutar || 0), kasa: e.kasa || 'banka', firma: e.firma || '', karsilik: e.karsilik || '',
@@ -306,6 +311,12 @@
   };
 
   // Gönüllü: "İletişime geçildi" işareti
+  // Etkinlik envanteri: hasarlı / kullanılamaz / kayıp kaydı (adet panelden düşer ve olağan senkronla yazılır)
+  window.FCEnvanterDusum = async (d) => {
+    if (typeof d.envanter_id !== 'number' || d.envanter_id > 1e12) throw new Error('Kalem henüz kaydedilmedi; birkaç saniye sonra tekrar deneyin.');
+    const { error } = await sb.from('envanter_dusumleri').insert(d);
+    if (error) throw new Error(error.message);
+  };
   window.FCGonulluDurum = async (id, durum) => {
     const { error } = await sb.from('gonulluler').update({ durum }).eq('id', id);
     if (error) throw new Error(error.message);
@@ -539,6 +550,8 @@
       };
     };
 
+    // Tek etkinliğin sitedeki bağlantısı (kart açık gelir); kaydedilmemiş etkinlikte null
+    window.FCEtkinlikLink = (key) => { const id = keyEtk[key]; return id && id !== 'yaziliyor' ? `${location.origin}/#etkinlik-${id}` : null; };
     // Kapıda karekod: kod sunucuda uyeler.kod ile eşleşir (giris_kaydet). Dönüş: {ad, uye_id, zaten}
     window.FCGirisKaydet = async (key, kod) => {
       const etkId = keyEtk[key];

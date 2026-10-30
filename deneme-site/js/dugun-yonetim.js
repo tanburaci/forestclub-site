@@ -29,6 +29,30 @@
       return data;
     },
     davetSil: async (id) => hata(await sb.from('dugun_davetleri').delete().eq('id', id).select('id').single()),
+    // Envanter: gider (muhasebe + istenirse envanter + düğün gideri) tek işlemde; ödemesiz giriş ve düşüm hareketle
+    giderEkle: async (p) => {
+      const { data, error } = await sb.rpc('dugun_gider_ekle', { p });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    kalemEkle: async (k) => {
+      const { data, error } = await sb.from('dugun_envanter').insert(k).select('id').single();
+      if (error) throw new Error(error.message);
+      return data.id;
+    },
+    kalemDuzenle: async (id, k) => hata(await sb.from('dugun_envanter').update(k).eq('id', id).select('id').single()),
+    kalemSil: async (id) => hata(await sb.from('dugun_envanter').delete().eq('id', id).select('id').single()),
+    hareketEkle: async (h) => hata(await sb.from('dugun_envanter_hareketleri').insert(h).select('id').single()),
+    hareketSil: async (id) => hata(await sb.from('dugun_envanter_hareketleri').delete().eq('id', id).select('id').single()),
+    // Yazmadan sonra envanter yeniden okunur (adet tetikleyicide hesaplanır)
+    envanterOku: async () => {
+      const [e, h] = await Promise.all([
+        sb.from('dugun_envanter').select('*').order('grup').order('ad'),
+        sb.from('dugun_envanter_hareketleri').select('*').order('created_at', { ascending: false }).limit(500),
+      ]);
+      if (e.error) throw new Error(e.error.message);
+      return { envanter: e.data, hareketler: h.error ? [] : h.data };
+    },
     katalogSil: async (id) => hata(await sb.from('dugun_katalog').delete().eq('id', id).select('id').single()),
     resimYukle: (dosya) => window.FCAfisYukle(dosya),
   };
@@ -45,7 +69,8 @@
         sb.from('dugun_davetleri').select('*').order('created_at', { ascending: false }).limit(500),
       ]);
       [t, k].forEach((r) => { if (r.error) throw r.error; });
-      window.FCDYV = { talepler: t.data, katalog: k.data, davetler: d.error ? [] : d.data };  // davet tablosu yoksa (göç) boş
+      const env = await window.FCDY.envanterOku().catch(() => ({ envanter: [], hareketler: [] }));  // göç yoksa boş
+      window.FCDYV = { talepler: t.data, katalog: k.data, davetler: d.error ? [] : d.data, ...env };  // davet tablosu yoksa (göç) boş
       const style = el.getAttribute('style');
       await window.DC.bagla('/sayfalar/dugun-yonetim.dc.html', el, { varliklar: A.varliklar });
       if (style) el.setAttribute('style', style);  // bagla kutunun stilini siler; sekme gizliyse gizli kalsın
