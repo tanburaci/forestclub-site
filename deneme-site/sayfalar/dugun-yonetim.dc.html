@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Forest Club Urla · Yönetim › Düğün</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.dy-kart{background:#FFFFFF;border:2.5px solid #111111;border-radius:14px;box-shadow:5px 5px 0 #111111}
+.dy-satir{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #E4E4E2}
+.dy-satir img{width:64px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #DADAD8;background:#F6EFE3}
+.dy-k{padding:8px 12px;min-height:38px;font-size:13px}
+@media (max-width:640px){.dy-satir{grid-template-columns:48px minmax(0,1fr)}.dy-satir img{width:48px;height:34px}.dy-satir .dy-dugmeler{grid-column:1 / -1}}
+</style>
+</helmet>
+
+<!-- Yönetim › Düğün: talepler (/dugun/ sihirbazından) ve katalog. Teklif, ödeme planı ve giderler için tablolar hazır;
+     kapora / iptal koşulları belirlenince bu sayfaya eklenecek. -->
+<div style="display: flex; flex-direction: column; gap: 20px; font-family: Figtree, sans-serif; color: #111111">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+    <div>
+      <h2 style="margin: 0; font-family: 'Amatic SC', cursive; font-size: 56px; line-height: 1">Düğün</h2>
+      <p style="margin: 6px 0 0; color: #5E5E5E">Çiftlerin /dugun/ sayfasından gönderdiği tasarımlar ve sitedeki seçenekler. Sitede fiyat görünmez; teklif görüşmede verilir.</p>
+    </div>
+    <a class="fc-btn fc-btn-ikincil" href="/dugun/" target="_blank" rel="noopener" style="text-decoration: none">Düğün sayfasını aç ↗</a>
+  </div>
+
+  <nav style="display: flex; gap: 6px; flex-wrap: wrap" aria-label="Düğün bölümleri">
+    <sc-for list="{{ altSekmeler }}" as="s" hint-placeholder-count="2">
+      <button type="button" class="{{ s.sinif }}" onClick="{{ s.sec }}">{{ s.ad }}</button>
+    </sc-for>
+  </nav>
+
+  <sc-if value="{{ mesaj }}" hint-placeholder-val="{{ false }}">
+    <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 12px; padding: 12px 14px; font-weight: 600">{{ mesaj }}</p>
+  </sc-if>
+
+  <!-- TALEPLER -->
+  <sc-if value="{{ taleplerSekme }}" hint-placeholder-val="{{ true }}">
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; gap: 6px; flex-wrap: wrap" role="group" aria-label="Duruma göre">
+        <sc-for list="{{ filtreler }}" as="f" hint-placeholder-count="5">
+          <button type="button" class="{{ f.sinif }}" onClick="{{ f.sec }}">{{ f.ad }}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ talepYok }}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 0; color: #5E5E5E">Bu durumda talep yok. Çiftler /dugun/ sayfasındaki “Düğününüzü tasarlayın” ile talep gönderir.</p>
+      </sc-if>
+      <sc-for list="{{ talepler }}" as="t" hint-placeholder-count="2">
+        <article class="dy-kart" style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+          <button type="button" onClick="{{ t.ac }}" aria-expanded="{{ t.acikYazi }}" style="all: unset; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center">
+            <span style="display: flex; flex-direction: column; gap: 4px">
+              <strong style="font-size: 18px">{{ t.ad }}</strong>
+              <span style="font-size: 14px; color: #3A3A3A">{{ t.ozet }}</span>
+            </span>
+            <span style="display: flex; gap: 10px; align-items: center"><span style="{{ t.rozet }}">{{ t.durumAd }}</span><span aria-hidden="true">{{ t.ok }}</span></span>
+          </button>
+          <sc-if value="{{ t.acik }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 14px; border-top: 1px solid #E4E4E2; padding-top: 14px">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                <a class="fc-btn fc-btn-ikincil dy-k" href="{{ t.telLink }}" style="text-decoration: none">📞 {{ t.tel }}</a>
+                <a class="fc-btn fc-btn-ikincil dy-k" href="{{ t.mailLink }}" style="text-decoration: none">✉️ {{ t.eposta }}</a>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 20px; font-size: 14px">
+                <sc-for list="{{ t.secimler }}" as="s" hint-placeholder-count="4">
+                  <div style="display: flex; gap: 8px"><span style="color: #5E5E5E; min-width: 110px">{{ s.ad }}</span><span style="flex: 1">{{ s.deger }}</span></div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ t.notVar }}" hint-placeholder-val="{{ false }}">
+                <p style="margin: 0; background: #F6EFE3; border-radius: 10px; padding: 10px 12px; white-space: pre-line; font-size: 14px">“{{ t.notlar }}”</p>
+              </sc-if>
+              <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Durum
+                <select class="fc-input" value="{{ t.durum }}" onChange="{{ t.durumDegis }}" style="max-width: 280px">
+                  <sc-for list="{{ durumlar }}" as="d" hint-placeholder-count="6"><option value="{{ d.id }}">{{ d.ad }}</option></sc-for>
+                </select>
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Yönetici notu (yalnız yönetim görür)
+                <textarea class="fc-input" rows="3" maxlength="4000" value="{{ t.yNot }}" onChange="{{ t.notYaz }}" style="resize: vertical"></textarea>
+              </label>
+              <button type="button" class="fc-btn dy-k" onClick="{{ t.notKaydet }}" style="align-self: flex-start">Notu kaydet</button>
+            </div>
+          </sc-if>
+        </article>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- KATALOG -->
+  <sc-if value="{{ katalogSekme }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; gap: 18px">
+      <p style="margin: 0; color: #5E5E5E; font-size: 14px">Resimler şimdilik örnek çizim; gerçek fotoğraf gelince “Düzenle”den yükleyin. Gizlenen kalem sitede görünmez.</p>
+
+      <sc-if value="{{ duzVar }}" hint-placeholder-val="{{ false }}">
+        <section class="dy-kart" style="padding: 22px; display: flex; flex-direction: column; gap: 12px">
+          <h3 style="margin: 0; font-size: 20px">{{ duzBaslik }}</h3>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Ad *
+            <input class="fc-input" type="text" maxlength="80" value="{{ duz.ad }}" onChange="{{ duzAlan.ad }}">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Açıklama
+            <textarea class="fc-input" rows="2" maxlength="500" value="{{ duz.aciklama }}" onChange="{{ duzAlan.aciklama }}" style="resize: vertical"></textarea>
+          </label>
+          <sc-if value="{{ duzUrun }}" hint-placeholder-val="{{ false }}">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Grup (Örtü, Çiçek, Mum, Sandalye…)
+              <input class="fc-input" type="text" maxlength="40" value="{{ duz.grup }}" onChange="{{ duzAlan.grup }}">
+            </label>
+          </sc-if>
+          <sc-if value="{{ duzMenu }}" hint-placeholder-val="{{ false }}">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Hangi mekanın menüsü
+              <select class="fc-input" value="{{ duz.mekan_id }}" onChange="{{ duzAlan.mekan_id }}">
+                <option value="">Bütün mekanlar</option>
+                <sc-for list="{{ mekanSecenek }}" as="m" hint-placeholder-count="1"><option value="{{ m.id }}">{{ m.ad }}</option></sc-for>
+              </select>
+            </label>
+          </sc-if>
+          <sc-if value="{{ duzMekan }}" hint-placeholder-val="{{ false }}">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px"><input type="checkbox" checked="{{ duz.yemek_mekandan }}" onChange="{{ yemekDegis }}" style="width: 20px; height: 20px"> Yemeği mekan veriyor (menü yalnız tercih bilgisi)</label>
+          </sc-if>
+          <div style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap">
+            <img src="{{ duzResim }}" alt="" style="width: 120px; height: 82px; object-fit: cover; border-radius: 10px; border: 2px solid #111111; background: #F6EFE3">
+            <label class="fc-btn fc-btn-ikincil dy-k" style="cursor: pointer">Resim yükle (JPG, PNG, WebP)
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange="{{ resimSec }}" style="display: none">
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; width: 110px">Sıra
+              <input class="fc-input" type="number" inputmode="numeric" value="{{ duz.sira }}" onChange="{{ duzAlan.sira }}">
+            </label>
+          </div>
+          <sc-if value="{{ duzHata }}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ duzHata }}</p>
+          </sc-if>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap">
+            <button type="button" class="fc-btn" onClick="{{ duzKaydet }}">Kaydet</button>
+            <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ duzVazgec }}">Vazgeç</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-for list="{{ gruplar }}" as="g" hint-placeholder-count="3">
+        <section class="dy-kart" style="padding: 18px 20px">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap">
+            <div><h3 style="margin: 0; font-size: 19px">{{ g.ad }}</h3><span style="font-size: 13px; color: #5E5E5E">{{ g.not }}</span></div>
+            <button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ g.ekle }}">+ Ekle</button>
+          </div>
+          <sc-for list="{{ g.kalemler }}" as="k" hint-placeholder-count="2">
+            <div class="dy-satir" style="{{ k.soluk }}">
+              <img src="{{ k.resim }}" alt="">
+              <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><strong style="font-size: 15px">{{ k.ad }}</strong><span style="font-size: 13px; color: #5E5E5E; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ k.alt }}</span></span>
+              <span class="dy-dugmeler" style="display: flex; gap: 6px; flex-wrap: wrap">
+                <button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ k.duzenle }}">Düzenle</button>
+                <button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ k.acKapa }}">{{ k.acKapaYazi }}</button>
+                <button type="button" class="fc-sekme" onClick="{{ k.sil }}" style="text-decoration: underline; font-size: 13px">Sil</button>
+              </span>
+            </div>
+          </sc-for>
+        </section>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <p style="margin: 0; font-size: 13px; color: #5E5E5E">Yakında: teklif hazırlama, ödeme planı (kapora, taksit), düğün başına gelir-gider ve tedarikçiler. Altyapı hazır; kapora ve iptal koşulları belirlenince açılacak.</p>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1100,"height":1600}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // Canlıda veri js/dugun-yonetim.js'ten (window.FCDYV); önizlemede örnek
+    const V = window.FCDYV || {
+      talepler: [{ id: 1, ad: 'Ayşe ve Can', eposta: 'cift@posta.test', tel: '0532 000 00 00', tarih: '2027-06-12', tarih_esnek: false, kisi: '50_100', durum: 'yeni',
+        secimler: { mekan: 'Pinya, Urla', bolumler: ['Nikah töreni', 'Kokteyl'], konsept: 'Kır sofrası', urunler: [{ grup: 'Çiçek', ad: 'Kır çiçekleri' }], ekstralar: ['Düğün pastası'] },
+        notlar: 'Gün batımında nikah istiyoruz.', yonetici_notu: null, created_at: '2026-11-02T10:00:00Z' }],
+      katalog: [{ id: 1, tur: 'konsept', ad: 'Kır sofrası', aciklama: 'Keten, kır çiçekleri.', resim: '/dugun/cizim/konsept-kir.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 1, acik: true }],
+    };
+    this.state = { alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '' };
+  }
+  renderVals() {
+    const st = this.state;
+    const Y = window.FCDY;
+    const pill = (bg, fg) => `background:${bg};color:${fg};font-size:13px;font-weight:700;border-radius:999px;padding:5px 11px;display:inline-block`;
+    const DURUM = [
+      { id: 'yeni', ad: 'Yeni', rozet: pill('#111111', '#FFFFFF') }, { id: 'gorusuldu', ad: 'Görüşüldü', rozet: pill('#E4E4E2', '#111111') },
+      { id: 'teklif', ad: 'Teklif verildi', rozet: pill('#F3E6C8', '#6B5420') }, { id: 'kesin', ad: 'Kesinleşti', rozet: pill('#DCE9C8', '#2F4A1F') },
+      { id: 'tamamlandi', ad: 'Tamamlandı', rozet: pill('#F0F0EE', '#3A3A3A') }, { id: 'iptal', ad: 'İptal', rozet: pill('#F3DCD5', '#82301F') },
+    ];
+    const KISI = { '50den_az': '50 kişiden az', '50_100': '50–100 kişi', '100_150': '100–150 kişi', '150den_fazla': '150+ kişi', bilmiyorum: 'kişi sayısı belli değil' };
+    const tYaz = (t) => (t ? t.slice(0, 10).split('-').reverse().join('.') : '');
+    const bilgi = (m) => this.setState({ mesaj: m });
+    const yaz = (is, tamam) => (Y ? is().then(tamam, (h) => bilgi(`Kaydedilemedi: ${h.message}`)) : tamam());
+    const aktif = (t) => !['tamamlandi', 'iptal'].includes(t.durum);
+    const FILTRE = [['acik', 'Açık', aktif], ['yeni', 'Yeni', (t) => t.durum === 'yeni'], ['kesin', 'Kesinleşen', (t) => t.durum === 'kesin'],
+      ['kapali', 'Tamamlanan / iptal', (t) => !aktif(t)], ['hepsi', 'Hepsi', () => true]];
+    const filtreF = (FILTRE.find((f) => f[0] === st.filtre) || FILTRE[0])[2];
+    const talepGuncelle = (id, d) => this.setState((s) => ({ talepler: s.talepler.map((x) => (x.id === id ? { ...x, ...d } : x)) }));
+
+    const TUR = [
+      ['mekan', 'Mekanlar', 'Sihirbazda ilk seçim; tek mekan varsa kendiliğinden seçili gelir.'],
+      ['bolum', 'Akış bölümleri', 'Nikah, kokteyl, yemek, after party…'],
+      ['menu', 'Menüler', 'Mekanın menüleri; çift isterse tercih olarak işaretler (isteğe bağlı).'],
+      ['konsept', 'Masa konseptleri', 'Ana sayfada vitrin, sihirbazda seçim.'],
+      ['urun', 'Ürünler', 'Konsepti değiştirmek için gruplara ayrılır (Örtü, Çiçek…).'],
+      ['ekstra', 'Ekstralar', 'Müzik, fotoğraf, ışık, pasta…'],
+    ];
+    const kat = st.katalog;
+    const duz = st.duz;
+    const duzKaydet = () => {
+      if (!duz.ad.trim()) return this.setState({ duzHata: 'Ad yazın.' });
+      if (duz.tur === 'urun' && !String(duz.grup || '').trim()) return this.setState({ duzHata: 'Ürünün grubunu yazın (örn. Çiçek).' });
+      const kayit = { ...duz, ad: duz.ad.trim(), aciklama: (duz.aciklama || '').trim(), grup: (duz.grup || '').trim(), mekan_id: duz.mekan_id ? Number(duz.mekan_id) : null };
+      const bitir = (donen) => this.setState((s) => {
+        const satir = { ...kayit, ...donen };
+        return {
+        katalog: s.katalog.some((x) => x.id === satir.id) ? s.katalog.map((x) => (x.id === satir.id ? satir : x)) : [...s.katalog, satir],
+        duz: null, duzHata: '', mesaj: `“${satir.ad}” kaydedildi.`,
+        };
+      });
+      if (!Y) return bitir({ ...kayit, id: kayit.id || Date.now() });
+      this.setState({ duzHata: 'Kaydediliyor…' });
+      Y.katalogKaydet(kayit).then(bitir, (h) => this.setState({ duzHata: h.message }));
+    };
+
+    const liste = st.talepler.filter(filtreF);
+    return {
+      mesaj: st.mesaj,
+      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['katalog', 'Katalog']].map(([id, ad]) => ({
+        ad, sinif: st.alt === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ alt: id, mesaj: '' }),
+      })),
+      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog',
+      filtreler: FILTRE.map(([id, ad, f]) => ({ ad: `${ad} (${st.talepler.filter(f).length})`, sinif: st.filtre === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ filtre: id }) })),
+      talepYok: !liste.length,
+      durumlar: DURUM,
+      talepler: liste.map((t) => {
+        const d = DURUM.find((x) => x.id === t.durum) || DURUM[0];
+        const s = t.secimler || {};
+        const acik = st.acik === t.id;
+        const yNot = st.notlar[t.id] !== undefined ? st.notlar[t.id] : t.yonetici_notu || '';
+        return {
+          ad: t.ad, durum: t.durum, durumAd: d.ad, rozet: d.rozet, acik, acikYazi: acik ? 'true' : 'false', ok: acik ? '▴' : '▾',
+          ozet: `${t.tarih ? tYaz(t.tarih) : 'Tarih belli değil'} · ${KISI[t.kisi] || ''} · talep ${tYaz(t.created_at)}`,
+          ac: () => this.setState({ acik: acik ? null : t.id }),
+          tel: t.tel, telLink: `tel:${String(t.tel || '').replace(/[^\d+]/g, '')}`, eposta: t.eposta, mailLink: `mailto:${t.eposta}`,
+          secimler: [
+            ['Mekan', s.mekan], ['Akış', (s.bolumler || []).join(', ')], ['Menü', s.menu || 'Mekanın menüsü'], ['Masa konsepti', s.konsept || 'Birlikte seçilecek'],
+            ['Ayrıntılar', (s.urunler || []).map((u) => (u.grup ? `${u.grup}: ${u.ad}` : u.ad)).join(', ')], ['Ekstralar', (s.ekstralar || []).join(', ')],
+          ].map(([ad, deger]) => ({ ad, deger: deger || '—' })),
+          notVar: !!t.notlar, notlar: t.notlar || '',
+          durumDegis: (e) => {
+            const v = e.target.value;
+            yaz(() => Y.durum(t.id, v), () => { talepGuncelle(t.id, { durum: v }); bilgi(`${t.ad}: ${(DURUM.find((x) => x.id === v) || d).ad}`); });
+          },
+          yNot,
+          notYaz: (e) => { const v = e.target.value; this.setState((s2) => ({ notlar: { ...s2.notlar, [t.id]: v } })); },
+          notKaydet: () => yaz(() => Y.not(t.id, yNot.trim()), () => { talepGuncelle(t.id, { yonetici_notu: yNot.trim() || null }); bilgi('Not kaydedildi.'); }),
+        };
+      }),
+
+      gruplar: TUR.map(([tur, ad, not]) => ({
+        ad, not,
+        ekle: () => this.setState({ duz: { tur, ad: '', aciklama: '', resim: '', grup: '', mekan_id: '', yemek_mekandan: true, sira: kat.filter((k) => k.tur === tur).length + 1, acik: true }, duzHata: '', mesaj: '' }),
+        kalemler: kat.filter((k) => k.tur === tur).sort((a, b) => (a.grup || '').localeCompare(b.grup || '', 'tr') || a.sira - b.sira || a.id - b.id).map((k) => ({
+          ad: k.ad, resim: k.resim || '/dugun/cizim/mekan.svg', soluk: k.acik ? '' : 'opacity: .45',
+          alt: [k.grup, k.acik ? '' : 'gizli', k.aciklama].filter(Boolean).join(' · '),
+          acKapaYazi: k.acik ? 'Gizle' : 'Göster',
+          duzenle: () => this.setState({ duz: { ...k, aciklama: k.aciklama || '', grup: k.grup || '', mekan_id: k.mekan_id ? String(k.mekan_id) : '' }, duzHata: '', mesaj: '' }),
+          acKapa: () => yaz(() => Y.katalogKaydet({ ...k, acik: !k.acik }), () => this.setState((s) => ({ katalog: s.katalog.map((x) => (x.id === k.id ? { ...x, acik: !k.acik } : x)),
+            mesaj: k.acik ? `“${k.ad}” sitede gizlendi.` : `“${k.ad}” sitede görünüyor.` }))),
+          sil: () => {
+            if (!window.confirm(`“${k.ad}” silinsin mi? Gönderilmiş talepler etkilenmez.`)) return;
+            yaz(() => Y.katalogSil(k.id), () => this.setState((s) => ({ katalog: s.katalog.filter((x) => x.id !== k.id && x.mekan_id !== k.id), mesaj: `“${k.ad}” silindi.` })));
+          },
+        })),
+      })),
+      duzVar: !!duz, duz: duz || {}, duzBaslik: duz ? `${duz.id ? 'Düzenle' : 'Yeni'} · ${(TUR.find((x) => x[0] === duz.tur) || [0, ''])[1]}` : '',
+      duzUrun: !!duz && duz.tur === 'urun', duzMenu: !!duz && duz.tur === 'menu', duzMekan: !!duz && duz.tur === 'mekan',
+      duzResim: (duz && duz.resim) || '/dugun/cizim/mekan.svg', duzHata: st.duzHata,
+      mekanSecenek: kat.filter((k) => k.tur === 'mekan').map((m) => ({ id: String(m.id), ad: m.ad })),
+      duzAlan: Object.fromEntries(['ad', 'aciklama', 'grup', 'mekan_id', 'sira'].map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ duz: { ...s.duz, [k]: v }, duzHata: '' })); }])),
+      yemekDegis: (e) => { const v = !!e.target.checked; this.setState((s) => ({ duz: { ...s.duz, yemek_mekandan: v } })); },
+      resimSec: (e) => {
+        const dosya = e.target.files && e.target.files[0];
+        if (!dosya) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(dosya.type)) return this.setState({ duzHata: 'Resim JPG, PNG ya da WebP olmalı.' });
+        if (dosya.size > 5 * 1024 * 1024) return this.setState({ duzHata: 'Resim 5 MB\'tan büyük.' });
+        if (!Y) return;
+        this.setState({ duzHata: 'Resim yükleniyor…' });
+        Y.resimYukle(dosya).then((url) => this.setState((s) => ({ duz: { ...s.duz, resim: url }, duzHata: '' })), (h) => this.setState({ duzHata: h.message }));
+      },
+      duzKaydet, duzVazgec: () => this.setState({ duz: null, duzHata: '' }),
+    };
+  }
+}
+</script>
+</body>
+</html>
