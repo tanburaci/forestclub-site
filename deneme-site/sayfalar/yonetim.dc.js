@@ -7,7 +7,8 @@ class Component extends DCLogic {
     const BOS = { tarih: '', saat: '', tur: 'bulusma', ad: '', kim: '', metin: '', link: '', kontenjan: '30', min: '', fiyat: '', uye: 'ucretsiz', afis: '' };
     this.BOS = BOS;
     this.BUGUN = window.FC ? window.FC.bugun : '2026-10-24';  // deneme sitesinde gerçek bugün
-    this.MBOS = { tur: 'gider', tarih: this.BUGUN, tutar: '', kasa: 'banka', hedef: 'nakit', kategori: 'İkram', etk: '', aciklama: '', belge: '' };
+    this.MBOS = { tur: 'gider', tarih: this.BUGUN, tutar: '', kasa: 'banka', hedef: 'nakit', kategori: 'İkram', etk: '', aciklama: '', belge: '',
+      envantere: false, eAd: '', eKategori: 'Diğer', eAdet: '1', eBirim: 'adet', eKonum: '' };
     this.SABLONLAR = [
       { id: 'basvuru', ad: 'Başvuru alındı, ödeme yok', ne: 'Biri başvurup kartla ödemeyi tamamlamazsa gider.', acik: true,
         konu: 'Forest Club Urla başvurun bize ulaştı 🌲', alanlar: ['ad', 'odemeLinki'],
@@ -129,6 +130,7 @@ class Component extends DCLogic {
         { id: 8, ad: 'Hamak', kategori: 'Mobilya / kamp', adet: 2, birim: 'adet', giris: 'diger', tarih: '2026-10-10', kaynak: 'Ödünç (geri verilecek)', konum: 'Alan' },
       ],
       eFiltre: 'tumu', eFormAcik: false, eForm: { ...this.EBOS }, eHata: '', eMesaj: '',
+      eDusum: null, eDusumHata: '', eDusulen: window.FC ? window.FC.dusulen || {} : {},
       // E-posta şablonları (ilk metinler taslak; kulüp kendi metniyle değiştirir)
       sablonlar: window.FC ? window.FC.sablonlar : this.SABLONLAR.map((s) => ({ ...s })), sSecili: 'basvuru', sMesaj: '',
       etkinlikler: window.FC ? window.FC.etkinlikler : ETKINLIKLER,
@@ -351,6 +353,10 @@ class Component extends DCLogic {
       if (!(tutar > 0)) return this.setState({ mHata: 'Tutarı yazın (örn. 1.250).' });
       if (f.tur === 'aktarim' && f.kasa === f.hedef) return this.setState({ mHata: 'Nereden ve nereye aynı kasa olamaz.' });
       if (f.tur !== 'aktarim' && !f.aciklama.trim()) return this.setState({ mHata: 'Kısa bir açıklama yazın.' });
+      const envantere = f.tur === 'gider' && f.envantere;
+      const eAdet = Number(f.eAdet);
+      if (envantere && !f.eAd.trim()) return this.setState({ mHata: 'Envantere girecek ürünün adını yazın.' });
+      if (envantere && !(eAdet > 0)) return this.setState({ mHata: 'Envantere girecek miktarı yazın.' });
       const aktarim = f.tur === 'aktarim';
       const kayit = {
         id: Date.now(), tarih: f.tarih, tur: f.tur, tutar, kasa: f.kasa, hedef: aktarim ? f.hedef : '',
@@ -358,9 +364,15 @@ class Component extends DCLogic {
         aciklama: f.aciklama.trim() || (f.hedef === 'nakit' ? 'Bankadan nakit çekildi' : 'Nakit bankaya yatırıldı'),
       };
       const ad = { gider: 'Gider', gelir: 'Gelir', aktarim: 'Aktarım' }[f.tur];
+      // Envanter kalemi: satın alındı, ödenen tutar ve kasa bilgisiyle (gider zaten bu kayıtla yazıldı)
+      const kalem = envantere ? {
+        id: kayit.id + 1, ad: f.eAd.trim(), kategori: f.eKategori, adet: eAdet, birim: f.eBirim, giris: 'satin', tarih: f.tarih,
+        konum: f.eKonum.trim(), not: f.aciklama.trim(), tutar, kasa: f.kasa, firma: '', karsilik: '', kaynak: '',
+      } : null;
       this.setState((s) => ({
-        hareketler: [...s.hareketler, kayit], mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mAy: f.tarih.slice(0, 7),
-        mMesaj: `${ad} kaydedildi: ${tutar.toLocaleString('tr-TR')} TL.`,
+        hareketler: [...s.hareketler, kayit], envanter: kalem ? [...s.envanter, kalem] : s.envanter,
+        mFormAcik: false, mForm: { ...this.MBOS }, mHata: '', mAy: f.tarih.slice(0, 7),
+        mMesaj: `${ad} kaydedildi: ${tutar.toLocaleString('tr-TR')} TL.${kalem ? ` “${kalem.ad}” (${eAdet} ${f.eBirim}) envantere eklendi.` : ''}`,
       }));
     };
     // Envanter formu
@@ -1058,15 +1070,17 @@ class Component extends DCLogic {
     const miktarDegis = (id, fark) => this.setState((s) => ({
       envanter: s.envanter.map((x) => (x.id === id ? { ...x, adet: Math.max(0, x.adet + fark) } : x)),
     }));
+    const eDusumKalem = this.state.eDusum ? envanter.find((x) => x.id === this.state.eDusum.id) : null;
     const eSatirlar = envanter.filter((x) => eFiltre === 'tumu' || x.giris === eFiltre)
       .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id)
       .map((x) => ({
         ad: x.ad, kategori: x.kategori, girisAd: GIRIS_AD[x.giris], rozet: GIRIS_ROZET[x.giris], tarihYazi: tarihYaz(x.tarih),
-        alt: [x.konum, x.not].filter(Boolean).join(' · '),
+        alt: [x.konum, x.not, this.state.eDusulen[x.id] ? `${this.state.eDusulen[x.id]} ${x.birim} düşüldü (hasarlı / kullanılamaz)` : ''].filter(Boolean).join(' · '),
         kaynak: x.giris === 'satin' ? (x.tutar ? `${TL(x.tutar)} · ${KASA[x.kasa]}` : '—')
           : x.giris === 'firma' ? `${x.firma}${x.karsilik ? ` · karşılığı: ${x.karsilik}` : ''}` : x.kaynak,
         miktar: `${x.adet} ${x.birim}`, bitti: x.adet === 0,
         azalt: () => miktarDegis(x.id, -1), arttir: () => miktarDegis(x.id, 1),
+        dus: () => this.setState({ eDusum: { id: x.id, adet: '1', neden: 'hasarli', not: '' }, eMesaj: '' }), dusEtiket: `${x.ad}: hasarlı / kullanılamaz düş`,
         azaltEtiket: `${x.ad} miktarını azalt`, arttirEtiket: `${x.ad} miktarını arttır`,
       }));
     const firmaKalem = envanter.filter((x) => x.giris === 'firma');
@@ -1120,6 +1134,24 @@ class Component extends DCLogic {
       sMesaj: this.state.sMesaj,
       envanterSekme: sekme === 'envanter',
       eOzet, eSatirlar, eYok: !eSatirlar.length,
+      // Hasarlı / kullanılamaz / kayıp: adet düşer, kayıt envanter_dusumleri'ne (yonetim.js FCEnvanterDusum)
+      eDusumVar: !!eDusumKalem, eDusumKalem: eDusumKalem || {}, eDusum: this.state.eDusum || {}, eDusumHata: this.state.eDusumHata,
+      eDusumAlan: Object.fromEntries(['adet', 'neden', 'not'].map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ eDusum: { ...s.eDusum, [k]: v }, eDusumHata: '' })); }])),
+      eDusumKapat: () => this.setState({ eDusum: null, eDusumHata: '' }),
+      eDusumKaydet: () => {
+        const d = this.state.eDusum;
+        const n = Number(d.adet);
+        if (!(n > 0)) return this.setState({ eDusumHata: 'Kaç tane düşüleceğini yazın.' });
+        if (n > eDusumKalem.adet) return this.setState({ eDusumHata: `Envanterde ${eDusumKalem.adet} ${eDusumKalem.birim} var; en çok o kadar düşülebilir.` });
+        const NEDEN = { hasarli: 'hasarlı', kullanilamaz: 'kullanılamaz', kayip: 'kayıp' };
+        const bitir = () => this.setState((s) => ({
+          envanter: s.envanter.map((x) => (x.id === d.id ? { ...x, adet: x.adet - n } : x)), eDusum: null, eDusumHata: '',
+          eDusulen: { ...s.eDusulen, [d.id]: (s.eDusulen[d.id] || 0) + n },
+          eMesaj: `“${eDusumKalem.ad}”: ${n} ${eDusumKalem.birim} ${NEDEN[d.neden]} olarak envanterden düşüldü.`,
+        }));
+        if (!window.FCEnvanterDusum) return bitir();
+        window.FCEnvanterDusum({ envanter_id: d.id, adet: n, neden: d.neden, notlar: d.not.trim() || null }).then(bitir, (h) => this.setState({ eDusumHata: h.message }));
+      },
       eFiltreler: secimler([{ id: 'tumu', ad: 'Tümü' }, { id: 'satin', ad: 'Satın alınan' }, { id: 'firma', ad: 'Firmalardan' }, { id: 'diger', ad: 'Diğer' }], eFiltre, 'eFiltre'),
       eGirisler: [{ id: 'satin', ad: 'Satın alındı' }, { id: 'firma', ad: 'Firmadan geldi' }, { id: 'diger', ad: 'Diğer' }].map((t) => ({
         ...t, sinif: t.id === eForm.giris ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme',
@@ -1235,7 +1267,8 @@ class Component extends DCLogic {
       gHareketler: mGorunum === 'hareketler', gEtkinlik: mGorunum === 'etkinlik', gOzet: mGorunum === 'ozet',
       mFiltreler: secimler([{ id: 'tumu', ad: 'Tümü' }, { id: 'gelir', ad: 'Gelir' }, { id: 'gider', ad: 'Gider' }, { id: 'aktarim', ad: 'Aktarım' },
         { id: 'fatura', ad: `Faturası kesilecek (${faturasiz.length})` }], mFiltre, 'mFiltre'),
-      mFormAcik: this.state.mFormAcik, mForm, mAlan: this.mAlan, mKaydet: this.mKaydet, mHata: this.state.mHata, mMesaj: this.state.mMesaj,
+      mFormAcik: this.state.mFormAcik, mForm, mAlan: this.mAlan, mKaydet: this.mKaydet,
+      mEnvDegis: (e) => { const v = !!e.target.checked; this.setState((s) => ({ mForm: { ...s.mForm, envantere: v, eAd: v && !s.mForm.eAd ? s.mForm.aciklama : s.mForm.eAd }, mHata: '' })); }, mHata: this.state.mHata, mMesaj: this.state.mMesaj,
       mFormBaslik: { gider: 'Gider ekle', gelir: 'Gelir ekle', aktarim: 'Kasalar arası aktar' }[mForm.tur],
       mGider: mForm.tur === 'gider', mGelir: mForm.tur === 'gelir', mAktarim: mForm.tur === 'aktarim', mAktarimDegil: mForm.tur !== 'aktarim',
       mTurler, mEtkSecenek,
@@ -1374,6 +1407,14 @@ class Component extends DCLogic {
           yoklamaAc: () => { this.setState({ etkPanel: { key, mod: 'yoklama' }, kod: '', kodMesaj: '' }); this.paneleKay(); },
           iptalAc: () => { this.setState({ etkPanel: { key, mod: 'iptal' }, iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '' }); this.paneleKay(); },
           duyuruDuzenle: () => this.setState({ sekme: 'eposta', sSecili: 'duyuru', sMesaj: '' }),
+          // Paylaş: sitede bu etkinliğe giden bağlantı (WhatsApp / Instagram'a yapıştırılır)
+          linkYazi: this.state.etkLinkKopya === key ? 'Kopyalandı ✓' : 'Paylaşım bağlantısı',
+          linkKopyala: () => {
+            const u = window.FCEtkinlikLink ? window.FCEtkinlikLink(key) : `${location.origin}/#etkinlik-${encodeURIComponent(key)}`;
+            if (!u) return window.FC_ORTAK && window.FC_ORTAK.bildir('Etkinlik henüz kaydedilmedi; birkaç saniye sonra tekrar deneyin.', true);
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(() => this.setState({ etkLinkKopya: key }), () => window.prompt('Bağlantıyı kopyalayın:', u));
+            else window.prompt('Bağlantıyı kopyalayın:', u);
+          },
           // Düzenle: aynı form, tarih ve ad kilitli (kayıtlar tarih|ad ile bağlı)
           duzenle: () => {
             const o = this.state.etkinlikler.find((z) => `${z.tarih}|${z.ad}` === key);
