@@ -159,7 +159,8 @@
     for (const a of Array.from(canli.attributes)) if (!yeni.hasAttribute(a.name)) canli.removeAttribute(a.name);
     for (const a of Array.from(yeni.attributes)) if (canli.getAttribute(a.name) !== a.value) canli.setAttribute(a.name, a.value);
     olaylariBagla(canli, yeni);
-    cocuklariIsle(canli, yeni);
+    // data-dc-dis: içine başka bir sayfa bağlanmış kutu (ör. Yönetim › Düğün); içeriğine dokunulmaz
+    if (!yeni.hasAttribute('data-dc-dis')) cocuklariIsle(canli, yeni);
     ozellikleriUygula(canli, yeni);
   }
 
