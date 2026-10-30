@@ -288,7 +288,7 @@ class Component extends DCLogic {
             const eski = (s.formlar || []).find((x) => x.id === id);
             const yeni = { ...(eski || { acik: false, yanitlar: [] }), ...kayit, id, anahtar: d.anahtar || (eski && eski.anahtar) || '' };
             return { formlar: eski ? s.formlar.map((x) => (x.id === id ? yeni : x)) : [yeni, ...(s.formlar || [])], fmDuz: null, fmHata: '',
-              fmMesaj: eski ? `“${kayit.baslik}” güncellendi.` : `“${kayit.baslik}” kaydedildi. ${kayit.ozel ? 'Açmak için “Aç”a basın, sonra bağlantıyı üyeye gönderin.' : 'Üyelere açmak için “Aç”a basın.'}` };
+              fmMesaj: eski ? `“${kayit.baslik}” güncellendi.` : `“${kayit.baslik}” kaydedildi. ${kayit.ozel ? 'Açmak için “Aç”a basın, sonra bağlantıyı kişiye gönderin.' : 'Üyelere açmak için “Aç”a basın.'}` };
           });
           if (!window.FCFormKaydet) return bitir({ id: f.id || Date.now(), anahtar: 'deneme' });
           this.setState({ fmHata: 'Kaydediliyor…' });
@@ -302,7 +302,7 @@ class Component extends DCLogic {
           acKapa: () => {
             const yap = () => this.setState((s) => ({ formlar: s.formlar.map((x) => (x.id === f.id ? { ...x, acik: !f.acik } : x)),
               fmMesaj: f.acik ? `“${f.baslik}” kapandı; üyeler artık cevap veremez.`
-                : f.ozel ? `“${f.baslik}” açıldı; panelde görünmez, yalnız bağlantıyı gönderdiğiniz üye doldurur.` : `“${f.baslik}” açıldı; üye panelinde görünüyor.` }));
+                : f.ozel ? `“${f.baslik}” açıldı; panelde görünmez, yalnız bağlantıyı gönderdiğiniz kişi doldurur.` : `“${f.baslik}” açıldı; üye panelinde görünüyor.` }));
             if (!window.FCFormAcKapa) return yap();
             window.FCFormAcKapa(f.id, !f.acik).then(yap, (h) => this.setState({ fmMesaj: `Kaydedilemedi: ${h.message}` }));
           },

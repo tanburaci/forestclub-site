@@ -1,5 +1,5 @@
 // Üye formları: Yönetim › Formlar (kurma, açma, cevaplar, CSV), /form/?id=N (üye doldurur, form_yanitla), üye
-// panelinde açık formlar; özel form (panelde görünmez, yalnız /form/?k=<anahtar> bağlantısıyla).
+// panelinde açık formlar; özel form (panelde görünmez, girişsiz, yalnız /form/?k=<anahtar> bağlantısıyla).
 const { sayfaAc, yonetimVerisi, oturum, gun, SITE } = require('./yardim.js');
 const fs = require('fs');
 const path = require('path');
@@ -97,21 +97,36 @@ const kullanici = (page) => page.route(`${SB}/auth/v1/user`, (r) => r.fulfill({ 
       `form: cevap form_yanitla ile gitti (${JSON.stringify(yazilan[0])})`);
     dogru(!f.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'form: sayfa / CSP hatası yok');
 
-    // ---------- Özel form: anahtarlı bağlantıyla açılır, cevap anahtarla gider ----------
+    // ---------- Özel form: girişsiz, anahtarlı bağlantıyla açılır; ad + e-postayla form-gonder'e gider ----------
     const oy = [];
     const ov = { tablolar: { formlar: [], form_yanitlari: [] }, rpc: {
-      ozel_form: (b) => [200, b.p_anahtar === OZEL.anahtar ? [{ id: 6, baslik: OZEL.baslik, aciklama: null, sorular: OZEL.sorular }] : []],
-      form_yanitla: (b) => { oy.push(b); return [200, b.p_cevaplar]; } } };
-    const o = await sayfaAc(tarayici, ov, oturum('uye-1', 'deniz@posta.test'));
-    await kullanici(o.page);
+      ozel_form: (b) => [200, b.p_anahtar === OZEL.anahtar ? [{ id: 6, baslik: OZEL.baslik, aciklama: null, sorular: OZEL.sorular }] : []] } };
+    const o = await sayfaAc(tarayici, ov);
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    await o.page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript',
+      body: "window.turnstile = { n: 0, render(el, o) { setTimeout(() => o.callback('jeton-' + (++this.n)), 20); return this.n; }, remove() {} };" }));
+    await o.page.route(`${SB}/functions/v1/form-gonder`, (r) => {
+      if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 200, headers: cors });
+      oy.push(JSON.parse(r.request().postData()));
+      r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ sonuc: {} }) });
+    });
     await o.page.goto(`${SITE}/form/?k=${OZEL.anahtar}`);
     await o.page.getByRole('heading', { name: 'Gizli davet' }).waitFor({ timeout: 10000 });
+    dogru(await o.page.getByText('Önce üye girişi').count() === 0, 'özel form: giriş istemeden açılır');
     await o.page.getByLabel('Evet').check();
     await o.page.getByRole('button', { name: 'Gönder' }).click();
+    dogru(await o.page.getByText('Adını ve soyadını yaz.').count() === 1, 'özel form: ad yoksa uyarı');
+    await o.page.getByLabel('Adın ve soyadın').fill('Ayşe Kaya');
+    await o.page.getByLabel('E-posta').fill('Ayse@Posta.test');
+    await o.page.getByRole('button', { name: 'Gönder' }).click();
     await o.page.getByText('Teşekkürler! 🌲').waitFor({ timeout: 5000 });
-    dogru(oy.length === 1 && oy[0].p_form === 6 && oy[0].p_anahtar === OZEL.anahtar, `özel form: cevap anahtarla gitti (${JSON.stringify(oy[0])})`);
+    const og = oy[0] || {};
+    dogru(oy.length === 1 && og.tur === 'ozel_form' && og.jeton && og.veri.anahtar === OZEL.anahtar && og.veri.ad === 'Ayşe Kaya'
+      && og.veri.eposta === 'ayse@posta.test' && og.veri.cevaplar.s1 === 'Evet', `özel form: form-gonder'e anahtar, ad, e-posta ile gitti (${JSON.stringify(og)})`);
+    dogru(await o.page.getByRole('link', { name: 'Ana sayfaya dön' }).count() === 1, 'özel form: dönüş ana sayfaya');
+    dogru(!o.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'özel form: sayfa / CSP hatası yok');
     await o.page.goto(`${SITE}/form/?k=yanlis`);
-    await o.page.waitForTimeout(1500);
+    await o.page.getByText('bağlantı hatalı', { exact: false }).waitFor({ timeout: 10000 });
     dogru(await o.page.getByRole('heading', { name: 'Gizli davet' }).count() === 0, 'özel form: yanlış anahtarla açılmaz');
 
     // ---------- Üye paneli: açık formlar ----------
