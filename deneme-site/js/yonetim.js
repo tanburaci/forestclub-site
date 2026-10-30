@@ -550,6 +550,8 @@
       };
     };
 
+    // Tek etkinliğin sitedeki bağlantısı (kart açık gelir); kaydedilmemiş etkinlikte null
+    window.FCEtkinlikLink = (key) => { const id = keyEtk[key]; return id && id !== 'yaziliyor' ? `${location.origin}/#etkinlik-${id}` : null; };
     // Kapıda karekod: kod sunucuda uyeler.kod ile eşleşir (giris_kaydet). Dönüş: {ad, uye_id, zaten}
     window.FCGirisKaydet = async (key, kod) => {
       const etkId = keyEtk[key];

@@ -32,7 +32,7 @@
         kayitli: ((d.get(e.id) || {}).kayitli || 0) + e.satilan_bilet,
       } : null;
       return {
-        tarih: e.tarih, gun: g, ay: AYLAR[Number(m) - 1], haftaGunu: GUNLER[new Date(`${e.tarih}T12:00:00`).getDay()],
+        id: e.id, tarih: e.tarih, gun: g, ay: AYLAR[Number(m) - 1], haftaGunu: GUNLER[new Date(`${e.tarih}T12:00:00`).getDay()],
         ad: e.ad, saat: e.saat || '', tur: e.tur, metin: e.aciklama || e.kim || '', link: e.link || '#', afis: e.afis || '',
         ...(satis ? { satis } : {}),
       };

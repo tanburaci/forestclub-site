@@ -23,11 +23,25 @@ class Component extends DCLogic {
     // Üye panelinde "Beni hatırla" ile giriş yapılmışsa düğme "Panelim" olur
     if (window.FCS && window.FCS.oturum) this.setState({ uyeGirisli: true });  // deneme sitesi: Supabase oturumu
     // iyzico'dan dönüş (odeme-donus?tur=destek): teşekkür ya da hata penceresi; adres temizlenir
+    this.etkinligeGit();
+    window.addEventListener('hashchange', () => this.etkinligeGit());
     const donus = /^#destek-(tamam|hata)$/.exec(location.hash);
     if (donus) {
       this.setState({ destek: donus[1] });
       history.replaceState(null, '', location.pathname + location.search);
     }
+  }
+  // Paylaşılan etkinlik bağlantısı (/#etkinlik-<id>): kart açılır (geçmişteyse geçmiş listesi genişler) ve ekrana kaydırılır
+  etkinligeGit() {
+    const m = /^#etkinlik-(\d+|\d{4}-\d{2}-\d{2})$/.exec(location.hash);
+    if (!m) return;
+    const liste = window.FCS ? window.FCS.etkinlikler : [];
+    const b = liste.find((x) => String(x.id) === m[1] || (!x.id && x.tarih === m[1]));
+    if (!b) return;
+    this.setState({ tur: 'tumu', gecmisTumu: true, acikEtk: `${b.tarih}|${b.ad}` }, () => {
+      const el = document.getElementById(location.hash.slice(1));
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+    });
   }
   componentWillUnmount() {
     window.removeEventListener('scroll', this.kaydir);
@@ -81,6 +95,9 @@ class Component extends DCLogic {
       const yakinda15 = !gecti && !bugun && (new Date(`${b.tarih}T12:00:00Z`) - new Date(`${BUGUN}T12:00:00Z`)) / 864e5 <= 15;
       const kartKey = `${b.tarih}|${b.ad}`;
       const acik = this.state.acikEtk === kartKey;
+      // Paylaş: tek etkinliğin bağlantısı (/#etkinlik-<id>); telefonda paylaşım menüsü, değilse panoya kopyalanır
+      const capa = b.id ? `etkinlik-${b.id}` : `etkinlik-${b.tarih}`;
+      const paylasLink = `${location.origin}/#${capa}`;
       return {
         ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
         acik, acikYazi: acik ? 'true' : 'false', metinSinif: acik ? '' : 'fs-ozet', acYazi: acik ? 'Kapat ▲' : 'Ayrıntılar ▼',
@@ -89,6 +106,18 @@ class Component extends DCLogic {
           this.setState((st) => ({ acikEtk: st.acikEtk === kartKey ? null : kartKey }));
         },
         afisAc: () => this.setState({ afisTam: b.afis, afisTamAlt: `${b.ad} afişi` }),
+        capa, paylasEtiket: `${b.ad} etkinliğini paylaş`, paylasYazi: this.state.paylasildi === kartKey ? 'Bağlantı kopyalandı ✓' : 'Paylaş ↗',
+        paylas: () => {
+          const metin = `${b.ad} · ${b.gun} ${b.ay} ${b.haftaGunu}${b.saat ? `, ${b.saat}` : ''} · Pinya, Urla`;
+          const kopyala = () => {
+            const tamam = () => this.setState({ paylasildi: kartKey });
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(paylasLink).then(tamam, () => window.prompt('Bağlantıyı kopyalayın:', paylasLink));
+            else window.prompt('Bağlantıyı kopyalayın:', paylasLink);
+          };
+          if (navigator.share && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+            navigator.share({ title: `Forest Club Urla · ${b.ad}`, text: metin, url: paylasLink }).catch((h) => { if (h && h.name !== 'AbortError') kopyala(); });
+          } else kopyala();
+        },
         // "Yakında" yalnız 15 gün içindeki etkinliklerde; daha uzaktakilerde etiket yok
         etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : yakinda15 ? 'Yakında' : '',
         rozet: gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : yakinda15 ? pill('#111111', '#FFFFFF') : 'display:none',
