@@ -18,12 +18,19 @@ const KATALOG = [
   { id: 7, tur: 'urun', ad: 'Kır çiçekleri', aciklama: null, resim: '/dugun/cizim/cicek.svg', grup: 'Çiçek', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
   { id: 10, tur: 'urun', ad: 'Jüt yol halısı', aciklama: null, resim: null, grup: 'Nikah alanı', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
   { id: 11, tur: 'urun', ad: 'Altın peçete halkası', aciklama: null, resim: null, grup: 'Peçete', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
+  { id: 20, tur: 'palet', ad: 'Lavanta bahçesi', aciklama: 'Lila ve yeşil.', resim: null, grup: null, mekan_id: null, yemek_mekandan: true, renkler: ['#a99bc7', '#d9d0ea', '#7f8c6a'], sira: 1, acik: true },
+  { id: 21, tur: 'palet', ad: 'Ege mavisi', aciklama: 'Mavi ve beyaz.', resim: null, grup: null, mekan_id: null, yemek_mekandan: true, renkler: ['#2f5d8a', '#ffffff'], sira: 2, acik: true },
+  { id: 22, tur: 'his', ad: 'Doğal', aciklama: null, resim: null, grup: null, mekan_id: null, yemek_mekandan: true, renkler: null, sira: 1, acik: true },
+  { id: 23, tur: 'his', ad: 'Romantik', aciklama: null, resim: null, grup: null, mekan_id: null, yemek_mekandan: true, renkler: null, sira: 2, acik: true },
+  { id: 24, tur: 'his', ad: 'Bohem', aciklama: null, resim: null, grup: null, mekan_id: null, yemek_mekandan: true, renkler: null, sira: 3, acik: true },
+  { id: 25, tur: 'his', ad: 'Zarif', aciklama: null, resim: null, grup: null, mekan_id: null, yemek_mekandan: true, renkler: null, sira: 4, acik: true },
   { id: 8, tur: 'ekstra', ad: 'Fotoğraf ve video', aciklama: null, resim: '/dugun/cizim/foto.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 1, acik: true },
   { id: 9, tur: 'ekstra', ad: 'Düğün pastası', aciklama: null, resim: '/dugun/cizim/pasta.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 2, acik: true },
 ];
 
-async function dugunAc(tarayici, genislik) {
-  const s = await sayfaAc(tarayici, { tablolar: { dugun_katalog: KATALOG }, rpc: {} });
+async function dugunAc(tarayici, genislik, adres = '/dugun/') {
+  const s = await sayfaAc(tarayici, { tablolar: { dugun_katalog: KATALOG },
+    rpc: { dugun_davet_bilgi: (b) => [200, b.p_anahtar === 'a1b2c3' ? [{ ad: 'Selin ve Mert' }] : []] } });
   if (genislik) await s.page.setViewportSize({ width: genislik, height: 860 });
   s.gonderilen = [];
   await s.page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript',
@@ -33,8 +40,8 @@ async function dugunAc(tarayici, genislik) {
     s.gonderilen.push(JSON.parse(r.request().postData()));
     r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ sonuc: 'tamam' }) });
   });
-  await s.page.goto(`${SITE}/dugun/`);
-  await s.page.getByRole('heading', { name: /Doğanın içinde/ }).waitFor({ timeout: 15000 });
+  await s.page.goto(`${SITE}${adres}`);
+  await s.page.getByRole('heading', { name: adres === '/dugun/' ? /Doğanın içinde/ : /Merhaba|Bağlantı geçersiz/ }).waitFor({ timeout: 15000 });
   return s;
 }
 
@@ -61,6 +68,14 @@ async function dugunAc(tarayici, genislik) {
     dogru(await p.locator('button.dg-sec.secili', { hasText: 'Pinya, Urla' }).count() === 1, 'adım 2: tek mekan kendiliğinden seçili');
     await p.locator('button.dg-sec', { hasText: 'Nikah töreni' }).click();
     await ileri();
+    await p.getByRole('heading', { name: 'Renkler ve his' }).waitFor({ timeout: 3000 });
+    await p.locator('button.dg-sec', { hasText: 'Lavanta bahçesi' }).click();
+    await p.getByRole('button', { name: '+ Renk ekle' }).click();
+    await p.getByLabel('Renk 1', { exact: true }).evaluate((e) => { e.value = '#ff8800'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+    for (const h of ['Doğal', 'Romantik', 'Bohem']) await p.locator('#tasarla button.dg-hap', { hasText: h }).click();
+    await p.locator('#tasarla button.dg-hap', { hasText: 'Zarif' }).click();
+    dogru(await p.getByText('En çok 3 his seçebilirsiniz.').count() === 1 && await p.locator('#tasarla button.dg-hap.secili').count() === 3, 'renk adımı: en çok 3 his');
+    await ileri();
     await p.getByRole('heading', { name: 'Menü tercihi' }).waitFor({ timeout: 3000 });
     dogru(await p.locator('#tasarla').getByRole('button', { name: 'Atla →' }).count() === 1 && await p.locator('#tasarla').getByText('Yemek mekanın mutfağından gelir', { exact: false }).count() === 1,
       'adım 3: menü isteğe bağlı (Atla), yemek mekandan');
@@ -83,6 +98,11 @@ async function dugunAc(tarayici, genislik) {
     await ileri();
     await p.getByRole('heading', { name: 'Son adım' }).waitFor({ timeout: 3000 });
     const ozet = await p.locator('#tasarla').innerText();
+    const mood = p.locator('.dg-mood');
+    if (process.env.EKRAN) await p.locator('#tasarla').screenshot({ path: process.env.EKRAN + '/dugun-mood.png' });
+    dogru(await mood.isVisible() && (await mood.innerText()).includes('Lavanta bahçesi + kendi renkleriniz') && (await mood.innerText()).includes('Romantik')
+      && await mood.locator('.dg-serit span').count() === 4 && await mood.locator('.dg-mood-kucuk img').count() >= 2 && (await mood.locator('.dg-mood-ana').getAttribute('src')).includes('konsept-gece'),
+      'son adım: mood board (konsept, palet + kendi rengi, his, detaylar)');
     dogru(ozet.includes('Henüz belli değil') && ozet.includes('Nikah töreni') && ozet.includes('Işıklı gece') && ozet.includes('Çiçek: Kır çiçekleri') && ozet.includes('Nikah alanı: Jüt yol halısı') && ozet.includes('Düğün pastası'),
       'adım 7: özet seçimleri gruplarıyla gösteriyor');
     dogru(!/\d+\s*(TL|₺)/.test(await p.locator('body').innerText()), 'sayfada fiyat yok');
@@ -96,9 +116,28 @@ async function dugunAc(tarayici, genislik) {
     await p.getByRole('heading', { name: /Teşekkür ederiz/ }).waitFor({ timeout: 5000 });
     const g = d.gonderilen[0] || {};
     dogru(d.gonderilen.length === 1 && g.tur === 'dugun' && g.jeton && g.veri.eposta === 'cift@posta.test' && g.veri.kisi === '50_100' && g.veri.tarih_esnek === true
-      && JSON.stringify(g.veri.secimler) === JSON.stringify({ mekan: 1, bolumler: [2], menu: null, konsept: 5, urunler: [7, 11, 10], ekstralar: [9] }) && g.veri.kvkk === true,
+      && JSON.stringify(g.veri.secimler) === JSON.stringify({ mekan: 1, bolumler: [2], palet: 20, renkler: ['#ff8800'], his: [22, 23, 24], menu: null, konsept: 5, urunler: [7, 11, 10], ekstralar: [9] }) && g.veri.kvkk === true,
       `talep form-gonder'e "dugun" olarak gitti (${JSON.stringify(g.veri)})`);
     dogru(!d.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'düğün sayfası: sayfa / CSP hatası yok');
+
+    // Özel davet bağlantısı: tanıtım yok, çift adıyla selamlanır, talep "davet" anahtarıyla gider
+    const dv = await dugunAc(tarayici, 1280, '/dugun/?k=a1b2c3');
+    dogru(await dv.page.getByRole('heading', { name: 'Merhaba Selin ve Mert 🤍' }).count() === 1 && await dv.page.locator('#konseptler').count() === 0 && await dv.page.getByText('Sık sorulanlar').count() === 0,
+      'davet: yalnız form, çift adıyla selamlama');
+    const dp = dv.page;
+    const dIleri = () => dp.locator('#tasarla').getByRole('button', { name: /Devam|Atla|Teklif isteyin/ }).click();
+    await dp.getByLabel('Tarih henüz belli değil').check();
+    await dp.getByRole('radio', { name: 'Henüz bilmiyorum' }).click();
+    for (let i = 0; i < 7; i++) await dIleri();
+    dogru(await dp.getByLabel('Adınız ve soyadınız *').inputValue() === 'Selin ve Mert', 'davet: ad alanı çiftin adıyla dolu');
+    await dp.getByLabel('E-posta *').fill('selin@posta.test');
+    await dp.getByLabel('Telefon *').fill('0532 000 00 09');
+    await dp.locator('#tasarla input[type=checkbox]').last().check();
+    await dIleri();
+    await dp.getByRole('heading', { name: /Teşekkür ederiz/ }).waitFor({ timeout: 5000 });
+    dogru(dv.gonderilen.length === 1 && dv.gonderilen[0].veri.davet === 'a1b2c3', 'davet: talep davet anahtarıyla gitti');
+    const yanlis = await dugunAc(tarayici, 1280, '/dugun/?k=yanlis');
+    dogru(await yanlis.page.getByRole('heading', { name: 'Bağlantı geçersiz' }).count() === 1 && await yanlis.page.locator('#tasarla').count() === 0, 'davet: yanlış bağlantıda form yok, uyarı var');
 
     // Telefon: yatay taşma yok
     const t = await dugunAc(tarayici, 375);
@@ -119,6 +158,12 @@ async function dugunAc(tarayici, genislik) {
     await y.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
     await y.page.locator('nav.fc-menu button', { hasText: /^Düğün$/ }).click();
     await y.page.getByText('Ayşe ve Can').waitFor({ timeout: 8000 });
+    await y.page.getByRole('button', { name: '+ Yeni bağlantı' }).click();
+    await y.page.getByLabel('Çiftin adı').fill('Selin ve Mert');
+    await y.page.getByRole('button', { name: 'Bağlantı oluştur' }).click();
+    await y.page.getByText('Bağlantı hazır (Selin ve Mert)', { exact: false }).waitFor({ timeout: 4000 });
+    const dEkle = y.istekler.find((x) => x.yontem === 'POST' && x.yol === '/rest/v1/dugun_davetleri');
+    dogru(dEkle && dEkle.govde.ad === 'Selin ve Mert', 'yönetim: özel davet bağlantısı oluşturuldu');
     dogru(await y.page.getByText('Eski Çift').count() === 0, 'talepler: varsayılan "Açık" filtresi tamamlananları gizler');
     await y.page.getByText('Ayşe ve Can').click();
     const detay = await y.page.locator('#fc-dugun article').first().innerText();
