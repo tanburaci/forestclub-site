@@ -824,6 +824,7 @@
     const panel = await window.DC.bagla('/sayfalar/yonetim.dc.html', kok, { varliklar: A.varliklar });
     if (hata) panel.setState({ girisHata: hata });
     if (window.FC) senkronKur(panel);
+    if (window.FC && panel.state.sekme === 'dugun' && window.FCDugunAc) window.FCDugunAc();  // /yonetim#dugun
     // Başka sekmede yeniden giriş ya da çıkış yapılırsa bu sekmenin oturumu da değişir; iki adımlı doğrulama düşerse
     // sunucu kayıtları reddeder ("Ayar bulunamadı" gibi). Panel yenilenir, gerekirse kod yeniden sorulur.
     if (window.FC) {
