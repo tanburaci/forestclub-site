@@ -7,6 +7,7 @@
 // "destek": kartla destek; iyzico ödeme sayfası açılır, dönüş odeme-donus?tur=destek (ayarlar.kart_odeme açıkken).
 // Etkinlik bileti havale + dekontla: "bilet_adres" isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
 // imzalı yükleme adresi verir, dekont yüklenince "bilet_kaydet" isteği yöneticinin onayına düşürür.
+// "ozel_form": gizli bağlantılı özel form; girişsiz, ad + e-postayla (anahtar sunucuda denetlenir).
 //
 // Secrets: TURNSTILE_SECRET (zorunlu), IP_TUZU (isteğe bağlı; IP özetine katılır); destek için IYZICO_API_KEY,
 // IYZICO_SECRET_KEY, IYZICO_ADRES, isteğe bağlı IYZICO_TCKN
@@ -15,7 +16,7 @@ import { fiyat, iyzico } from '../_ortak/iyzico.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
 const SINIR: Record<string, number> = {
-  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, hepsi: 30,
+  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, ozel_form: 10, hepsi: 30,
 };
 // yol zaten Turnstile'lı "dekont_adres" / "bilet_adres" adımında verildi
 const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet', 'bilet_kaydet']);
@@ -159,6 +160,11 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
         p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60),
         p_alanlar: (Array.isArray(v.alanlar) ? v.alanlar : []).slice(0, 10).map((x: unknown) => metin(x, 60)),
         p_not: metin(v.not, 1000), p_kvkk: v.kvkk === true,
+      });
+    case 'ozel_form':
+      return rpc('ozel_form_yanitla', {
+        p_anahtar: metin(v.anahtar, 64), p_ad: metin(v.ad, 120), p_eposta: metin(v.eposta, 200),
+        p_cevaplar: v.cevaplar && typeof v.cevaplar === 'object' && !Array.isArray(v.cevaplar) ? v.cevaplar : {},
       });
     default:
       throw new KullaniciHatasi('Bilinmeyen form.');
