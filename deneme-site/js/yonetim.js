@@ -39,7 +39,7 @@
     const [uyeler, odemeler, etkinlikler, kayitlar, biletler, hareketler, envanter, sablonlar, dekontlar, cagri, biletIstekleri, formlar, formYanitlari] = await Promise.all([
       hepsi('uyeler'), hepsi('odemeler'), hepsi('etkinlikler'), hepsi('etkinlik_kayitlari', ['etkinlik_id', 'uye_id']),
       hepsi('tanisma_biletleri'), hepsi('muhasebe_hareketleri'), hepsi('envanter'), hepsi('eposta_sablonlari'),
-      hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'), hepsi('formlar'), hepsi('form_yanitlari', ['form_id', 'uye_id']),
+      hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'), hepsi('formlar'), hepsi('form_yanitlari', ['form_id', 'uye_id', 'created_at']),
     ]);
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
     const [kuyruk, saglik, ayarlar, veriTalepleri, uyeNotlari, gonulluler] = await Promise.all([
@@ -138,7 +138,8 @@
         id: f.id, baslik: f.baslik, aciklama: f.aciklama || '', sorular: f.sorular || [], acik: f.acik, ozel: !!f.ozel, anahtar: f.anahtar || '',
         yanitlar: formYanitlari.filter((y) => y.form_id === f.id).map((y) => {
           const u = uyeler.find((x) => x.id === y.uye_id);
-          return { ad: u ? u.ad : `Üye #${y.uye_id}`, tarih: zaman(y.updated_at || y.created_at), cevaplar: y.cevaplar || {} };
+          // Özel form cevabı girişsiz: ad ve e-postayla
+          return { ad: u ? u.ad : y.uye_id ? `Üye #${y.uye_id}` : `${y.ad} (${y.eposta})`, tarih: zaman(y.updated_at || y.created_at), cevaplar: y.cevaplar || {} };
         }),
       })),
       etkDurum,

@@ -12,7 +12,7 @@ class Component extends DCLogic {
       { id: 's4', metin: 'Eklemek istediğin bir şey var mı?', tur: 'uzun' },
     ] }, cevaplar: {} };
     this.F = F;
-    this.state = { cevaplar: { ...(F.cevaplar || {}) }, hata: '', gitti: false };
+    this.state = { cevaplar: { ...(F.cevaplar || {}) }, kimlik: { ad: '', eposta: '' }, hata: '', gitti: false };
   }
   renderVals() {
     const F = this.F;
@@ -38,15 +38,24 @@ class Component extends DCLogic {
     });
     return {
       girisYok: F.durum === 'giris', girisLink: '/uye', kapali: F.durum === 'kapali', formda, gitti: this.state.gitti,
+      // Özel form: girişsiz, ad + e-postayla; dönüş ana sayfaya
+      ozel: !!F.ozel, kimlik: this.state.kimlik,
+      adYaz: (e) => { const v = e.target.value; this.setState((st) => ({ kimlik: { ...st.kimlik, ad: v }, hata: '' })); },
+      epostaYaz: (e) => { const v = e.target.value; this.setState((st) => ({ kimlik: { ...st.kimlik, eposta: v }, hata: '' })); },
+      kapaliYazi: F.ozel ? 'Bu form şu an cevap almıyor ya da bağlantı hatalı.' : 'Bu form şu an cevap almıyor. Üye panelinde açık formları görebilirsin.',
+      donLink: F.ozel ? '/' : '/uye', donYazi: F.ozel ? 'Ana sayfaya dön' : 'Üye paneline dön',
       baslik: F.form ? F.form.baslik : '', aciklama: F.form ? F.form.aciklama || '' : '', aciklamaVar: !!(F.form && F.form.aciklama),
       dahaOnce: !!F.dahaOnce, sorular, hata: this.state.hata, gonderYazi: F.dahaOnce ? 'Cevaplarımı güncelle' : 'Gönder',
       duzelt: () => this.setState({ gitti: false }),
       gonder: () => {
+        const k = this.state.kimlik;
+        if (F.ozel && k.ad.trim().length < 3) return this.setState({ hata: 'Adını ve soyadını yaz.' });
+        if (F.ozel && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(k.eposta.trim())) return this.setState({ hata: 'Geçerli bir e-posta yaz.' });
         const eksik = F.form.sorular.find((s) => s.zorunlu && (s.tur === 'coklu' ? !(Array.isArray(c[s.id]) && c[s.id].length) : !String(c[s.id] || '').trim()));
         if (eksik) return this.setState({ hata: `"${eksik.metin}" sorusunu cevapla.` });
         if (!window.FCFGonder) return this.setState({ gitti: true, hata: '' });
         this.setState({ hata: 'Gönderiliyor…' });
-        window.FCFGonder(c).then(() => { F.dahaOnce = true; this.setState({ gitti: true, hata: '' }); }).catch((h) => this.setState({ hata: h.message }));
+        window.FCFGonder(c, { ad: k.ad.trim(), eposta: k.eposta.trim().toLowerCase() }).then(() => { F.dahaOnce = true; this.setState({ gitti: true, hata: '' }); }).catch((h) => this.setState({ hata: h.message }));
       },
     };
   }
