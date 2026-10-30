@@ -2,6 +2,8 @@
 # parçaları (sayfalar/) kapalı (X-Robots-Tag aşağıda).
 [build]
   publish = "."
+  # Paylaşılan etkinlik bağlantısı /e/<id>: önizlemede afiş (netlify/edge-functions/etkinlik.js)
+  edge_functions = "netlify/edge-functions"
 
 [[headers]]
   for = "/*"
