@@ -25,3 +25,21 @@ window.FC_AYLIK = {
   oku(deger) { return { ...this.varsayilan, ...(deger && typeof deger === 'object' ? deger : {}) }; },
   doldur(metin, ay) { return String(metin || '').replace(/\{ay\}/g, ay || ''); },
 };
+
+// Düğün kataloğu: ürün gruplarının sırası, hangi adımda göründüğü (masa / alan) ve fotoğrafı olmayan kalemin çizimi.
+// Listede olmayan yeni bir grup masa adımında, alfabetik olarak sonda görünür.
+window.FC_DUGUN = {
+  masaGruplari: ['Masa', 'Örtü', 'Peçete', 'Tabak ve supla', 'Çatal bıçak', 'Bardak', 'Çiçek', 'Mum', 'Masa kartı', 'Sandalye', 'Sandalye süsü'],
+  alanGruplari: ['Nikah alanı', 'Karşılama', 'Lounge', 'Işıklandırma'],
+  cizim: { Masa: 'masa', Örtü: 'ortu', Peçete: 'pecete', 'Tabak ve supla': 'tabak', 'Çatal bıçak': 'catal', Bardak: 'bardak', Çiçek: 'cicek', Mum: 'mum',
+    'Masa kartı': 'kart', Sandalye: 'sandalye', 'Sandalye süsü': 'cicek', 'Nikah alanı': 'kemer', Karşılama: 'pano', Lounge: 'lounge', Işıklandırma: 'fener' },
+  turCizim: { mekan: 'mekan', bolum: 'kemer', menu: 'yemek', konsept: 'konsept-kir', urun: 'masa', ekstra: 'isik' },
+  resim(k) { return k.resim || `/dugun/cizim/${(k.tur === 'urun' && this.cizim[k.grup]) || this.turCizim[k.tur] || 'mekan'}.svg`; },
+  alanMi(grup) { return this.alanGruplari.includes(grup); },
+  // Grupları sabit sıraya, bilinmeyenleri sona (alfabetik) dizer
+  sirala(gruplar) {
+    const hepsi = [...this.masaGruplari, ...this.alanGruplari];
+    const yer = (g) => (hepsi.includes(g) ? hepsi.indexOf(g) : 1000);
+    return [...gruplar].sort((a, b) => yer(a) - yer(b) || a.localeCompare(b, 'tr'));
+  },
+};
