@@ -29,7 +29,7 @@ select is_empty($$
   select p.oid::regprocedure::text from pg_proc p
   where p.pronamespace = 'public'::regnamespace and p.prokind = 'f' and has_function_privilege('anon', p.oid, 'execute')
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
-    and p.proname not in ('demo_adres_mi', 'etkinlik_doluluk', 'istanbul_bugun', 'sayac_artir', 'tanisma_etkinlikleri', 'tr_tarih', 'yonetici_mi') $$,
+    and p.proname not in ('demo_adres_mi', 'etkinlik_doluluk', 'istanbul_bugun', 'sayac_artir', 'tanisma_etkinlikleri', 'ozel_form', 'tr_tarih', 'yonetici_mi') $$,
   'ziyaretçi (anon) yalnız izinli işlevleri çalıştırabilir');
 
 select is_empty($$
