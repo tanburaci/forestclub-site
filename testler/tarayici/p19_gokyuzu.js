@@ -31,6 +31,7 @@ const gorunur = (page, sec) => page.evaluate((s) => { const e = document.querySe
     const bayrak = await g.page.locator('.fs-mekan text').allTextContents();
     dogru(bayrak.includes('Forest Club') && bayrak.includes('Urla'), `adada bayraklar (${bayrak.join(', ')})`);
     dogru(await g.page.evaluate(() => getComputedStyle(document.querySelector('#ust h1')).color) === 'rgb(17, 17, 17)', 'gündüz: başlık siyah');
+    dogru(await g.page.evaluate(() => [...document.querySelectorAll('.fs-parti')].length === 3 && [...document.querySelectorAll('.fs-parti')].every((e) => getComputedStyle(e).opacity === '0')), 'gündüz: parti yapan üç karakter gizli');
     dogru(!g.konsol.some((x) => /pageerror|Content Security/.test(x)), 'gündüz: sayfa / CSP hatası yok');
 
     const n = await ac('gece,kar');
@@ -38,6 +39,7 @@ const gorunur = (page, sec) => page.evaluate((s) => { const e = document.querySe
     dogru(!(await gorunur(n.page, '.fs-ucan-balon')) && await gorunur(n.page, '.fs-ucan-orta') && await gorunur(n.page, '.fs-ucan-yakin'), 'gece: balonlar yok; ipli ve pervaneli sticker var');
     dogru(await n.page.evaluate(() => getComputedStyle(document.querySelector('.fs-gece-sahne')).opacity === '1' && getComputedStyle(document.querySelector('.fs-ucan-orta')).filter.includes('drop-shadow')), 'gece: parti ışıkları açık, ay ışığı ipli sticker\'da');
     dogru(await n.page.evaluate(() => getComputedStyle(document.querySelector('#ust h1')).color) === 'rgb(255, 255, 255)', 'gece: başlık beyaz');
+    dogru(await n.page.evaluate(() => [...document.querySelectorAll('.fs-parti')].every((e) => getComputedStyle(e).opacity === '1')), 'gece: parti yapan üç karakter görünür');
     const y = await ac('gunduz,yagmur');
     dogru(await gorunur(y.page, '.fs-yagmur') && await gorunur(y.page, '.fs-bulut-ek'), 'yağmur: damlalar ve ek bulutlar');
   } catch (h) {
