@@ -278,6 +278,9 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
 .fs-yer-svg:first-child{z-index:0}
 .fs-yer img+svg{z-index:2}
 .fs-parti{transform-box:fill-box;transform-origin:50% 100%;animation:fs-dans .7s ease-in-out infinite alternate}
+/* Parti yapan üç karakter yalnız gece (gündüz ve şafakta gizli; parti ışıklarıyla birlikte yavaşça belirir) */
+.fs-parti{opacity:0;transition:opacity 2s}
+html.gok-gece .fs-parti{opacity:1}
 @keyframes fs-dans{from{transform:translateY(0) rotate(-6deg)}to{transform:translateY(-10px) rotate(6deg)}}
 .fs-konfeti{animation:fs-konfeti 1.6s linear infinite}
 @keyframes fs-konfeti{0%{opacity:0;transform:translateY(-8px)}20%{opacity:1}100%{opacity:0;transform:translateY(22px)}}
