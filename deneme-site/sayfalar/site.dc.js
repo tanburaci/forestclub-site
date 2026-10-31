@@ -485,11 +485,13 @@ class Component extends DCLogic {
       cagriAcik: this.state.cagriAcik,
       modalSinif: this.state.cagriAdim === 'afis' ? 'fs-modal fs-modal-afis' : 'fs-modal',
       cagriAfis: this.state.cagriAdim === 'afis',
-      cagriFormda: this.state.cagriAdim === 'form',
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
-      cagriForm: () => this.setState({ cagriAdim: 'form' }),
-      cagriAfiseDon: () => this.setState({ cagriAdim: 'afis' }),
+      cagriForm: () => {
+        this.setState({ cagriAcik: false });
+        const hedef = document.getElementById('acik-cagri');
+        if (hedef) setTimeout(() => hedef.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      },
       yuzenSinif: acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),

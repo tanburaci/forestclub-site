@@ -105,7 +105,11 @@ a{color:#111111}a:hover{color:#000000}
 @media (max-width: 1024px){.fs-hero-yazi{display:none !important}.fs-sadece-tel{display:block}
   .fs-ilk-ekran{padding-bottom:30vh !important;min-height:0 !important}
   .fs-mekan{height:36vh;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 16%);mask-image:linear-gradient(to bottom,transparent 0%,#000 16%)}}
-@media (max-width: 640px){.fs-menu{padding:8px 9px;font-size:14px;min-height:40px}}
+/* Telefonda menü: 6 bölüm 3'erli iki sıra, eşit genişlikte yan yana (üye girişi sağ üstte ayrı durur) */
+@media (max-width: 640px){
+  nav[aria-label="Site menüsü"]{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px !important;width:100%}
+  .fs-menu{padding:6px 4px;font-size:14px;min-height:40px;justify-content:center;text-align:center;background:rgba(255,255,255,.55);border-radius:12px;white-space:nowrap}
+}
 @media (max-width: 640px){
   header .fs-baslik{font-size:28px !important}
   .fs-uye-giris{position:absolute;top:24px;right:16px;margin:0 !important;padding:0 14px !important;min-height:0 !important;height:36px !important;font-size:13px !important;border-width:2px !important;border-radius:999px !important;box-shadow:2px 2px 0 #111111 !important}
@@ -577,7 +581,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
     </div>
   </sc-if>
 
-  <!-- AÇIK ÇAĞRI POP-UP: önce afiş, afişteki düğmeyle form -->
+  <!-- AÇIK ÇAĞRI POP-UP: afiş; afişteki düğme sayfadaki Açık Çağrı bölümüne kaydırır -->
   <sc-if value="{{ cagriAcik }}" hint-placeholder-val="{{ false }}">
     <div class="fs-modal-zemin" onClick="{{ cagriKapat }}"></div>
     <div class="{{ modalSinif }}" role="dialog" aria-modal="true" aria-label="Açık Çağrı">
@@ -595,76 +599,6 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
             <button type="button" class="fs-afis-dugme" onClick="{{ cagriForm }}" aria-label="Başvurmak için tıkla"></button>
           </div>
         </sc-if>
-      </sc-if>
-      <sc-if value="{{ cagriFormda }}" hint-placeholder-val="{{ false }}">
-        <div class="fs-modal-form">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px">
-            <button type="button" class="fs-menu" onClick="{{ cagriAfiseDon }}" style="border: 2px solid #111111">‹ Afiş</button>
-            <span class="fs-baslik" style="font-size: 40px">Birlikte ne üretelim?</span>
-          </div>
-        <form style="background: #FFFFFF; padding: 4px 2px 6px; display: flex; flex-direction: column; gap: 22px; box-sizing: border-box">
-          <sc-for list="{{ cagriAdimlar }}" as="adim" hint-placeholder-count="3">
-            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
-              <legend style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; margin-bottom: 4px; padding: 0">
-                <span style="width: 40px; height: 40px; border-radius: 50%; background: #111111; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-family: 'Amatic SC', cursive; font-size: 26px">{{ adim.no }}</span>
-                {{ adim.baslik }}
-              </legend>
-              <sc-for list="{{ adim.alanlar }}" as="a" hint-placeholder-count="3">
-                <div style="display: flex; flex-direction: column; gap: 6px">
-                  <span style="font-weight: 600; font-size: 15px">{{ a.etiket }}</span>
-                  <sc-if value="{{ a.yazi }}" hint-placeholder-val="{{ true }}">
-                    <input type="text" placeholder="{{ a.ipucu }}" value="{{ a.deger }}" onChange="{{ a.yaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
-                  </sc-if>
-                  <sc-if value="{{ a.uzun }}" hint-placeholder-val="{{ false }}">
-                    <textarea rows="3" placeholder="{{ a.ipucu }}" value="{{ a.deger }}" onChange="{{ a.yaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; box-sizing: border-box; resize: vertical"></textarea>
-                  </sc-if>
-                  <sc-if value="{{ a.uyeKutu }}" hint-placeholder-val="{{ false }}">
-                    <div style="border: 2.5px dashed #111111; border-radius: 14px; padding: 16px; background: #FFF8E6; display: flex; flex-direction: column; gap: 10px">
-                      <div style="display: flex; align-items: center; gap: 10px">
-                        <img src="/_blob/426f104f4634b69c53f59c397459ea29" alt="" style="width: 64px; transform: rotate(-8deg)">
-                        <div>
-                          <div style="font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 30px; line-height: 1">Aramıza katılmak ister misin?</div>
-                          <div style="font-size: 14px; color: #3A3A3A">Atölye yürütücülüğü üyelerimize açık · 3.000 TL / 30 gün</div>
-                        </div>
-                      </div>
-                      <div style="display: flex; flex-wrap: wrap; gap: 8px">
-                        <sc-for list="{{ a.secenekler }}" as="c" hint-placeholder-count="2">
-                          <button type="button" onClick="{{ c.sec }}" aria-pressed="{{ c.basili }}" style="{{ c.stil }}">{{ c.ad }}</button>
-                        </sc-for>
-                      </div>
-                      <sc-if value="{{ a.acik }}" hint-placeholder-val="{{ false }}">
-                        <div style="display: flex; flex-direction: column; gap: 10px">
-                          <input type="email" placeholder="E-posta adresin *" value="{{ a.uyeEposta }}" onChange="{{ a.uyeEpostaYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
-                          <input type="tel" placeholder="Telefon numaran *" value="{{ a.uyeTel }}" onChange="{{ a.uyeTelYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
-                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeKosul }}" onChange="{{ a.uyeKosulDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Üyelik koşullarını okudum, kabul ediyorum. <a href="/uyelik-kosullari/" target="_blank" rel="noopener">Metin</a> *</span></label>
-                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeDogal }}" onChange="{{ a.uyeDogalDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Doğal alan beyanını kabul ediyorum. <a href="/dogal-alan/" target="_blank" rel="noopener">Metin</a> *</span></label>
-                          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeFoto }}" onChange="{{ a.uyeFotoDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Fotoğraf/video iznim var (isteğe bağlı). <a href="/gizlilik/" target="_blank" rel="noopener">Metin</a></span></label>
-                          <span style="font-size: 13px; color: #5E5E5E">Ödeme bilgisi (IBAN) e-postana gelecek. 🌲</span>
-                        </div>
-                      </sc-if>
-                    </div>
-                  </sc-if>
-                  <sc-if value="{{ a.secim }}" hint-placeholder-val="{{ false }}">
-                    <div style="display: flex; flex-wrap: wrap; gap: 8px">
-                      <sc-for list="{{ a.secenekler }}" as="c" hint-placeholder-count="4">
-                        <button type="button" onClick="{{ c.sec }}" aria-pressed="{{ c.basili }}" style="{{ c.stil }}">{{ c.ad }}</button>
-                      </sc-for>
-                    </div>
-                  </sc-if>
-                </div>
-              </sc-for>
-            </fieldset>
-          </sc-for>
-          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ cagriKvkk }}" onChange="{{ cagriKvkkDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>KVKK Aydınlatma Metni'ni okudum ve bilgilendirildim. <a href="/gizlilik/" target="_blank" rel="noopener">Metnin tamamı</a></span></label>
-          <sc-if value="{{ cagriHata }}" hint-placeholder-val="{{ false }}">
-            <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ cagriHata }}</p>
-          </sc-if>
-          <button type="button" class="fs-btn" onClick="{{ cagriGonder }}" style="font-size: 18px">Fikrimi gönder ✨</button>
-          <sc-if value="{{ cagriGitti }}" hint-placeholder-val="{{ false }}">
-            <p role="status" style="margin: 0; border: 2.5px solid #111111; border-radius: 12px; padding: 14px; font-weight: 600; background: #F6C945">Teşekkürler! Fikrin bize ulaştı. {{ aylikAy }} programını planlarken seninle iletişime geçeceğiz. 🌲</p>
-          </sc-if>
-        </form>
-        </div>
       </sc-if>
     </div>
   </sc-if>
@@ -762,6 +696,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
         <a class="fs-menu" href="#kulup">Biz Kimiz?</a>
         <a class="fs-menu" href="#bulusmalar">Etkinlikler</a>
         <a class="fs-menu" href="#basvuru">Üyelik</a>
+        <a class="fs-menu" href="#acik-cagri">Açık Çağrı</a>
         <a class="fs-menu" href="#sss">SSS</a>
         <a class="fs-menu" href="#iletisim">İletişim</a>
         <a class="fs-btn fs-btn-acik fs-uye-giris" href="Uye.dc.html" style="margin-left: 8px; padding: 10px 18px; min-height: 44px">{{ uyeDugme }}</a>
@@ -1108,6 +1043,78 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
           <p style="margin: 0; font-size: 17px; line-height: 1.5">Gönüllü başvurun bize ulaştı. Seninle e-postayla iletişime geçeceğiz.</p>
         </div>
       </sc-if>
+    </section>
+
+    <!-- AÇIK ÇAĞRI: atölye / etkinlik fikri formu (yönetim › Başvurular › Açık Çağrı'ya düşer). Aylık duyuru rozetinden açılan
+         afişteki düğme de buraya kaydırır -->
+    <section id="acik-cagri" style="max-width: 1200px; margin: 0 auto; padding: 56px 20px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+      <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+        <h2 class="fs-baslik" style="font-size: 52px">Açık Çağrı</h2>
+        <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">Atölye, buluşma ya da etkinlik fikrin mi var? Yürütmek istediğin bir şey, getirmek istediğin bir sanatçı, denemek istediğin bir format… Formu doldur; programı planlarken seninle iletişime geçelim, birlikte üretelim.</p>
+        <img src="/_blob/c7a89dd60f2523087967c3301c3cfbe5" alt="Forest Club Urla Açık Çağrı afişi: fikirlerini paylaş, birlikte üretelim." loading="lazy" style="width: 100%; max-width: 420px; border: 2.5px solid #111111; border-radius: 16px; box-shadow: 5px 5px 0 #111111">
+      </div>
+            <form class="fs-cagri-form" style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 22px; box-sizing: border-box">
+              <sc-for list="{{ cagriAdimlar }}" as="adim" hint-placeholder-count="3">
+                <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
+                  <legend style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; margin-bottom: 4px; padding: 0">
+                    <span style="width: 40px; height: 40px; border-radius: 50%; background: #111111; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-family: 'Amatic SC', cursive; font-size: 26px">{{ adim.no }}</span>
+                    {{ adim.baslik }}
+                  </legend>
+                  <sc-for list="{{ adim.alanlar }}" as="a" hint-placeholder-count="3">
+                    <div style="display: flex; flex-direction: column; gap: 6px">
+                      <span style="font-weight: 600; font-size: 15px">{{ a.etiket }}</span>
+                      <sc-if value="{{ a.yazi }}" hint-placeholder-val="{{ true }}">
+                        <input type="text" placeholder="{{ a.ipucu }}" value="{{ a.deger }}" onChange="{{ a.yaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
+                      </sc-if>
+                      <sc-if value="{{ a.uzun }}" hint-placeholder-val="{{ false }}">
+                        <textarea rows="3" placeholder="{{ a.ipucu }}" value="{{ a.deger }}" onChange="{{ a.yaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; box-sizing: border-box; resize: vertical"></textarea>
+                      </sc-if>
+                      <sc-if value="{{ a.uyeKutu }}" hint-placeholder-val="{{ false }}">
+                        <div style="border: 2.5px dashed #111111; border-radius: 14px; padding: 16px; background: #FFF8E6; display: flex; flex-direction: column; gap: 10px">
+                          <div style="display: flex; align-items: center; gap: 10px">
+                            <img src="/_blob/426f104f4634b69c53f59c397459ea29" alt="" style="width: 64px; transform: rotate(-8deg)">
+                            <div>
+                              <div style="font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 30px; line-height: 1">Aramıza katılmak ister misin?</div>
+                              <div style="font-size: 14px; color: #3A3A3A">Atölye yürütücülüğü üyelerimize açık · 3.000 TL / 30 gün</div>
+                            </div>
+                          </div>
+                          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                            <sc-for list="{{ a.secenekler }}" as="c" hint-placeholder-count="2">
+                              <button type="button" onClick="{{ c.sec }}" aria-pressed="{{ c.basili }}" style="{{ c.stil }}">{{ c.ad }}</button>
+                            </sc-for>
+                          </div>
+                          <sc-if value="{{ a.acik }}" hint-placeholder-val="{{ false }}">
+                            <div style="display: flex; flex-direction: column; gap: 10px">
+                              <input type="email" placeholder="E-posta adresin *" value="{{ a.uyeEposta }}" onChange="{{ a.uyeEpostaYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
+                              <input type="tel" placeholder="Telefon numaran *" value="{{ a.uyeTel }}" onChange="{{ a.uyeTelYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
+                              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeKosul }}" onChange="{{ a.uyeKosulDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Üyelik koşullarını okudum, kabul ediyorum. <a href="/uyelik-kosullari/" target="_blank" rel="noopener">Metin</a> *</span></label>
+                              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeDogal }}" onChange="{{ a.uyeDogalDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Doğal alan beyanını kabul ediyorum. <a href="/dogal-alan/" target="_blank" rel="noopener">Metin</a> *</span></label>
+                              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeFoto }}" onChange="{{ a.uyeFotoDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Fotoğraf/video iznim var (isteğe bağlı). <a href="/gizlilik/" target="_blank" rel="noopener">Metin</a></span></label>
+                              <span style="font-size: 13px; color: #5E5E5E">Ödeme bilgisi (IBAN) e-postana gelecek. 🌲</span>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ a.secim }}" hint-placeholder-val="{{ false }}">
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                          <sc-for list="{{ a.secenekler }}" as="c" hint-placeholder-count="4">
+                            <button type="button" onClick="{{ c.sec }}" aria-pressed="{{ c.basili }}" style="{{ c.stil }}">{{ c.ad }}</button>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </fieldset>
+              </sc-for>
+              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ cagriKvkk }}" onChange="{{ cagriKvkkDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>KVKK Aydınlatma Metni'ni okudum ve bilgilendirildim. <a href="/gizlilik/" target="_blank" rel="noopener">Metnin tamamı</a></span></label>
+              <sc-if value="{{ cagriHata }}" hint-placeholder-val="{{ false }}">
+                <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ cagriHata }}</p>
+              </sc-if>
+              <button type="button" class="fs-btn" onClick="{{ cagriGonder }}" style="font-size: 18px">Fikrimi gönder ✨</button>
+              <sc-if value="{{ cagriGitti }}" hint-placeholder-val="{{ false }}">
+                <p role="status" style="margin: 0; border: 2.5px solid #111111; border-radius: 12px; padding: 14px; font-weight: 600; background: #F6C945">Teşekkürler! Fikrin bize ulaştı. {{ aylikAy }} programını planlarken seninle iletişime geçeceğiz. 🌲</p>
+              </sc-if>
+            </form>
     </section>
 
     <!-- SIK SORULANLAR + YOL TARİFİ -->
@@ -1661,11 +1668,13 @@ class Component extends DCLogic {
       cagriAcik: this.state.cagriAcik,
       modalSinif: this.state.cagriAdim === 'afis' ? 'fs-modal fs-modal-afis' : 'fs-modal',
       cagriAfis: this.state.cagriAdim === 'afis',
-      cagriFormda: this.state.cagriAdim === 'form',
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
-      cagriForm: () => this.setState({ cagriAdim: 'form' }),
-      cagriAfiseDon: () => this.setState({ cagriAdim: 'afis' }),
+      cagriForm: () => {
+        this.setState({ cagriAcik: false });
+        const hedef = document.getElementById('acik-cagri');
+        if (hedef) setTimeout(() => hedef.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      },
       yuzenSinif: acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
