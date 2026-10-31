@@ -57,6 +57,16 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
     const pano = await s.page.evaluate(() => navigator.clipboard.readText());
     dogru(pano === `${SITE}/e/7`, `paylaş: bağlantı panoya kopyalandı (${pano})`);
     dogru(await s.page.locator('#etkinlik-7').getAttribute('aria-expanded') === 'false', 'paylaş: düğme kartı açıp kapatmaz');
+    // Açık Çağrı: menüde Üyelik ile SSS arasında, form sayfada kendi bölümünde; telefonda menü 3'erli iki sıra
+    const menu = await s.page.locator('nav[aria-label="Site menüsü"] a.fs-menu').allTextContents();
+    dogru(menu.join('|') === 'Biz Kimiz?|Etkinlikler|Üyelik|Açık Çağrı|SSS|İletişim', `menü: Açık Çağrı Üyelik ile SSS arasında (${menu.join(', ')})`);
+    dogru(await s.page.locator('#acik-cagri form').count() === 1 && await s.page.locator('#acik-cagri').evaluate((el) => el.nextElementSibling && el.nextElementSibling.id === 'sss'),
+      'Açık Çağrı formu sayfada, SSS bölümünden önce');
+    await s.page.setViewportSize({ width: 360, height: 780 });
+    await s.page.waitForTimeout(300);
+    const satir = await s.page.evaluate(() => [...document.querySelectorAll('nav[aria-label="Site menüsü"] a.fs-menu')].map((a) => Math.round(a.getBoundingClientRect().top)));
+    dogru(new Set(satir).size === 2 && satir.slice(0, 3).every((y) => y === satir[0]) && satir.slice(3).every((y) => y === satir[3])
+      && await s.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'telefon: menü 3\'erli iki sıra, taşma yok');
     dogru(!s.konsol.some((x) => /pageerror|Content Security/.test(x)), 'sayfa / CSP hatası yok');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
