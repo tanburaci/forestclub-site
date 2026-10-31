@@ -86,13 +86,15 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
     await c.page.getByPlaceholder('Adın Soyadın').fill('Deniz Ses');
     await c.page.getByPlaceholder('ornek@mail.com ya da 05xx').fill('deniz@posta.test');
     await c.page.getByRole('button', { name: 'Evet', exact: true }).click();
-    await c.page.getByRole('button', { name: 'Ses ve müzik' }).click();
     await c.page.getByPlaceholder('Örn. Ormanda ses banyosu').fill('Ses banyosu');
-    await c.page.locator('textarea').first().fill('Gong ve kaselerle dinlenme.');
+    await c.page.locator('textarea').first().fill('Gong');
     await c.page.locator('input[type=checkbox]').last().check();
     await c.page.getByRole('button', { name: 'Fikrimi gönder ✨' }).click();
+    dogru(await c.page.getByText('Çalışmanın alanını seç (en az bir tane).').count() === 1 && !cagrilar.length, 'Açık Çağrı: eksik alan adıyla söylenir, gönderilmez');
+    await c.page.getByRole('button', { name: 'Ses ve müzik' }).click();
+    await c.page.getByRole('button', { name: 'Fikrimi gönder ✨' }).click();
     await c.page.getByText('Teşekkürler! 🌲').waitFor({ timeout: 5000 });
-    dogru(cagrilar.length === 1 && cagrilar[0].tur === 'cagri' && cagrilar[0].veri.ad === 'Deniz Ses' && cagrilar[0].veri.alan === 'Ses ve müzik' && cagrilar[0].veri.baslik === 'Ses banyosu',
+    dogru(cagrilar.length === 1 && cagrilar[0].tur === 'cagri' && cagrilar[0].veri.ad === 'Deniz Ses' && cagrilar[0].veri.alan === 'Ses ve müzik' && cagrilar[0].veri.baslik === 'Ses banyosu' && cagrilar[0].veri.anlat === 'Gong',
       `Açık Çağrı sayfası: form gönderildi (${JSON.stringify(cagrilar[0] && cagrilar[0].veri)})`);
     dogru(await c.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1) && !c.konsol.some((x) => /pageerror|Content Security/.test(x)), 'Açık Çağrı sayfası: telefonda taşma yok, hata yok');
   } catch (h) {
