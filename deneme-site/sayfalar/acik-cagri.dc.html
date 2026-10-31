@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Forest Club Urla · Açık Çağrı</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6F1E4}
+a{color:#111111}
+.fs-baslik{font-family:'Amatic SC',cursive;font-weight:700;color:#111111;line-height:1;margin:0}
+.fs-btn{font:700 16px Figtree,sans-serif;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:14px 22px;min-height:48px;background:#111111;color:#FFFFFF;border:2.5px solid #111111;box-shadow:3px 3px 0 #111111}
+.fs-btn:hover{background:#000000;color:#FFFFFF}
+.fs-btn-acik{background:transparent;color:#111111}
+.fs-btn-acik:hover{background:#E8E8E6;color:#000000}
+</style>
+</helmet>
+
+<!-- AÇIK ÇAĞRI sayfası (/acik-cagri/): atölye / etkinlik fikri formu; form-gonder (Turnstile + IP sınırı) → yönetim ›
+     Başvurular › Açık Çağrı. Ana sayfadaki menü ve aylık duyuru afişi buraya gelir. -->
+<div style="font-family: Figtree, sans-serif; color: #111111; min-height: 100vh; padding: 24px 16px 40px; box-sizing: border-box">
+  <div style="max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+    <a href="/" style="display: flex; align-items: center; gap: 10px; text-decoration: none; align-self: flex-start">
+      <img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="" style="width: 46px">
+      <span class="fs-baslik" style="font-size: 34px">Forest Club Urla</span>
+    </a>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <h1 class="fs-baslik" style="font-size: 56px; margin: 0">Açık Çağrı</h1>
+      <p style="margin: 0; font-size: 17px; line-height: 1.6; color: #3A3A3A">Atölye, buluşma ya da etkinlik fikrin mi var? Formu doldur; programı planlarken seninle iletişime geçelim, birlikte üretelim.</p>
+    </div>
+    <sc-if value="{{ formda }}" hint-placeholder-val="{{ true }}">
+    <form class="fs-cagri-form" style="background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 22px; box-sizing: border-box">
+            <sc-for list="{{ cagriAdimlar }}" as="adim" hint-placeholder-count="3">
+              <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
+                <legend style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; margin-bottom: 4px; padding: 0">
+                  <span style="width: 40px; height: 40px; border-radius: 50%; background: #111111; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center; font-family: 'Amatic SC', cursive; font-size: 26px">{{ adim.no }}</span>
+                  {{ adim.baslik }}
+                </legend>
+                <sc-for list="{{ adim.alanlar }}" as="a" hint-placeholder-count="3">
+                  <div style="display: flex; flex-direction: column; gap: 6px">
+                    <span style="font-weight: 600; font-size: 15px">{{ a.etiket }}</span>
+                    <sc-if value="{{ a.yazi }}" hint-placeholder-val="{{ true }}">
+                      <input type="text" placeholder="{{ a.ipucu }}" value="{{ a.deger }}" onChange="{{ a.yaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
+                    </sc-if>
+                    <sc-if value="{{ a.uzun }}" hint-placeholder-val="{{ false }}">
+                      <textarea rows="3" placeholder="{{ a.ipucu }}" value="{{ a.deger }}" onChange="{{ a.yaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; box-sizing: border-box; resize: vertical"></textarea>
+                    </sc-if>
+                    <sc-if value="{{ a.uyeKutu }}" hint-placeholder-val="{{ false }}">
+                      <div style="border: 2.5px dashed #111111; border-radius: 14px; padding: 16px; background: #FFF8E6; display: flex; flex-direction: column; gap: 10px">
+                        <div style="display: flex; align-items: center; gap: 10px">
+                          <img src="/_blob/426f104f4634b69c53f59c397459ea29" alt="" style="width: 64px; transform: rotate(-8deg)">
+                          <div>
+                            <div style="font-family: 'Amatic SC', cursive; font-weight: 700; font-size: 30px; line-height: 1">Aramıza katılmak ister misin?</div>
+                            <div style="font-size: 14px; color: #3A3A3A">Atölye yürütücülüğü üyelerimize açık · 3.000 TL / 30 gün</div>
+                          </div>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                          <sc-for list="{{ a.secenekler }}" as="c" hint-placeholder-count="2">
+                            <button type="button" onClick="{{ c.sec }}" aria-pressed="{{ c.basili }}" style="{{ c.stil }}">{{ c.ad }}</button>
+                          </sc-for>
+                        </div>
+                        <sc-if value="{{ a.acik }}" hint-placeholder-val="{{ false }}">
+                          <div style="display: flex; flex-direction: column; gap: 10px">
+                            <input type="email" placeholder="E-posta adresin *" value="{{ a.uyeEposta }}" onChange="{{ a.uyeEpostaYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
+                            <input type="tel" placeholder="Telefon numaran *" value="{{ a.uyeTel }}" onChange="{{ a.uyeTelYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
+                            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeKosul }}" onChange="{{ a.uyeKosulDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Üyelik koşullarını okudum, kabul ediyorum. <a href="/uyelik-kosullari/" target="_blank" rel="noopener">Metin</a> *</span></label>
+                            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeDogal }}" onChange="{{ a.uyeDogalDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Doğal alan beyanını kabul ediyorum. <a href="/dogal-alan/" target="_blank" rel="noopener">Metin</a> *</span></label>
+                            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ a.uyeFoto }}" onChange="{{ a.uyeFotoDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span>Fotoğraf/video iznim var (isteğe bağlı). <a href="/gizlilik/" target="_blank" rel="noopener">Metin</a></span></label>
+                            <span style="font-size: 13px; color: #5E5E5E">Ödeme bilgisi (IBAN) e-postana gelecek. 🌲</span>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ a.secim }}" hint-placeholder-val="{{ false }}">
+                      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                        <sc-for list="{{ a.secenekler }}" as="c" hint-placeholder-count="4">
+                          <button type="button" onClick="{{ c.sec }}" aria-pressed="{{ c.basili }}" style="{{ c.stil }}">{{ c.ad }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </fieldset>
+            </sc-for>
+            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 15px"><input type="checkbox" checked="{{ cagriKvkk }}" onChange="{{ cagriKvkkDegis }}" style="width: 20px; height: 20px; margin: 1px 0 0; accent-color: #111111"> <span>KVKK Aydınlatma Metni'ni okudum ve bilgilendirildim. <a href="/gizlilik/" target="_blank" rel="noopener">Metnin tamamı</a></span></label>
+            <sc-if value="{{ cagriHata }}" hint-placeholder-val="{{ false }}">
+              <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ cagriHata }}</p>
+            </sc-if>
+            <button type="button" class="fs-btn" onClick="{{ cagriGonder }}" style="font-size: 18px">Fikrimi gönder ✨</button>
+            <sc-if value="{{ cagriGitti }}" hint-placeholder-val="{{ false }}">
+              <p role="status" style="margin: 0; border: 2.5px solid #111111; border-radius: 12px; padding: 14px; font-weight: 600; background: #F6C945">Teşekkürler! Fikrin bize ulaştı. Programı planlarken seninle iletişime geçeceğiz. 🌲</p>
+            </sc-if>
+          </form>
+    </sc-if>
+    <sc-if value="{{ cagriGitti }}" hint-placeholder-val="{{ false }}">
+      <div role="status" style="background: #111111; color: #FFFFFF; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
+        <span class="fs-baslik" style="font-size: 46px; color: #FFFFFF">Teşekkürler! 🌲</span>
+        <p style="margin: 0; font-size: 17px; line-height: 1.5">Fikrin bize ulaştı. Programı planlarken seninle iletişime geçeceğiz.</p>
+        <a class="fs-btn fs-btn-acik" href="/" style="align-self: flex-start; background: #FFFFFF; color: #111111">Ana sayfaya dön</a>
+      </div>
+    </sc-if>
+    <!-- Sözleşmeler ve ödeme logoları (iyzico şartı): her sayfanın altında -->
+    <footer style="margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 13px; text-align: center">
+      <nav aria-label="Sözleşmeler" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px">
+        <a href="/hakkimizda/" style="color: #3A3A3A; padding: 6px 2px">Hakkımızda</a>
+        <a href="/teslimat-iade/" style="color: #3A3A3A; padding: 6px 2px">Teslimat ve iade</a>
+        <a href="/gizlilik/" style="color: #3A3A3A; padding: 6px 2px">Gizlilik ve KVKK</a>
+        <a href="/mesafeli-satis/" style="color: #3A3A3A; padding: 6px 2px">Mesafeli satış sözleşmesi</a>
+      </nav>
+      <img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32" style="height: 24px; width: auto; max-width: 100%">
+    </footer>
+  </div>
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":700,"height":2400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { cv: {}, secim: {}, cagriKvkk: false, cagriHata: '', cagriGitti: false };
+  }
+  renderVals() {
+    // Seçenek düğmeleri (tek seçim / çoklu seçim)
+    const secim = this.state.secim;
+    const secenekStil = (on) => `font:600 14px Figtree,sans-serif;border-radius:999px;padding:9px 15px;min-height:42px;cursor:pointer;border:2px solid #111111;${on ? 'background:#111111;color:#FFFFFF;box-shadow:3px 3px 0 #F08A24' : 'background:#FFFFFF;color:#111111'}`;
+    const secimAlani = (anahtar, etiket, liste, coklu) => ({
+      etiket, secim: true, yazi: false, uzun: false, uyeKutu: false, acik: false,
+      secenekler: liste.map((ad) => {
+        const on = coklu ? (secim[anahtar] || []).includes(ad) : secim[anahtar] === ad;
+        return { ad, basili: on ? 'true' : 'false', stil: secenekStil(on), sec: () => {
+          const s2 = { ...this.state.secim };
+          if (coklu) { const l = s2[anahtar] || []; s2[anahtar] = l.includes(ad) ? l.filter((x) => x !== ad) : [...l, ad]; }
+          else s2[anahtar] = ad;
+          this.setState({ secim: s2 });
+        } };
+      }),
+    });
+    // Deneme sitesi: Açık Çağrı alanlarının değerleri state.cv'de (anahtarlar Sheets'teki sütunlar)
+    const cv = this.state.cv;
+    const cvYaz = (anahtar) => (e) => { const v = e.target.value; this.setState((st) => ({ cv: { ...st.cv, [anahtar]: v }, cagriHata: '' })); };
+    const cvDegis = (anahtar) => () => this.setState((st) => ({ cv: { ...st.cv, [anahtar]: !st.cv[anahtar] }, cagriHata: '' }));
+    const yazi = (etiket, ipucu, anahtar) => ({ etiket, ipucu, yazi: true, uzun: false, secim: false, uyeKutu: false, acik: false, secenekler: [], deger: cv[anahtar] || '', yaz: cvYaz(anahtar) });
+    const uzun = (etiket, ipucu, anahtar) => ({ etiket, ipucu, yazi: false, uzun: true, secim: false, uyeKutu: false, acik: false, secenekler: [], deger: cv[anahtar] || '', yaz: cvYaz(anahtar) });
+    const cagriAdimlar = [
+      { no: '1', baslik: 'Biraz tanışalım', alanlar: [
+        yazi('Adın ve soyadın *', 'Adın Soyadın', 'ad'),
+        yazi('E-posta veya telefon numaran *', 'ornek@mail.com ya da 05xx', 'iletisim'),
+        secimAlani('uye', 'Forest Club üyesi misin? *', ['Evet', 'Hayır'], false),
+        ...(secim.uye === 'Hayır' ? [{ ...secimAlani('uyeOl', '', ['Evet, üye olmak istiyorum', 'Şimdilik değil'], false),
+                                       secim: false, uyeKutu: true, acik: secim.uyeOl === 'Evet, üye olmak istiyorum',
+                                       uyeEposta: cv.uyeEposta || '', uyeEpostaYaz: cvYaz('uyeEposta'), uyeTel: cv.uyeTelefon || '', uyeTelYaz: cvYaz('uyeTelefon'),
+                                       uyeKosul: !!cv.uyeKosul, uyeKosulDegis: cvDegis('uyeKosul'), uyeDogal: !!cv.uyeDogal, uyeDogalDegis: cvDegis('uyeDogal'),
+                                       uyeFoto: !!cv.uyeFoto, uyeFotoDegis: cvDegis('uyeFoto') }] : []),
+      ] },
+      { no: '2', baslik: 'Fikrini anlatalım', alanlar: [
+        secimAlani('alan', 'Çalışman hangi alanda? *', ['Hareket ve beden', 'Ses ve müzik', 'Sanat ve el işi', 'Doğa ve farkındalık', 'Yemek ve mutfak', 'Sohbet ve paylaşım'], true),
+        yazi('Atölyenin veya buluşmanın adı *', 'Örn. Ormanda ses banyosu', 'baslik'),
+        uzun('Bize biraz anlatır mısın? *', 'Ne yapacağız, kimlere uygun, katılımcılar ne deneyimleyecek?', 'anlat'),
+        secimAlani('deneyim', 'Daha önce bu çalışmayı gerçekleştirdin mi?', ['Evet, birçok kez', 'Evet, birkaç kez', 'Hayır, ilk kez'], false),
+      ] },
+      { no: '3', baslik: 'Bir araya gelelim', alanlar: [
+        secimAlani('sure', 'Buluşma ne kadar sürer?', ['1 saat', '1,5 saat', '2 saat', 'Yarım gün'], false),
+        secimAlani('kisi', 'Kaç kişiyle gerçekleştirmek istersin?', ['5–10', '10–20', '20+'], false),
+        uzun('İhtiyaç duyduğun malzemeler veya alan var mı?', 'Matlar, ses sistemi, gölgelik…', 'ihtiyac'),
+        secimAlani('gun', 'Hangi günler uygunsun?', ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
+      ] },
+    ];
+    return {
+      formda: !this.state.cagriGitti,
+      cagriAdimlar,
+      cagriGitti: this.state.cagriGitti,
+      cagriKvkk: this.state.cagriKvkk, cagriHata: this.state.cagriHata,
+      cagriKvkkDegis: () => this.setState((st) => ({ cagriKvkk: !st.cagriKvkk, cagriHata: '' })),
+      cagriGonder: () => {
+        if (!window.FCSCagri) return this.setState({ cagriGitti: true });
+        if (!this.state.cagriKvkk) return this.setState({ cagriHata: 'Göndermek için KVKK metnini onayla.' });
+        const uyeOl = secim.uye === 'Hayır' && secim.uyeOl === 'Evet, üye olmak istiyorum';
+        if (uyeOl && !(cv.uyeKosul && cv.uyeDogal)) return this.setState({ cagriHata: 'Üyelik için koşullar ve doğal alan beyanını onayla.' });
+        const liste = (x) => (Array.isArray(x) ? x.join(', ') : x || '');
+        this.setState({ cagriHata: 'Gönderiliyor…' });
+        window.FCSCagri({
+          ad: cv.ad, iletisim: cv.iletisim, uye: secim.uye || '', alan: liste(secim.alan), baslik: cv.baslik, anlat: cv.anlat,
+          deneyim: secim.deneyim || '', sure: secim.sure || '', kisi: secim.kisi || '', ihtiyac: cv.ihtiyac, gunler: liste(secim.gun),
+          uyeOl, uyeEposta: cv.uyeEposta, uyeTelefon: cv.uyeTelefon, uyeFoto: !!cv.uyeFoto,
+        }).then(() => this.setState({ cagriGitti: true, cagriHata: '' })).catch((h) => this.setState({ cagriHata: h.message }));
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>
