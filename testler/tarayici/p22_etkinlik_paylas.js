@@ -60,14 +60,41 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
     // Açık Çağrı: menüde Üyelik ile SSS arasında, form sayfada kendi bölümünde; telefonda menü 3'erli iki sıra
     const menu = await s.page.locator('nav[aria-label="Site menüsü"] a.fs-menu').allTextContents();
     dogru(menu.join('|') === 'Biz Kimiz?|Etkinlikler|Üyelik|Açık Çağrı|SSS|İletişim', `menü: Açık Çağrı Üyelik ile SSS arasında (${menu.join(', ')})`);
-    dogru(await s.page.locator('#acik-cagri form').count() === 1 && await s.page.locator('#acik-cagri').evaluate((el) => el.nextElementSibling && el.nextElementSibling.id === 'sss'),
-      'Açık Çağrı formu sayfada, SSS bölümünden önce');
+    dogru(await s.page.locator('nav[aria-label="Site menüsü"] a', { hasText: 'Açık Çağrı' }).getAttribute('href') === '/acik-cagri/' && await s.page.locator('#acik-cagri, .fs-cagri-form').count() === 0,
+      'Açık Çağrı ana sayfada değil; menü /acik-cagri/ sayfasını açar');
     await s.page.setViewportSize({ width: 360, height: 780 });
     await s.page.waitForTimeout(300);
     const satir = await s.page.evaluate(() => [...document.querySelectorAll('nav[aria-label="Site menüsü"] a.fs-menu')].map((a) => Math.round(a.getBoundingClientRect().top)));
     dogru(new Set(satir).size === 2 && satir.slice(0, 3).every((y) => y === satir[0]) && satir.slice(3).every((y) => y === satir[3])
       && await s.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'telefon: menü 3\'erli iki sıra, taşma yok');
     dogru(!s.konsol.some((x) => /pageerror|Content Security/.test(x)), 'sayfa / CSP hatası yok');
+
+    // Açık Çağrı sayfası: yalnız form; gönderim form-gonder'e "cagri"
+    const c = await sayfaAc(tarayici, veri, null);
+    await c.page.setViewportSize({ width: 390, height: 800 });
+    const cagrilar = [];
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    await c.page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript',
+      body: "window.turnstile = { n: 0, render(el, o) { setTimeout(() => o.callback('jeton-' + (++this.n)), 20); return this.n; }, remove() {} };" }));
+    await c.page.route('https://gflabqnazkstsyafzdmn.supabase.co/functions/v1/form-gonder', (r) => {
+      if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 200, headers: cors });
+      cagrilar.push(JSON.parse(r.request().postData()));
+      r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ sonuc: 'tamam' }) });
+    });
+    await c.page.goto(`${SITE}/acik-cagri/`);
+    await c.page.getByRole('heading', { name: 'Açık Çağrı' }).waitFor({ timeout: 15000 });
+    await c.page.getByPlaceholder('Adın Soyadın').fill('Deniz Ses');
+    await c.page.getByPlaceholder('ornek@mail.com ya da 05xx').fill('deniz@posta.test');
+    await c.page.getByRole('button', { name: 'Evet', exact: true }).click();
+    await c.page.getByRole('button', { name: 'Ses ve müzik' }).click();
+    await c.page.getByPlaceholder('Örn. Ormanda ses banyosu').fill('Ses banyosu');
+    await c.page.locator('textarea').first().fill('Gong ve kaselerle dinlenme.');
+    await c.page.locator('input[type=checkbox]').last().check();
+    await c.page.getByRole('button', { name: 'Fikrimi gönder ✨' }).click();
+    await c.page.getByText('Teşekkürler! 🌲').waitFor({ timeout: 5000 });
+    dogru(cagrilar.length === 1 && cagrilar[0].tur === 'cagri' && cagrilar[0].veri.ad === 'Deniz Ses' && cagrilar[0].veri.alan === 'Ses ve müzik' && cagrilar[0].veri.baslik === 'Ses banyosu',
+      `Açık Çağrı sayfası: form gönderildi (${JSON.stringify(cagrilar[0] && cagrilar[0].veri)})`);
+    dogru(await c.page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1) && !c.konsol.some((x) => /pageerror|Content Security/.test(x)), 'Açık Çağrı sayfası: telefonda taşma yok, hata yok');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
   } finally {
