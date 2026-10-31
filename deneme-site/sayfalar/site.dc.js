@@ -107,7 +107,7 @@ class Component extends DCLogic {
           this.setState((st) => ({ acikEtk: st.acikEtk === kartKey ? null : kartKey }));
         },
         afisAc: () => this.setState({ afisTam: b.afis, afisTamAlt: `${b.ad} afişi` }),
-        capa, paylasEtiket: `${b.ad} etkinliğini paylaş`, paylasYazi: this.state.paylasildi === kartKey ? 'Bağlantı kopyalandı ✓' : 'Paylaş ↗',
+        capa, paylasEtiket: `${b.ad} etkinliğini paylaş`, paylasYazi: this.state.paylasildi === kartKey ? 'Bağlantı kopyalandı ✓' : 'Paylaş',
         paylas: () => {
           const metin = `${b.ad} · ${b.gun} ${b.ay} ${b.haftaGunu}${b.saat ? `, ${b.saat}` : ''} · Pinya, Urla`;
           const kopyala = () => {
