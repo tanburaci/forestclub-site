@@ -179,7 +179,7 @@ class Component extends DCLogic {
         secimAlani('sure', 'Buluşma ne kadar sürer?', ['1 saat', '1,5 saat', '2 saat', 'Yarım gün'], false),
         secimAlani('kisi', 'Kaç kişiyle gerçekleştirmek istersin?', ['5–10', '10–20', '20+'], false),
         uzun('İhtiyaç duyduğun malzemeler veya alan var mı?', 'Matlar, ses sistemi, gölgelik…', 'ihtiyac'),
-        secimAlani('gun', `${AYLIK.ay} ayında hangi günler uygunsun?`, ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
+        secimAlani('gun', 'Hangi günler uygunsun?', ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
       ] },
     ];
     // Deneme sitesi: iletişim bilgileri yönetim panelindeki ayarlardan (ayarlar.iletisim)

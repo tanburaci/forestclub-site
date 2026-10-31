@@ -595,7 +595,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
         </sc-if>
         <sc-if value="{{ cagriHazirAfis }}" hint-placeholder-val="{{ true }}">
           <div class="fs-afis">
-            <img src="/_blob/c7a89dd60f2523087967c3301c3cfbe5" alt="Forest Club Urla Açık Çağrı afişi: Kasım ayı programı için fikirlerini paylaş, birlikte üretelim.">
+            <img src="/_blob/c6dc84158c4bd70f7f5d1022943f4ffd" alt="Forest Club Urla Açık Çağrı afişi: fikirlerini paylaş, birlikte üretelim.">
             <button type="button" class="fs-afis-dugme" onClick="{{ cagriForm }}" aria-label="Başvurmak için tıkla"></button>
           </div>
         </sc-if>
@@ -1051,7 +1051,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
       <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
         <h2 class="fs-baslik" style="font-size: 52px">Açık Çağrı</h2>
         <p style="margin: 0; font-size: 18px; line-height: 1.6; color: #3A3A3A">Atölye, buluşma ya da etkinlik fikrin mi var? Yürütmek istediğin bir şey, getirmek istediğin bir sanatçı, denemek istediğin bir format… Formu doldur; programı planlarken seninle iletişime geçelim, birlikte üretelim.</p>
-        <img src="/_blob/c7a89dd60f2523087967c3301c3cfbe5" alt="Forest Club Urla Açık Çağrı afişi: fikirlerini paylaş, birlikte üretelim." loading="lazy" style="width: 100%; max-width: 420px; border: 2.5px solid #111111; border-radius: 16px; box-shadow: 5px 5px 0 #111111">
+        <img src="/_blob/c6dc84158c4bd70f7f5d1022943f4ffd" alt="Forest Club Urla Açık Çağrı afişi: fikirlerini paylaş, birlikte üretelim." loading="lazy" style="width: 100%; max-width: 420px; border: 2.5px solid #111111; border-radius: 16px; box-shadow: 5px 5px 0 #111111">
       </div>
             <form class="fs-cagri-form" style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 22px; box-sizing: border-box">
               <sc-for list="{{ cagriAdimlar }}" as="adim" hint-placeholder-count="3">
@@ -1112,7 +1112,7 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
               </sc-if>
               <button type="button" class="fs-btn" onClick="{{ cagriGonder }}" style="font-size: 18px">Fikrimi gönder ✨</button>
               <sc-if value="{{ cagriGitti }}" hint-placeholder-val="{{ false }}">
-                <p role="status" style="margin: 0; border: 2.5px solid #111111; border-radius: 12px; padding: 14px; font-weight: 600; background: #F6C945">Teşekkürler! Fikrin bize ulaştı. {{ aylikAy }} programını planlarken seninle iletişime geçeceğiz. 🌲</p>
+                <p role="status" style="margin: 0; border: 2.5px solid #111111; border-radius: 12px; padding: 14px; font-weight: 600; background: #F6C945">Teşekkürler! Fikrin bize ulaştı. Programı planlarken seninle iletişime geçeceğiz. 🌲</p>
               </sc-if>
             </form>
     </section>
@@ -1362,7 +1362,7 @@ class Component extends DCLogic {
         secimAlani('sure', 'Buluşma ne kadar sürer?', ['1 saat', '1,5 saat', '2 saat', 'Yarım gün'], false),
         secimAlani('kisi', 'Kaç kişiyle gerçekleştirmek istersin?', ['5–10', '10–20', '20+'], false),
         uzun('İhtiyaç duyduğun malzemeler veya alan var mı?', 'Matlar, ses sistemi, gölgelik…', 'ihtiyac'),
-        secimAlani('gun', `${AYLIK.ay} ayında hangi günler uygunsun?`, ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
+        secimAlani('gun', 'Hangi günler uygunsun?', ['Hafta içi sabah', 'Hafta içi öğleden sonra', 'Hafta içi akşam', 'Cumartesi', 'Pazar'], true),
       ] },
     ];
     // Deneme sitesi: iletişim bilgileri yönetim panelindeki ayarlardan (ayarlar.iletisim)
