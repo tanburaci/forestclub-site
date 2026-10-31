@@ -60,6 +60,18 @@ class Component extends DCLogic {
       cagriKvkkDegis: () => this.setState((st) => ({ cagriKvkk: !st.cagriKvkk, cagriHata: '' })),
       cagriGonder: () => {
         if (!window.FCSCagri) return this.setState({ cagriGitti: true });
+        // Zorunlu alanlar (sunucu da aynı kuralla denetler): eksik olan adıyla söylenir
+        const bos = (x) => !String(x || '').trim();
+        const eksik = String(cv.ad || '').trim().length < 3 ? 'Adını ve soyadını yaz.'
+          : String(cv.iletisim || '').replace(/\s/g, '').length < 6 ? 'E-posta adresini ya da telefon numaranı yaz.'
+            : !secim.uye ? '"Forest Club üyesi misin?" sorusunu cevapla.'
+              : !(secim.alan || []).length ? 'Çalışmanın alanını seç (en az bir tane).'
+                : String(cv.baslik || '').trim().length < 2 ? 'Atölyenin ya da buluşmanın adını yaz.'
+                  : String(cv.anlat || '').trim().length < 3 ? '"Bize biraz anlatır mısın?" alanını doldur.' : '';
+        if (eksik) return this.setState({ cagriHata: eksik });
+        if (secim.uye === 'Hayır' && secim.uyeOl === 'Evet, üye olmak istiyorum' && (bos(cv.uyeEposta) || bos(cv.uyeTelefon))) {
+          return this.setState({ cagriHata: 'Üyelik için e-posta adresini ve telefon numaranı yaz.' });
+        }
         if (!this.state.cagriKvkk) return this.setState({ cagriHata: 'Göndermek için KVKK metnini onayla.' });
         const uyeOl = secim.uye === 'Hayır' && secim.uyeOl === 'Evet, üye olmak istiyorum';
         if (uyeOl && !(cv.uyeKosul && cv.uyeDogal)) return this.setState({ cagriHata: 'Üyelik için koşullar ve doğal alan beyanını onayla.' });
