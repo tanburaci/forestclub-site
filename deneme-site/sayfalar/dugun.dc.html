@@ -60,6 +60,8 @@ body{margin:0;background:#F6EFE3}
 .dg-grup-bas:focus-visible{outline:2px solid #5B6B4E;outline-offset:-2px}
 .dg-grup-bas img{width:46px;height:32px;object-fit:cover;border-radius:8px;background:#EFE5D3}
 .dg-grup-ic{display:flex;gap:8px;flex-wrap:wrap;padding:4px 14px 14px}
+.dg-hap-yazi{display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.2}
+.dg-hap-fiyat{font-size:12px;font-weight:500;color:#8A7B5F;font-variant-numeric:tabular-nums}
 .dg-hap img{width:28px;height:28px;object-fit:cover;border-radius:50%;margin:-4px 8px -4px -6px;vertical-align:middle}
 .dg-sss summary{cursor:pointer;font-weight:600;padding:14px 0;list-style:none}
 .dg-sss summary::-webkit-details-marker{display:none}
@@ -286,7 +288,7 @@ body{margin:0;background:#F6EFE3}
                   <sc-if value="{{ g.acik }}" hint-placeholder-val="{{ false }}">
                     <div class="dg-grup-ic">
                       <sc-for list="{{ g.urunler }}" as="u" hint-placeholder-count="3">
-                        <button type="button" class="{{ u.sinif }}" aria-pressed="{{ u.secili }}" onClick="{{ u.sec }}"><sc-if value="{{ u.foto }}" hint-placeholder-val="{{ false }}"><img src="{{ u.resim }}" alt=""></sc-if>{{ u.ad }}</button>
+                        <button type="button" class="{{ u.sinif }}" aria-pressed="{{ u.secili }}" onClick="{{ u.sec }}"><sc-if value="{{ u.foto }}" hint-placeholder-val="{{ false }}"><img src="{{ u.resim }}" alt=""></sc-if><span class="dg-hap-yazi">{{ u.ad }}<span class="dg-hap-fiyat">{{ u.fiyat }}</span></span></button>
                       </sc-for>
                     </div>
                   </sc-if>
@@ -307,7 +309,7 @@ body{margin:0;background:#F6EFE3}
                 <sc-if value="{{ g.acik }}" hint-placeholder-val="{{ false }}">
                   <div class="dg-grup-ic">
                     <sc-for list="{{ g.urunler }}" as="u" hint-placeholder-count="3">
-                      <button type="button" class="{{ u.sinif }}" aria-pressed="{{ u.secili }}" onClick="{{ u.sec }}"><sc-if value="{{ u.foto }}" hint-placeholder-val="{{ false }}"><img src="{{ u.resim }}" alt=""></sc-if>{{ u.ad }}</button>
+                      <button type="button" class="{{ u.sinif }}" aria-pressed="{{ u.secili }}" onClick="{{ u.sec }}"><sc-if value="{{ u.foto }}" hint-placeholder-val="{{ false }}"><img src="{{ u.resim }}" alt=""></sc-if><span class="dg-hap-yazi">{{ u.ad }}<span class="dg-hap-fiyat">{{ u.fiyat }}</span></span></button>
                     </sc-for>
                   </div>
                 </sc-if>
@@ -476,9 +478,17 @@ class Component extends DCLogic {
         urunler: urunler.map((u) => {
           const sec = v.urunler.includes(u.id);
           return { ad: u.ad, secili: sec ? 'true' : 'false', sinif: sec ? 'dg-hap secili' : 'dg-hap', foto: !!u.resim && !u.resim.startsWith('/dugun/cizim/'), resim: u.resim,
+            fiyat: fiyatYazi(u.id),
             sec: () => deg({ urunler: ac(v.urunler, u.id) }) };
         }),
       };
+    };
+    // Müşteri fiyatı (yönetimde kâr girilen ürün); yoksa teklif görüşmede
+    const BIRIM = { adet: 'adet', kisi: 'kişi', masa: 'masa', metre: 'metre', sabit: '' };
+    const fiyatYazi = (id) => {
+      const f = (D.fiyatlar || []).find((x) => x.katalog_id === id);
+      if (!f) return 'teklif ile';
+      return `${Math.round(Number(f.fiyat)).toLocaleString('tr-TR')} TL${BIRIM[f.birim] ? ` / ${BIRIM[f.birim]}` : ''}`;
     };
     const urunAd = (g) => K('urun').filter((u) => (u.grup || 'Diğer') === g && v.urunler.includes(u.id)).map((u) => u.ad).join(', ');
     const ozet = [

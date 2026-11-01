@@ -60,9 +60,17 @@ class Component extends DCLogic {
         urunler: urunler.map((u) => {
           const sec = v.urunler.includes(u.id);
           return { ad: u.ad, secili: sec ? 'true' : 'false', sinif: sec ? 'dg-hap secili' : 'dg-hap', foto: !!u.resim && !u.resim.startsWith('/dugun/cizim/'), resim: u.resim,
+            fiyat: fiyatYazi(u.id),
             sec: () => deg({ urunler: ac(v.urunler, u.id) }) };
         }),
       };
+    };
+    // Müşteri fiyatı (yönetimde kâr girilen ürün); yoksa teklif görüşmede
+    const BIRIM = { adet: 'adet', kisi: 'kişi', masa: 'masa', metre: 'metre', sabit: '' };
+    const fiyatYazi = (id) => {
+      const f = (D.fiyatlar || []).find((x) => x.katalog_id === id);
+      if (!f) return 'teklif ile';
+      return `${Math.round(Number(f.fiyat)).toLocaleString('tr-TR')} TL${BIRIM[f.birim] ? ` / ${BIRIM[f.birim]}` : ''}`;
     };
     const urunAd = (g) => K('urun').filter((u) => (u.grup || 'Diğer') === g && v.urunler.includes(u.id)).map((u) => u.ad).join(', ');
     const ozet = [
