@@ -187,6 +187,23 @@ a{color:#111111}a:hover{color:#000000}
                 <button type="button" class="fc-btn" onClick="{{ etkinlikSec }}">Yeni etkinlik</button>
               </div>
             </div>
+            <!-- Minimum kişiye ulaşılamayan, 24 saatten az kalan etkinlikler: karar yöneticinin onayında -->
+            <sc-if value="{{ minOnayVar }}" hint-placeholder-val="{{ false }}">
+              <section role="alert" style="background: #FFF4D6; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+                <h3 style="margin: 0; font-size: 18px">Onayınızı bekliyor: minimum kişiye ulaşılamadı</h3>
+                <sc-for list="{{ minOnaylar }}" as="m" hint-placeholder-count="1">
+                  <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; border-top: 1px solid #E8D9A8; padding-top: 10px">
+                    <span><strong>{{ m.ad }}</strong> · {{ m.zaman }} · {{ m.durum }}</span>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                      <button type="button" class="fc-btn" onClick="{{ m.iptal }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">İptal et</button>
+                      <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ m.ertele }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Ertele</button>
+                      <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ m.devam }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Devam et</button>
+                    </div>
+                  </div>
+                </sc-for>
+                <span style="color: #5E5E5E; font-size: 13px">İptal ya da ertelemede kayıtlılara mail kendiliğinden gider. “Devam et” etkinliği olduğu gibi bırakır.</span>
+              </section>
+            </sc-if>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
               <sc-for list="{{ ozet }}" as="k" hint-placeholder-count="4">
@@ -500,6 +517,23 @@ a{color:#111111}a:hover{color:#000000}
               </sc-if>
             </section>
 
+            <!-- Minimum kişiye ulaşılamayan, 24 saatten az kalan etkinlikler: karar yöneticinin onayında -->
+            <sc-if value="{{ minOnayVar }}" hint-placeholder-val="{{ false }}">
+              <section role="alert" style="background: #FFF4D6; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+                <h3 style="margin: 0; font-size: 18px">Onayınızı bekliyor: minimum kişiye ulaşılamadı</h3>
+                <sc-for list="{{ minOnaylar }}" as="m" hint-placeholder-count="1">
+                  <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; border-top: 1px solid #E8D9A8; padding-top: 10px">
+                    <span><strong>{{ m.ad }}</strong> · {{ m.zaman }} · {{ m.durum }}</span>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                      <button type="button" class="fc-btn" onClick="{{ m.iptal }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">İptal et</button>
+                      <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ m.ertele }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Ertele</button>
+                      <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ m.devam }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Devam et</button>
+                    </div>
+                  </div>
+                </sc-for>
+                <span style="color: #5E5E5E; font-size: 13px">İptal ya da ertelemede kayıtlılara mail kendiliğinden gider. “Devam et” etkinliği olduğu gibi bırakır.</span>
+              </section>
+            </sc-if>
             <!-- Aylık dosya: önizleme; geçerli satırlar tek tıkla eklenir (biçim: etkinlik_sablonu.csv) -->
             <sc-if value="{{ aylikVar }}" hint-placeholder-val="{{ false }}">
               <section style="background: #FFFFFF; border-radius: 14px; border: 2px solid #111111; padding: 24px; display: flex; flex-direction: column; gap: 12px">
@@ -1079,33 +1113,43 @@ a{color:#111111}a:hover{color:#000000}
                     <button type="button" class="{{ f.sinif }}" onClick="{{ f.sec }}">{{ f.ad }}</button>
                   </sc-for>
                 </div>
-                <div style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; overflow: auto; max-height: 560px">
-                  <table class="fc-tablo">
-                    <thead><tr><th>Tarih</th><th>Tür</th><th>Açıklama</th><th>Kategori · etkinlik</th><th>Kasa</th><th style="text-align: right">Tutar</th><th>Belge</th><th>Fatura</th></tr></thead>
-                    <tbody>
-                      <sc-for list="{{ hareketSatirlari }}" as="h" hint-placeholder-count="8">
-                        <tr>
-                          <td>{{ h.tarihYazi }}</td>
-                          <td><span style="{{ h.rozet }}">{{ h.turAd }}</span></td>
-                          <td style="font-weight: 600">{{ h.aciklama }}<sc-if value="{{ h.otomatik }}" hint-placeholder-val="{{ false }}"><span style="margin-left: 8px; color: #5E5E5E; font-size: 12px; font-weight: 600">otomatik</span></sc-if></td>
-                          <td style="color: #3A3A3A">{{ h.baglam }}</td>
-                          <td>{{ h.kasaAd }}</td>
-                          <td style="text-align: right; font-weight: 700; font-variant-numeric: tabular-nums">{{ h.tutarYazi }}</td>
-                          <td style="color: #5E5E5E; font-size: 14px">{{ h.belge }}</td>
-                          <td style="white-space: nowrap">
-                            <sc-if value="{{ h.faturaBekliyor }}" hint-placeholder-val="{{ false }}">
-                              <span style="display: inline-flex; gap: 6px"><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ h.faturaKopyala }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">{{ h.faturaKopyaYazi }}</button><button type="button" class="fc-btn" onClick="{{ h.faturaKes }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">Kesildi</button><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ h.faturaGerekmez }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">Gerekmez</button></span>
-                            </sc-if>
-                            <sc-if value="{{ h.faturaVar }}" hint-placeholder-val="{{ false }}">
-                              <span style="{{ h.faturaRozet }}">{{ h.faturaYazi }}</span>
-                              <button type="button" onClick="{{ h.faturaGeriAl }}" aria-label="Fatura işaretini geri al" style="margin-left: 6px; background: none; border: 0; color: #5E5E5E; text-decoration: underline; cursor: pointer; font: 600 12px Figtree, sans-serif">geri al</button>
-                            </sc-if>
-                          </td>
-                        </tr>
-                      </sc-for>
-                    </tbody>
-                  </table>
-                </div>
+                <!-- Gelirler, giderler ve aktarımlar ayrı tablolarda, tarih sırasıyla; her tablonun altında toplam -->
+                <sc-for list="{{ hareketGruplari }}" as="g" hint-placeholder-count="2">
+                  <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; overflow: hidden">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 16px 20px; border-bottom: 2px solid #111111; {{ g.baslikStil }}">
+                      <h3 style="margin: 0; font-size: 18px">{{ g.baslik }} <span style="font-weight: 400; color: #5E5E5E; font-size: 14px">{{ g.adet }}</span></h3>
+                      <strong style="font-size: 20px; font-variant-numeric: tabular-nums">{{ g.toplamYazi }}</strong>
+                    </div>
+                    <div style="overflow: auto; max-height: 480px">
+                      <table class="fc-tablo">
+                        <thead><tr><th>Tarih</th><th>Açıklama</th><th>Kategori · etkinlik</th><th>Kasa</th><th style="text-align: right">Tutar</th><th>Belge</th><sc-if value="{{ g.faturaSutun }}" hint-placeholder-val="{{ true }}"><th>Fatura</th></sc-if></tr></thead>
+                        <tbody>
+                          <sc-for list="{{ g.satirlar }}" as="h" hint-placeholder-count="4">
+                            <tr>
+                              <td>{{ h.tarihYazi }}</td>
+                              <td style="font-weight: 600">{{ h.aciklama }}<sc-if value="{{ h.otomatik }}" hint-placeholder-val="{{ false }}"><span style="margin-left: 8px; color: #5E5E5E; font-size: 12px; font-weight: 600">otomatik</span></sc-if></td>
+                              <td style="color: #3A3A3A">{{ h.baglam }}</td>
+                              <td>{{ h.kasaAd }}</td>
+                              <td style="text-align: right; font-weight: 700; font-variant-numeric: tabular-nums">{{ h.tutarYazi }}</td>
+                              <td style="color: #5E5E5E; font-size: 14px">{{ h.belge }}</td>
+                              <sc-if value="{{ g.faturaSutun }}" hint-placeholder-val="{{ true }}">
+                                <td style="white-space: nowrap">
+                                  <sc-if value="{{ h.faturaBekliyor }}" hint-placeholder-val="{{ false }}">
+                                    <span style="display: inline-flex; gap: 6px"><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ h.faturaKopyala }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">{{ h.faturaKopyaYazi }}</button><button type="button" class="fc-btn" onClick="{{ h.faturaKes }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">Kesildi</button><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ h.faturaGerekmez }}" style="min-height: 34px; padding: 4px 12px; font-size: 13px">Gerekmez</button></span>
+                                  </sc-if>
+                                  <sc-if value="{{ h.faturaVar }}" hint-placeholder-val="{{ false }}">
+                                    <span style="{{ h.faturaRozet }}">{{ h.faturaYazi }}</span>
+                                    <button type="button" onClick="{{ h.faturaGeriAl }}" aria-label="Fatura işaretini geri al" style="margin-left: 6px; background: none; border: 0; color: #5E5E5E; text-decoration: underline; cursor: pointer; font: 600 12px Figtree, sans-serif">geri al</button>
+                                  </sc-if>
+                                </td>
+                              </sc-if>
+                            </tr>
+                          </sc-for>
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                </sc-for>
                 <sc-if value="{{ hareketYok }}" hint-placeholder-val="{{ false }}">
                   <p style="margin: 0; color: #5E5E5E">{{ hareketYokMetin }}</p>
                 </sc-if>
@@ -2089,6 +2133,35 @@ class Component extends DCLogic {
         } };
       }) };
     };
+    // Minimum kişi onayı: 24 saatten az kalan, kayıtlı + bilet + tanışma sayısı minimumun altındaki etkinlikler
+    this.minOnayGorunum = () => {
+      const st = this.state;
+      const simdi = Date.now();
+      const liste = (st.etkinlikler || []).filter((x) => {
+        const key = `${x.tarih}|${x.ad}`;
+        if (!x.min || st.etkDurum[key] || (st.minDevam || {})[key]) return false;
+        const sa = (/^\s*(\d{1,2})\.(\d{2})/.exec(x.saat || '') || [null, '10', '00']);
+        const bas = Date.parse(`${x.tarih}T${sa[1].padStart(2, '0')}:${sa[2]}:00+03:00`);
+        if (!(bas > simdi && bas - simdi <= 24 * 3600 * 1000)) return false;
+        const k = st.kayitlar[key];
+        const gelen = k ? k.kayitli.length + (x.satis ? x.satis.satilan : 0) + (k.tanisma || 0) : 0;
+        return gelen < x.min;
+      });
+      const panel = (key, tur) => this.setState({ sekme: 'etkinlikler', etkPanel: { key, mod: 'iptal' }, iptal: { tur, tarih: '', neden: 'Yeterli katılım yok', mesaj: '' }, iptalMesaj: '' });
+      return {
+        minOnayVar: liste.length > 0,
+        minOnaylar: liste.map((x) => {
+          const key = `${x.tarih}|${x.ad}`;
+          const k = st.kayitlar[key];
+          const gelen = k ? k.kayitli.length + (x.satis ? x.satis.satilan : 0) + (k.tanisma || 0) : 0;
+          return {
+            ad: x.ad, zaman: `${x.tarih.split('-').reverse().join('.')} ${x.saat || ''}`.trim(), durum: `${gelen} kişi / minimum ${x.min}`,
+            iptal: () => panel(key, 'iptal'), ertele: () => panel(key, 'ertele'),
+            devam: () => this.setState((s) => ({ minDevam: { ...(s.minDevam || {}), [key]: true } })),
+          };
+        }),
+      };
+    };
     // Formlar: liste, düzenleyici (sorular), cevaplar. Canlıda yazma yonetim.js'teki FCFormKaydet / FCFormAcKapa ile
     this.formlarGorunum = () => {
       const st = this.state;
@@ -2828,8 +2901,8 @@ class Component extends DCLogic {
     const faturasiz = hareketler.filter((h) => h.tur === 'gelir' && !h.fatura);
     const faturaYaz = (id, degisiklik) => this.setState((s) => ({ hareketler: s.hareketler.map((x) => (x.id === id ? { ...x, ...degisiklik } : x)) }));
     const hareketSatirlari = (mFiltre === 'fatura' ? faturasiz : (mEtk ? etkH : ayH).filter((h) => mFiltre === 'tumu' || h.tur === mFiltre))
-      .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id)
-      .map((h) => ({
+      .sort((a, b) => a.tarih.localeCompare(b.tarih) || a.id - b.id)
+      .map((h) => ({ tur: h.tur, tutar: h.tutar,
         tarihYazi: tarihYaz(h.tarih), turAd: TUR_AD[h.tur], rozet: TUR_ROZET[h.tur], aciklama: h.aciklama, otomatik: h.otomatik,
         baglam: h.tur === 'aktarim' ? 'Kasalar arası' : [h.kategori, h.etk ? etkAdi[h.etk] : (h.tur === 'gider' ? 'Genel' : '')].filter(Boolean).join(' · '),
         kasaAd: h.tur === 'aktarim' ? `${KASA[h.kasa]} → ${KASA[h.hedef]}` : KASA[h.kasa],
@@ -2856,6 +2929,18 @@ class Component extends DCLogic {
         },
         faturaGeriAl: () => faturaYaz(h.id, { fatura: '', faturaNo: '', faturaTarih: '' }),
       }));
+
+    // Ayrı tablolar: gelirler, giderler, kasalar arası aktarımlar (boş olan gösterilmez)
+    const GRUP = [
+      { tur: 'gelir', baslik: mFiltre === 'fatura' ? 'Faturası kesilecek gelirler' : 'Gelirler', isaret: '+', stil: 'background:#EEF6E6' },
+      { tur: 'gider', baslik: 'Giderler', isaret: '−', stil: 'background:#F8ECE8' },
+      { tur: 'aktarim', baslik: 'Kasalar arası aktarımlar', isaret: '', stil: 'background:#F0F0EE' },
+    ];
+    const hareketGruplari = GRUP.map((g) => {
+      const satirlar = hareketSatirlari.filter((h) => h.tur === g.tur);
+      return { baslik: g.baslik, baslikStil: g.stil, satirlar, adet: `· ${satirlar.length} kayıt`, faturaSutun: g.tur === 'gelir',
+        toplamYazi: `Toplam ${g.isaret}${TL(satirlar.reduce((t, h) => t + h.tutar, 0))}` };
+    }).filter((g) => g.satirlar.length);
 
     // Etkinlik maliyeti: giderler − katılım geliri = kulübe maliyeti; katılımcıya bölünür
     const kat = this.state.katilimci;
@@ -3066,7 +3151,7 @@ class Component extends DCLogic {
       komisyonOran: this.state.komisyonOran,
       komisyonYaz: (e) => this.setState({ komisyonOran: e.target.value }),
       muhasebeSekme: sekme === 'muhasebe',
-      kasalar, aylar, ayOzet, hareketSatirlari, etkMaliyet, etkOzetMetin, kasaTablo,
+      kasalar, aylar, ayOzet, hareketSatirlari, hareketGruplari, etkMaliyet, etkOzetMetin, kasaTablo,
       hareketYok: !hareketSatirlari.length,
       faturaRehberi: mFiltre === 'fatura',
       hareketYokMetin: mFiltre === 'fatura' ? 'Faturası kesilecek gelir yok ✓' : mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
@@ -3295,6 +3380,7 @@ class Component extends DCLogic {
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',
       dugunStil: sekme === 'dugun' ? '' : 'display: none',
+      ...this.minOnayGorunum(),
       ...this.formlarGorunum(),
       basvuruSekme: sekme === 'basvurular',
       bvr,
