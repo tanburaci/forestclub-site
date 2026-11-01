@@ -59,7 +59,13 @@ body{margin:0;background:#F6EFE3}
 .dg-grup-bas{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;font-weight:600;font-size:15px}
 .dg-grup-bas:focus-visible{outline:2px solid #5B6B4E;outline-offset:-2px}
 .dg-grup-bas img{width:46px;height:32px;object-fit:cover;border-radius:8px;background:#EFE5D3}
-.dg-grup-ic{display:flex;gap:8px;flex-wrap:wrap;padding:4px 14px 14px}
+.dg-grup-ic{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:4px 14px 14px}
+@media (max-width:420px){.dg-grup-ic{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dg-hap.dg-urun{border-radius:14px;padding:0;overflow:hidden;display:flex;flex-direction:column;align-items:stretch;text-align:left;min-height:0;min-width:0}
+.dg-hap.dg-urun img{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:0;margin:0;display:block;background:#EFE5D3}
+.dg-hap.dg-urun .dg-hap-yazi{display:flex;padding:8px 10px 10px;gap:3px;font-size:14px;overflow-wrap:anywhere}
+.dg-hap.dg-urun.secili{box-shadow:0 0 0 3px rgba(91,107,78,.25)}
+.dg-hap.dg-urun.secili .dg-hap-fiyat{color:#E7EDDF}
 .dg-hap-yazi{display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.2}
 .dg-hap-fiyat{font-size:12px;font-weight:500;color:#8A7B5F;font-variant-numeric:tabular-nums}
 .dg-hap img{width:28px;height:28px;object-fit:cover;border-radius:50%;margin:-4px 8px -4px -6px;vertical-align:middle}
@@ -288,7 +294,7 @@ body{margin:0;background:#F6EFE3}
                   <sc-if value="{{ g.acik }}" hint-placeholder-val="{{ false }}">
                     <div class="dg-grup-ic">
                       <sc-for list="{{ g.urunler }}" as="u" hint-placeholder-count="3">
-                        <button type="button" class="{{ u.sinif }}" aria-pressed="{{ u.secili }}" onClick="{{ u.sec }}"><sc-if value="{{ u.foto }}" hint-placeholder-val="{{ false }}"><img src="{{ u.resim }}" alt=""></sc-if><span class="dg-hap-yazi">{{ u.ad }}<span class="dg-hap-fiyat">{{ u.fiyat }}</span></span></button>
+                        <button type="button" class="{{ u.sinif }}" aria-pressed="{{ u.secili }}" onClick="{{ u.sec }}"><img src="{{ u.resim }}" alt="" loading="lazy"><span class="dg-hap-yazi">{{ u.ad }}<span class="dg-hap-fiyat">{{ u.fiyat }}</span></span></button>
                       </sc-for>
                     </div>
                   </sc-if>
@@ -309,7 +315,7 @@ body{margin:0;background:#F6EFE3}
                 <sc-if value="{{ g.acik }}" hint-placeholder-val="{{ false }}">
                   <div class="dg-grup-ic">
                     <sc-for list="{{ g.urunler }}" as="u" hint-placeholder-count="3">
-                      <button type="button" class="{{ u.sinif }}" aria-pressed="{{ u.secili }}" onClick="{{ u.sec }}"><sc-if value="{{ u.foto }}" hint-placeholder-val="{{ false }}"><img src="{{ u.resim }}" alt=""></sc-if><span class="dg-hap-yazi">{{ u.ad }}<span class="dg-hap-fiyat">{{ u.fiyat }}</span></span></button>
+                      <button type="button" class="{{ u.sinif }}" aria-pressed="{{ u.secili }}" onClick="{{ u.sec }}"><img src="{{ u.resim }}" alt="" loading="lazy"><span class="dg-hap-yazi">{{ u.ad }}<span class="dg-hap-fiyat">{{ u.fiyat }}</span></span></button>
                     </sc-for>
                   </div>
                 </sc-if>
@@ -477,7 +483,7 @@ class Component extends DCLogic {
         ac: () => this.setState((s) => ({ acikGrup: { ...s.acikGrup, [g]: !s.acikGrup[g] } })),
         urunler: urunler.map((u) => {
           const sec = v.urunler.includes(u.id);
-          return { ad: u.ad, secili: sec ? 'true' : 'false', sinif: sec ? 'dg-hap secili' : 'dg-hap', foto: !!u.resim && !u.resim.startsWith('/dugun/cizim/'), resim: u.resim,
+          return { ad: u.ad, secili: sec ? 'true' : 'false', sinif: sec ? 'dg-hap dg-urun secili' : 'dg-hap dg-urun', resim: FD.resim(u),
             fiyat: fiyatYazi(u.id),
             sec: () => deg({ urunler: ac(v.urunler, u.id) }) };
         }),
