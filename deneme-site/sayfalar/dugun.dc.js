@@ -59,7 +59,7 @@ class Component extends DCLogic {
         ac: () => this.setState((s) => ({ acikGrup: { ...s.acikGrup, [g]: !s.acikGrup[g] } })),
         urunler: urunler.map((u) => {
           const sec = v.urunler.includes(u.id);
-          return { ad: u.ad, secili: sec ? 'true' : 'false', sinif: sec ? 'dg-hap secili' : 'dg-hap', foto: !!u.resim && !u.resim.startsWith('/dugun/cizim/'), resim: u.resim,
+          return { ad: u.ad, secili: sec ? 'true' : 'false', sinif: sec ? 'dg-hap dg-urun secili' : 'dg-hap dg-urun', resim: FD.resim(u),
             fiyat: fiyatYazi(u.id),
             sec: () => deg({ urunler: ac(v.urunler, u.id) }) };
         }),
