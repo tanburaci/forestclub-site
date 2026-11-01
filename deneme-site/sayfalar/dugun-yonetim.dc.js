@@ -239,7 +239,6 @@ class Component extends DCLogic {
       ['mekan', 'Mekanlar', 'Sihirbazda ilk seçim; tek mekan varsa kendiliğinden seçili gelir.'],
       ['bolum', 'Akış bölümleri', 'Nikah, kokteyl, yemek, after party…'],
       ['menu', 'Menüler', 'Mekanın menüleri; çift isterse tercih olarak işaretler (isteğe bağlı).'],
-      ['konsept', 'Masa konseptleri', 'Ana sayfada vitrin, sihirbazda seçim.'],
       ['urun', 'Ürünler', 'Gruplara ayrılır; masa grupları "Masalarınız", Nikah alanı / Karşılama / Lounge / Işıklandırma "Alan ve dekor" adımında.'],
       ['ekstra', 'Ekstralar', 'Müzik, fotoğraf, ışık, pasta…'],
       ['palet', 'Renk paletleri', '"Renkler ve his" adımında; çift ayrıca kendi renklerini ekleyebilir.'],

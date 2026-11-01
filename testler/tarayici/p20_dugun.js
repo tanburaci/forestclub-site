@@ -53,7 +53,7 @@ async function dugunAc(tarayici, genislik, adres = '/dugun/') {
     // ---------- Müşteri sayfası ----------
     const d = await dugunAc(tarayici, 1280);
     const p = d.page;
-    dogru(await p.locator('#konseptler article').count() === 2, 'konsept vitrini katalogdan');
+    dogru(await p.locator('#konseptler').count() === 0 && !(await p.locator('body').innerText()).includes('Masa konseptleri'), 'masa konseptleri sayfada yok (01.11.2026 kaldırıldı)');
     const katIstek = d.istekler.find((x) => x.yol === '/rest/v1/dugun_katalog');
     dogru(katIstek && !/fiyat/.test(katIstek.ara) && /select=id/.test(katIstek.ara), 'katalog fiyatsız sütunlarla okunuyor');
     if (process.env.EKRAN) await p.screenshot({ path: process.env.EKRAN + '/dugun-ust.png', fullPage: true });
@@ -80,7 +80,6 @@ async function dugunAc(tarayici, genislik, adres = '/dugun/') {
     dogru(await p.locator('#tasarla').getByRole('button', { name: 'Atla →' }).count() === 1 && await p.locator('#tasarla').getByText('Yemek mekanın mutfağından gelir', { exact: false }).count() === 1,
       'adım 3: menü isteğe bağlı (Atla), yemek mekandan');
     await ileri();
-    await p.locator('button.dg-sec', { hasText: 'Işıklı gece' }).click();
     dogru(await p.locator('button.dg-hap', { hasText: 'Kır çiçekleri' }).count() === 0, 'adım 4: ürün grupları kapalı gelir');
     const gruplar = await p.locator('.dg-grup-bas').allInnerTexts();
     dogru(gruplar.length === 3 && gruplar[0].startsWith('Örtü') && gruplar[1].startsWith('Peçete') && gruplar[2].startsWith('Çiçek'), `adım 4: masa grupları sırayla (${gruplar.join(' | ')})`);
@@ -101,9 +100,9 @@ async function dugunAc(tarayici, genislik, adres = '/dugun/') {
     const mood = p.locator('.dg-mood');
     if (process.env.EKRAN) await p.locator('#tasarla').screenshot({ path: process.env.EKRAN + '/dugun-mood.png' });
     dogru(await mood.isVisible() && (await mood.innerText()).includes('Lavanta bahçesi + kendi renkleriniz') && (await mood.innerText()).includes('Romantik')
-      && await mood.locator('.dg-serit span').count() === 4 && await mood.locator('.dg-mood-kucuk img').count() >= 2 && (await mood.locator('.dg-mood-ana').getAttribute('src')).includes('konsept-gece'),
-      'son adım: mood board (konsept, palet + kendi rengi, his, detaylar)');
-    dogru(ozet.includes('Henüz belli değil') && ozet.includes('Nikah töreni') && ozet.includes('Işıklı gece') && ozet.includes('Çiçek: Kır çiçekleri') && ozet.includes('Nikah alanı: Jüt yol halısı') && ozet.includes('Düğün pastası'),
+      && await mood.locator('.dg-serit span').count() === 4 && await mood.locator('.dg-mood-kucuk img').count() >= 2 && (await mood.locator('.dg-mood-ana').getAttribute('src')).includes('/dugun/cizim/mekan.svg'),
+      'son adım: mood board (mekan, palet + kendi rengi, his, detaylar)');
+    dogru(ozet.includes('Henüz belli değil') && ozet.includes('Nikah töreni') && !ozet.includes('Masa konsepti') && ozet.includes('Çiçek: Kır çiçekleri') && ozet.includes('Nikah alanı: Jüt yol halısı') && ozet.includes('Düğün pastası'),
       'adım 7: özet seçimleri gruplarıyla gösteriyor');
     dogru(!/\d+\s*(TL|₺)/.test(await p.locator('body').innerText()), 'sayfada fiyat yok');
     await p.getByLabel('Adınız ve soyadınız *').fill('Ayşe ve Can');
@@ -116,7 +115,7 @@ async function dugunAc(tarayici, genislik, adres = '/dugun/') {
     await p.getByRole('heading', { name: /Teşekkür ederiz/ }).waitFor({ timeout: 5000 });
     const g = d.gonderilen[0] || {};
     dogru(d.gonderilen.length === 1 && g.tur === 'dugun' && g.jeton && g.veri.eposta === 'cift@posta.test' && g.veri.kisi === '50_100' && g.veri.tarih_esnek === true
-      && JSON.stringify(g.veri.secimler) === JSON.stringify({ mekan: 1, bolumler: [2], palet: 20, renkler: ['#ff8800'], his: [22, 23, 24], menu: null, konsept: 5, urunler: [7, 11, 10], ekstralar: [9] }) && g.veri.kvkk === true,
+      && JSON.stringify(g.veri.secimler) === JSON.stringify({ mekan: 1, bolumler: [2], palet: 20, renkler: ['#ff8800'], his: [22, 23, 24], menu: null, urunler: [7, 11, 10], ekstralar: [9] }) && g.veri.kvkk === true,
       `talep form-gonder'e "dugun" olarak gitti (${JSON.stringify(g.veri)})`);
     dogru(!d.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'düğün sayfası: sayfa / CSP hatası yok');
 
@@ -186,16 +185,17 @@ async function dugunAc(tarayici, genislik, adres = '/dugun/') {
     dogru(await y.page.locator('#fc-dugun').getByText('Ayşe ve Can').isVisible() && await y.page.getByRole('heading', { name: 'Formlar' }).count() === 0, 'geri dönünce Düğün bölümü yerinde, Formlar karışmıyor');
     // Katalog
     await y.page.locator('#fc-dugun button', { hasText: /^Katalog$/ }).click();
-    const gece = y.page.locator('#fc-dugun .dy-satir', { hasText: 'Işıklı gece' });
-    await gece.getByRole('button', { name: 'Gizle' }).click();
-    await y.page.getByText('“Işıklı gece” sitede gizlendi.').waitFor({ timeout: 4000 });
+    dogru(await y.page.locator('#fc-dugun section', { hasText: 'Masa konseptleri' }).count() === 0, 'katalog: masa konseptleri bölümü yok');
+    const pasta = y.page.locator('#fc-dugun .dy-satir', { hasText: 'Düğün pastası' });
+    await pasta.getByRole('button', { name: 'Gizle' }).click();
+    await y.page.getByText('“Düğün pastası” sitede gizlendi.').waitFor({ timeout: 4000 });
     dogru(y.istekler.some((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/dugun_katalog' && x.govde.acik === false), 'katalog: kalem gizlendi');
-    await y.page.locator('#fc-dugun section', { hasText: 'Masa konseptleri' }).getByRole('button', { name: '+ Ekle' }).click();
+    await y.page.locator('#fc-dugun section', { hasText: 'Ekstralar' }).getByRole('button', { name: '+ Ekle' }).click();
     await y.page.getByLabel('Ad *').fill('Lavanta');
     await y.page.locator('#fc-dugun').getByRole('button', { name: 'Kaydet' }).click();
     await y.page.getByText('“Lavanta” kaydedildi.').waitFor({ timeout: 4000 });
     const ekle = y.istekler.find((x) => x.yontem === 'POST' && x.yol === '/rest/v1/dugun_katalog');
-    dogru(ekle && ekle.govde.tur === 'konsept' && ekle.govde.ad === 'Lavanta', `katalog: yeni konsept eklendi (${JSON.stringify(ekle && ekle.govde)})`);
+    dogru(ekle && ekle.govde.tur === 'ekstra' && ekle.govde.ad === 'Lavanta', `katalog: yeni ekstra eklendi (${JSON.stringify(ekle && ekle.govde)})`);
     // Hızlı ekle: her satıra bir ürün, grupla; zaten olan atlanır
     const urunler = y.page.locator('#fc-dugun section', { hasText: 'Ürünler' });
     dogru((await urunler.innerText()).includes('PEÇETE') || (await urunler.innerText()).includes('Peçete'), 'katalog: ürünler grup başlıklarıyla');

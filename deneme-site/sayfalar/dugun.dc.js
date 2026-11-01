@@ -38,7 +38,7 @@ class Component extends DCLogic {
       ['Mekan', 'Mekan ve akış', 'Düğününüz nerede olsun, gün nasıl aksın?'],
       ['Renk', 'Renkler ve his', 'Mood board\'unuzun temeli: bir palet seçin ya da kendi renklerinizi ekleyin.'],
       ['Menu', 'Menü tercihi', 'İsterseniz bu adımı atlayabilirsiniz.'],
-      ['Masa', 'Masalarınız', 'Bir konsept seçin; dilerseniz ayrıntılarını değiştirin.'],
+      ['Masa', 'Masalarınız', 'Masalarınızda ne olsun? Her gruptan dilediğinizi seçin.'],
       ['Alan', 'Alan ve dekor', 'Nikah alanı, karşılama, oturma köşeleri ve ışıklar. İsteğe bağlı.'],
       ['Ekstra', 'Ekstralar', 'Düğününüzü tamamlayacak dokunuşlar.'],
       ['Son', 'Son adım', 'Mood board\'unuz hazır. Bilgilerinizi bırakın; size özel teklifimizle dönelim.'],
@@ -102,7 +102,6 @@ class Component extends DCLogic {
       ['Renkler', [v.palet ? ad(v.palet) : '', v.renkler.length ? `kendi renkleriniz (${v.renkler.length})` : ''].filter(Boolean).join(' + ') || 'Birlikte seçelim'],
       ['His', v.his.map(ad).join(', ') || '—'],
       ['Menü', v.menu ? ad(v.menu) : 'Mekanın menüsü, sonra konuşuruz'],
-      ['Masa konsepti', v.konsept ? ad(v.konsept) : 'Birlikte seçelim'],
       ['Masa ayrıntıları', gruplar.filter((g) => !FD.alanMi(g)).map((g) => (urunAd(g) ? `${g}: ${urunAd(g)}` : '')).filter(Boolean).join(' · ') || '—'],
       ['Alan ve dekor', gruplar.filter((g) => FD.alanMi(g)).map((g) => (urunAd(g) ? `${g}: ${urunAd(g)}` : '')).filter(Boolean).join(' · ') || '—'],
       ['Ekstralar', v.ekstralar.map(ad).join(', ') || '—'],
@@ -111,10 +110,12 @@ class Component extends DCLogic {
     const palet = K('palet').find((x) => x.id === v.palet);
     const renkStil = (r) => `background:${/^#[0-9a-f]{6}$/i.test(r) ? r : '#EFE5D3'}`;
     const moodRenk = [...((palet && palet.renkler) || []), ...v.renkler].slice(0, 8);
-    const konsept = K('konsept').find((x) => x.id === v.konsept);
+    // Mood board ana görseli: seçilen ilk ürünün fotoğrafı, yoksa mekan
+    const ilkFoto = K('urun').filter((u) => v.urunler.includes(u.id)).map((u) => (u.resim ? u : D.katalog.find((x) => x.id === u.ust_id) || u))
+      .find((u) => u.resim && !u.resim.startsWith('/dugun/cizim/'));
     const kucukler = [...v.urunler, ...v.ekstralar].map((id) => D.katalog.find((k) => k.id === id)).filter(Boolean);
     const mood = {
-      ana: konsept ? FD.resim(konsept) : mekan ? FD.resim(mekan) : '/dugun/cizim/mekan.svg', anaAd: konsept ? konsept.ad : mekan ? mekan.ad : '',
+      ana: ilkFoto ? ilkFoto.resim : mekan ? FD.resim(mekan) : '/dugun/cizim/mekan.svg', anaAd: ilkFoto ? ilkFoto.ad : mekan ? mekan.ad : '',
       renkVar: moodRenk.length > 0, renkler: moodRenk.map(renkStil),
       paletAd: palet ? palet.ad + (v.renkler.length ? ' + kendi renkleriniz' : '') : v.renkler.length ? 'Kendi renkleriniz' : 'Renkleri birlikte seçelim',
       hisler: v.his.map(ad).filter(Boolean),
@@ -137,7 +138,7 @@ class Component extends DCLogic {
     const gonder = () => {
       const veri = { ad: v.ad.trim(), eposta: v.eposta.trim().toLowerCase(), tel: v.tel.trim(), tarih: v.tarihEsnek ? null : v.tarih || null,
         tarih_esnek: v.tarihEsnek || !v.tarih, kisi: v.kisi, not: v.not.trim(), kvkk: v.kvkk,
-        secimler: { mekan: v.mekan, bolumler: v.bolumler, palet: v.palet, renkler: v.renkler, his: v.his, menu: v.menu, konsept: v.konsept, urunler: urunSecili, ekstralar: v.ekstralar } };
+        secimler: { mekan: v.mekan, bolumler: v.bolumler, palet: v.palet, renkler: v.renkler, his: v.his, menu: v.menu, urunler: urunSecili, ekstralar: v.ekstralar } };
       if (!window.FCDGonder) return this.setState({ gitti: true });
       this.setState({ gonderiliyor: true, hata: '' });
       window.FCDGonder(veri).then(() => this.setState({ gitti: true, gonderiliyor: false }), (h) => this.setState({ hata: h.message, gonderiliyor: false }));
@@ -150,11 +151,10 @@ class Component extends DCLogic {
       tanitim: !D.davet, davetVar: !!davet, davetGecersiz: !!(D.davet && D.davet.gecersiz), formVar: !(D.davet && D.davet.gecersiz),
       davetBaslik: davet && davet.ad ? `Merhaba ${davet.ad} 🤍` : 'Düğününüzü birlikte tasarlayalım',
       adimlarTanitim: [
-        { no: '01', baslik: 'Tasarlayın', metin: 'Tarihinizi, akışı, masa konseptinizi ve ekstraları birkaç adımda seçin.' },
+        { no: '01', baslik: 'Tasarlayın', metin: 'Tarihinizi, akışı, masanızdaki ayrıntıları ve ekstraları birkaç adımda seçin.' },
         { no: '02', baslik: 'Tanışalım', metin: 'Sizi arayıp hayalinizi dinleyelim; dilerseniz alanı birlikte gezelim.' },
         { no: '03', baslik: 'Size özel teklif', metin: 'Seçimlerinize göre hazırladığımız teklifle her ayrıntıyı birlikte planlayalım.' },
       ],
-      konseptVitrin: K('konsept').map((k) => ({ ...k, resim: FD.resim(k), aciklama: k.aciklama || '' })),
       sihirbazda: !this.state.gitti, gitti: this.state.gitti, v,
       adimYazi: `${adim} / ${SON}`, adimBaslik: ADIMLAR[adim - 1][1], adimAciklama: ADIMLAR[adim - 1][2],
       ilerleme: ADIMLAR.map((_, i) => (i < adim ? 'tamam' : '')),
@@ -167,7 +167,6 @@ class Component extends DCLogic {
       menuler: [{ id: null, ad: 'Mekanın menüsü, sonra konuşuruz', aciklama: mekan && mekan.yemek_mekandan === false ? 'Menüyü görüşmede birlikte belirleyelim.' : 'Yemeği mekan karşılıyor; menüyü mekanla birlikte netleştiririz.' }, ...menuler]
         .map((m) => ({ ...kart(m, v.menu === m.id, () => deg({ menu: m.id })),
           nokta: v.menu === m.id ? 'width: 10px; height: 10px; border-radius: 50%; background: #5B6B4E' : 'display: none' })),
-      konseptler: K('konsept').map((k) => kart(k, v.konsept === k.id, () => deg({ konsept: v.konsept === k.id ? null : k.id }))),
       paletler: K('palet').map((pl) => ({ ...kart(pl, v.palet === pl.id, () => deg({ palet: v.palet === pl.id ? null : pl.id })), renkler: (pl.renkler || []).map(renkStil) })),
       kendiRenkler: v.renkler.map((r, i) => ({ deger: r, etiket: `Renk ${i + 1}`, silEtiket: `Renk ${i + 1}'i kaldır`,
         yaz: (e) => { const x = String(e.target.value || '').toLowerCase(); deg({ renkler: v.renkler.map((y, j) => (j === i ? x : y)) }); },
