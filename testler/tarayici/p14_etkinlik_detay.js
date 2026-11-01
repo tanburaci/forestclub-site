@@ -72,6 +72,14 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     await y2.page.getByText('Onayınızı bekliyor: minimum kişiye ulaşılamadı').waitFor({ timeout: 15000 });
     const kutu = y2.page.locator('section[role="alert"]').filter({ hasText: 'Yakın Yoga' });
     dogru((await kutu.innerText()).includes('0 kişi / minimum 8') && !(await kutu.innerText()).includes('Breakfast Club'), 'onay kutusu: yalnız 24 saat içindeki ve minimumun altındaki etkinlik');
+    await y2.page.locator('button').filter({ hasText: /^Etkinlikler$/ }).first().click();
+    await y2.page.evaluate(() => scrollTo(0, 0));
+    const kutu2 = y2.page.locator('section[role="alert"]').filter({ hasText: 'Yakın Yoga' }).first();
+    await kutu2.getByRole('button', { name: 'İptal et' }).click();
+    await y2.page.waitForTimeout(900);
+    const gorunur = await y2.page.evaluate(() => { const p = document.getElementById('etk-panel'); if (!p) return false; const r = p.getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; });
+    dogru(gorunur, 'Etkinlikler sekmesinde "İptal et": iptal paneli açıldı ve ekrana kaydırıldı');
+    await y2.page.locator('button').filter({ hasText: /^Ana sayfa$/ }).first().click();
     await kutu.getByRole('button', { name: 'İptal et' }).click();
     await y2.page.getByText('Duyur', { exact: false }).first().waitFor({ timeout: 3000 }).catch(() => {});
     dogru(await y2.page.locator('select').filter({ has: y2.page.locator('option[value="Yeterli katılım yok"]') }).first().inputValue() === 'Yeterli katılım yok', 'İptal et: iptal paneli "Yeterli katılım yok" nedeniyle açıldı');
