@@ -250,7 +250,11 @@ class Component extends DCLogic {
         const gelen = k ? k.kayitli.length + (x.satis ? x.satis.satilan : 0) + (k.tanisma || 0) : 0;
         return gelen < x.min;
       });
-      const panel = (key, tur) => this.setState({ sekme: 'etkinlikler', etkPanel: { key, mod: 'iptal' }, iptal: { tur, tarih: '', neden: 'Yeterli katılım yok', mesaj: '' }, iptalMesaj: '' });
+      // Panel sayfanın altında (etkinlik listesinden sonra) açılır: ekrana kaydırılır, yoksa düğme çalışmıyor gibi görünür
+      const panel = (key, tur) => {
+        this.setState({ sekme: 'etkinlikler', etkPanel: { key, mod: 'iptal' }, iptal: { tur, tarih: '', neden: 'Yeterli katılım yok', mesaj: '' }, iptalMesaj: '' });
+        this.paneleKay();
+      };
       return {
         minOnayVar: liste.length > 0,
         minOnaylar: liste.map((x) => {
