@@ -381,7 +381,8 @@
   };
 
   // --- Kapıda karekod: kamera ------------------------------------------------------------------------------------
-  // Tarayıcıda BarcodeDetector varsa o; yoksa jsQR yalnız ilk kullanımda (SRI ile) yüklenir.
+  // Tarayıcıda karekodu destekleyen BarcodeDetector varsa o; yoksa ya da okurken hata verirse jsQR (yalnız ilk
+  // kullanımda, SRI ile yüklenir). Bazı masaüstü tarayıcılarda BarcodeDetector var görünür ama karekod okuyamaz.
   let jsqrSozu = null;
   function jsqrYukle() {
     if (window.jsQR) return Promise.resolve(window.jsQR);
@@ -398,7 +399,8 @@
     }
     return jsqrSozu;
   }
-  // video: <video> öğesi; bulundu(kod): okunan FC-U-… / FC-T-… kodu (aynı kod 4 sn içinde tekrar gelmez). Dönüş: durdur()
+  // video: <video> öğesi; bulundu(kod): okunan FC-U-… (üye), FC-T-… (tanışma) ya da FC-B-… (bilet) kodu (aynı kod 4 sn
+  // içinde tekrar gelmez). Dönüş: durdur()
   window.FCKameraAc = async (video, bulundu) => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Bu tarayıcı kameraya erişemiyor; kodu elle yazın.');
     const akis = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
@@ -410,18 +412,11 @@
       video.setAttribute('playsinline', '');
       video.srcObject = akis;
       await video.play().catch(() => {});
-      let oku = null;
-      if ('BarcodeDetector' in window) {
-        try {
-          const bd = new window.BarcodeDetector({ formats: ['qr_code'] });
-          oku = async () => { const r = await bd.detect(video); return r.length ? r[0].rawValue : ''; };
-        } catch (h) { oku = null; }
-      }
-      if (!oku) {
+      const jsqrOku = async () => {
         const jsQR = await jsqrYukle();
         const tuval = document.createElement('canvas');
         const ctx = tuval.getContext('2d', { willReadFrequently: true });
-        oku = async () => {
+        return async () => {
           const w = video.videoWidth;
           const y = video.videoHeight;
           if (!w || !y) return '';
@@ -431,13 +426,33 @@
           const r = jsQR(ctx.getImageData(0, 0, w, y).data, w, y, { inversionAttempts: 'dontInvert' });
           return r ? r.data : '';
         };
+      };
+      let oku = null;
+      if ('BarcodeDetector' in window) {
+        try {
+          const bicimler = window.BarcodeDetector.getSupportedFormats ? await window.BarcodeDetector.getSupportedFormats() : ['qr_code'];
+          if (bicimler.includes('qr_code')) {
+            const bd = new window.BarcodeDetector({ formats: ['qr_code'] });
+            oku = async () => {
+              try {
+                const r = await bd.detect(video);
+                return r.length ? r[0].rawValue : '';
+              } catch (h) {
+                if (video.readyState < 2) return '';  // görüntü henüz gelmedi
+                oku = await jsqrOku();  // okuyucu çalışmıyor: jsQR'a geç
+                return oku();
+              }
+            };
+          }
+        } catch (h) { oku = null; }
       }
+      if (!oku) oku = await jsqrOku();
       let son = '';
       let sonZaman = 0;
       const dongu = async () => {
         if (dur) return;
         try {
-          const m = /FC-T-[A-Z0-9]{6}|FC-U-\d+/i.exec(await oku());
+          const m = /FC-[TB]-[A-Z0-9]{6}|FC-U-\d+/i.exec(await oku());
           const kod = m ? m[0].toUpperCase() : '';
           if (kod && (kod !== son || Date.now() - sonZaman > 4000)) { son = kod; sonZaman = Date.now(); bulundu(kod); }
         } catch (h) { /* kare okunamadı; sonrakini dene */ }
