@@ -14,7 +14,8 @@ insert into etkinlikler (tarih, saat, tur, ad, kontenjan, min_kisi) values
 select is(min_kisi_kontrol(), 1, 'yaklaşan ve minimumun altındaki etkinlik için uyarı');
 select is((select count(*) from eposta_kuyrugu where sablon = 'min_kisi' and alici = 'min-yon@test.invalid')::int, 1, 'yöneticiye min_kisi maili kuyrukta');
 select is(min_kisi_kontrol(), 0, 'aynı etkinlik için ikinci kez uyarı yok');
-update etkinlikler set saat = '23.59' where ad = 'Min Yoga';
+-- Saat gerçekten değişsin: test İstanbul 11.59'da koşarsa etkinlik zaten 23.59'dadır (eskiden o dakika kalıyordu)
+update etkinlikler set saat = case when saat = '23.59' then '23.58' else '23.59' end where ad = 'Min Yoga';
 select ok((select min_uyari_at is null from etkinlikler where ad = 'Min Yoga'), 'saat değişince uyarı sıfırlanır');
 select ok((select min_uyari_at is null from etkinlikler where ad = 'Uzak Yoga'), '24 saatten uzak etkinliğe dokunulmaz');
 
