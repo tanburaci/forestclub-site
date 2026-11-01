@@ -236,6 +236,35 @@ class Component extends DCLogic {
         } };
       }) };
     };
+    // Minimum kişi onayı: 24 saatten az kalan, kayıtlı + bilet + tanışma sayısı minimumun altındaki etkinlikler
+    this.minOnayGorunum = () => {
+      const st = this.state;
+      const simdi = Date.now();
+      const liste = (st.etkinlikler || []).filter((x) => {
+        const key = `${x.tarih}|${x.ad}`;
+        if (!x.min || st.etkDurum[key] || (st.minDevam || {})[key]) return false;
+        const sa = (/^\s*(\d{1,2})\.(\d{2})/.exec(x.saat || '') || [null, '10', '00']);
+        const bas = Date.parse(`${x.tarih}T${sa[1].padStart(2, '0')}:${sa[2]}:00+03:00`);
+        if (!(bas > simdi && bas - simdi <= 24 * 3600 * 1000)) return false;
+        const k = st.kayitlar[key];
+        const gelen = k ? k.kayitli.length + (x.satis ? x.satis.satilan : 0) + (k.tanisma || 0) : 0;
+        return gelen < x.min;
+      });
+      const panel = (key, tur) => this.setState({ sekme: 'etkinlikler', etkPanel: { key, mod: 'iptal' }, iptal: { tur, tarih: '', neden: 'Yeterli katılım yok', mesaj: '' }, iptalMesaj: '' });
+      return {
+        minOnayVar: liste.length > 0,
+        minOnaylar: liste.map((x) => {
+          const key = `${x.tarih}|${x.ad}`;
+          const k = st.kayitlar[key];
+          const gelen = k ? k.kayitli.length + (x.satis ? x.satis.satilan : 0) + (k.tanisma || 0) : 0;
+          return {
+            ad: x.ad, zaman: `${x.tarih.split('-').reverse().join('.')} ${x.saat || ''}`.trim(), durum: `${gelen} kişi / minimum ${x.min}`,
+            iptal: () => panel(key, 'iptal'), ertele: () => panel(key, 'ertele'),
+            devam: () => this.setState((s) => ({ minDevam: { ...(s.minDevam || {}), [key]: true } })),
+          };
+        }),
+      };
+    };
     // Formlar: liste, düzenleyici (sorular), cevaplar. Canlıda yazma yonetim.js'teki FCFormKaydet / FCFormAcKapa ile
     this.formlarGorunum = () => {
       const st = this.state;
@@ -975,8 +1004,8 @@ class Component extends DCLogic {
     const faturasiz = hareketler.filter((h) => h.tur === 'gelir' && !h.fatura);
     const faturaYaz = (id, degisiklik) => this.setState((s) => ({ hareketler: s.hareketler.map((x) => (x.id === id ? { ...x, ...degisiklik } : x)) }));
     const hareketSatirlari = (mFiltre === 'fatura' ? faturasiz : (mEtk ? etkH : ayH).filter((h) => mFiltre === 'tumu' || h.tur === mFiltre))
-      .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id)
-      .map((h) => ({
+      .sort((a, b) => a.tarih.localeCompare(b.tarih) || a.id - b.id)
+      .map((h) => ({ tur: h.tur, tutar: h.tutar,
         tarihYazi: tarihYaz(h.tarih), turAd: TUR_AD[h.tur], rozet: TUR_ROZET[h.tur], aciklama: h.aciklama, otomatik: h.otomatik,
         baglam: h.tur === 'aktarim' ? 'Kasalar arası' : [h.kategori, h.etk ? etkAdi[h.etk] : (h.tur === 'gider' ? 'Genel' : '')].filter(Boolean).join(' · '),
         kasaAd: h.tur === 'aktarim' ? `${KASA[h.kasa]} → ${KASA[h.hedef]}` : KASA[h.kasa],
@@ -1003,6 +1032,18 @@ class Component extends DCLogic {
         },
         faturaGeriAl: () => faturaYaz(h.id, { fatura: '', faturaNo: '', faturaTarih: '' }),
       }));
+
+    // Ayrı tablolar: gelirler, giderler, kasalar arası aktarımlar (boş olan gösterilmez)
+    const GRUP = [
+      { tur: 'gelir', baslik: mFiltre === 'fatura' ? 'Faturası kesilecek gelirler' : 'Gelirler', isaret: '+', stil: 'background:#EEF6E6' },
+      { tur: 'gider', baslik: 'Giderler', isaret: '−', stil: 'background:#F8ECE8' },
+      { tur: 'aktarim', baslik: 'Kasalar arası aktarımlar', isaret: '', stil: 'background:#F0F0EE' },
+    ];
+    const hareketGruplari = GRUP.map((g) => {
+      const satirlar = hareketSatirlari.filter((h) => h.tur === g.tur);
+      return { baslik: g.baslik, baslikStil: g.stil, satirlar, adet: `· ${satirlar.length} kayıt`, faturaSutun: g.tur === 'gelir',
+        toplamYazi: `Toplam ${g.isaret}${TL(satirlar.reduce((t, h) => t + h.tutar, 0))}` };
+    }).filter((g) => g.satirlar.length);
 
     // Etkinlik maliyeti: giderler − katılım geliri = kulübe maliyeti; katılımcıya bölünür
     const kat = this.state.katilimci;
@@ -1213,7 +1254,7 @@ class Component extends DCLogic {
       komisyonOran: this.state.komisyonOran,
       komisyonYaz: (e) => this.setState({ komisyonOran: e.target.value }),
       muhasebeSekme: sekme === 'muhasebe',
-      kasalar, aylar, ayOzet, hareketSatirlari, etkMaliyet, etkOzetMetin, kasaTablo,
+      kasalar, aylar, ayOzet, hareketSatirlari, hareketGruplari, etkMaliyet, etkOzetMetin, kasaTablo,
       hareketYok: !hareketSatirlari.length,
       faturaRehberi: mFiltre === 'fatura',
       hareketYokMetin: mFiltre === 'fatura' ? 'Faturası kesilecek gelir yok ✓' : mEtk ? 'Bu etkinliğe bu türde kayıt yok.' : 'Bu ay bu türde kayıt yok.',
@@ -1442,6 +1483,7 @@ class Component extends DCLogic {
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',
       dugunStil: sekme === 'dugun' ? '' : 'display: none',
+      ...this.minOnayGorunum(),
       ...this.formlarGorunum(),
       basvuruSekme: sekme === 'basvurular',
       bvr,
