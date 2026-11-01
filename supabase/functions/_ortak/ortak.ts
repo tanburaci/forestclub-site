@@ -2,8 +2,11 @@
 // anahtarı ve demo adresi denetimi.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.45.4';
 
+// Tarayıcıdan yalnız kendi sitemiz çağırabilir (01.11.2026; önceden '*'). SITE_ADRESI Supabase secret'ı:
+// https://www.forestcluburla.com (forestcluburla.com ve eski adresler oraya yönlenir)
 export const CORS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, ''),
+  'Vary': 'Origin',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };

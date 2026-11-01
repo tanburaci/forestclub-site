@@ -30,7 +30,9 @@ jobs:
           echo "== Gizli tablolar (ziyaretçi 0 satır görmeli)"
           for t in uyeler odemeler dekontlar dekont_yuklemeleri destekler muhasebe_hareketleri eposta_kuyrugu eposta_sablonlari \
                    denetim_kaydi yoneticiler acik_cagri tanisma_biletleri veri_talepleri envanter etkinlik_kayitlari \
-                   uyelik_dondurmalari anket_yanitlari odeme_istekleri sayaclar istek_sayaci bilet_istekleri biletler formlar form_yanitlari; do
+                   uyelik_dondurmalari anket_yanitlari odeme_istekleri sayaclar istek_sayaci bilet_istekleri biletler formlar form_yanitlari \
+                   dugun_davetleri dugun_envanter dugun_envanter_hareketleri dugun_fiyatlar dugun_giderleri dugun_odemeleri \
+                   dugun_talepleri dugun_tedarikcileri dugun_teklif_kalemleri envanter_dusumleri gonulluler uye_notlari; do
             c=$(kod "$SB/rest/v1/$t?select=*&limit=5" -H "apikey: $K" -H "Authorization: Bearer $K")
             n=$(python3 -c "import json;d=json.load(open('/tmp/govde'));print(len(d) if isinstance(d,list) else -1)" 2>/dev/null || echo -1)
             if [ "$n" = 0 ] || [ "$c" = 401 ] || [ "$c" = 403 ] || [ "$c" = 404 ]; then sonuc ok "$t okunamıyor ($c, $n satır)"; else sonuc x "$t: $c, $n satır döndü"; fi
@@ -57,6 +59,8 @@ jobs:
           done
 
           echo "== Edge Function'lar"
+          izin=$(curl -s -o /dev/null -D - -m 20 -X OPTIONS "$SB/functions/v1/form-gonder" -H 'Origin: https://evil.example' -H 'Access-Control-Request-Method: POST' | tr -d '\r' | grep -i '^access-control-allow-origin:' | cut -d' ' -f2)
+          case "$izin" in "$SITE") sonuc ok "form-gonder CORS yalnız $SITE";; *) sonuc x "form-gonder CORS başka siteye açık: '$izin'";; esac
           c=$(kod -X POST "$SB/functions/v1/eposta-gonder"); [ "$c" = 401 ] && sonuc ok "eposta-gonder anahtarsız 401" || sonuc x "eposta-gonder: $c"
           c=$(kod -X POST "$SB/functions/v1/eposta-gonder" -H 'x-zamanlayici: yanlis-anahtar-yanlis-anahtar'); [ "$c" = 401 ] && sonuc ok "eposta-gonder yanlış anahtar 401" || sonuc x "eposta-gonder yanlış anahtar: $c"
           c=$(kod -X POST "$SB/functions/v1/dekont-temizle"); [ "$c" = 401 ] && sonuc ok "dekont-temizle anahtarsız 401" || sonuc x "dekont-temizle: $c"
