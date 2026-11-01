@@ -47,6 +47,17 @@ async function canliKatalog() {
     if (k) maliyetler.push({ katalog_id: k.id, alis, kira, esas, kar_yuzde: null, birim, tedarikci: null, notlar });
   }
   const fiyatlar = [];
+  // ORNEK_KAR=40 node yerel_onizleme.js → maliyeti bilinen ürünlere örnek kâr (yalnız bu pencerede)
+  const ornekKar = Number(process.env.ORNEK_KAR);
+  if (ornekKar >= 0) {
+    for (const m of maliyetler) {
+      const esas = m.esas === 'kira' ? m.kira : m.alis;
+      if (esas == null) continue;
+      m.kar_yuzde = ornekKar;
+      fiyatlar.push({ katalog_id: m.katalog_id, fiyat: Math.round(esas * (1 + ornekKar / 100)), birim: m.birim });
+    }
+    console.log(`Örnek kâr %${ornekKar}: ${fiyatlar.length} üründe fiyat.`);
+  }
   console.log(`Canlı katalog kopyası: ${katalog.length} kalem, ${maliyetler.length} başlangıç maliyeti. Canlıya hiçbir şey yazılmaz.`);
 
   const v = yonetimVerisi();
@@ -100,7 +111,7 @@ async function canliKatalog() {
 
   const d = await sayfaAc(tarayici, v, null);  // aynı sahte veritabanı: yönetimde kaydedilen fiyat burada görünür
   await d.page.goto(`${SITE}/dugun/`);
-  await y.page.bringToFront();
-  console.log('Pencere açık: yönetim › Düğün › Maliyet ve ikinci sekmede /dugun/. Fiyatı görmek için düğün sekmesini yenileyin.');
+  await d.page.bringToFront();
+  console.log('Pencere açık: önde /dugun/ (müşteri), diğer pencerede yönetim › Düğün › Maliyet. Yönetimde kaydedilen fiyatı görmek için düğün sayfasını yenileyin.');
   console.log('Kapatmak için tarayıcı penceresini kapatın.');
 })().catch((h) => { console.error('Önizleme açılamadı:', h.message); process.exit(1); });
