@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(25);
+select plan(26);
 
 -- ---------- Katalog ----------
 select is_empty($$
@@ -14,6 +14,12 @@ select is_empty($$
     and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) c where c like 'search_path=%') $$,
   'her SECURITY DEFINER işlevinde search_path sabit (şema ele geçirme yok)');
 select is_empty($$ select id from storage.buckets where id = 'dekontlar' and public $$, 'dekont deposu herkese açık değil');
+select is_empty($$
+  select c.relname::text from pg_class c
+  where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'p')
+    and (has_table_privilege('anon', c.oid, 'insert') or has_table_privilege('anon', c.oid, 'update')
+         or has_table_privilege('anon', c.oid, 'delete') or has_table_privilege('anon', c.oid, 'truncate')) $$,
+  'ziyaretçi (anon) hiçbir tabloda yazma yetkisine sahip değil (RLS dışında ikinci kilit)');
 
 -- ---------- Veri: iki üye, her birinin ödemesi, dekontu, kaydı, dondurması, veri talebi ----------
 insert into auth.users (id, email) values
