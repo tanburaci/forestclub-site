@@ -58,6 +58,7 @@
       sb.from('gonulluler').select('*').order('id', { ascending: false }).limit(300).then((r) => r.data || [], () => []),
     ]);
     const B = bugun();
+    setTimeout(() => paylasKopyalariniTamamla(etkinlikler), 3000);  // paylaşım önizlemesi için eksik küçük afişler
     const grupla = (xs, alan) => {
       const m = new Map();
       xs.forEach((x) => { const k = x[alan]; if (!m.has(k)) m.set(k, []); m.get(k).push(x); });
@@ -213,8 +214,49 @@
     const yol = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${uzanti}`;
     const { error } = await sb.storage.from('afisler').upload(yol, dosya, { contentType: dosya.type, cacheControl: '31536000' });
     if (error) throw new Error(error.message);
+    await paylasKopyasiYukle(dosya, yol).catch(() => {});  // olmazsa paylaşımda büyük afiş / logo kalır, yükleme bozulmaz
     return sb.storage.from('afisler').getPublicUrl(yol).data.publicUrl;
   };
+  // Paylaşım önizlemesi (WhatsApp vb.) büyük resimleri göstermiyor: her afişin yanına küçük bir kopya
+  // (afisler/paylas/<ad>.jpg, en fazla 1200 px, ~250 KB altı) konur; /e/<id> önizlemesi varsa onu kullanır.
+  const PAYLAS_SINIR = 250 * 1024;
+  const paylasYolu = (yol) => `paylas/${yol.replace(/\.[a-z]+$/i, '')}.jpg`;
+  async function paylasKopyasiYukle(kaynak, yol) {
+    const resim = await createImageBitmap(kaynak);
+    const oran = Math.min(1, 1200 / resim.width);
+    const tuval = document.createElement('canvas');
+    tuval.width = Math.round(resim.width * oran);
+    tuval.height = Math.round(resim.height * oran);
+    const ctx = tuval.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';  // saydam PNG'ler siyaha dönmesin
+    ctx.fillRect(0, 0, tuval.width, tuval.height);
+    ctx.drawImage(resim, 0, 0, tuval.width, tuval.height);
+    let blob = null;
+    for (const kalite of [0.82, 0.72, 0.62, 0.52, 0.42]) {
+      blob = await new Promise((r) => tuval.toBlob(r, 'image/jpeg', kalite));
+      if (blob && blob.size <= PAYLAS_SINIR) break;
+    }
+    if (!blob) throw new Error('kopya üretilemedi');
+    const { error } = await sb.storage.from('afisler').upload(paylasYolu(yol), blob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: true });
+    if (error) throw new Error(error.message);
+  }
+  // Eski afişlerin küçük kopyası yoksa yönetim paneli açılınca arka planda üretilir (oturum başına bir kez)
+  let paylasTamamlandi = false;
+  async function paylasKopyalariniTamamla(etkinlikler) {
+    if (paylasTamamlandi) return;
+    paylasTamamlandi = true;
+    const onEk = `${A.supabaseUrl}/storage/v1/object/public/afisler/`;
+    for (const e of etkinlikler) {
+      if (!e.afis || !e.afis.startsWith(onEk) || e.afis.includes('/paylas/')) continue;
+      const yol = decodeURIComponent(e.afis.slice(onEk.length));
+      try {
+        const var_ = await fetch(onEk + paylasYolu(yol), { method: 'HEAD' });
+        if (var_.ok) continue;
+        const asil = await fetch(e.afis);
+        if (asil.ok) await paylasKopyasiYukle(await asil.blob(), yol);
+      } catch (h) { /* sonraki açılışta yeniden denenir */ }
+    }
+  }
   // Formlar: kaydet (yeni → insert, var → update) ve aç / kapat. Dönüş: { id, anahtar } (özel form bağlantısı için)
   window.FCFormKaydet = async (f) => {
     const satir = { baslik: f.baslik, aciklama: f.aciklama || null, sorular: f.sorular, ozel: !!f.ozel };
