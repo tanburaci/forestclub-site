@@ -13,6 +13,13 @@
 .dy-satir{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #E4E4E2}
 .dy-satir img{width:64px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #DADAD8;background:#F6EFE3}
 .dy-k{padding:8px 12px;min-height:38px;font-size:13px}
+.dy-mal{display:grid;grid-template-columns:72px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid #E4E4E2}
+.dy-mal img{width:72px;height:50px;object-fit:cover;border-radius:8px;border:1px solid #DADAD8;background:#F6EFE3}
+.dy-mal-alan{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;align-items:end}
+.dy-mal-alan label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#3A3A3A}
+.dy-mal-alan .fc-input{min-height:38px;padding:6px 10px;font-size:14px}
+.dy-fiyat{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+@media (max-width:640px){.dy-mal{grid-template-columns:52px minmax(0,1fr)}.dy-mal img{width:52px;height:38px}}
 @media (max-width:640px){.dy-satir{grid-template-columns:48px minmax(0,1fr)}.dy-satir img{width:48px;height:34px}.dy-satir .dy-dugmeler{grid-column:1 / -1}}
 </style>
 </helmet>
@@ -23,7 +30,7 @@
   <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
     <div>
       <h2 style="margin: 0; font-family: 'Amatic SC', cursive; font-size: 56px; line-height: 1">Düğün</h2>
-      <p style="margin: 6px 0 0; color: #5E5E5E">Çiftlerin /dugun/ sayfasından gönderdiği tasarımlar ve sitedeki seçenekler. Sitede fiyat görünmez; teklif görüşmede verilir.</p>
+      <p style="margin: 6px 0 0; color: #5E5E5E">Çiftlerin /dugun/ sayfasından gönderdiği tasarımlar ve sitedeki seçenekler. Fiyat, Maliyet sekmesinde kâr yüzdesi girilen ürünlerde sitede görünür; diğerlerinde “teklif ile”.</p>
     </div>
     <a class="fc-btn fc-btn-ikincil" href="/dugun/" target="_blank" rel="noopener" style="text-decoration: none">Düğün sayfasını aç ↗</a>
   </div>
@@ -247,6 +254,54 @@
     </div>
   </sc-if>
 
+  <!-- MALİYET: ürün başına ortalama alış / kira, tedarikçi, kâr %; müşteri fiyatı = esas maliyet × (1 + kâr %).
+       Maliyet ve kâr yalnız burada; sitede yalnız müşteri fiyatı (kâr girilmemişse "teklif ile"). -->
+  <sc-if value="{{ maliyetSekme }}" hint-placeholder-val="{{ false }}">
+    <div style="display: flex; flex-direction: column; gap: 18px">
+      <p style="margin: 0; color: #5E5E5E; font-size: 14px; max-width: 70ch">Başlangıç maliyetleri internette kaynağı bulunan 2026 fiyatlarıdır; kaynağı olmayan boş bırakıldı. Tedarikçiden teklif geldikçe girin. Müşteri fiyatı yalnız maliyeti ve kârı girilen üründe oluşur ve kaydedince düğün sayfasında görünür.</p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 14px">
+        <span style="{{ malOzet.rozet1 }}">{{ malOzet.fiyatli }}</span>
+        <span style="{{ malOzet.rozet2 }}">{{ malOzet.maliyetsiz }}</span>
+      </div>
+      <sc-for list="{{ malGruplar }}" as="mg" hint-placeholder-count="2">
+        <section class="dy-kart" style="padding: 16px 20px">
+          <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-end">
+            <h3 style="margin: 0; font-size: 18px">{{ mg.ad }}</h3>
+            <span style="display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap">
+              <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600">Bu gruba kâr %<input class="fc-input" type="text" inputmode="decimal" placeholder="Örn. 40" value="{{ mg.kar }}" onChange="{{ mg.karYaz }}" style="width: 110px; min-height: 38px; padding: 6px 10px"></label>
+              <button type="button" class="fc-btn fc-btn-ikincil dy-k" onClick="{{ mg.karUygula }}">{{ mg.uygulaYazi }}</button>
+            </span>
+          </div>
+          <sc-for list="{{ mg.kalemler }}" as="m" hint-placeholder-count="3">
+            <div class="dy-mal">
+              <img src="{{ m.resim }}" alt="{{ m.ad }}">
+              <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+                <div style="display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline">
+                  <strong style="font-size: 15px">{{ m.ad }}</strong>
+                  <span><span style="color: #5E5E5E; font-size: 13px">Müşteri fiyatı: </span><span class="dy-fiyat">{{ m.fiyat }}</span></span>
+                </div>
+                <div class="dy-mal-alan">
+                  <label>Alış ort. (TL)<input class="fc-input" type="text" inputmode="decimal" aria-label="{{ m.etiketAlis }}" value="{{ m.alis }}" onChange="{{ m.alan.alis }}"></label>
+                  <label>Kira ort. (TL)<input class="fc-input" type="text" inputmode="decimal" aria-label="{{ m.etiketKira }}" value="{{ m.kira }}" onChange="{{ m.alan.kira }}"></label>
+                  <label>Esas<select class="fc-input" value="{{ m.esas }}" onChange="{{ m.alan.esas }}"><option value="kira">Kira</option><option value="alis">Alış</option></select></label>
+                  <label>Kâr %<input class="fc-input" type="text" inputmode="decimal" aria-label="{{ m.etiketKar }}" value="{{ m.kar }}" onChange="{{ m.alan.kar_yuzde }}"></label>
+                  <label>Birim<select class="fc-input" value="{{ m.birim }}" onChange="{{ m.alan.birim }}"><option value="adet">adet</option><option value="kisi">kişi</option><option value="masa">masa</option><option value="metre">metre</option><option value="sabit">sabit</option></select></label>
+                </div>
+                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #3A3A3A">Tedarikçi bağlantısı<input class="fc-input" type="url" placeholder="https://…" value="{{ m.tedarikci }}" onChange="{{ m.alan.tedarikci }}" style="min-height: 38px; padding: 6px 10px; font-size: 14px"></label>
+                <sc-if value="{{ m.notVar }}" hint-placeholder-val="{{ true }}"><span style="font-size: 12px; color: #5E5E5E">Kaynak: {{ m.notlar }}</span></sc-if>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+                  <button type="button" class="fc-btn dy-k" onClick="{{ m.kaydet }}">{{ m.kaydetYazi }}</button>
+                  <sc-if value="{{ m.tedVar }}" hint-placeholder-val="{{ false }}"><a href="{{ m.tedarikci }}" target="_blank" rel="noopener" style="font-size: 13px; color: #111111">Tedarikçi sayfası ↗</a></sc-if>
+                  <sc-if value="{{ m.hata }}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size: 13px; color: #82301F">{{ m.hata }}</span></sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </section>
+      </sc-for>
+    </div>
+  </sc-if>
+
   <!-- KATALOG -->
   <sc-if value="{{ katalogSekme }}" hint-placeholder-val="{{ false }}">
     <div style="display: flex; flex-direction: column; gap: 18px">
@@ -374,7 +429,103 @@ class Component extends DCLogic {
     this.OBOS = { kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1', neden: 'diger', not: '' };
     this.state = { envanter: V.envanter || [], hareketler: V.hareketler || [], form: null, g: { ...this.GBOS }, o: { ...this.OBOS }, dF: null, gHata: '', gecmis: null,
       davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
+      maliyetler: V.maliyetler || [], fiyatlar: V.fiyatlar || [], malDuz: {}, malDurum: {}, grupKar: {},
       alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '', hizli: null, yukleniyor: null };
+  }
+  // Maliyet: satır düzenlemesi (malDuz) kaydedilmemiş değişikliktir; müşteri fiyatı burada da sunucudaki formülle hesaplanır
+  maliyetVals(st, Y, FD) {
+    const sayi = (v) => {
+      const t = String(v == null ? '' : v).trim().replace(/\s|TL/gi, '');
+      if (!t) return null;
+      const n = Number(/,/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t);
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const yazi = (v) => (v == null ? '' : String(Number(v)).replace('.', ','));
+    const BIRIM = { adet: 'adet', kisi: 'kişi', masa: 'masa', metre: 'metre', sabit: '' };
+    const tl = (n) => `${Math.round(n).toLocaleString('tr-TR')} TL`;
+    const malMap = Object.fromEntries(st.maliyetler.map((m) => [m.katalog_id, m]));
+    const satir = (k) => ({ alis: '', kira: '', esas: 'kira', kar_yuzde: '', birim: 'adet', tedarikci: '', notlar: '',
+      ...Object.fromEntries(Object.entries(malMap[k.id] || {}).map(([a, v]) => [a, ['alis', 'kira', 'kar_yuzde'].includes(a) ? yazi(v) : v == null ? '' : v])),
+      ...(st.malDuz[k.id] || {}) });
+    const fiyatHesap = (r) => {
+      const esas = sayi(r.esas === 'alis' ? r.alis : r.kira);
+      const kar = sayi(r.kar_yuzde);
+      if (esas == null || kar == null || Number.isNaN(esas) || Number.isNaN(kar)) return null;
+      return Math.round(esas * (1 + kar / 100));
+    };
+    const urunler = st.katalog.filter((k) => k.tur === 'urun');
+    const kaydet = (k, r) => {
+      const p = { katalog_id: k.id, esas: r.esas, birim: r.birim, tedarikci: String(r.tedarikci || '').trim(), notlar: r.notlar || '' };
+      for (const a of ['alis', 'kira', 'kar_yuzde']) {
+        const n = sayi(r[a]);
+        if (Number.isNaN(n) || (n != null && n < 0)) return Promise.reject(new Error('Rakamları sayı olarak yazın (örn. 1.250 ya da 40).'));
+        p[a] = n;
+      }
+      if (p.tedarikci && !/^https:\/\//.test(p.tedarikci)) return Promise.reject(new Error('Tedarikçi bağlantısı https:// ile başlamalı.'));
+      const bitti = (sonuc) => this.setState((s) => {
+        const yeni = { ...p, tedarikci: p.tedarikci || null };
+        const fiyat = sonuc && sonuc.fiyat != null ? Number(sonuc.fiyat) : null;
+        const malDuz = { ...s.malDuz }; delete malDuz[k.id];
+        return {
+          maliyetler: [...s.maliyetler.filter((m) => m.katalog_id !== k.id), yeni], malDuz,
+          fiyatlar: fiyat == null ? s.fiyatlar.filter((f) => f.katalog_id !== k.id) : [...s.fiyatlar.filter((f) => f.katalog_id !== k.id), { katalog_id: k.id, fiyat, birim: p.birim }],
+          malDurum: { ...s.malDurum, [k.id]: { kaydedildi: true } },
+        };
+      });
+      if (!Y || !Y.maliyetKaydet) return Promise.resolve(bitti({ fiyat: fiyatHesap(r) }));
+      return Y.maliyetKaydet(p).then(bitti);
+    };
+    const tekKaydet = (k, r) => {
+      this.setState((s) => ({ malDurum: { ...s.malDurum, [k.id]: { kaydediliyor: true } } }));
+      kaydet(k, r).catch((h) => this.setState((s) => ({ malDurum: { ...s.malDurum, [k.id]: { hata: h.message } } })));
+    };
+    const gruplar = FD.sirala([...new Set(urunler.map((u) => u.grup || 'Diğer'))]);
+    const fiyatli = st.fiyatlar.length;
+    const maliyetsiz = urunler.filter((k) => { const r = satir(k); return sayi(r.alis) == null && sayi(r.kira) == null; }).length;
+    return {
+      malOzet: {
+        fiyatli: `${fiyatli} üründe sitede fiyat var`, maliyetsiz: `${maliyetsiz} ürünün maliyeti bilinmiyor`,
+        rozet1: 'background:#DCE9C8;color:#2F4A1F;font-weight:700;border-radius:999px;padding:5px 11px',
+        rozet2: 'background:#F3E6C8;color:#6B5420;font-weight:700;border-radius:999px;padding:5px 11px',
+      },
+      malGruplar: gruplar.map((g) => {
+        const kalemler = urunler.filter((u) => (u.grup || 'Diğer') === g).sort((a, b) => a.sira - b.sira || a.id - b.id);
+        const kar = st.grupKar[g] || '';
+        const durum = st.malDurum[`grup:${g}`] || {};
+        return {
+          ad: g, kar,
+          karYaz: (e) => { const v = e.target.value; this.setState((s) => ({ grupKar: { ...s.grupKar, [g]: v } })); },
+          uygulaYazi: durum.kaydediliyor ? 'Uygulanıyor…' : durum.tamam ? 'Uygulandı ✓' : 'Hepsine uygula',
+          karUygula: () => {
+            const n = sayi(kar);
+            if (n == null || Number.isNaN(n) || n < 0) return this.setState((s) => ({ malDurum: { ...s.malDurum, [`grup:${g}`]: {} }, mesaj: `${g}: kâr yüzdesini sayı olarak yazın.` }));
+            this.setState((s) => ({ malDurum: { ...s.malDurum, [`grup:${g}`]: { kaydediliyor: true } } }));
+            kalemler.reduce((zincir, k) => zincir.then(() => kaydet(k, { ...satir(k), kar_yuzde: String(n) })), Promise.resolve())
+              .then(() => this.setState((s) => ({ malDurum: { ...s.malDurum, [`grup:${g}`]: { tamam: true } }, mesaj: `${g}: kâr %${yazi(n)} uygulandı.` })),
+                (h) => this.setState((s) => ({ malDurum: { ...s.malDurum, [`grup:${g}`]: {} }, mesaj: `${g}: uygulanamadı: ${h.message}` })));
+          },
+          kalemler: kalemler.map((k) => {
+            const r = satir(k);
+            const f = fiyatHesap(r);
+            const d = st.malDurum[k.id] || {};
+            const degisti = !!st.malDuz[k.id];
+            const alan = Object.fromEntries(['alis', 'kira', 'esas', 'kar_yuzde', 'birim', 'tedarikci'].map((a) => [a, (e) => {
+              const v = e.target.value;
+              this.setState((s) => ({ malDuz: { ...s.malDuz, [k.id]: { ...(s.malDuz[k.id] || {}), [a]: v } }, malDurum: { ...s.malDurum, [k.id]: {} } }));
+            }]));
+            return {
+              ad: k.ad, resim: FD.resim(k), alis: r.alis, kira: r.kira, esas: r.esas, kar: r.kar_yuzde, birim: r.birim,
+              etiketAlis: `${k.ad} alış maliyeti`, etiketKira: `${k.ad} kira maliyeti`, etiketKar: `${k.ad} kâr yüzdesi`,
+              tedarikci: r.tedarikci || '', tedVar: /^https:\/\//.test(r.tedarikci || ''), notlar: r.notlar || '', notVar: !!r.notlar,
+              fiyat: f == null ? 'teklif ile' : `${tl(f)}${BIRIM[r.birim] ? ` / ${BIRIM[r.birim]}` : ''}`,
+              alan, hata: d.hata || '',
+              kaydetYazi: d.kaydediliyor ? 'Kaydediliyor…' : d.kaydedildi && !degisti ? 'Kaydedildi ✓' : 'Kaydet',
+              kaydet: () => tekKaydet(k, r),
+            };
+          }),
+        };
+      }),
+    };
   }
   // Düğün envanteri (etkinlik envanterinden ayrı): özet, gider / ödemesiz giriş / düşüm formları, gruplu liste ve geçmiş
   envanterVals(st, Y, bilgi, tYaz, pill, FD) {
@@ -585,10 +736,11 @@ class Component extends DCLogic {
         };
       }),
       mesaj: st.mesaj,
-      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['envanter', 'Envanter'], ['katalog', 'Katalog']].map(([id, ad]) => ({
+      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['envanter', 'Envanter'], ['maliyet', 'Maliyet'], ['katalog', 'Katalog']].map(([id, ad]) => ({
         ad, sinif: st.alt === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ alt: id, mesaj: '' }),
       })),
-      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog', envanterSekme: st.alt === 'envanter',
+      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog', envanterSekme: st.alt === 'envanter', maliyetSekme: st.alt === 'maliyet',
+      ...this.maliyetVals(st, Y, FD),
       ...this.envanterVals(st, Y, bilgi, tYaz, pill, FD),
       filtreler: FILTRE.map(([id, ad, f]) => ({ ad: `${ad} (${st.talepler.filter(f).length})`, sinif: st.filtre === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ filtre: id }) })),
       talepYok: !liste.length,

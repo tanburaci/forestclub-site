@@ -30,9 +30,9 @@ window.FC_AYLIK = {
 // Listede olmayan yeni bir grup masa adımında, alfabetik olarak sonda görünür.
 window.FC_DUGUN = {
   masaGruplari: ['Masa', 'Örtü', 'Peçete', 'Tabak ve supla', 'Çatal bıçak', 'Bardak', 'Çiçek', 'Mum', 'Masa kartı', 'Sandalye', 'Sandalye süsü'],
-  alanGruplari: ['Nikah alanı', 'Karşılama', 'Lounge', 'Işıklandırma'],
+  alanGruplari: ['Nikah alanı', 'Karşılama', 'Lounge', 'Işıklandırma', 'Altyapı'],
   cizim: { Masa: 'masa', Örtü: 'ortu', Peçete: 'pecete', 'Tabak ve supla': 'tabak', 'Çatal bıçak': 'catal', Bardak: 'bardak', Çiçek: 'cicek', Mum: 'mum',
-    'Masa kartı': 'kart', Sandalye: 'sandalye', 'Sandalye süsü': 'cicek', 'Nikah alanı': 'kemer', Karşılama: 'pano', Lounge: 'lounge', Işıklandırma: 'fener' },
+    'Masa kartı': 'kart', Sandalye: 'sandalye', 'Sandalye süsü': 'cicek', 'Nikah alanı': 'kemer', Karşılama: 'pano', Lounge: 'lounge', Işıklandırma: 'fener', Altyapı: 'isik' },
   turCizim: { mekan: 'mekan', bolum: 'kemer', menu: 'yemek', konsept: 'konsept-kir', urun: 'masa', ekstra: 'isik' },
   resim(k) { return k.resim || `/dugun/cizim/${(k.tur === 'urun' && this.cizim[k.grup]) || this.turCizim[k.tur] || 'mekan'}.svg`; },
   alanMi(grup) { return this.alanGruplari.includes(grup); },
