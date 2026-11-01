@@ -105,7 +105,6 @@ body{margin:0;background:#F6EFE3}
       <p style="margin: 0; font-size: 18px; line-height: 1.65; color: #5A554B; max-width: 520px">Zeytin ağaçlarının ve çamların gölgesinde, gün batımından gece yarısına uzanan bir kutlama. Hayalinizdeki düğünü birkaç adımda tasarlayın; gerisini birlikte planlayalım.</p>
       <div style="display: flex; gap: 10px; flex-wrap: wrap">
         <a class="dg-btn" href="#tasarla">Düğününüzü tasarlayın</a>
-        <a class="dg-btn dg-btn-acik" href="#konseptler">Masa konseptleri</a>
       </div>
     </div>
     <img src="/dugun/cizim/mekan.svg" alt="Ağaçların altında ışıklı düğün alanı çizimi" style="width: 100%; border-radius: 28px; border: 1.5px solid #E2D6C0">
@@ -124,25 +123,6 @@ body{margin:0;background:#F6EFE3}
     </div>
   </section>
 
-  <!-- Konseptler -->
-  <section id="konseptler" class="dg-ic" style="padding-top: 56px; padding-bottom: 24px; display: flex; flex-direction: column; gap: 20px">
-    <div style="display: flex; flex-direction: column; gap: 8px">
-      <span class="dg-ust">İlham</span>
-      <h2 class="dg-serif" style="font-size: 44px">Masa konseptleri</h2>
-      <p style="margin: 0; color: #5A554B">Örnek çizimlerdir; her konsepti örtüsünden çiçeğine kadar size göre değiştiriyoruz.</p>
-    </div>
-    <div class="dg-izgara">
-      <sc-for list="{{ konseptVitrin }}" as="k" hint-placeholder-count="4">
-        <article class="dg-kart" style="overflow: hidden">
-          <img src="{{ k.resim }}" alt="{{ k.ad }}" style="width: 100%; aspect-ratio: 16/11; object-fit: cover; display: block; background: #EFE5D3">
-          <div style="padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 4px">
-            <strong class="dg-serif" style="font-size: 24px">{{ k.ad }}</strong>
-            <span style="color: #5A554B; font-size: 14px; line-height: 1.55">{{ k.aciklama }}</span>
-          </div>
-        </article>
-      </sc-for>
-    </div>
-  </section>
   </sc-if>
 
   <!-- Özel davet bağlantısı (/dugun/?k=…): tanıtım gizli, çift adıyla selamlanır; geçersiz bağlantıda uyarı -->
@@ -277,20 +257,9 @@ body{margin:0;background:#F6EFE3}
           </div>
         </sc-if>
 
-        <!-- 4. Masa: konsept ve ürünler -->
+        <!-- 4. Masa: ürünler (masa konseptleri 01.11.2026'da kaldırıldı) -->
         <sc-if value="{{ adimMasa }}" hint-placeholder-val="{{ false }}">
           <div style="display: flex; flex-direction: column; gap: 22px">
-            <div style="display: flex; flex-direction: column; gap: 10px">
-              <span style="font-weight: 600; font-size: 14px">Masa konsepti</span>
-              <div class="dg-izgara">
-                <sc-for list="{{ konseptler }}" as="k" hint-placeholder-count="4">
-                  <button type="button" class="{{ k.sinif }}" aria-pressed="{{ k.secili }}" onClick="{{ k.sec }}">
-                    <img src="{{ k.resim }}" alt=""><span class="dg-tik">✓</span>
-                    <span class="dg-sec-yazi"><strong class="dg-serif" style="font-size: 22px">{{ k.ad }}</strong><span style="font-size: 13px; color: #5A554B; line-height: 1.5">{{ k.aciklama }}</span></span>
-                  </button>
-                </sc-for>
-              </div>
-            </div>
             <div style="display: flex; flex-direction: column; gap: 6px">
               <span style="font-weight: 600; font-size: 14px">Ayrıntıları seçmek ister misiniz? <span style="font-weight: 400; color: #8A7B5F">(isteğe bağlı; her gruptan birden fazla seçebilirsiniz)</span></span>
               <sc-for list="{{ masaGruplari }}" as="g" hint-placeholder-count="3">
@@ -364,7 +333,7 @@ body{margin:0;background:#F6EFE3}
         <!-- 7. Özet ve iletişim -->
         <sc-if value="{{ adimSon }}" hint-placeholder-val="{{ false }}">
           <div style="display: flex; flex-direction: column; gap: 18px">
-            <!-- Mood board: konsept, palet, his ve seçilen detaylar bir arada -->
+            <!-- Mood board: seçilen ilk ürünün fotoğrafı (yoksa mekan), palet, his ve seçilen detaylar bir arada -->
             <div class="dg-mood" aria-label="Mood board">
               <img class="dg-mood-ana" src="{{ mood.ana }}" alt="{{ mood.anaAd }}">
               <div class="dg-mood-yan">
@@ -487,7 +456,7 @@ class Component extends DCLogic {
       ['Mekan', 'Mekan ve akış', 'Düğününüz nerede olsun, gün nasıl aksın?'],
       ['Renk', 'Renkler ve his', 'Mood board\'unuzun temeli: bir palet seçin ya da kendi renklerinizi ekleyin.'],
       ['Menu', 'Menü tercihi', 'İsterseniz bu adımı atlayabilirsiniz.'],
-      ['Masa', 'Masalarınız', 'Bir konsept seçin; dilerseniz ayrıntılarını değiştirin.'],
+      ['Masa', 'Masalarınız', 'Masalarınızda ne olsun? Her gruptan dilediğinizi seçin.'],
       ['Alan', 'Alan ve dekor', 'Nikah alanı, karşılama, oturma köşeleri ve ışıklar. İsteğe bağlı.'],
       ['Ekstra', 'Ekstralar', 'Düğününüzü tamamlayacak dokunuşlar.'],
       ['Son', 'Son adım', 'Mood board\'unuz hazır. Bilgilerinizi bırakın; size özel teklifimizle dönelim.'],
@@ -551,7 +520,6 @@ class Component extends DCLogic {
       ['Renkler', [v.palet ? ad(v.palet) : '', v.renkler.length ? `kendi renkleriniz (${v.renkler.length})` : ''].filter(Boolean).join(' + ') || 'Birlikte seçelim'],
       ['His', v.his.map(ad).join(', ') || '—'],
       ['Menü', v.menu ? ad(v.menu) : 'Mekanın menüsü, sonra konuşuruz'],
-      ['Masa konsepti', v.konsept ? ad(v.konsept) : 'Birlikte seçelim'],
       ['Masa ayrıntıları', gruplar.filter((g) => !FD.alanMi(g)).map((g) => (urunAd(g) ? `${g}: ${urunAd(g)}` : '')).filter(Boolean).join(' · ') || '—'],
       ['Alan ve dekor', gruplar.filter((g) => FD.alanMi(g)).map((g) => (urunAd(g) ? `${g}: ${urunAd(g)}` : '')).filter(Boolean).join(' · ') || '—'],
       ['Ekstralar', v.ekstralar.map(ad).join(', ') || '—'],
@@ -560,10 +528,12 @@ class Component extends DCLogic {
     const palet = K('palet').find((x) => x.id === v.palet);
     const renkStil = (r) => `background:${/^#[0-9a-f]{6}$/i.test(r) ? r : '#EFE5D3'}`;
     const moodRenk = [...((palet && palet.renkler) || []), ...v.renkler].slice(0, 8);
-    const konsept = K('konsept').find((x) => x.id === v.konsept);
+    // Mood board ana görseli: seçilen ilk ürünün fotoğrafı, yoksa mekan
+    const ilkFoto = K('urun').filter((u) => v.urunler.includes(u.id)).map((u) => (u.resim ? u : D.katalog.find((x) => x.id === u.ust_id) || u))
+      .find((u) => u.resim && !u.resim.startsWith('/dugun/cizim/'));
     const kucukler = [...v.urunler, ...v.ekstralar].map((id) => D.katalog.find((k) => k.id === id)).filter(Boolean);
     const mood = {
-      ana: konsept ? FD.resim(konsept) : mekan ? FD.resim(mekan) : '/dugun/cizim/mekan.svg', anaAd: konsept ? konsept.ad : mekan ? mekan.ad : '',
+      ana: ilkFoto ? ilkFoto.resim : mekan ? FD.resim(mekan) : '/dugun/cizim/mekan.svg', anaAd: ilkFoto ? ilkFoto.ad : mekan ? mekan.ad : '',
       renkVar: moodRenk.length > 0, renkler: moodRenk.map(renkStil),
       paletAd: palet ? palet.ad + (v.renkler.length ? ' + kendi renkleriniz' : '') : v.renkler.length ? 'Kendi renkleriniz' : 'Renkleri birlikte seçelim',
       hisler: v.his.map(ad).filter(Boolean),
@@ -586,7 +556,7 @@ class Component extends DCLogic {
     const gonder = () => {
       const veri = { ad: v.ad.trim(), eposta: v.eposta.trim().toLowerCase(), tel: v.tel.trim(), tarih: v.tarihEsnek ? null : v.tarih || null,
         tarih_esnek: v.tarihEsnek || !v.tarih, kisi: v.kisi, not: v.not.trim(), kvkk: v.kvkk,
-        secimler: { mekan: v.mekan, bolumler: v.bolumler, palet: v.palet, renkler: v.renkler, his: v.his, menu: v.menu, konsept: v.konsept, urunler: urunSecili, ekstralar: v.ekstralar } };
+        secimler: { mekan: v.mekan, bolumler: v.bolumler, palet: v.palet, renkler: v.renkler, his: v.his, menu: v.menu, urunler: urunSecili, ekstralar: v.ekstralar } };
       if (!window.FCDGonder) return this.setState({ gitti: true });
       this.setState({ gonderiliyor: true, hata: '' });
       window.FCDGonder(veri).then(() => this.setState({ gitti: true, gonderiliyor: false }), (h) => this.setState({ hata: h.message, gonderiliyor: false }));
@@ -599,11 +569,10 @@ class Component extends DCLogic {
       tanitim: !D.davet, davetVar: !!davet, davetGecersiz: !!(D.davet && D.davet.gecersiz), formVar: !(D.davet && D.davet.gecersiz),
       davetBaslik: davet && davet.ad ? `Merhaba ${davet.ad} 🤍` : 'Düğününüzü birlikte tasarlayalım',
       adimlarTanitim: [
-        { no: '01', baslik: 'Tasarlayın', metin: 'Tarihinizi, akışı, masa konseptinizi ve ekstraları birkaç adımda seçin.' },
+        { no: '01', baslik: 'Tasarlayın', metin: 'Tarihinizi, akışı, masanızdaki ayrıntıları ve ekstraları birkaç adımda seçin.' },
         { no: '02', baslik: 'Tanışalım', metin: 'Sizi arayıp hayalinizi dinleyelim; dilerseniz alanı birlikte gezelim.' },
         { no: '03', baslik: 'Size özel teklif', metin: 'Seçimlerinize göre hazırladığımız teklifle her ayrıntıyı birlikte planlayalım.' },
       ],
-      konseptVitrin: K('konsept').map((k) => ({ ...k, resim: FD.resim(k), aciklama: k.aciklama || '' })),
       sihirbazda: !this.state.gitti, gitti: this.state.gitti, v,
       adimYazi: `${adim} / ${SON}`, adimBaslik: ADIMLAR[adim - 1][1], adimAciklama: ADIMLAR[adim - 1][2],
       ilerleme: ADIMLAR.map((_, i) => (i < adim ? 'tamam' : '')),
@@ -616,7 +585,6 @@ class Component extends DCLogic {
       menuler: [{ id: null, ad: 'Mekanın menüsü, sonra konuşuruz', aciklama: mekan && mekan.yemek_mekandan === false ? 'Menüyü görüşmede birlikte belirleyelim.' : 'Yemeği mekan karşılıyor; menüyü mekanla birlikte netleştiririz.' }, ...menuler]
         .map((m) => ({ ...kart(m, v.menu === m.id, () => deg({ menu: m.id })),
           nokta: v.menu === m.id ? 'width: 10px; height: 10px; border-radius: 50%; background: #5B6B4E' : 'display: none' })),
-      konseptler: K('konsept').map((k) => kart(k, v.konsept === k.id, () => deg({ konsept: v.konsept === k.id ? null : k.id }))),
       paletler: K('palet').map((pl) => ({ ...kart(pl, v.palet === pl.id, () => deg({ palet: v.palet === pl.id ? null : pl.id })), renkler: (pl.renkler || []).map(renkStil) })),
       kendiRenkler: v.renkler.map((r, i) => ({ deger: r, etiket: `Renk ${i + 1}`, silEtiket: `Renk ${i + 1}'i kaldır`,
         yaz: (e) => { const x = String(e.target.value || '').toLowerCase(); deg({ renkler: v.renkler.map((y, j) => (j === i ? x : y)) }); },
