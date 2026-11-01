@@ -16,8 +16,9 @@ const ANAHTAR = /supabaseAnahtar:\s*'([^']+)'/.exec(fs.readFileSync(path.join(DE
 const GOC = fs.readFileSync(path.join(KOK, 'supabase/migrations/20261202000000_dugun_maliyet.sql'), 'utf8');
 
 // Göçteki VALUES bloklarını okur: "('a', 'b', 3)" → ['a', 'b', 3]
-function degerler(baslangic) {
-  const i = GOC.indexOf(baslangic);
+function degerler(baslangic, kacinci = 0) {
+  let i = -1;
+  for (let n = 0; n <= kacinci; n++) { i = GOC.indexOf(baslangic, i + 1); if (i < 0) return []; }
   const blok = GOC.slice(i, GOC.indexOf(') as ', i));
   return [...blok.matchAll(/\(\s*('(?:[^']|'')*'(?:\s*,\s*(?:'(?:[^']|'')*'|null(?:::numeric)?|[\d.]+(?:::numeric)?))*)\s*\)/g)].map((m) =>
     [...m[1].matchAll(/'((?:[^']|'')*)'|(null)(?:::numeric)?|([\d.]+)(?:::numeric)?/g)].map((x) => (x[1] !== undefined ? x[1].replace(/''/g, "'") : x[2] ? null : Number(x[3]))));
@@ -32,18 +33,26 @@ async function canliKatalog() {
 (async () => {
   const katalog = await canliKatalog();
   let yeniId = Math.max(0, ...katalog.map((k) => k.id)) + 1;
-  for (const [grup, ad, sira] of degerler("insert into public.dugun_katalog (tur, grup, ad, sira)")) {
-    if (!katalog.some((k) => k.tur === 'urun' && k.grup === grup && k.ad === ad)) {
-      katalog.push({ id: yeniId++, tur: 'urun', grup, ad, sira, aciklama: null, resim: null, mekan_id: null, yemek_mekandan: true, renkler: null, acik: true });
+  for (const kacinci of [0, 1]) {
+    for (const [grup, ad, sira] of degerler("insert into public.dugun_katalog (tur, grup, ad, sira)\nselect", kacinci)) {
+      if (!katalog.some((k) => k.tur === 'urun' && k.grup === grup && k.ad === ad && !k.ust_id)) {
+        katalog.push({ id: yeniId++, tur: 'urun', grup, ad, sira, aciklama: null, resim: null, mekan_id: null, yemek_mekandan: true, renkler: null, acik: true, ust_id: null });
+      }
+    }
+  }
+  for (const [grup, ustAd, ad, sira] of degerler("insert into public.dugun_katalog (tur, grup, ad, sira, ust_id)")) {
+    const ust = katalog.find((k) => k.tur === 'urun' && k.grup === grup && k.ad === ustAd && !k.ust_id);
+    if (ust && !katalog.some((k) => k.ust_id === ust.id && k.ad === ad)) {
+      katalog.push({ id: yeniId++, tur: 'urun', grup, ad, sira, aciklama: null, resim: null, mekan_id: null, yemek_mekandan: true, renkler: null, acik: true, ust_id: ust.id });
     }
   }
   for (const [grup, ad, dosya] of degerler("update public.dugun_katalog k set resim")) {
-    const k = katalog.find((x) => x.tur === 'urun' && x.grup === grup && x.ad === ad);
+    const k = katalog.find((x) => x.tur === 'urun' && x.grup === grup && x.ad === ad && !x.ust_id);
     if (k && (!k.resim || k.resim.startsWith('/dugun/cizim/'))) k.resim = `/dugun/foto/${dosya}`;
   }
   const maliyetler = [];
   for (const [grup, ad, alis, kira, esas, birim, notlar] of degerler("insert into public.dugun_maliyetler (katalog_id")) {
-    const k = katalog.find((x) => x.tur === 'urun' && x.grup === grup && x.ad === ad);
+    const k = katalog.find((x) => x.tur === 'urun' && x.grup === grup && x.ad === ad && !x.ust_id);
     if (k) maliyetler.push({ katalog_id: k.id, alis, kira, esas, kar_yuzde: null, birim, tedarikci: null, notlar });
   }
   const fiyatlar = [];
@@ -58,6 +67,8 @@ async function canliKatalog() {
     }
     console.log(`Örnek kâr %${ornekKar}: ${fiyatlar.length} üründe fiyat.`);
   }
+  const sayi = (f) => katalog.filter(f).length;
+  console.log(`Ürün: ${sayi((k) => k.tur === 'urun' && !k.ust_id)} · seçenek: ${sayi((k) => k.ust_id)} · grup: ${new Set(katalog.filter((k) => k.tur === 'urun').map((k) => k.grup)).size}`);
   console.log(`Canlı katalog kopyası: ${katalog.length} kalem, ${maliyetler.length} başlangıç maliyeti. Canlıya hiçbir şey yazılmaz.`);
 
   const v = yonetimVerisi();

@@ -8,7 +8,7 @@
 
   async function basla() {
     const kok = document.getElementById('kok');
-    const { data, error } = await sb.from('dugun_katalog').select('id, tur, ad, aciklama, resim, grup, mekan_id, yemek_mekandan, renkler, sira')
+    const { data, error } = await sb.from('dugun_katalog').select('id, tur, ad, aciklama, resim, grup, mekan_id, yemek_mekandan, renkler, sira, ust_id')
       .order('sira').order('id');
     if (error) console.error(error);
     // Müşteri fiyatları (yönetimde kâr girilen ürünler); maliyet ve kâr buraya gelmez

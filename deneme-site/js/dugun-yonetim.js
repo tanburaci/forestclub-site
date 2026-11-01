@@ -5,7 +5,7 @@
   'use strict';
   const A = window.FC_AYAR;
   const { sb } = window.FC_ORTAK;
-  const KATALOG_SUTUN = 'id, tur, ad, aciklama, resim, grup, mekan_id, yemek_mekandan, renkler, sira, acik';
+  const KATALOG_SUTUN = 'id, tur, ad, aciklama, resim, grup, mekan_id, yemek_mekandan, renkler, sira, acik, ust_id';
 
   const hata = ({ error }) => { if (error) throw new Error(error.message); };
 
@@ -15,7 +15,7 @@
     // Yeni (id yok) → insert, var → update. Dönüş: kaydedilen satır
     katalogKaydet: async (k) => {
       const satir = { tur: k.tur, ad: k.ad, aciklama: k.aciklama || null, resim: k.resim || null, grup: k.grup || null,
-        mekan_id: k.mekan_id || null, yemek_mekandan: k.yemek_mekandan !== false, sira: Number(k.sira) || 0, acik: k.acik !== false,
+        mekan_id: k.mekan_id || null, ust_id: k.tur === 'urun' && k.ust_id ? Number(k.ust_id) : null, yemek_mekandan: k.yemek_mekandan !== false, sira: Number(k.sira) || 0, acik: k.acik !== false,
         renkler: k.tur === 'palet' && Array.isArray(k.renkler) && k.renkler.length ? k.renkler.map((r) => String(r).toLowerCase()) : null };
       const is = k.id ? sb.from('dugun_katalog').update(satir).eq('id', k.id) : sb.from('dugun_katalog').insert(satir);
       const { data, error } = await is.select(KATALOG_SUTUN).single();
