@@ -208,7 +208,10 @@ html.gok-gece .fs-ilk-ekran header .fs-uye-giris{background:#FFFFFF;color:#11111
 .fs-paylas:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #F08A24}
 .fs-paylas svg{flex:none}
 .fs-ac-yazi{font-size:13px;font-weight:700;text-decoration:underline;color:#111111}
-.fs-afis-ac{display:block;width:100%;max-width:360px;margin-top:4px;padding:0;border:0;background:transparent;cursor:zoom-in}
+/* Açılan etkinlik: afiş solda, açıklama sağında sona kadar; telefonda afiş üstte */
+.fs-etk-detay{display:flex;gap:18px;align-items:flex-start}
+.fs-afis-ac{display:block;flex:0 0 min(300px,42%);width:min(300px,42%);margin-top:4px;padding:0;border:0;background:transparent;cursor:zoom-in}
+@media (max-width: 640px){.fs-etk-detay{flex-direction:column}.fs-afis-ac{flex:none;width:100%;max-width:360px;align-self:center}}
 .fs-afis-ac img{display:block;width:100%;height:auto;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .fs-tam{position:fixed;inset:0;z-index:2147483100;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;cursor:zoom-out}
 .fs-tam img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
@@ -805,11 +808,13 @@ html.gok-gece .fs-parti{opacity:1}
                 <span style="{{ b.rozet }}">{{ b.etiket }}</span>
               </div>
               <div style="color: #111111; font-weight: 600; font-size: 15px">{{ b.saat }} · Pinya, Urla</div>
-              <div class="{{ b.metinSinif }}" style="color: #5E5E5E; font-size: 15px; line-height: 1.5; white-space: pre-line">{{ b.metin }}</div>
-              <sc-if value="{{ b.acik }}" hint-placeholder-val="{{ false }}">
-                <sc-if value="{{ b.afisVar }}" hint-placeholder-val="{{ false }}">
+              <div class="fs-etk-detay">
+                <sc-if value="{{ b.afisAcik }}" hint-placeholder-val="{{ false }}">
                   <button type="button" class="fs-afis-ac" onClick="{{ b.afisAc }}" aria-label="Afişi tam ekran aç"><img src="{{ b.afis }}" alt="{{ b.afisAlt }}" loading="lazy"></button>
                 </sc-if>
+                <div class="{{ b.metinSinif }}" style="color: #5E5E5E; font-size: 15px; line-height: 1.5; white-space: pre-line; flex: 1; min-width: 0">{{ b.metin }}</div>
+              </div>
+              <sc-if value="{{ b.acik }}" hint-placeholder-val="{{ false }}">
                 <sc-if value="{{ b.linkVar }}" hint-placeholder-val="{{ true }}">
                   <a href="{{ b.link }}" style="font-weight: 600; font-size: 14px; margin-top: 2px">Instagram'da gör</a>
                 </sc-if>
@@ -846,11 +851,13 @@ html.gok-gece .fs-parti{opacity:1}
                 <span style="{{ b.rozet }}">{{ b.etiket }}</span>
               </div>
               <div style="color: #111111; font-weight: 600; font-size: 15px">{{ b.saat }}</div>
-              <div class="{{ b.metinSinif }}" style="color: #5E5E5E; font-size: 15px; line-height: 1.5; white-space: pre-line">{{ b.metin }}</div>
-              <sc-if value="{{ b.acik }}" hint-placeholder-val="{{ false }}">
-                <sc-if value="{{ b.afisVar }}" hint-placeholder-val="{{ false }}">
+              <div class="fs-etk-detay">
+                <sc-if value="{{ b.afisAcik }}" hint-placeholder-val="{{ false }}">
                   <button type="button" class="fs-afis-ac" onClick="{{ b.afisAc }}" aria-label="Afişi tam ekran aç"><img src="{{ b.afis }}" alt="{{ b.afisAlt }}" loading="lazy"></button>
                 </sc-if>
+                <div class="{{ b.metinSinif }}" style="color: #5E5E5E; font-size: 15px; line-height: 1.5; white-space: pre-line; flex: 1; min-width: 0">{{ b.metin }}</div>
+              </div>
+              <sc-if value="{{ b.acik }}" hint-placeholder-val="{{ false }}">
                 <sc-if value="{{ b.linkVar }}" hint-placeholder-val="{{ true }}">
                   <a href="{{ b.link }}" style="font-weight: 600; font-size: 14px; margin-top: 2px">Instagram'da gör</a>
                 </sc-if>
@@ -1216,7 +1223,7 @@ class Component extends DCLogic {
       const capa = b.id ? `etkinlik-${b.id}` : `etkinlik-${b.tarih}`;
       const paylasLink = b.id ? `${location.origin}/e/${b.id}` : `${location.origin}/#${capa}`;
       return {
-        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
+        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAcik: acik && !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
         acik, acikYazi: acik ? 'true' : 'false', metinSinif: acik ? '' : 'fs-ozet', acYazi: acik ? 'Kapat ▲' : 'Ayrıntılar ▼',
         kartTikla: (e) => {
           if (e.target.closest('a, button, input, select, textarea, label')) return;
