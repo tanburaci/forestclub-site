@@ -26,7 +26,7 @@ create temp table t_uye on commit drop as
   select (select id from uyeler where eposta = 'idor1@test.invalid') as bir, (select id from uyeler where eposta = 'idor2@test.invalid') as iki;
 grant select on t_uye to authenticated, anon;
 insert into etkinlikler (tarih, saat, tur, ad, kontenjan) values (current_date + 5, '10.00', 'yoga', 'IDOR Yoga', 10);
-insert into odemeler (uye_id, tarih, tutar, yol) select bir, current_date, 3000, 'elden' from t_uye union all select iki, current_date, 3000, 'elden' from t_uye;
+insert into odemeler (uye_id, tarih, tutar, yol) select bir, current_date, 3000, 'elden'::odeme_yolu from t_uye union all select iki, current_date, 3000, 'elden'::odeme_yolu from t_uye;
 insert into dekontlar (uye_id, eposta, ad, odeme_tarihi, dosya)
   select bir, 'idor1@test.invalid', 'Idor Bir', current_date, 'yeni/idor1.pdf' from t_uye
   union all select iki, 'idor2@test.invalid', 'Idor İki', current_date, 'yeni/idor2.pdf' from t_uye;
@@ -63,7 +63,7 @@ do $$ begin update uyeler set tel = '05000000000' where eposta = 'idor2@test.inv
 do $$ begin update uyeler set user_id = '00000000-0000-4000-8000-0000000000c1' where eposta = 'idor2@test.invalid'; exception when others then null; end $$;
 do $$ begin delete from odemeler where uye_id = (select bir from t_uye); exception when others then null; end $$;
 do $$ begin update dekontlar set durum = 'onaylandi' where eposta = 'idor1@test.invalid'; exception when others then null; end $$;
-select throws_ok($$ insert into odemeler (uye_id, tarih, tutar, yol) select bir, current_date, 1, 'elden' from t_uye $$, '42501', null,
+select throws_ok($$ insert into odemeler (uye_id, tarih, tutar, yol) select bir, current_date, 1, 'elden'::odeme_yolu from t_uye $$, '42501', null,
   'üye kendine ödeme yazamaz');
 select throws_ok($$ insert into etkinlik_kayitlari (etkinlik_id, uye_id) select (select id from etkinlikler where ad = 'IDOR Yoga'), iki from t_uye $$,
   '42501', null, 'üye başkası adına etkinlik kaydı açamaz');
