@@ -1413,6 +1413,7 @@ class Component extends DCLogic {
         const ozelDurum = this.state.etkDurum[key];
         return {
           ...x,
+          afisVar: !!x.afis, afis: x.afis || '',
           durum: ozelDurum || x.durum, rozet: ozelDurum ? DOLDU : x.rozet,
           kayitYazi: k ? (() => {
             const sat = x.satis ? x.satis.satilan : 0;

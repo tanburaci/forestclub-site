@@ -30,6 +30,11 @@ a{color:#111111}a:hover{color:#000000}
 .fc-sekme:hover{background:#E8E8E6}
 .fc-sekme-aktif{background:#111111;color:#FFFFFF}
 .fc-sekme-aktif:hover{background:#111111}
+/* Etkinlik kartı: afiş solda, yazılar sağında sona kadar; telefonda afiş üstte */
+.fc-etk-kart{display:flex;gap:20px;align-items:flex-start}
+.fc-etk-afis{flex:0 0 min(220px,30%);width:min(220px,30%);height:auto;border:2px solid #111111;border-radius:10px;display:block}
+.fc-etk-govde{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+@media (max-width: 640px){.fc-etk-kart{flex-direction:column}.fc-etk-afis{flex:none;width:100%;max-width:320px;align-self:center}}
 .fc-btn{font:700 15px Figtree,sans-serif;border-radius:10px;padding:11px 18px;min-height:44px;cursor:pointer;border:2.5px solid #111111;background:#111111;color:#FFFFFF}
 .fc-btn:hover{background:#000000}
 .fc-btn-ikincil{background:#FFFFFF;color:#111111}
@@ -633,9 +638,13 @@ a{color:#111111}a:hover{color:#000000}
             </sc-if>
 
             <h3 style="margin: 4px 0 0; font-size: 20px">Yaklaşan</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px">
+            <div style="display: flex; flex-direction: column; gap: 16px">
               <sc-for list="{{ yaklasanEtk }}" as="e" hint-placeholder-count="2">
-                <article style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+                <article class="fc-etk-kart" style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 22px">
+                  <sc-if value="{{ e.afisVar }}" hint-placeholder-val="{{ false }}">
+                    <img class="fc-etk-afis" src="{{ e.afis }}" alt="{{ e.ad }} afişi" loading="lazy">
+                  </sc-if>
+                  <div class="fc-etk-govde">
                   <div style="display: flex; gap: 14px; align-items: center">
                     <div style="width: 60px; text-align: center; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 8px 0">
                       <div style="font-size: 24px; font-weight: 700; line-height: 1">{{ e.gun }}</div>
@@ -665,6 +674,7 @@ a{color:#111111}a:hover{color:#000000}
                     <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ e.duzenle }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Düzenle</button>
                     <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ e.duyuruDuzenle }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Duyuruyu düzenle</button>
                     <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ e.linkKopyala }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">{{ e.linkYazi }}</button>
+                  </div>
                   </div>
                 </article>
               </sc-for>
@@ -3310,6 +3320,7 @@ class Component extends DCLogic {
         const ozelDurum = this.state.etkDurum[key];
         return {
           ...x,
+          afisVar: !!x.afis, afis: x.afis || '',
           durum: ozelDurum || x.durum, rozet: ozelDurum ? DOLDU : x.rozet,
           kayitYazi: k ? (() => {
             const sat = x.satis ? x.satis.satilan : 0;
