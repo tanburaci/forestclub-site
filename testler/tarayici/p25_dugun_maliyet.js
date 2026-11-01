@@ -89,6 +89,38 @@ const fiyatlar = [];
     dogru(fiyatYazisi === 1, `müşteri fiyatı sayfaya geldi (${fiyatYazisi})`);
     dogru(!/3700|3\.700|maliyet/i.test(html), 'sayfada maliyet ya da alış rakamı yok');
     dogru(!d.konsol.some((x) => /pageerror/.test(x)), `düğün: sayfa hatası yok ${d.konsol.filter((x) => /pageerror/.test(x)).join(' | ')}`);
+
+    // Seçenekli ürün: kart açılır, seçenek seçilir; özet "Ana ürün · seçenek" yazar; seçeneğin fiyatı yoksa ana ürününki
+    const sk = [...katalog,
+      { id: 40, tur: 'urun', ad: 'Yuvarlak masa', aciklama: null, resim: '/dugun/foto/masa-yuvarlak-masa.jpg', grup: 'Masa', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true, ust_id: null },
+      { id: 41, tur: 'urun', ad: 'Ø150 cm · 8 kişi', aciklama: null, resim: null, grup: 'Masa', mekan_id: null, yemek_mekandan: true, sira: 1, acik: true, ust_id: 40 },
+      { id: 42, tur: 'urun', ad: 'Ø180 cm · 10 kişi', aciklama: null, resim: null, grup: 'Masa', mekan_id: null, yemek_mekandan: true, sira: 2, acik: true, ust_id: 40 }];
+    const sf = [{ katalog_id: 42, fiyat: 1225, birim: 'adet' }, { katalog_id: 40, fiyat: 900, birim: 'adet' }];
+    const s2 = await sayfaAc(tarayici, { tablolar: { dugun_katalog: sk }, rpc: { dugun_fiyatlari: () => [200, sf], dugun_davet_bilgi: () => [200, []] } }, null);
+    const p = s2.page;
+    await p.setViewportSize({ width: 390, height: 844 });
+    await p.goto(`${SITE}/dugun/`);
+    await p.getByRole('heading', { name: /Doğanın içinde/ }).waitFor({ timeout: 15000 });
+    const ileri = () => p.locator('#tasarla').getByRole('button', { name: /Devam|Atla|Teklif isteyin/ }).click();
+    await ileri(); await p.getByLabel('Tarih henüz belli değil').check(); await p.getByRole('radio', { name: '50–100' }).click();
+    for (const h of ['Mekan ve akış', 'Renkler ve his', 'Menü tercihi']) { await ileri(); await p.getByRole('heading', { name: h }).waitFor({ timeout: 3000 }); }
+    await ileri();
+    await p.locator('.dg-grup-bas', { hasText: 'Masa' }).first().click();
+    const kart = p.locator('.dg-urun-kutu', { hasText: 'Yuvarlak masa' });
+    dogru((await kart.innerText()).includes('2 seçenek'), 'seçenekli ürün kartı seçenek sayısını gösteriyor');
+    await kart.locator('button.dg-urun').click();
+    dogru(await kart.getByRole('button', { name: /Ø180 cm · 10 kişi/ }).count() === 1, 'karta dokununca seçenekler açıldı');
+    dogru((await kart.getByRole('button', { name: /Ø180 cm/ }).innerText()).includes('1.225 TL') && (await kart.getByRole('button', { name: /Ø150 cm/ }).innerText()).includes('900 TL'),
+      'seçeneğin kendi fiyatı; yoksa ana ürünün fiyatı');
+    await kart.getByRole('button', { name: /Ø180 cm · 10 kişi/ }).click();
+    dogru((await kart.locator('button.dg-urun').innerText()).includes('1 seçili: Ø180 cm · 10 kişi'), 'kart seçileni gösteriyor');
+    dogru(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth) <= 1, 'telefonda açık kart yana kaydırmıyor');
+    await ileri(); await p.getByRole('heading', { name: 'Alan ve dekor' }).waitFor({ timeout: 3000 });
+    await ileri(); await ileri();
+    await p.getByRole('heading', { name: 'Son adım' }).waitFor({ timeout: 3000 });
+    const ozet = await p.locator('#tasarla').innerText();
+    dogru(ozet.includes('Masa: Yuvarlak masa · Ø180 cm · 10 kişi'), 'özet: "Ana ürün · seçenek"');
+    dogru(!s2.konsol.some((x) => /pageerror/.test(x)), 'seçenekli sihirbaz: sayfa hatası yok');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;
   } finally {
