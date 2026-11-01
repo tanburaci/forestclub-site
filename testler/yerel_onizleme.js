@@ -46,7 +46,7 @@ async function canliKatalog() {
       katalog.push({ id: yeniId++, tur: 'urun', grup, ad, sira, aciklama: null, resim: null, mekan_id: null, yemek_mekandan: true, renkler: null, acik: true, ust_id: ust.id });
     }
   }
-  for (const [grup, ad, dosya] of degerler("update public.dugun_katalog k set resim")) {
+  for (const [grup, ad, dosya] of [...degerler("update public.dugun_katalog k set resim", 0), ...degerler("update public.dugun_katalog k set resim", 1)]) {
     const k = katalog.find((x) => x.tur === 'urun' && x.grup === grup && x.ad === ad && !x.ust_id);
     if (k && (!k.resim || k.resim.startsWith('/dugun/cizim/'))) k.resim = `/dugun/foto/${dosya}`;
   }
