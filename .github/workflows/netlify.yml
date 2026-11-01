@@ -1,5 +1,7 @@
 # Forest Club Urla · siteyi (deneme-site/) Netlify'a doğrudan yayınlar. Netlify'ın kendi kuyruğu canlı yayınları atladığı
-# için ("a new one was scheduled"): main'e her birleştirmede kendiliğinden (site dosyası değiştiyse), istenirse elle.
+# için ("a new one was scheduled"). Netlify her canlı yayından kredi düşer (01.11.2026: ayda 1.000 kredinin %90'ı yayınlara
+# gitti): günde bir kez gece 03.00'te (İstanbul) yalnız son 24 saatte deneme-site/ değiştiyse yayınlar; acil düzeltmede
+# Actions › Netlify'a yayınla › Run workflow ile elle hemen yayınlanır (elle çalıştırma her zaman yayınlar).
 # Yalnız deneme-site/ yayınlanır (deponun kökü değil: kökte site yok, "Page not found" olur); netlify.toml
 # (güvenlik başlıkları, yönlendirmeler) oradan okunur; derleme adımı yok.
 # Secrets: NETLIFY_AUTH_TOKEN (Netlify › User settings › Applications), NETLIFY_SITE_ID (Site configuration › General)
@@ -7,9 +9,8 @@ name: Netlify'a yayınla
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['deneme-site/**']
+  schedule:
+    - cron: '0 0 * * *'   # 03.00 İstanbul
 
 permissions:
   contents: read
@@ -26,10 +27,20 @@ jobs:
       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Son 24 saatte site değişti mi
+        id: degisti
+        run: |
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then echo "yayinla=evet" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ -n "$(git log --since='25 hours ago' --format=%h -- deneme-site)" ]; then echo "yayinla=evet" >> "$GITHUB_OUTPUT"
+          else echo "Site değişmedi; yayın yok (kredi harcanmaz)."; echo "yayinla=hayir" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-node@v4
+        if: steps.degisti.outputs.yayinla == 'evet'
         with:
           node-version: 22
       - name: Yayınla
+        if: steps.degisti.outputs.yayinla == 'evet'
         working-directory: deneme-site
         run: |
           if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then echo "NETLIFY_AUTH_TOKEN ve NETLIFY_SITE_ID gerekli"; exit 1; fi
