@@ -38,6 +38,7 @@ class Component extends DCLogic {
     const liste = window.FCS ? window.FCS.etkinlikler : [];
     const b = liste.find((x) => String(x.id) === m[1] || (!x.id && x.tarih === m[1]));
     if (!b) return;
+    if (b.id && !(window.FCS && window.FCS.tek)) { location.replace(`/e/${b.id}`); return; }
     this.setState({ tur: 'tumu', gecmisTumu: true, acikEtk: `${b.tarih}|${b.ad}` }, () => {
       const el = document.getElementById(location.hash.slice(1));
       if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
@@ -100,11 +101,13 @@ class Component extends DCLogic {
       const capa = b.id ? `etkinlik-${b.id}` : `etkinlik-${b.tarih}`;
       const paylasLink = b.id ? `${location.origin}/e/${b.id}` : `${location.origin}/#${capa}`;
       return {
-        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAcik: acik && !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
-        acik, acikYazi: acik ? 'true' : 'false', metinSinif: acik ? '' : 'fs-ozet', acYazi: acik ? 'Kapat ▲' : 'Ayrıntılar ▼',
+        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAcik: false, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
+        acik: false, acikYazi: 'false', metinSinif: 'fs-ozet', acYazi: b.id ? 'Etkinlik sayfası →' : '',
+        sayfa: b.id ? `/e/${b.id}` : '',
+        // Karta dokununca etkinliğin kendi sayfası açılır (aşağı açılan kart yok)
         kartTikla: (e) => {
           if (e.target.closest('a, button, input, select, textarea, label')) return;
-          this.setState((st) => ({ acikEtk: st.acikEtk === kartKey ? null : kartKey }));
+          if (b.id) location.href = `/e/${b.id}`;
         },
         afisAc: () => this.setState({ afisTam: b.afis, afisTamAlt: `${b.ad} afişi` }),
         capa, paylasEtiket: `${b.ad} etkinliğini paylaş`, paylasYazi: this.state.paylasildi === kartKey ? 'Bağlantı kopyalandı ✓' : 'Paylaş',
@@ -190,7 +193,50 @@ class Component extends DCLogic {
       : [{ id: 'sepet', ad: '1 · Randevu' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
     const hak = this.state.hak;
     const sepetToplamAdet = Object.values(sepet).reduce((t, n) => t + n, 0);
+    // Etkinlik satış alanları (liste ve etkinlik sayfası aynı hesabı kullanır)
+    const urunYap = (b) => {
+        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
+        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        const key = `${b.tarih}|${b.ad}`;
+        const kalan = kalanYer(b);
+        const sepette = sepet[key] || 0;
+        return {
+          ...b,
+          fiyatYazi: TL(b.satis.fiyat),
+          uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : b.satis.uye === 'yuzde50' ? `Üyelere %50 · ${TL(uyeFiyati(b))}` : 'Üyelere de aynı fiyat',
+          kalanYazi: kalan <= 0 ? 'Tükendi' : kalan <= 5 ? `Son ${kalan} yer!` : `${kalan} yer kaldı`,
+          kalanStil: `font-size:13px;font-weight:700;color:${kalan <= 5 ? '#82301F' : '#5E5E5E'}`,
+          dolu: kalan <= sepette,
+          dugme: kalan <= 0 ? 'Tükendi' : sepette ? `Randevuda ${sepette} kişi · bir kişi daha` : 'Randevu oluştur',
+          dugmeStil: kalan <= sepette ? 'opacity:.5;cursor:default' : '',
+          sepeteEkle: () => { if (kalan > sepette) adetDegis(key, 1, kalan); },
+        };
+    };
+    // Etkinliğin kendi sayfası (/e/<id>): site.js FCS.tek'i yazar; önizlemede props.tek
+    const tekId = window.FCS ? window.FCS.tek : (this.props.tek || null);
+    const tekHam = tekId ? tumu.find((b) => String(b.id) === String(tekId)) : null;
+    const tek = tekHam ? (tekHam.tarih >= BUGUN ? urunYap(tekHam) : { ...tekHam, fiyatYazi: '', uyeYazi: '', kalanYazi: '', dolu: true, dugme: 'Gerçekleşti', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} }) : null;
+    const tekUyeYazi = tek && tek.satis ? (tek.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : tek.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : (tek ? 'Üyeliğe dahil' : '');
+    const digerler = tumu.filter((b) => b.tarih >= BUGUN && b.id && String(b.id) !== String(tekId)).slice(0, 3).map((b) => ({
+      ...b, sayfa: `/e/${b.id}`, zaman: `${b.gun} ${b.ay.charAt(0)}${b.ay.slice(1).toLocaleLowerCase('tr-TR')} ${b.haftaGunu}${b.saat ? ` · ${b.saat}` : ''}`,
+      uyeKisa: b.satis ? (b.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : b.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : 'Üyeliğe dahil', afisVar: !!b.afis,
+    }));
     return {
+      // Ana sayfa ↔ etkinliğin kendi sayfası
+      anaSayfa: !tekId, tekSayfa: !!tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
+      tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
+      tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
+      tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN),
+      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN),
+      tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
+      tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
+      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali,
+      tekTvKapat: () => this.setState({ tekTvKapali: true }),
+      tekTvGit: () => { location.href = '/#basvuru'; },
+      digerler, digerVar: digerler.length > 0,
+      // Etkinlik sayfasında "Randevu oluştur": bir kişi ekler ve sepeti hemen açar
+      tekRandevu: () => { if (!tek || tek.dolu) return; tek.sepeteEkle(); this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }); },
       uyeDugme: this.state.uyeGirisli ? 'Panelim' : 'Üye girişi',
       // Ürün kartları
       urunVals: null,
@@ -426,7 +472,7 @@ class Component extends DCLogic {
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
       cagriForm: () => { location.href = '/acik-cagri/'; },
-      yuzenSinif: acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      yuzenSinif: tekId ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),
@@ -448,25 +494,7 @@ class Component extends DCLogic {
         { ad: 'Hareket', metin: 'Yoga, Tai Chi ve farkındalık çalışmaları' },
       ],
       filtreler,
-      yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map((b) => {
-        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
-        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        const key = `${b.tarih}|${b.ad}`;
-        const kalan = kalanYer(b);
-        const sepette = sepet[key] || 0;
-        return {
-          ...b,
-          fiyatYazi: TL(b.satis.fiyat),
-          uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : b.satis.uye === 'yuzde50' ? `Üyelere %50 · ${TL(uyeFiyati(b))}` : 'Üyelere de aynı fiyat',
-          kalanYazi: kalan <= 0 ? 'Tükendi' : kalan <= 5 ? `Son ${kalan} yer!` : `${kalan} yer kaldı`,
-          kalanStil: `font-size:13px;font-weight:700;color:${kalan <= 5 ? '#82301F' : '#5E5E5E'}`,
-          dolu: kalan <= sepette,
-          dugme: kalan <= 0 ? 'Tükendi' : sepette ? `Randevuda ${sepette} kişi · bir kişi daha` : 'Randevu oluştur',
-          dugmeStil: kalan <= sepette ? 'opacity:.5;cursor:default' : '',
-          sepeteEkle: () => { if (kalan > sepette) adetDegis(key, 1, kalan); },
-        };
-      }),
+      yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map(urunYap),
       // Geçmiş: en yakın tarihten en eskiye
       gecmisler: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih < BUGUN).reverse().slice(0, this.state.gecmisTumu ? undefined : 3),
       gecmisDahaVar: !this.state.gecmisTumu && (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih < BUGUN).length > 3,

@@ -28,20 +28,23 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
     const metin = kart.locator('.fs-ozet');
     dogru(await metin.count() === 1 && (await metin.evaluate((e) => e.scrollHeight > e.clientHeight + 4)), 'site: kart önce kısa özet (açıklama kısaltılmış)');
     dogru(await kart.locator('.fs-afis-ac').count() === 0, 'site: kapalı kartta afiş yok');
+    // Karta dokununca etkinliğin kendi sayfası (/e/<id>) açılır; yerelde Edge Function yerine ana sayfa HTML'i
+    await s.page.route(`${SITE}/e/**`, (r) => r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: require('fs').readFileSync(path.join(DENEME, 'index.html'), 'utf8') }));
     await kart.locator('h3').click();
-    dogru(await kart.locator('.fs-ozet').count() === 0 && await kart.locator('.fs-afis-ac').count() === 1, 'site: kartın başlığına dokununca açıldı, afiş göründü');
-    await kart.locator('.fs-afis-ac').click();
+    await s.page.waitForURL(`${SITE}/e/${etk.id}`, { timeout: 8000 });
+    await s.page.locator('.fe-afis').waitFor({ timeout: 10000 });
+    dogru(await s.page.getByRole('heading', { name: 'Breakfast Club' }).count() === 1 && await s.page.locator('a.fe-geri[href="/"]').count() === 1,
+      'site: karta dokununca etkinliğin sayfası açıldı (başlık + ana sayfaya dönüş)');
+    await s.page.locator('.fe-afis').click();
     const tam = s.page.locator('.fs-tam');
     dogru(await tam.isVisible() && (await tam.locator('img').getAttribute('src')) === AFIS, 'site: afiş tam ekran açıldı');
     await tam.click({ position: { x: 10, y: 10 } });
     dogru(await tam.count() === 0, 'site: tam ekran dokununca kapandı');
-    await kart.locator('.fs-afis-ac').click();
+    await s.page.locator('.fe-afis').click();
     await s.page.keyboard.press('Escape');
     dogru(await s.page.locator('.fs-tam').count() === 0, 'site: tam ekran Esc ile kapandı');
-    await kart.getByRole('button', { name: 'Randevu oluştur' }).click();
-    dogru(await kart.locator('.fs-afis-ac').count() === 1, 'site: düğmeye basmak kartı kapatmaz');
-    await kart.locator('div').filter({ hasText: /^10\.00 · Pinya, Urla$/ }).click();
-    dogru(await kart.locator('.fs-ozet').count() === 1, 'site: karta yeniden dokununca kapandı');
+    await s.page.locator('.fe-cubuk').getByRole('button', { name: 'Randevu oluştur' }).click();
+    dogru(await s.page.getByRole('dialog', { name: 'Sepet' }).isVisible(), 'site: etkinlik sayfasında Randevu oluştur sepeti açar');
     dogru(!s.konsol.some((x) => /pageerror/.test(x)), 'site: sayfa hatası yok');
 
     // ---------- Üye paneli ----------

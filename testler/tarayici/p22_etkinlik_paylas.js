@@ -22,9 +22,12 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
     const ef = await import(`data:text/javascript,${encodeURIComponent(kaynak)}`);
     const eskiFetch = global.fetch;
     let sorgu = '';
-    let kucukVar = false;  // afisler/paylas/<ad>.jpg (küçük paylaşım kopyası) var mı
+    let kucukVar = false;
+    let anaHtml = false;  // ana sayfa HTML'i alınabiliyor mu (alınamazsa kısa önizleme + yönlendirme)
+    const ANA_HTML = require('fs').readFileSync(path.join(DENEME, 'index.html'), 'utf8');  // afisler/paylas/<ad>.jpg (küçük paylaşım kopyası) var mı
     global.fetch = async (u, o) => {
       if (o && o.method === 'HEAD') return new Response(null, { status: kucukVar && /\/afisler\/paylas\/a\.jpg$/.test(String(u)) ? 200 : 404 });
+      if (/\/index\.html$/.test(String(u))) return new Response(anaHtml ? ANA_HTML : 'yok', { status: anaHtml ? 200 : 404 });
       sorgu = String(u); return new Response(JSON.stringify(/id=eq\.12&/.test(sorgu) ? [{ ad: 'Sunset <Club>', tarih: '2026-11-14', saat: '18.00', aciklama: 'Gün batımında müzik.', afis: 'https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/a.jpg' }] : []), { status: 200 }); };
     const yanit = await ef.default(new Request('https://www.forestcluburla.com/e/12'));
     const html = await yanit.text();
@@ -37,6 +40,12 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
     dogru(kucukHtml.includes('og:image" content="https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/paylas/a.jpg"'),
       'önizleme: küçük paylaşım kopyası varsa o kullanılır (WhatsApp büyük resmi göstermiyor)');
     kucukVar = false;
+    anaHtml = true;
+    const tam = await (await ef.default(new Request('https://www.forestcluburla.com/e/12'))).text();
+    dogru(tam.includes('site.js') && tam.includes('<title>Sunset &lt;Club&gt; · Forest Club Urla</title>') && tam.includes('og:url" content="https://www.forestcluburla.com/e/12"')
+      && tam.includes('og:image" content="https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/a.jpg"') && !tam.includes('http-equiv="refresh"'),
+      'etkinlik sayfası: ana sayfa bu adreste, başlık ve önizleme etiketleri etkinliğin');
+    anaHtml = false;
     const yok = await (await ef.default(new Request('https://www.forestcluburla.com/e/99'))).text();
     dogru(yok.includes('/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png') && yok.includes('url=/#etkinlikler'), 'önizleme: etkinlik yoksa logo ve etkinlikler bölümü');
     global.fetch = eskiFetch;
