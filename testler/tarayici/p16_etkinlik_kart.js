@@ -59,14 +59,11 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
     await u.page.locator('button').filter({ hasText: /^Etkinlikler$/ }).first().click();
     const uk = u.page.locator('article.fu-kart').filter({ hasText: 'Breakfast Club' });
     await uk.waitFor({ timeout: 5000 });
-    dogru(await uk.getByRole('button', { name: 'Afişi tam ekran aç' }).count() === 0, 'üye: kapalı kartta afiş yok');
-    await uk.getByText('Normal fiyat 600 TL', { exact: false }).click();  // başlık değil, kartın altındaki fiyat yazısı
-    dogru(await uk.getByRole('button', { name: 'Afişi tam ekran aç' }).count() === 1, 'üye: kartın herhangi bir yerine dokununca açıldı');
-    await uk.getByRole('button', { name: 'Afişi tam ekran aç' }).click();
-    const ut = u.page.getByRole('dialog', { name: 'Breakfast Club afişi' });
-    dogru(await ut.isVisible(), 'üye: afiş tam ekran açıldı');
-    await ut.click({ position: { x: 10, y: 10 } });
-    dogru(await ut.count() === 0, 'üye: tam ekran dokununca kapandı');
+    // Üye panelinde de karta dokununca etkinliğin kendi sayfası açılır
+    await u.page.route(`${SITE}/e/**`, (r) => r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: '<!doctype html><title>etkinlik</title>' }));
+    await uk.getByText('Normal fiyat 600 TL', { exact: false }).click();
+    await u.page.waitForURL(`${SITE}/e/${etk.id}`, { timeout: 8000 });
+    dogru(u.page.url().endsWith(`/e/${etk.id}`), 'üye: karta dokununca etkinliğin sayfası açıldı');
     dogru(!u.konsol.some((x) => /pageerror/.test(x)), 'üye: sayfa hatası yok');
 
     // ---------- Aylık duyuru: yönetimden ayarlanır, sitede rozet + şerit ----------
