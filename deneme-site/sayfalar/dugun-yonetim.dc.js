@@ -15,7 +15,111 @@ class Component extends DCLogic {
     this.OBOS = { kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1', neden: 'diger', not: '' };
     this.state = { envanter: V.envanter || [], hareketler: V.hareketler || [], form: null, g: { ...this.GBOS }, o: { ...this.OBOS }, dF: null, gHata: '', gecmis: null,
       davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
+      maliyetler: V.maliyetler || [], fiyatlar: V.fiyatlar || [], malDuz: {}, malDurum: {}, grupKar: {},
       alt: 'talepler', filtre: 'acik', acik: null, talepler: V.talepler, katalog: V.katalog, notlar: {}, duz: null, duzHata: '', mesaj: '', hizli: null, yukleniyor: null };
+  }
+  // Maliyet: satır düzenlemesi (malDuz) kaydedilmemiş değişikliktir; müşteri fiyatı burada da sunucudaki formülle hesaplanır
+  maliyetVals(st, Y, FD) {
+    const sayi = (v) => {
+      const t = String(v == null ? '' : v).trim().replace(/\s|TL/gi, '');
+      if (!t) return null;
+      const n = Number(/,/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t);
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const yazi = (v) => (v == null ? '' : String(Number(v)).replace('.', ','));
+    const BIRIM = { adet: 'adet', kisi: 'kişi', masa: 'masa', metre: 'metre', sabit: '' };
+    const tl = (n) => `${Math.round(n).toLocaleString('tr-TR')} TL`;
+    const malMap = Object.fromEntries(st.maliyetler.map((m) => [m.katalog_id, m]));
+    const satir = (k) => ({ alis: '', kira: '', esas: 'kira', kar_yuzde: '', birim: 'adet', tedarikci: '', notlar: '',
+      ...Object.fromEntries(Object.entries(malMap[k.id] || {}).map(([a, v]) => [a, ['alis', 'kira', 'kar_yuzde'].includes(a) ? yazi(v) : v == null ? '' : v])),
+      ...(st.malDuz[k.id] || {}) });
+    const fiyatHesap = (r) => {
+      const esas = sayi(r.esas === 'alis' ? r.alis : r.kira);
+      const kar = sayi(r.kar_yuzde);
+      if (esas == null || kar == null || Number.isNaN(esas) || Number.isNaN(kar)) return null;
+      return Math.round(esas * (1 + kar / 100));
+    };
+    const urunler = st.katalog.filter((k) => k.tur === 'urun');
+    // Ana ürün, hemen ardından seçenekleri (ust_id)
+    const sirali = (liste) => {
+      const sr = (a, b) => a.sira - b.sira || a.id - b.id;
+      const anaUrunler = liste.filter((u) => !u.ust_id || !liste.some((x) => x.id === u.ust_id)).sort(sr);
+      return anaUrunler.flatMap((u) => [u, ...liste.filter((c) => c.ust_id === u.id).sort(sr)]);
+    };
+    const ust = (k) => (k.ust_id ? st.katalog.find((x) => x.id === k.ust_id) : null);
+    const kaydet = (k, r) => {
+      const p = { katalog_id: k.id, esas: r.esas, birim: r.birim, tedarikci: String(r.tedarikci || '').trim(), notlar: r.notlar || '' };
+      for (const a of ['alis', 'kira', 'kar_yuzde']) {
+        const n = sayi(r[a]);
+        if (Number.isNaN(n) || (n != null && n < 0)) return Promise.reject(new Error('Rakamları sayı olarak yazın (örn. 1.250 ya da 40).'));
+        p[a] = n;
+      }
+      if (p.tedarikci && !/^https:\/\//.test(p.tedarikci)) return Promise.reject(new Error('Tedarikçi bağlantısı https:// ile başlamalı.'));
+      const bitti = (sonuc) => this.setState((s) => {
+        const yeni = { ...p, tedarikci: p.tedarikci || null };
+        const fiyat = sonuc && sonuc.fiyat != null ? Number(sonuc.fiyat) : null;
+        const malDuz = { ...s.malDuz }; delete malDuz[k.id];
+        return {
+          maliyetler: [...s.maliyetler.filter((m) => m.katalog_id !== k.id), yeni], malDuz,
+          fiyatlar: fiyat == null ? s.fiyatlar.filter((f) => f.katalog_id !== k.id) : [...s.fiyatlar.filter((f) => f.katalog_id !== k.id), { katalog_id: k.id, fiyat, birim: p.birim }],
+          malDurum: { ...s.malDurum, [k.id]: { kaydedildi: true } },
+        };
+      });
+      if (!Y || !Y.maliyetKaydet) return Promise.resolve(bitti({ fiyat: fiyatHesap(r) }));
+      return Y.maliyetKaydet(p).then(bitti);
+    };
+    const tekKaydet = (k, r) => {
+      this.setState((s) => ({ malDurum: { ...s.malDurum, [k.id]: { kaydediliyor: true } } }));
+      kaydet(k, r).catch((h) => this.setState((s) => ({ malDurum: { ...s.malDurum, [k.id]: { hata: h.message } } })));
+    };
+    const gruplar = FD.sirala([...new Set(urunler.map((u) => u.grup || 'Diğer'))]);
+    const fiyatli = st.fiyatlar.length;
+    const maliyetsiz = urunler.filter((k) => { const r = satir(k); return sayi(r.alis) == null && sayi(r.kira) == null; }).length;
+    return {
+      malOzet: {
+        fiyatli: `${fiyatli} üründe sitede fiyat var`, maliyetsiz: `${maliyetsiz} ürünün maliyeti bilinmiyor`,
+        rozet1: 'background:#DCE9C8;color:#2F4A1F;font-weight:700;border-radius:999px;padding:5px 11px',
+        rozet2: 'background:#F3E6C8;color:#6B5420;font-weight:700;border-radius:999px;padding:5px 11px',
+      },
+      malGruplar: gruplar.map((g) => {
+        const kalemler = sirali(urunler.filter((u) => (u.grup || 'Diğer') === g));
+        const kar = st.grupKar[g] || '';
+        const durum = st.malDurum[`grup:${g}`] || {};
+        return {
+          ad: g, kar,
+          karYaz: (e) => { const v = e.target.value; this.setState((s) => ({ grupKar: { ...s.grupKar, [g]: v } })); },
+          uygulaYazi: durum.kaydediliyor ? 'Uygulanıyor…' : durum.tamam ? 'Uygulandı ✓' : 'Hepsine uygula',
+          karUygula: () => {
+            const n = sayi(kar);
+            if (n == null || Number.isNaN(n) || n < 0) return this.setState((s) => ({ malDurum: { ...s.malDurum, [`grup:${g}`]: {} }, mesaj: `${g}: kâr yüzdesini sayı olarak yazın.` }));
+            this.setState((s) => ({ malDurum: { ...s.malDurum, [`grup:${g}`]: { kaydediliyor: true } } }));
+            kalemler.reduce((zincir, k) => zincir.then(() => kaydet(k, { ...satir(k), kar_yuzde: String(n) })), Promise.resolve())
+              .then(() => this.setState((s) => ({ malDurum: { ...s.malDurum, [`grup:${g}`]: { tamam: true } }, mesaj: `${g}: kâr %${yazi(n)} uygulandı.` })),
+                (h) => this.setState((s) => ({ malDurum: { ...s.malDurum, [`grup:${g}`]: {} }, mesaj: `${g}: uygulanamadı: ${h.message}` })));
+          },
+          kalemler: kalemler.map((k) => {
+            const r = satir(k);
+            const f = fiyatHesap(r);
+            const d = st.malDurum[k.id] || {};
+            const degisti = !!st.malDuz[k.id];
+            const alan = Object.fromEntries(['alis', 'kira', 'esas', 'kar_yuzde', 'birim', 'tedarikci'].map((a) => [a, (e) => {
+              const v = e.target.value;
+              this.setState((s) => ({ malDuz: { ...s.malDuz, [k.id]: { ...(s.malDuz[k.id] || {}), [a]: v } }, malDurum: { ...s.malDurum, [k.id]: {} } }));
+            }]));
+            return {
+              ad: ust(k) ? `↳ ${k.ad}` : k.ad, resim: FD.resim(k.resim || !ust(k) ? k : ust(k)), alis: r.alis, kira: r.kira, esas: r.esas, kar: r.kar_yuzde, birim: r.birim,
+              etiketAlis: `${ust(k) ? `${ust(k).ad} · ` : ''}${k.ad} alış maliyeti`, etiketKira: `${ust(k) ? `${ust(k).ad} · ` : ''}${k.ad} kira maliyeti`,
+              etiketKar: `${ust(k) ? `${ust(k).ad} · ` : ''}${k.ad} kâr yüzdesi`,
+              tedarikci: r.tedarikci || '', tedVar: /^https:\/\//.test(r.tedarikci || ''), notlar: r.notlar || '', notVar: !!r.notlar,
+              fiyat: f == null ? 'teklif ile' : `${tl(f)}${BIRIM[r.birim] ? ` / ${BIRIM[r.birim]}` : ''}`,
+              alan, hata: d.hata || '',
+              kaydetYazi: d.kaydediliyor ? 'Kaydediliyor…' : d.kaydedildi && !degisti ? 'Kaydedildi ✓' : 'Kaydet',
+              kaydet: () => tekKaydet(k, r),
+            };
+          }),
+        };
+      }),
+    };
   }
   // Düğün envanteri (etkinlik envanterinden ayrı): özet, gider / ödemesiz giriş / düşüm formları, gruplu liste ve geçmiş
   envanterVals(st, Y, bilgi, tYaz, pill, FD) {
@@ -135,7 +239,6 @@ class Component extends DCLogic {
       ['mekan', 'Mekanlar', 'Sihirbazda ilk seçim; tek mekan varsa kendiliğinden seçili gelir.'],
       ['bolum', 'Akış bölümleri', 'Nikah, kokteyl, yemek, after party…'],
       ['menu', 'Menüler', 'Mekanın menüleri; çift isterse tercih olarak işaretler (isteğe bağlı).'],
-      ['konsept', 'Masa konseptleri', 'Ana sayfada vitrin, sihirbazda seçim.'],
       ['urun', 'Ürünler', 'Gruplara ayrılır; masa grupları "Masalarınız", Nikah alanı / Karşılama / Lounge / Işıklandırma "Alan ve dekor" adımında.'],
       ['ekstra', 'Ekstralar', 'Müzik, fotoğraf, ışık, pasta…'],
       ['palet', 'Renk paletleri', '"Renkler ve his" adımında; çift ayrıca kendi renklerini ekleyebilir.'],
@@ -178,7 +281,8 @@ class Component extends DCLogic {
       if (!duz.ad.trim()) return this.setState({ duzHata: 'Ad yazın.' });
       if (duz.tur === 'urun' && !String(duz.grup || '').trim()) return this.setState({ duzHata: 'Ürünün grubunu yazın (örn. Çiçek).' });
       if (duz.tur === 'palet' && !(duz.renkler || []).length) return this.setState({ duzHata: 'Palete en az bir renk ekleyin.' });
-      const kayit = { ...duz, ad: duz.ad.trim(), aciklama: (duz.aciklama || '').trim(), grup: (duz.grup || '').trim(), mekan_id: duz.mekan_id ? Number(duz.mekan_id) : null };
+      const kayit = { ...duz, ad: duz.ad.trim(), aciklama: (duz.aciklama || '').trim(), grup: (duz.grup || '').trim(), mekan_id: duz.mekan_id ? Number(duz.mekan_id) : null,
+        ust_id: duz.tur === 'urun' && duz.ust_id ? Number(duz.ust_id) : null };
       const bitir = (donen) => this.setState((s) => {
         const satir = { ...kayit, ...donen };
         return {
@@ -226,10 +330,11 @@ class Component extends DCLogic {
         };
       }),
       mesaj: st.mesaj,
-      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['envanter', 'Envanter'], ['katalog', 'Katalog']].map(([id, ad]) => ({
+      altSekmeler: [['talepler', `Talepler (${st.talepler.filter((t) => t.durum === 'yeni').length} yeni)`], ['envanter', 'Envanter'], ['maliyet', 'Maliyet'], ['katalog', 'Katalog']].map(([id, ad]) => ({
         ad, sinif: st.alt === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ alt: id, mesaj: '' }),
       })),
-      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog', envanterSekme: st.alt === 'envanter',
+      taleplerSekme: st.alt === 'talepler', katalogSekme: st.alt === 'katalog', envanterSekme: st.alt === 'envanter', maliyetSekme: st.alt === 'maliyet',
+      ...this.maliyetVals(st, Y, FD),
       ...this.envanterVals(st, Y, bilgi, tYaz, pill, FD),
       filtreler: FILTRE.map(([id, ad, f]) => ({ ad: `${ad} (${st.talepler.filter(f).length})`, sinif: st.filtre === id ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme', sec: () => this.setState({ filtre: id }) })),
       talepYok: !liste.length,
@@ -275,8 +380,13 @@ class Component extends DCLogic {
         ekle: () => this.setState({ duz: { tur, ad: '', aciklama: '', resim: '', grup: '', mekan_id: '', yemek_mekandan: true, sira: kat.filter((k) => k.tur === tur).length + 1, acik: true }, duzHata: '', hizli: null, mesaj: '' }),
         altlar: (tur === 'urun' ? FD.sirala([...new Set(kat.filter((k) => k.tur === 'urun').map((k) => k.grup || 'Diğer'))]) : ['']).map((g) => ({
           baslik: g,
-          kalemler: kat.filter((k) => k.tur === tur && (tur !== 'urun' || (k.grup || 'Diğer') === g)).sort((a, b) => a.sira - b.sira || a.id - b.id).map((k) => ({
-          ad: k.ad, resim: FD.resim(k), soluk: k.acik ? '' : 'opacity: .45',
+          kalemler: (() => {
+            const liste = kat.filter((k) => k.tur === tur && (tur !== 'urun' || (k.grup || 'Diğer') === g));
+            const sr = (a, b) => a.sira - b.sira || a.id - b.id;
+            const anaUrunler = liste.filter((k) => !k.ust_id || !liste.some((x) => x.id === k.ust_id)).sort(sr);
+            return anaUrunler.flatMap((k) => [k, ...liste.filter((c) => c.ust_id === k.id).sort(sr)]);
+          })().map((k) => ({
+          ad: k.ust_id ? `↳ ${k.ad}` : k.ad, resim: FD.resim(k.resim || !k.ust_id ? k : (kat.find((x) => x.id === k.ust_id) || k)), soluk: k.acik ? '' : 'opacity: .45',
           alt: [k.tur === 'palet' ? (k.renkler || []).join(' ') : ['palet', 'his'].includes(k.tur) || (k.resim && !k.resim.startsWith('/dugun/cizim/')) ? '' : 'fotoğraf yok', k.acik ? '' : 'gizli', k.aciklama].filter(Boolean).join(' · '),
           resimVar: k.tur !== 'palet',
           serit: k.tur === 'palet' ? (k.renkler || []).map((r) => `flex:1;background:${r}`) : [], seritVar: k.tur === 'palet',
@@ -294,7 +404,7 @@ class Component extends DCLogic {
               .catch((hata2) => this.setState({ yukleniyor: null, mesaj: `Yüklenemedi: ${hata2.message}` }));
           },
           acKapaYazi: k.acik ? 'Gizle' : 'Göster',
-          duzenle: () => this.setState({ duz: { ...k, aciklama: k.aciklama || '', grup: k.grup || '', mekan_id: k.mekan_id ? String(k.mekan_id) : '' }, duzHata: '', mesaj: '' }),
+          duzenle: () => this.setState({ duz: { ...k, aciklama: k.aciklama || '', grup: k.grup || '', mekan_id: k.mekan_id ? String(k.mekan_id) : '', ust_id: k.ust_id ? String(k.ust_id) : '' }, duzHata: '', mesaj: '' }),
           acKapa: () => yaz(() => Y.katalogKaydet({ ...k, acik: !k.acik }), () => this.setState((s) => ({ katalog: s.katalog.map((x) => (x.id === k.id ? { ...x, acik: !k.acik } : x)),
             mesaj: k.acik ? `“${k.ad}” sitede gizlendi.` : `“${k.ad}” sitede görünüyor.` }))),
           sil: () => {
@@ -313,7 +423,9 @@ class Component extends DCLogic {
       duzRenkEkle: () => this.setState((s) => ({ duz: { ...s.duz, renkler: [...(s.duz.renkler || []), '#c8a15a'] } })),
       duzResim: duz ? FD.resim(duz) : '', duzHata: st.duzHata,
       mekanSecenek: kat.filter((k) => k.tur === 'mekan').map((m) => ({ id: String(m.id), ad: m.ad })),
-      duzAlan: Object.fromEntries(['ad', 'aciklama', 'grup', 'mekan_id', 'sira'].map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ duz: { ...s.duz, [k]: v }, duzHata: '' })); }])),
+      ustSecenek: kat.filter((k) => k.tur === 'urun' && !k.ust_id && (!duz || k.id !== duz.id) && (!duz || !duz.grup || k.grup === duz.grup))
+        .sort((a, b) => String(a.grup).localeCompare(String(b.grup), 'tr') || a.sira - b.sira).map((k) => ({ id: String(k.id), ad: `${k.grup || 'Diğer'} · ${k.ad}` })),
+      duzAlan: Object.fromEntries(['ad', 'aciklama', 'grup', 'mekan_id', 'sira', 'ust_id'].map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ duz: { ...s.duz, [k]: v }, duzHata: '' })); }])),
       yemekDegis: (e) => { const v = !!e.target.checked; this.setState((s) => ({ duz: { ...s.duz, yemek_mekandan: v } })); },
       resimSec: (e) => {
         const dosya = e.target.files && e.target.files[0];

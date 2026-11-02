@@ -29,10 +29,13 @@ window.FC_AYLIK = {
 // Düğün kataloğu: ürün gruplarının sırası, hangi adımda göründüğü (masa / alan) ve fotoğrafı olmayan kalemin çizimi.
 // Listede olmayan yeni bir grup masa adımında, alfabetik olarak sonda görünür.
 window.FC_DUGUN = {
-  masaGruplari: ['Masa', 'Örtü', 'Peçete', 'Tabak ve supla', 'Çatal bıçak', 'Bardak', 'Çiçek', 'Mum', 'Masa kartı', 'Sandalye', 'Sandalye süsü'],
-  alanGruplari: ['Nikah alanı', 'Karşılama', 'Lounge', 'Işıklandırma'],
+  masaGruplari: ['Masa', 'Örtü', 'Peçete', 'Tabak ve supla', 'Çatal bıçak', 'Bardak', 'Sofra servisi', 'Çiçek', 'Masa üstü süs', 'Mum', 'Masa kartı', 'Sandalye', 'Sandalye süsü'],
+  alanGruplari: ['Nikah alanı', 'Karşılama', 'Lounge', 'Işıklandırma', 'Gölgelik ve çadır', 'Bar ve içecek', 'Pasta ve tatlı sunumu', 'Fotoğraf köşesi', 'Çocuk köşesi',
+    'Tabela ve yönlendirme', 'Misafir konforu', 'Kâğıt ürünler', 'Altyapı'],
   cizim: { Masa: 'masa', Örtü: 'ortu', Peçete: 'pecete', 'Tabak ve supla': 'tabak', 'Çatal bıçak': 'catal', Bardak: 'bardak', Çiçek: 'cicek', Mum: 'mum',
-    'Masa kartı': 'kart', Sandalye: 'sandalye', 'Sandalye süsü': 'cicek', 'Nikah alanı': 'kemer', Karşılama: 'pano', Lounge: 'lounge', Işıklandırma: 'fener' },
+    'Masa kartı': 'kart', Sandalye: 'sandalye', 'Sandalye süsü': 'cicek', 'Nikah alanı': 'kemer', Karşılama: 'pano', Lounge: 'lounge', Işıklandırma: 'fener', Altyapı: 'isik',
+    'Sofra servisi': 'tabak', 'Masa üstü süs': 'cicek', 'Gölgelik ve çadır': 'konak', 'Bar ve içecek': 'kokteyl', 'Pasta ve tatlı sunumu': 'pasta',
+    'Fotoğraf köşesi': 'foto', 'Çocuk köşesi': 'parti', 'Tabela ve yönlendirme': 'pano', 'Misafir konforu': 'lounge', 'Kâğıt ürünler': 'kart' },
   turCizim: { mekan: 'mekan', bolum: 'kemer', menu: 'yemek', konsept: 'konsept-kir', urun: 'masa', ekstra: 'isik' },
   resim(k) { return k.resim || `/dugun/cizim/${(k.tur === 'urun' && this.cizim[k.grup]) || this.turCizim[k.tur] || 'mekan'}.svg`; },
   alanMi(grup) { return this.alanGruplari.includes(grup); },

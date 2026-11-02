@@ -38,7 +38,7 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     await y.page.getByRole('button', { name: 'Etkinliği kaydet' }).click();
     await y.page.getByText('“Breakfast Club” güncellendi.').waitFor({ timeout: 5000 });
     const g = y.istekler.find((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/etkinlikler');
-    dogru(yuklenen.length === 1 && g && g.govde.saat === '09.30–11.30' && g.govde.aciklama.startsWith('Ağaçların altında') && /\/afisler\/.+\.png$/.test(g.govde.afis) && !('tarih' in g.govde) && !('ad' in g.govde),
+    dogru(yuklenen.filter((y) => !y.includes('/paylas/')).length === 1 && yuklenen.some((y) => /\/afisler\/paylas\/.+\.jpg$/.test(y)) && g && g.govde.saat === '09.30–11.30' && g.govde.aciklama.startsWith('Ağaçların altında') && /\/afisler\/.+\.png$/.test(g.govde.afis) && !('tarih' in g.govde) && !('ad' in g.govde),
       `düzenleme ve afiş kaydedildi (${JSON.stringify(g && g.govde)})`);
     dogru(await y.page.getByRole('link', { name: 'Üye paneli' }).getAttribute('href') === '/uye', 'yönetim: tek tuşla üye paneline geçiş');
     // Yöneticinin kendi üyeliğini hesabına bağlaması

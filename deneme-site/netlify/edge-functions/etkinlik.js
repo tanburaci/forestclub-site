@@ -18,12 +18,19 @@ export function tarihYaz(tarih, saat) {
   return `${Number(m[3])} ${AYLAR[Number(m[2]) - 1]} ${gun}${saat ? ` · ${saat}` : ''}`;
 }
 
+// Afişin paylaşım için küçültülmüş kopyası (yönetim panelinde afisler/paylas/<ad>.jpg olarak üretilir); WhatsApp gibi
+// uygulamalar büyük resmi göstermeyip site simgesine (logo) düşüyor
+export function paylasAdresi(afis) {
+  const m = /^(https:\/\/[^/]+\/storage\/v1\/object\/public\/afisler\/)([^/?#]+?)\.[a-z]+$/i.exec(afis || '');
+  return m ? `${m[1]}paylas/${m[2]}.jpg` : null;
+}
+
 export function sayfa(kok, id, e) {
   const hedef = id && e ? `/#etkinlik-${id}` : '/#etkinlikler';
   const baslik = e ? `${e.ad} · Forest Club Urla` : 'Forest Club Urla · Gatherings in Nature';
   const aciklama = e ? kisalt([tarihYaz(e.tarih, e.saat), 'Pinya, Urla', e.aciklama || e.kim].filter(Boolean).join(' · '), 200)
     : "Urla'da ağaçların altında buluşmalar: kahvaltı, gün batımı, yoga, atölyeler, müzik.";
-  const resim = e && /^https:\/\//.test(e.afis || '') ? e.afis : `${kok}${LOGO}`;
+  const resim = e && /^https:\/\//.test(e.paylasResim || e.afis || '') ? (e.paylasResim || e.afis) : `${kok}${LOGO}`;
   return `<!doctype html>
 <html lang="tr">
 <head>
@@ -61,6 +68,8 @@ export default async (istek) => {
         headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
       });
       if (r.ok) e = (await r.json())[0] || null;
+      const kucuk = e && paylasAdresi(e.afis);
+      if (kucuk && (await fetch(kucuk, { method: 'HEAD' })).ok) e.paylasResim = kucuk;
     } catch (h) { /* veri okunamazsa genel önizleme */ }
   }
   return new Response(sayfa(url.origin, id, e), {
