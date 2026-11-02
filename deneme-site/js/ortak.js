@@ -158,9 +158,10 @@
 
   // Etkinlik bileti (havale + dekont): 1) istek açılır, sunucu tutarı söyler ve yerleri dekont gelene dek ayırmaz;
   // 2) dekont imzalı adrese yüklenir, istek yöneticinin onayına düşer. kalemler: [{etkinlik: id, adet}]
-  window.FCSBiletAc = async ({ kalemler, ad, eposta, tel }) => {
+  // yol: kart (Shopier ödeme sayfası adresi döner) | havale (dekont yükleme hakkı) | nakit (yer ayrılır)
+  window.FCSBiletAc = async ({ kalemler, ad, eposta, tel, yol }) => {
     const { data: { session } } = await sb.auth.getSession();
-    return formGonder('bilet_adres', { kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, oturum: session ? session.access_token : null });
+    return formGonder('bilet_adres', { kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, yol: yol || 'havale', oturum: session ? session.access_token : null });
   };
   window.FCSBiletDekont = async (hak, eposta, dosya) => {
     const { tur } = dekontDosyasi(dosya);

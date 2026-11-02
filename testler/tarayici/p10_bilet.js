@@ -54,13 +54,21 @@ async function biletSahte(page, tutar) {
     await modal.getByLabel(/E-posta \*/).fill('misafir@posta.test');
     await modal.getByLabel('Telefon *').fill('0532 000 00 00');
     await modal.locator('input[type="checkbox"]').check();
-    await modal.getByRole('button', { name: 'Ödemeye geç · havale / EFT' }).click();
+    // Kart kapalıyken varsayılan yöntem yok: kişi havaleyi bilerek seçer; nakit seçeneği yok (yalnız kapıda)
+    dogru(await modal.getByRole('radio', { name: /Kredi \/ banka kartı/ }).getAttribute('aria-disabled') === 'true'
+      && await modal.getByRole('radio', { name: /nakit/i }).count() === 0, 'site: kart çok yakında (kapalı), nakit seçeneği yok');
+    await modal.getByRole('button', { name: 'Ödeme yöntemini seç' }).click();
+    dogru(await modal.getByText('Ödeme yöntemini seç.').count() === 1, 'site: yöntem seçilmeden devam edilmez');
+    await modal.getByRole('radio', { name: /Havale \/ EFT/ }).click();
+    await modal.getByRole('button', { name: 'Devam · havale / EFT' }).click();
     await modal.getByRole('button', { name: 'Dekontu gönder' }).waitFor({ timeout: 5000 });
     dogru(await modal.locator('span', { hasText: /^2.000 TL$/ }).count() >= 1, 'site: sunucunun tutarı görünüyor');
     const ac = sf.formlar.find((f) => f.tur === 'bilet_adres');
     dogru(ac && JSON.stringify(ac.veri.kalemler) === JSON.stringify([{ etkinlik: 7, adet: 2 }]) && ac.veri.oturum === null && ac.jeton,
       `site: istek sunucuya (2 bilet, oturumsuz, Turnstile'lı) (${JSON.stringify(ac && ac.veri)})`);
     dogru(await modal.getByText('TR59 0015 7000 0000 0205 1344 62').count() === 1, 'site: IBAN görünüyor');
+    dogru(await modal.getByText('Ödemenden sonra 5–60 dakika içinde biletin e-posta adresine gönderilecektir.').count() === 1, 'site: havalede 5–60 dk uyarısı');
+    dogru(ac && ac.veri.yol === 'havale', 'site: istek havale yoluyla gitti');
     await modal.locator('input[type="file"]').setInputFiles(PDF);
     await modal.getByRole('button', { name: 'Dekontu gönder' }).click();
     await modal.getByText('Teşekkürler! 🌲').waitFor({ timeout: 5000 });
@@ -111,8 +119,8 @@ async function biletSahte(page, tutar) {
     v.rpc.bilet_karar = (g) => { v.rpcler.push(['bilet_karar', g]); return [200, { durum: 'onaylandi', adet: 2 }]; };
     const y = await sayfaAc(tarayici, v, oturum('yon-1', 'yonetici@posta.test'));
     await y.page.goto(`${SITE}/yonetim/#basvurular`);
-    await y.page.getByText('Bilet dekontları · 1').waitFor({ timeout: 15000 });
-    await y.page.getByRole('button', { name: /Bilet dekontları/ }).click();  // bölüm kapalı başlar
+    await y.page.getByText('Bilet istekleri · 1').waitFor({ timeout: 15000 });
+    await y.page.getByRole('button', { name: /Bilet istekleri/ }).click();  // bölüm kapalı başlar
     const satir = y.page.locator('div').filter({ hasText: 'Misafir Kişi' }).filter({ has: y.page.getByRole('button', { name: 'Onayla' }) }).last();
     dogru((await satir.innerText()).includes('Yoga Sabahı') && (await satir.innerText()).includes('2.000 TL'), 'yönetim: bilet dekontu etkinlik ve tutarla listede');
     dogru(await y.page.getByText('Yarım Kalan').count() === 0, 'yönetim: dekontu yüklenmemiş istek görünmüyor');
