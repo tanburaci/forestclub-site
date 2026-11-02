@@ -187,6 +187,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     v.tablolar.veri_talepleri = [{ id: 1, uye_id: 4, ad: 'Üye 4', eposta: 'u4@ornek.com', tur: 'silme', durum: 'bekliyor', created_at: new Date().toISOString(), tamam_at: null }];
     Object.assign(v.rpc, {
       giris_kaydet: (g) => { v.rpcler.push(['giris_kaydet', g]); return [200, { ad: 'Misafir', bilet_id: 7, tanisma: true, zaten: false }]; },
+      giris_kontrol: (g) => { v.rpcler.push(['giris_kontrol', g]); return [200, { kod: g.p_kod, ad: 'Misafir', tur: 'tanisma', zaten: false }]; },
       veri_kopyasi: (g) => { v.rpcler.push(['veri_kopyasi', g]); return [200, { uye: { ad: 'Üye 4' } }]; },
       uye_anonimlestir: (g) => { v.rpcler.push(['uye_anonimlestir', g]); return [200, ['yeni/x.pdf', 'https://drive.google.com/abc']]; },
     });
@@ -225,6 +226,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     // Kapıda kamera
     await y.page.getByRole('button', { name: 'Katılımcılar · yoklama' }).first().click();
     await y.page.getByRole('button', { name: 'Kamerayla okut' }).click();
+    await y.page.getByRole('button', { name: 'Girişi onayla' }).click({ timeout: 10000 });
     await y.page.getByText('Hoş geldin Misafir! Giriş işlendi. (tanışma bileti)').waitFor({ timeout: 10000 });
     const gk = v.rpcler.find((x) => x[0] === 'giris_kaydet');
     dogru(gk && gk[1].p_kod === 'FC-T-ABC234' && gk[1].p_etkinlik === 10, `kamera kodu okudu, giris_kaydet çağrıldı (${JSON.stringify(gk && gk[1])})`);

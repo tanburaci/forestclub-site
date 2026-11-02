@@ -410,6 +410,8 @@ html.gok-gece .fs-parti{opacity:1}
 .fe-dugmeler{display:flex;flex-wrap:wrap;gap:10px}
 .fe-gecti{background:#F0F0EE;border-radius:12px;padding:12px 14px;font-weight:600}
 .fe-metin{white-space:pre-line;color:#333333;line-height:1.6;margin-bottom:16px}
+@keyframes fs-bekle{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.fs-bekle-nokta{width:12px;height:12px;border-radius:50%;background:#111111;flex:none;animation:fs-bekle 1.2s ease-in-out infinite}
 .fe-alt-dugmeler{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.fe-takvim{font-weight:600;font-size:14px}
 .fe-neden,.fe-diger,.fe-tv-yer{max-width:1100px;margin:0 auto;padding:0 20px 34px;position:relative;z-index:1}
 .fe-neden h2,.fe-diger h2,.fe-tv-yer h2{font-size:48px;margin:0 0 14px}
@@ -585,10 +587,23 @@ html.gok-gece .fs-parti{opacity:1}
             <button type="button" class="fs-btn" onClick="{{ sDekontGonder }}">Dekontu gönder</button>
           </div>
         </sc-if>
+        <!-- Kartla ödeme: Shopier ayrı pencerede; bu ekran ödemenin gelmesini bekler (bilet_istek_durum) -->
+        <sc-if value="{{ sKartBekle }}" hint-placeholder-val="{{ false }}">
+          <div class="fs-kart-bekle" role="status" aria-live="polite" style="display: flex; flex-direction: column; gap: 12px">
+            <span class="fs-baslik" style="font-size: 44px">Ödeme Shopier'de 💳</span>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5"><strong>{{ hakTutarYazi }}</strong> ödemeni açılan Shopier penceresinde tamamla. Bu sayfayı kapatma; ödeme gelince burası kendiliğinden değişir, biletlerin <strong>{{ sEposta }}</strong> adresine gelir.</p>
+            <p style="margin: 0; display: flex; align-items: center; gap: 10px; background: #F0F0EE; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600"><span class="fs-bekle-nokta" aria-hidden="true"></span>Ödemen bekleniyor…</p>
+            <sc-if value="{{ sPencereYok }}" hint-placeholder-val="{{ false }}">
+              <p style="margin: 0; font-size: 14px; color: #82301F">Tarayıcın ödeme penceresini açmadı. Aşağıdaki düğmeyle aç.</p>
+            </sc-if>
+            <a class="fs-btn" href="{{ sOdemeSayfa }}" target="shopier-odeme" rel="noopener">{{ sPencereYazi }}</a>
+            <button type="button" class="fs-btn fs-btn-acik" onClick="{{ sepetKapat }}">Daha sonra · pencereyi kapat</button>
+          </div>
+        </sc-if>
         <sc-if value="{{ sKartDonus }}" hint-placeholder-val="{{ false }}">
           <div role="status" style="display: flex; flex-direction: column; gap: 12px">
-            <span class="fs-baslik" style="font-size: 44px">Teşekkürler! 🎟️</span>
-            <p style="margin: 0; font-size: 15px; line-height: 1.5">Ödemen Shopier'den bize ulaşınca biletlerin birkaç dakika içinde e-postana gelir. Gelmezse spam klasörüne de bak; yine yoksa bize yaz.</p>
+            <span class="fs-baslik" style="font-size: 44px">Ödemen alındı! 🎟️</span>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5">Teşekkürler! Biletlerin <strong>{{ sEposta }}</strong> adresine gönderildi; girişte e-postadaki karekodu göstermen yeterli. Gelmezse spam klasörüne de bak; yine yoksa bize yaz.</p>
             <button type="button" class="fs-btn" onClick="{{ sepetKapat }}">Tamam</button>
           </div>
         </sc-if>
@@ -1624,7 +1639,22 @@ class Component extends DCLogic {
       if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
     });
   }
+  // Shopier penceresindeki ödemeyi bekler: 4 sn'de bir sorulur, en çok 30 dk; gelince "Ödemen alındı" ve sepet boşalır
+  kartTakipBaslat(id, eposta) {
+    clearInterval(this.kartTakip);
+    const bas = Date.now();
+    this.kartTakip = setInterval(() => {
+      if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSBiletDurum) { clearInterval(this.kartTakip); return; }
+      window.FCSBiletDurum(id, eposta).then((d) => {
+        if (d === 'onaylandi') {
+          clearInterval(this.kartTakip);
+          this.setState({ sAdim: 'kartdonus', sepet: {}, hak: null, sepetAcik: true, sHata: '' });
+        }
+      }, () => {});
+    }, 4000);
+  }
   componentWillUnmount() {
+    clearInterval(this.kartTakip);
     window.removeEventListener('scroll', this.kaydir);
     if (this.bekle) cancelAnimationFrame(this.bekle);
   }
@@ -1839,7 +1869,7 @@ class Component extends DCLogic {
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
       sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi', 'nakit', 'kartdonus'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
       sAdimlar: ADIMLAR.map((a) => {
-        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont' }[sAdim] || sAdim));
+        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont', kartbekle: 'dekont' }[sAdim] || sAdim));
         const i = ADIMLAR.indexOf(a);
         return { ad: a.ad, stil: `border-radius:999px;padding:5px 10px;border:2px solid #111111;${i <= sira ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
       }),
@@ -1902,7 +1932,9 @@ class Component extends DCLogic {
       }),
       odemeDugme: !canli ? (toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)')
         : sYol === 'kart' ? `Kartla öde · ${TL(toplam || araToplam)}` : sYol === 'havale' ? 'Devam · havale / EFT' : 'Ödeme yöntemini seç',
-      sKartDonus: sAdim === 'kartdonus',
+      sKartDonus: sAdim === 'kartdonus', sKartBekle: sAdim === 'kartbekle',
+      sOdemeSayfa: this.state.sOdemeSayfa || '#', sPencereYok: !!this.state.sPencereYok,
+      sPencereYazi: this.state.sPencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
       sAd: this.state.sAd, sEposta: this.state.sEposta, sTel: this.state.sTel, sOnay: this.state.sOnay, sHata: this.state.sHata,
       sAdYaz: (e) => this.setState({ sAd: e.target.value, sHata: '' }),
       sEpostaYaz: (e) => this.setState({ sEposta: e.target.value, sHata: '' }),
@@ -1925,12 +1957,25 @@ class Component extends DCLogic {
           const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
           this.setState({ sHata: 'Hazırlanıyor…' });
           if (!sYol) return this.setState({ sHata: 'Ödeme yöntemini seç.' });
+          // Kart: Shopier ayrı pencerede açılır, bu sayfa kapanmaz; pencere tıklama anında açılmalı (sonra açılırsa
+          // tarayıcı engeller), adres sunucudan gelince yüklenir. Engellenirse ekranda "Shopier'de öde" bağlantısı çıkar.
+          let pencere = null;
+          if (sYol === 'kart') {
+            try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
+            try { if (pencere) pencere.document.title = 'Shopier ödeme sayfası açılıyor…'; } catch (e) { /* başka kaynak */ }
+          }
           window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol, kod: kodB ? kodB.kod : null })
             .then((h) => {
-              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) { location.href = h.sayfa; return; }
+              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) {
+                if (pencere && !pencere.closed) pencere.location.href = h.sayfa;
+                this.setState({ sAdim: 'kartbekle', hak: { ...h, adet: sepetToplamAdet, araToplam }, sOdemeSayfa: h.sayfa, sPencereYok: !pencere || pencere.closed, sHata: '' });
+                this.kartTakipBaslat(h.id, sEposta.trim());
+                return;
+              }
+              if (pencere && !pencere.closed) pencere.close();
               this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' });
             })
-            .catch((h) => this.setState({ sHata: h.message }));
+            .catch((h) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ sHata: h.message }); });
           return;
         }
         let no = 4821;

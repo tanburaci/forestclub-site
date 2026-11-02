@@ -22,6 +22,7 @@ function hucreler(metin) {
 async function dene(tarayici, metin, bozukOkuyucu) {
   const v = yonetimVerisi();
   v.rpc.giris_kaydet = (g) => { v.rpcler.push(['giris_kaydet', g]); return [200, { ad: 'Ezgi', uye_id: 2, bilet: true, zaten: false }]; };
+  v.rpc.giris_kontrol = (g) => { v.rpcler.push(['giris_kontrol', g]); return [200, { kod: g.p_kod, ad: 'Ezgi', tur: 'bilet', zaten: false }]; };
   const y = await sayfaAc(tarayici, v, oturum('yon-1', 'yonetici@posta.test'));
   await y.page.route('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', headers: { 'access-control-allow-origin': '*' }, body: JQ }));
   await y.ctx.addInitScript(({ hucre, n, bozukOkuyucu }) => {
@@ -44,6 +45,7 @@ async function dene(tarayici, metin, bozukOkuyucu) {
   await y.page.locator('button').filter({ hasText: /^Etkinlikler$/ }).first().click();
   await y.page.getByRole('button', { name: 'Katılımcılar · yoklama' }).first().click();
   await y.page.getByRole('button', { name: 'Kamerayla okut' }).click();
+  await y.page.getByRole('button', { name: 'Girişi onayla' }).click({ timeout: 10000 }).catch(() => {});
   await y.page.getByText('Hoş geldin Ezgi! Giriş işlendi. (bilet)').waitFor({ timeout: 10000 }).catch(() => {});
   const gk = v.rpcler.find((x) => x[0] === 'giris_kaydet');
   await y.ctx.close();
