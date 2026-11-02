@@ -13,7 +13,9 @@ class Component extends DCLogic {
       this.bekle = requestAnimationFrame(() => {
         this.bekle = null;
         const asagi = window.scrollY > 620;
-        if (asagi !== this.state.asagi) this.setState({ asagi });
+        const b = document.getElementById('bulusmalar');
+        const uyelikTv = !!b && b.getBoundingClientRect().top < innerHeight * 0.6;
+        if (asagi !== this.state.asagi || uyelikTv !== !!this.state.uyelikTv) this.setState({ asagi, uyelikTv });
       });
     };
   }
@@ -248,6 +250,8 @@ class Component extends DCLogic {
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali,
       tekTvKapat: () => this.setState({ tekTvKapali: true }),
       tekTvGit: () => { location.href = '/#basvuru'; },
+      anaTv: !tek && !this.state.uyeGirisli,
+      anaTvGit: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       digerler, digerVar: digerler.length > 0,
       // Etkinlik sayfasında "Randevu oluştur": bir kişi ekler ve sepeti hemen açar
       tekRandevu: () => { if (!tek || tek.dolu) return; tek.sepeteEkle(); this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }); },
@@ -539,6 +543,8 @@ class Component extends DCLogic {
       afisKapat: () => this.setState({ afisTam: '' }),
       yuzenGizli: acik ? 'false' : 'true',
       basaDon: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+      yuzenUyelik: !!this.state.uyelikTv && !this.state.uyeGirisli, yuzenVideo: !(this.state.uyelikTv && !this.state.uyeGirisli),
+      yuzenUyeOl: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       yuzenKapat: () => this.setState({ kapali: true }),
       ozellikler: [
         { ad: 'Breakfast Club', metin: 'Her ay ağaçların altında kahvaltı buluşması' },
