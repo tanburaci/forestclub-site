@@ -100,6 +100,18 @@ async function authTaklit(page, durum) {
     await y3.page.waitForTimeout(800);
     dogru(d3.istekler.includes('POST /auth/v1/logout'), 'kod ekranından çıkış yapılabiliyor');
 
+    // ---------- Şifre sıfırlama bağlantısı + iki adımlı giriş: önce kod, sonra yeni şifre (Supabase aal2 ister) ----------
+    const d5 = { faktorler: [{ id: 'f-1', factor_type: 'totp', status: 'verified' }], istekler: [], dogrulama: [] };
+    const y5 = await sayfaAc(tarayici, yonetimVerisi(), oturum('yon-1', 'yonetici@posta.test', 'aal1', d5.faktorler));
+    await authTaklit(y5.page, d5);
+    await y5.page.goto(`${SITE}/yonetim/#type=recovery`);
+    await y5.page.getByText('Doğrulama kodu').waitFor({ timeout: 15000 });
+    dogru(await y5.page.getByLabel('Yeni şifre (tekrar)').count() === 0, 'sıfırlama: kod girilmeden yeni şifre ekranı açılmıyor');
+    await y5.page.getByLabel('6 haneli kod').fill('123456');
+    await y5.page.getByRole('button', { name: 'Doğrula' }).click();
+    await y5.page.getByLabel('Yeni şifre (tekrar)').waitFor({ timeout: 15000 });
+    dogru(d5.dogrulama.length === 1 && d5.dogrulama[0].faktor === 'f-1', 'sıfırlama: kod doğrulandı, yeni şifre ekranı açıldı');
+
     // ---------- aal2 oturumda doğrudan panel; üye listesi sayfalı ----------
     const y4 = await sayfaAc(tarayici, yonetimVerisi(), oturum('yon-1', 'yonetici@posta.test'));
     await y4.page.goto(`${SITE}/yonetim/`);
