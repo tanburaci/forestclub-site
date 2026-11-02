@@ -66,24 +66,30 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     dogru(true, 'ayar gelince kapak kaldırıldı');
     const s2 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: 'Yağmur nedeniyle pazar buluşması ertelendi.' }]), null);
     await s2.page.goto(`${SITE}/`);
-    await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').waitFor({ timeout: 15000 });
+    await s2.page.getByRole('button', { name: 'Randevu oluştur' }).first().waitFor({ timeout: 15000 });
+    await s2.page.waitForTimeout(500);
+    dogru(await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').count() === 0, 'üye olmayan ziyaretçiye iptal duyurusu çıkmıyor');
     dogru(await s2.page.getByText('Yakında açılıyoruz 🌲').count() === 0, 'açılışta şerit yok');
     const s2Metin = await s2.page.locator('body').textContent();
     dogru(!/Önizleme|önizlemesi|ornek\.com/.test(s2Metin), 'canlıda tasarım önizlemesi notları ve örnek e-postalar yok');
     dogru(await s2.page.getByRole('button', { name: 'Tanışma biletimle rezervasyon oluştur' }).count() === 1 && await s2.page.getByRole('button', { name: 'Randevu oluştur' }).count() === 1,
       'açılışta tanışma bileti ve bilet satışı açık');
-    await s2.page.getByRole('button', { name: 'Tamam' }).first().click();
-    dogru(await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').count() === 0, 'duyuru "Tamam" ile kapanıyor');
-    // "Tamam" denen duyuru sayfaya yeniden gelince çıkmaz
-    await s2.page.reload();
-    await s2.page.getByRole('button', { name: 'Randevu oluştur' }).first().waitFor({ timeout: 15000 });
-    dogru(await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').count() === 0, 'Tamam denen duyuru sayfa yenilenince çıkmıyor');
+    // Giriş yapmış üyeye çıkar; "Tamam" ile kapanır, sayfaya yeniden gelince çıkmaz
+    const s2u = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: 'Yağmur nedeniyle pazar buluşması ertelendi.' }]), oturum('uye-1', 'deniz@posta.test', 'aal1'));
+    await s2u.page.goto(`${SITE}/`);
+    await s2u.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').waitFor({ timeout: 15000 });
+    dogru(true, 'giriş yapmış üyeye iptal duyurusu çıkıyor');
+    await s2u.page.getByRole('button', { name: 'Tamam' }).first().click();
+    dogru(await s2u.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').count() === 0, 'duyuru "Tamam" ile kapanıyor');
+    await s2u.page.reload();
+    await s2u.page.getByRole('button', { name: 'Randevu oluştur' }).first().waitFor({ timeout: 15000 });
+    dogru(await s2u.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').count() === 0, 'Tamam denen duyuru sayfa yenilenince çıkmıyor');
     // Günü geçmiş duyuru görünmez; günü gelmemiş görünür
-    const s4 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: { metin: 'Dünkü buluşma iptal edildi.', bitis: gun(-1) } }]), null);
+    const s4 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: { metin: 'Dünkü buluşma iptal edildi.', bitis: gun(-1) } }]), oturum('uye-1', 'deniz@posta.test', 'aal1'));
     await s4.page.goto(`${SITE}/`);
     await s4.page.getByRole('button', { name: 'Randevu oluştur' }).first().waitFor({ timeout: 15000 });
     dogru(await s4.page.getByText('Dünkü buluşma iptal edildi.').count() === 0, 'günü geçmiş iptal duyurusu görünmüyor');
-    const s5 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: { metin: 'Bugünkü buluşma iptal.', bitis: gun(0) } }]), null);
+    const s5 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: { metin: 'Bugünkü buluşma iptal.', bitis: gun(0) } }]), oturum('uye-1', 'deniz@posta.test', 'aal1'));
     await s5.page.goto(`${SITE}/`);
     await s5.page.getByText('Bugünkü buluşma iptal.').waitFor({ timeout: 15000 });
     dogru(true, 'günü bitmemiş duyuru görünüyor');

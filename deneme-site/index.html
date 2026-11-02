@@ -15,11 +15,11 @@
 <meta property="og:locale" content="tr_TR">
 <link rel="icon" href="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
-<script src="/js/dc.js?v=202611021900"></script>
-<script src="/sayfalar/site.dc.js?v=202611021900"></script>
-<script src="/js/ayar.js?v=202611021900"></script>
-<script src="/js/ortak.js?v=202611021900"></script>
-<script src="/js/site.js?v=202611021900" defer></script>
+<script src="/js/dc.js?v=202611022000"></script>
+<script src="/sayfalar/site.dc.js?v=202611022000"></script>
+<script src="/js/ayar.js?v=202611022000"></script>
+<script src="/js/ortak.js?v=202611022000"></script>
+<script src="/js/site.js?v=202611022000" defer></script>
 <!-- YAKINDA KAPAĞI: site görünür ve kaydırılır ama hiçbir yeri tıklanmaz, klavyeyle de ulaşılmaz (#kok inert);
      tıklananlar karttaki Instagram ve sözleşme bağlantıları (WhatsApp numaraları açılışa kadar görünmez).
      Yönetim › İletişim › Site durumu'nda "Yakında" modu kapatılınca site.js kapağı kaldırır; ayar okunamazsa kapak kalır. -->
@@ -71,11 +71,13 @@ body{padding-bottom:48px}
   <!-- Sitenin alt bilgisindeki sözleşmeler ve ödeme logoları: kapak dururken de ekranın altında (iyzico şartı) -->
   <footer class="alt">
     <nav class="yasal" aria-label="Sözleşmeler"><a href="/hakkimizda/">Hakkımızda</a><a href="/teslimat-iade/">Teslimat ve iade</a><a href="/gizlilik/">Gizlilik ve KVKK</a><a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a></nav>
-    <div class="logo"><img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32"></div>
+    <div class="logo"><img src="/_blob/odeme/logo-kart.png" alt="Mastercard, Visa, American Express, Troy" width="300" height="32"></div>
   </footer>
 </div>
 <!-- /YAKINDA KAPAĞI -->
 <div id="kok" inert style="font:16px Figtree,sans-serif;padding:24px">Yükleniyor…</div>
 <noscript><p style="font:16px Figtree,sans-serif;padding:0 24px">Forest Club Urla: Urla'da ağaçların altında kahvaltı ve gün batımı buluşmaları, yoga, atölyeler ve müzik. Siteyi görmek için tarayıcında JavaScript'i aç; bize Instagram'da @forestcluburla adresinden ulaşabilirsin.</p></noscript>
+<!-- Netlify "Powered by" rozeti istenmiyor: rozet betiği bu öğeyi görünce kendini çizmez (ücretli hesapta gizlenebilir) -->
+<div id="nl-badge-frame" hidden></div>
 </body>
 </html>
