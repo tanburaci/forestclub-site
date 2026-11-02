@@ -33,7 +33,14 @@ jobs:
         id: degisti
         run: |
           if [ "${{ github.event_name }}" = workflow_dispatch ]; then echo "yayinla=evet" >> "$GITHUB_OUTPUT"; exit 0; fi
-          if [ -n "$(git log --since='25 hours ago' --format=%h -- deneme-site)" ]; then echo "yayinla=evet" >> "$GITHUB_OUTPUT"
+          # Canlıdaki son yayının commit'i (yayın mesajı "main@<sha>"); o commit'ten bu yana deneme-site/ değişmediyse
+          # yayın yok: gün içinde elle yayınlanmışsa gece aynı şey ikinci kez yayınlanıp kredi harcanmaz
+          son=$(curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID/deploys?per_page=10" \
+            | jq -r '[.[] | select(.context=="production" and .state=="ready")][0].title // ""' | sed -n 's/^main@\([0-9a-f]\{7\}\).*/\1/p' || true)
+          if [ -n "$son" ] && git cat-file -e "$son^{commit}" 2>/dev/null; then
+            if [ -z "$(git diff --name-only "$son" HEAD -- deneme-site)" ]; then echo "Canlı yayın ($son) güncel; yayın yok (kredi harcanmaz)."; echo "yayinla=hayir" >> "$GITHUB_OUTPUT"
+            else echo "yayinla=evet" >> "$GITHUB_OUTPUT"; fi
+          elif [ -n "$(git log --since='25 hours ago' --format=%h -- deneme-site)" ]; then echo "yayinla=evet" >> "$GITHUB_OUTPUT"
           else echo "Site değişmedi; yayın yok (kredi harcanmaz)."; echo "yayinla=hayir" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-node@v4
         if: steps.degisti.outputs.yayinla == 'evet'
