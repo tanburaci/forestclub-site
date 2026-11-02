@@ -54,7 +54,7 @@ async function sahteSunucu(page) {
     dogru(await pencere.getByText('Küçük ya da büyük, her katkı bu alanı birlikte yeşertmemize yardım ediyor.').isVisible(), 'destek metni görünüyor');
     const tutarlar = await pencere.locator('.fs-tutar').allInnerTexts();
     dogru(JSON.stringify(tutarlar) === JSON.stringify(['1.000 TL', '2.500 TL', '5.000 TL', 'Başka tutar']), `hazır tutarlar (${tutarlar})`);
-    dogru(await pencere.getByText('Kartla ödeme çok yakında; şimdilik IBAN ile gönderebilirsin.').count() >= 1, 'kart kapalı notu');
+    dogru(await pencere.getByText('Kartla destek çok yakında; şimdilik IBAN ile gönderebilirsin.').count() >= 1, 'kart kapalı notu');
     const kart = pencere.getByRole('button', { name: 'Kartla öde' });
     dogru(await kart.getAttribute('aria-disabled') === 'true', 'kart kapalıyken "Kartla öde" pasif');
     await kart.click({ force: true });
@@ -73,22 +73,16 @@ async function sahteSunucu(page) {
     dogru(!/wa\.me/.test(html) && await s1.page.getByRole('button', { name: "WhatsApp'tan yaz" }).count() === 0, 'sitede WhatsApp numarası ve "WhatsApp\'tan yaz" yok');
     dogru(!s1.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'kart kapalı: sayfa / CSP hatası yok');
 
-    // ---------- Kart açık: iyzico'ya gider ----------
+    // ---------- Kart açık (Shopier biletlerde): destek yine yalnız IBAN (kartla destek iyzico'daydı, Shopier'e taşınana kadar kapalı) ----------
     const s2 = await sayfaAc(tarayici, veri([{ anahtar: 'yakinda', deger: false }, { anahtar: 'kart_odeme', deger: true }]), null);
     const formlar2 = await sahteSunucu(s2.page);
     await s2.page.goto(`${SITE}/`);
     await s2.page.locator('.fs-destek').click();
     const p2 = s2.page.getByRole('dialog', { name: 'Topluluğumuza destek ol' });
-    await p2.getByRole('button', { name: 'Başka tutar' }).click();
-    await p2.getByPlaceholder('Örn. 1500').fill('40');
-    await p2.getByRole('button', { name: /Kartla öde/ }).click();
-    dogru(await p2.getByText('En az 50 TL yaz.').count() === 1 && formlar2.length === 0, 'elle 40 TL: en az 50 TL uyarısı');
     await p2.getByRole('button', { name: '2.500 TL' }).click();
-    dogru(await p2.getByRole('button', { name: 'Kartla öde · 2.500 TL' }).count() === 1, 'düğmede seçilen tutar');
-    await Promise.all([s2.page.waitForURL(IYZICO, { timeout: 10000 }), p2.getByRole('button', { name: 'Kartla öde · 2.500 TL' }).click()]);
-    dogru(formlar2.length === 1 && formlar2[0].tur === 'destek' && formlar2[0].veri.tutar === 2500 && /^jeton-/.test(formlar2[0].jeton),
-      `form-gonder "destek" 2500 TL, Turnstile jetonlu (${JSON.stringify(formlar2[0])})`);
-    dogru(s2.page.url() === IYZICO, 'iyzico ödeme sayfasına gidildi');
+    dogru(await p2.getByRole('button', { name: /Kartla öde/ }).getAttribute('aria-disabled') === 'true'
+      && await p2.getByText('Kartla destek çok yakında; şimdilik IBAN ile gönderebilirsin.').count() === 1 && formlar2.length === 0 && s2.page.url() === `${SITE}/`,
+      'kart açıkken de destek kartla gitmez (yakında), IBAN görünür');
 
     // ---------- Dönüş ----------
     for (const [hash, metin, ad] of [['#destek-tamam', 'Desteğin bize ulaştı.', 'başarılı'], ['#destek-hata', 'Ödeme tamamlanamadı', 'başarısız']]) {
