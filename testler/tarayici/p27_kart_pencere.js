@@ -30,7 +30,7 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
         if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 200, headers: CORS });
         r.fulfill({ status: 200, contentType: 'application/json', headers: CORS, body: JSON.stringify({ sonuc: { id: 55, tutar: 2000, yol: 'kart', sayfa: 'https://shopier.test/odeme/123' } }) });
       });
-      await s.ctx.route('https://shopier.test/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>Shopier</title><h1>Shopier ödeme</h1>' }));
+      await s.ctx.route('https://shopier.test/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>Shopier</title><h1>Shopier ödeme</h1>' }).catch(() => {}));  // sekme kapanırken yarım kalabilir
       await s.page.goto(`${SITE}/`);
       await s.page.getByRole('button', { name: 'Randevu oluştur' }).first().click();
       await s.page.getByRole('button', { name: /Randevuda 1 kişi/ }).first().click();
@@ -70,9 +70,9 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
         if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 200, headers: CORS });
         const g = JSON.parse(r.request().postData()); gelen.push(g);
         const sonuc = g.tur === 'uyelik_kart' ? { id: 'u-1', tutar: 3000, sayfa: 'https://shopier.test/uyelik/1' } : 'tamam';
-        r.fulfill({ status: 200, contentType: 'application/json', headers: CORS, body: JSON.stringify({ sonuc }) });
+        r.fulfill({ status: 200, contentType: 'application/json', headers: CORS, body: JSON.stringify({ sonuc }) }).catch(() => {});
       });
-      await s.ctx.route('https://shopier.test/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>Shopier</title><h1>Shopier ödeme</h1>' }));
+      await s.ctx.route('https://shopier.test/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>Shopier</title><h1>Shopier ödeme</h1>' }).catch(() => {}));  // sekme kapanırken yarım kalabilir
       await s.page.goto(`${SITE}/`);
       const b = s.page.locator('#basvuru');
       await b.scrollIntoViewIfNeeded();

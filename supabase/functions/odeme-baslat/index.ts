@@ -31,7 +31,8 @@ Deno.serve(async (istek) => {
 
     if (shopierHazir()) {
       const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
-      const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla üyelik · 30 gün', tutar: Number(o.tutar), ref: `FC-UYELIK-${o.kod}`, donus: `${site}/uye/#odeme-tamam` });
+      const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla üyelik · 30 gün', tutar: Number(o.tutar), ref: `FC-UYELIK-${o.kod}`, donus: `${site}/uye/#odeme-tamam`,
+        gorsel: `${site}/_blob/shopier/uyelik.jpg` });  // maskot (Hello humans)
       await sb.rpc('odeme_istegi_token', { p_id: o.id, p_token: urun });
       return json(200, { sayfa });
     }
