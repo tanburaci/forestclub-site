@@ -30,7 +30,15 @@ class Component extends DCLogic {
       dondurma: null, dondurmaSecim: false, silmeSoru: false, silmeIstendi: false, veriMesaj: '',
       anket: { ct: { puan: 0, yorum: '', bitti: false }, sk: { puan: 5, yorum: '', bitti: true }, bf: { puan: 0, yorum: '', bitti: false } },
       galeri: '',
+      // Küçük TV: kapatan üyeye o gün bir daha çıkmaz
+      tvKapali: (() => { try { return localStorage.getItem('fc_tv_kapali') === new Date().toISOString().slice(0, 10); } catch (e) { return false; } })(),
     };
+    // Küçük TV: Etkinlikler açılınca kısa bir gecikmeyle alttan kayarak çıkar ve açık kalır
+    const tvKonum = () => {
+      const t = document.getElementById('fu-yuzen');
+      if (t && !t.classList.contains('fu-yuzen-acik')) setTimeout(() => t.classList.add('fu-yuzen-acik'), 400);
+    };
+    setInterval(tvKonum, 300);  // sekme değişince TV yeniden çizilir; yakalayıp açar
     this.pAlan = {};
     ['telefon', 'dogum'].forEach((k) => {
       this.pAlan[k] = (e) => { const v = e.target.value; this.setState((s) => ({ profil: { ...s.profil, [k]: v }, profilMesaj: '' })); };
@@ -332,6 +340,33 @@ class Component extends DCLogic {
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
       afisTamVar: !!this.state.afisTam, afisTam: this.state.afisTam || '', afisTamAlt: this.state.afisTamAlt || 'Afiş',
       afisKapat: () => this.setState({ afisTam: '' }),
+      // Küçük TV yalnız Etkinlikler'de ve üyeliği aktif olmayana (muaf da aktif sayılır)
+      tvVar: sekme === 'etkinlikler' && !aktif && !this.state.tvKapali,
+      ...(() => {
+        // TV'deki hesap gerçek veriden: önümüzdeki 30 günde üyeye ücretsiz buluşmaların bilet toplamı ↔ üyelik
+        const aidatSayi = canli ? window.FCU.aidat || 3000 : 3000;
+        const sinir = gunEkle(BUGUN, 30);
+        const liste = Object.values(this.state.kayit || {}).filter((e) => e.tarih >= BUGUN && e.tarih <= sinir);
+        const ucretsizHepsi = liste.filter((e) => e.uye === 'ucretsiz' && e.fiyat > 0).sort((a, b) => a.tarih.localeCompare(b.tarih));
+        // Fark abartılı görünmesin (ucuz/kalitesiz algısı): yakın tarihli buluşmalar aidatın 2 katına ulaşana kadar sayılır
+        const ucretsiz = [];
+        let toplam = 0;
+        for (const e of ucretsizHepsi) { if (toplam >= 2 * aidatSayi) break; ucretsiz.push(e); toplam += e.fiyat; }
+        const adlar = [...new Set(ucretsizHepsi.map((e) => e.ad.split(/[—·×]/)[0].trim()))].slice(0, 2);
+        const kazanc = toplam > aidatSayi;
+        return {
+          tvSatir2: kazanc ? TL(toplam) : 'Bilet derdi yok',
+          tvSatir3: TL(aidatSayi),
+          tvAdlar: [...(adlar.length ? adlar : ['Yoga', 'Sunset']), 'Buluşmalar'].map((a) => `${a} ✓`).join('\n'),
+          tvAtolye: liste.some((e) => e.uye === 'yuzde50') ? 'Atölyelerde üyelere %50' : 'Üyelere özel buluşmalar',
+          tvDugme: 'Aramıza katıl →',
+        };
+      })(),
+      tvGit: () => { this.setState({ sekme: 'uyelik' }); scrollTo(0, 0); },
+      tvKapat: () => {
+        try { localStorage.setItem('fc_tv_kapali', new Date().toISOString().slice(0, 10)); } catch (h) { /* gizli sekme */ }
+        this.setState({ tvKapali: true });
+      },
       ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf, yoneticiMi: !!(window.FCU && window.FCU.yonetici),
       formVar: !!(window.FCU && window.FCU.formlar && window.FCU.formlar.length),
       formlar: ((window.FCU && window.FCU.formlar) || []).map((f) => ({

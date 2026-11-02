@@ -1,11 +1,11 @@
-// Forest Club Urla · Yönetim › Düğün: talepler (durum, yönetici notu) ve katalog (mekan, bölüm, menü, masa konsepti,
-// ürün, ekstra). Sayfa (sayfalar/dugun-yonetim.dc.html) sekme ilk açıldığında yönetim panelindeki #fc-dugun kutusuna
+// Forest Club Urla · Yönetim › Düğün: talepler (durum, yönetici notu), envanter, maliyet (alış / kira, kâr %, müşteri
+// fiyatı) ve katalog (mekan, bölüm, menü, masa konsepti, ürün, ekstra). Sayfa (sayfalar/dugun-yonetim.dc.html) sekme ilk açıldığında yönetim panelindeki #fc-dugun kutusuna
 // bağlanır; veriyi kendisi okur ve yazar (RLS: yalnız yönetici).
 (function () {
   'use strict';
   const A = window.FC_AYAR;
   const { sb } = window.FC_ORTAK;
-  const KATALOG_SUTUN = 'id, tur, ad, aciklama, resim, grup, mekan_id, yemek_mekandan, renkler, sira, acik';
+  const KATALOG_SUTUN = 'id, tur, ad, aciklama, resim, grup, mekan_id, yemek_mekandan, renkler, sira, acik, ust_id';
 
   const hata = ({ error }) => { if (error) throw new Error(error.message); };
 
@@ -15,7 +15,7 @@
     // Yeni (id yok) → insert, var → update. Dönüş: kaydedilen satır
     katalogKaydet: async (k) => {
       const satir = { tur: k.tur, ad: k.ad, aciklama: k.aciklama || null, resim: k.resim || null, grup: k.grup || null,
-        mekan_id: k.mekan_id || null, yemek_mekandan: k.yemek_mekandan !== false, sira: Number(k.sira) || 0, acik: k.acik !== false,
+        mekan_id: k.mekan_id || null, ust_id: k.tur === 'urun' && k.ust_id ? Number(k.ust_id) : null, yemek_mekandan: k.yemek_mekandan !== false, sira: Number(k.sira) || 0, acik: k.acik !== false,
         renkler: k.tur === 'palet' && Array.isArray(k.renkler) && k.renkler.length ? k.renkler.map((r) => String(r).toLowerCase()) : null };
       const is = k.id ? sb.from('dugun_katalog').update(satir).eq('id', k.id) : sb.from('dugun_katalog').insert(satir);
       const { data, error } = await is.select(KATALOG_SUTUN).single();
@@ -53,6 +53,12 @@
       if (e.error) throw new Error(e.error.message);
       return { envanter: e.data, hareketler: h.error ? [] : h.data };
     },
+    // Maliyet: kaydeder, müşteri fiyatını sunucuda hesaplar. Dönüş: {fiyat} (yoksa null)
+    maliyetKaydet: async (p) => {
+      const { data, error } = await sb.rpc('dugun_maliyet_kaydet', { p });
+      if (error) throw new Error(error.message);
+      return data;
+    },
     katalogSil: async (id) => hata(await sb.from('dugun_katalog').delete().eq('id', id).select('id').single()),
     resimYukle: (dosya) => window.FCAfisYukle(dosya),
   };
@@ -70,7 +76,9 @@
       ]);
       [t, k].forEach((r) => { if (r.error) throw r.error; });
       const env = await window.FCDY.envanterOku().catch(() => ({ envanter: [], hareketler: [] }));  // göç yoksa boş
-      window.FCDYV = { talepler: t.data, katalog: k.data, davetler: d.error ? [] : d.data, ...env };  // davet tablosu yoksa (göç) boş
+      const [m, f] = await Promise.all([sb.from('dugun_maliyetler').select('*'), sb.from('dugun_fiyatlar').select('katalog_id, fiyat, birim')]);
+      window.FCDYV = { talepler: t.data, katalog: k.data, davetler: d.error ? [] : d.data, ...env,
+        maliyetler: m.error ? [] : m.data, fiyatlar: f.error ? [] : f.data };  // maliyet göçü yoksa boş  // davet tablosu yoksa (göç) boş
       const style = el.getAttribute('style');
       await window.DC.bagla('/sayfalar/dugun-yonetim.dc.html', el, { varliklar: A.varliklar });
       if (style) el.setAttribute('style', style);  // bagla kutunun stilini siler; sekme gizliyse gizli kalsın

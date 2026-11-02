@@ -100,7 +100,7 @@ class Component extends DCLogic {
       const capa = b.id ? `etkinlik-${b.id}` : `etkinlik-${b.tarih}`;
       const paylasLink = b.id ? `${location.origin}/e/${b.id}` : `${location.origin}/#${capa}`;
       return {
-        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
+        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAcik: acik && !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
         acik, acikYazi: acik ? 'true' : 'false', metinSinif: acik ? '' : 'fs-ozet', acYazi: acik ? 'Kapat ▲' : 'Ayrıntılar ▼',
         kartTikla: (e) => {
           if (e.target.closest('a, button, input, select, textarea, label')) return;

@@ -17,7 +17,7 @@ class Component extends DCLogic {
     const davet = D.davet && !D.davet.gecersiz ? D.davet : null;
     const mekanlar = D.katalog.filter((k) => k.tur === 'mekan');
     this.state = {
-      adim: 1, hata: '', gitti: false, gonderiliyor: false, acikGrup: {},
+      adim: 1, hata: '', gitti: false, gonderiliyor: false, acikGrup: {}, acikUrun: {},
       v: { tarih: '', tarihEsnek: false, kisi: '', mekan: mekanlar.length === 1 ? mekanlar[0].id : null, bolumler: [], palet: null, renkler: [], his: [], menu: null, konsept: null, urunler: [], ekstralar: [],
         ad: davet ? davet.ad : '', eposta: '', tel: '', not: '', kvkk: false },
     };
@@ -38,7 +38,7 @@ class Component extends DCLogic {
       ['Mekan', 'Mekan ve akış', 'Düğününüz nerede olsun, gün nasıl aksın?'],
       ['Renk', 'Renkler ve his', 'Mood board\'unuzun temeli: bir palet seçin ya da kendi renklerinizi ekleyin.'],
       ['Menu', 'Menü tercihi', 'İsterseniz bu adımı atlayabilirsiniz.'],
-      ['Masa', 'Masalarınız', 'Bir konsept seçin; dilerseniz ayrıntılarını değiştirin.'],
+      ['Masa', 'Masalarınız', 'Masalarınızda ne olsun? Her gruptan dilediğinizi seçin.'],
       ['Alan', 'Alan ve dekor', 'Nikah alanı, karşılama, oturma köşeleri ve ışıklar. İsteğe bağlı.'],
       ['Ekstra', 'Ekstralar', 'Düğününüzü tamamlayacak dokunuşlar.'],
       ['Son', 'Son adım', 'Mood board\'unuz hazır. Bilgilerinizi bırakın; size özel teklifimizle dönelim.'],
@@ -48,23 +48,52 @@ class Component extends DCLogic {
     const mekan = K('mekan').find((m) => m.id === v.mekan);
     const menuler = K('menu').filter((m) => !m.mekan_id || m.mekan_id === v.mekan);
     const ad = (id) => (D.katalog.find((k) => k.id === id) || {}).ad;
-    const gruplar = FD.sirala([...new Set(K('urun').map((u) => u.grup || 'Diğer'))]);
+    // Ürünler: ana ürünler (ust_id yok) kart; seçenekleri (ust_id) kartın içinde. Seçilen id ana ürün ya da seçenek olabilir
+    const anaUrunler = K('urun').filter((u) => !u.ust_id);
+    const secenekleri = (u) => K('urun').filter((c) => c.ust_id === u.id).sort((a, b) => a.sira - b.sira || a.id - b.id);
+    const urunTamAd = (u) => { const ust = u.ust_id && D.katalog.find((k) => k.id === u.ust_id); return ust ? `${ust.ad} · ${u.ad}` : u.ad; };
+    const gruplar = FD.sirala([...new Set(anaUrunler.map((u) => u.grup || 'Diğer'))]);
     const urunSecili = v.urunler;
     const grupKart = (g) => {
-      const urunler = K('urun').filter((u) => (u.grup || 'Diğer') === g);
-      const secilen = urunler.filter((u) => v.urunler.includes(u.id)).length;
+      const urunler = anaUrunler.filter((u) => (u.grup || 'Diğer') === g).sort((a, b) => a.sira - b.sira || a.id - b.id);
+      const secilen = K('urun').filter((u) => (u.grup || 'Diğer') === g && v.urunler.includes(u.id)).length;
       const acik = !!this.state.acikGrup[g];
       return {
         ad: g, resim: FD.resim({ tur: 'urun', grup: g }), acik, acikYazi: acik ? 'true' : 'false', ok: acik ? '▴' : '▾', sayi: secilen ? `${secilen} seçili` : '',
         ac: () => this.setState((s) => ({ acikGrup: { ...s.acikGrup, [g]: !s.acikGrup[g] } })),
         urunler: urunler.map((u) => {
-          const sec = v.urunler.includes(u.id);
-          return { ad: u.ad, secili: sec ? 'true' : 'false', sinif: sec ? 'dg-hap secili' : 'dg-hap', foto: !!u.resim && !u.resim.startsWith('/dugun/cizim/'), resim: u.resim,
-            sec: () => deg({ urunler: ac(v.urunler, u.id) }) };
+          const cs = secenekleri(u);
+          if (!cs.length) {
+            const sec = v.urunler.includes(u.id);
+            return { ad: u.ad, secili: sec ? 'true' : 'false', sinif: sec ? 'dg-hap dg-urun secili' : 'dg-hap dg-urun', resim: FD.resim(u),
+              fiyat: fiyatYazi(u.id), kutuSinif: 'dg-urun-kutu', acikYazi: null, secenekAcik: false, secenekler: [], grupEtiket: '',
+              sec: () => deg({ urunler: ac(v.urunler, u.id) }) };
+          }
+          const secilenler = cs.filter((c) => v.urunler.includes(c.id));
+          const acikU = !!this.state.acikUrun[u.id];
+          return {
+            ad: u.ad, resim: FD.resim(u), secili: secilenler.length ? 'true' : 'false',
+            sinif: secilenler.length ? 'dg-hap dg-urun secili' : 'dg-hap dg-urun',
+            fiyat: secilenler.length ? `${secilenler.length} seçili: ${secilenler.map((c) => c.ad).join(', ')}` : `${cs.length} seçenek ${acikU ? '▴' : '▾'}`,
+            kutuSinif: `dg-urun-kutu${acikU ? ' acik' : ''}`, acikYazi: acikU ? 'true' : 'false', secenekAcik: acikU, grupEtiket: `${u.ad} seçenekleri`,
+            sec: () => this.setState((s) => ({ acikUrun: { ...s.acikUrun, [u.id]: !s.acikUrun[u.id] } })),
+            secenekler: cs.map((c) => {
+              const sc = v.urunler.includes(c.id);
+              return { ad: c.ad, secili: sc ? 'true' : 'false', sinif: sc ? 'dg-hap secili' : 'dg-hap', fiyat: fiyatYazi(c.id, u.id),
+                sec: () => deg({ urunler: ac(v.urunler, c.id) }) };
+            }),
+          };
         }),
       };
     };
-    const urunAd = (g) => K('urun').filter((u) => (u.grup || 'Diğer') === g && v.urunler.includes(u.id)).map((u) => u.ad).join(', ');
+    // Müşteri fiyatı (yönetimde kâr girilen ürün); yoksa teklif görüşmede
+    const BIRIM = { adet: 'adet', kisi: 'kişi', masa: 'masa', metre: 'metre', sabit: '' };
+    const fiyatYazi = (id, ustId) => {
+      const f = (D.fiyatlar || []).find((x) => x.katalog_id === id) || (ustId && (D.fiyatlar || []).find((x) => x.katalog_id === ustId));  // seçeneğin fiyatı yoksa ana ürününki
+      if (!f) return 'teklif ile';
+      return `${Math.round(Number(f.fiyat)).toLocaleString('tr-TR')} TL${BIRIM[f.birim] ? ` / ${BIRIM[f.birim]}` : ''}`;
+    };
+    const urunAd = (g) => K('urun').filter((u) => (u.grup || 'Diğer') === g && v.urunler.includes(u.id)).map(urunTamAd).join(', ');
     const ozet = [
       ['Tarih', v.tarihEsnek || !v.tarih ? 'Henüz belli değil' : v.tarih.split('-').reverse().join('.')],
       ['Misafir', (KISI.find((k) => k[0] === v.kisi) || [0, '—'])[1]],
@@ -73,7 +102,6 @@ class Component extends DCLogic {
       ['Renkler', [v.palet ? ad(v.palet) : '', v.renkler.length ? `kendi renkleriniz (${v.renkler.length})` : ''].filter(Boolean).join(' + ') || 'Birlikte seçelim'],
       ['His', v.his.map(ad).join(', ') || '—'],
       ['Menü', v.menu ? ad(v.menu) : 'Mekanın menüsü, sonra konuşuruz'],
-      ['Masa konsepti', v.konsept ? ad(v.konsept) : 'Birlikte seçelim'],
       ['Masa ayrıntıları', gruplar.filter((g) => !FD.alanMi(g)).map((g) => (urunAd(g) ? `${g}: ${urunAd(g)}` : '')).filter(Boolean).join(' · ') || '—'],
       ['Alan ve dekor', gruplar.filter((g) => FD.alanMi(g)).map((g) => (urunAd(g) ? `${g}: ${urunAd(g)}` : '')).filter(Boolean).join(' · ') || '—'],
       ['Ekstralar', v.ekstralar.map(ad).join(', ') || '—'],
@@ -82,10 +110,12 @@ class Component extends DCLogic {
     const palet = K('palet').find((x) => x.id === v.palet);
     const renkStil = (r) => `background:${/^#[0-9a-f]{6}$/i.test(r) ? r : '#EFE5D3'}`;
     const moodRenk = [...((palet && palet.renkler) || []), ...v.renkler].slice(0, 8);
-    const konsept = K('konsept').find((x) => x.id === v.konsept);
+    // Mood board ana görseli: seçilen ilk ürünün fotoğrafı, yoksa mekan
+    const ilkFoto = K('urun').filter((u) => v.urunler.includes(u.id)).map((u) => (u.resim ? u : D.katalog.find((x) => x.id === u.ust_id) || u))
+      .find((u) => u.resim && !u.resim.startsWith('/dugun/cizim/'));
     const kucukler = [...v.urunler, ...v.ekstralar].map((id) => D.katalog.find((k) => k.id === id)).filter(Boolean);
     const mood = {
-      ana: konsept ? FD.resim(konsept) : mekan ? FD.resim(mekan) : '/dugun/cizim/mekan.svg', anaAd: konsept ? konsept.ad : mekan ? mekan.ad : '',
+      ana: ilkFoto ? ilkFoto.resim : mekan ? FD.resim(mekan) : '/dugun/cizim/mekan.svg', anaAd: ilkFoto ? ilkFoto.ad : mekan ? mekan.ad : '',
       renkVar: moodRenk.length > 0, renkler: moodRenk.map(renkStil),
       paletAd: palet ? palet.ad + (v.renkler.length ? ' + kendi renkleriniz' : '') : v.renkler.length ? 'Kendi renkleriniz' : 'Renkleri birlikte seçelim',
       hisler: v.his.map(ad).filter(Boolean),
@@ -108,7 +138,7 @@ class Component extends DCLogic {
     const gonder = () => {
       const veri = { ad: v.ad.trim(), eposta: v.eposta.trim().toLowerCase(), tel: v.tel.trim(), tarih: v.tarihEsnek ? null : v.tarih || null,
         tarih_esnek: v.tarihEsnek || !v.tarih, kisi: v.kisi, not: v.not.trim(), kvkk: v.kvkk,
-        secimler: { mekan: v.mekan, bolumler: v.bolumler, palet: v.palet, renkler: v.renkler, his: v.his, menu: v.menu, konsept: v.konsept, urunler: urunSecili, ekstralar: v.ekstralar } };
+        secimler: { mekan: v.mekan, bolumler: v.bolumler, palet: v.palet, renkler: v.renkler, his: v.his, menu: v.menu, urunler: urunSecili, ekstralar: v.ekstralar } };
       if (!window.FCDGonder) return this.setState({ gitti: true });
       this.setState({ gonderiliyor: true, hata: '' });
       window.FCDGonder(veri).then(() => this.setState({ gitti: true, gonderiliyor: false }), (h) => this.setState({ hata: h.message, gonderiliyor: false }));
@@ -121,11 +151,10 @@ class Component extends DCLogic {
       tanitim: !D.davet, davetVar: !!davet, davetGecersiz: !!(D.davet && D.davet.gecersiz), formVar: !(D.davet && D.davet.gecersiz),
       davetBaslik: davet && davet.ad ? `Merhaba ${davet.ad} 🤍` : 'Düğününüzü birlikte tasarlayalım',
       adimlarTanitim: [
-        { no: '01', baslik: 'Tasarlayın', metin: 'Tarihinizi, akışı, masa konseptinizi ve ekstraları birkaç adımda seçin.' },
+        { no: '01', baslik: 'Tasarlayın', metin: 'Tarihinizi, akışı, masanızdaki ayrıntıları ve ekstraları birkaç adımda seçin.' },
         { no: '02', baslik: 'Tanışalım', metin: 'Sizi arayıp hayalinizi dinleyelim; dilerseniz alanı birlikte gezelim.' },
         { no: '03', baslik: 'Size özel teklif', metin: 'Seçimlerinize göre hazırladığımız teklifle her ayrıntıyı birlikte planlayalım.' },
       ],
-      konseptVitrin: K('konsept').map((k) => ({ ...k, resim: FD.resim(k), aciklama: k.aciklama || '' })),
       sihirbazda: !this.state.gitti, gitti: this.state.gitti, v,
       adimYazi: `${adim} / ${SON}`, adimBaslik: ADIMLAR[adim - 1][1], adimAciklama: ADIMLAR[adim - 1][2],
       ilerleme: ADIMLAR.map((_, i) => (i < adim ? 'tamam' : '')),
@@ -138,7 +167,6 @@ class Component extends DCLogic {
       menuler: [{ id: null, ad: 'Mekanın menüsü, sonra konuşuruz', aciklama: mekan && mekan.yemek_mekandan === false ? 'Menüyü görüşmede birlikte belirleyelim.' : 'Yemeği mekan karşılıyor; menüyü mekanla birlikte netleştiririz.' }, ...menuler]
         .map((m) => ({ ...kart(m, v.menu === m.id, () => deg({ menu: m.id })),
           nokta: v.menu === m.id ? 'width: 10px; height: 10px; border-radius: 50%; background: #5B6B4E' : 'display: none' })),
-      konseptler: K('konsept').map((k) => kart(k, v.konsept === k.id, () => deg({ konsept: v.konsept === k.id ? null : k.id }))),
       paletler: K('palet').map((pl) => ({ ...kart(pl, v.palet === pl.id, () => deg({ palet: v.palet === pl.id ? null : pl.id })), renkler: (pl.renkler || []).map(renkStil) })),
       kendiRenkler: v.renkler.map((r, i) => ({ deger: r, etiket: `Renk ${i + 1}`, silEtiket: `Renk ${i + 1}'i kaldır`,
         yaz: (e) => { const x = String(e.target.value || '').toLowerCase(); deg({ renkler: v.renkler.map((y, j) => (j === i ? x : y)) }); },
