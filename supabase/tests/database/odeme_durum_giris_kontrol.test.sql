@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(14);
+select plan(15);
 
 insert into auth.users (id, email) values ('00000000-0000-4000-8000-0000000000f7', 'gk-yon@test.invalid');
 insert into yoneticiler (user_id, ad) values ('00000000-0000-4000-8000-0000000000f7', 'GK Yönetici');
@@ -43,6 +43,8 @@ select lives_ok(format($$ select odeme_istegi_token(%L, 'urun-uk-1') $$, (select
 select lives_ok(format($$ select odeme_tamamla('urun-uk-1', 'SIP-UK-1', %s, 0) $$, (select r ->> 'tutar' from t_u)), 'Shopier ödemesi işlendi');
 select ok(uyelik_odeme_durum((select (r ->> 'id')::uuid from t_u), 'yeni-uk@test.invalid') = 'odendi'
   and (select bitis >= current_date from uyeler where eposta = 'yeni-uk@test.invalid'), 'ödeme gelince durum odendi, üyelik başladı');
+create temp table t_d as select destek_istegi_ac(500) as r;
+select is(destek_durum((select (r ->> 'id')::uuid from t_d)), 'basladi', 'destek durumu sorulabiliyor (ödeme gelmeden: basladi)');
 
 select * from finish();
 rollback;

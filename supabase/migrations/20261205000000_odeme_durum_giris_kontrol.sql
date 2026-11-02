@@ -77,3 +77,12 @@ create or replace function public.uyelik_odeme_durum(p_id uuid, p_eposta text)
 $$;
 revoke execute on function public.uyelik_odeme_durum(uuid, text) from public;
 grant execute on function public.uyelik_odeme_durum(uuid, text) to anon, authenticated;
+
+-- "Destek ol" kartla (Shopier, ayrı pencerede): pencere açıkken site desteğin gelip gelmediğini sorar (istek numarası
+-- tahmin edilemez; yalnız durum döner). Ödeme gelince shopier-bildirim → destek_tamamla muhasebeye "Destek" geliri yazar.
+create or replace function public.destek_durum(p_id uuid)
+  returns text language sql stable security definer set search_path = public as $$
+  select durum from destekler where id = p_id;
+$$;
+revoke execute on function public.destek_durum(uuid) from public;
+grant execute on function public.destek_durum(uuid) to anon, authenticated;

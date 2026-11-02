@@ -85,8 +85,15 @@ async function acildiMi(): Promise<void> {
 
 // Kartla destek: alıcı bilgisi istenmez (kart sahibinin adını iyzico sayfası alır); iyzico'nun zorunlu alıcı alanlarına
 // kulübün bilgileri yazılır
-async function destekBaslat(tutarHam: unknown, ip: string): Promise<{ sayfa: string }> {
+async function destekBaslat(tutarHam: unknown, ip: string): Promise<{ sayfa: string; id?: string }> {
   const o = await rpc('destek_istegi_ac', { p_tutar: Number(tutarHam) }) as { id: string; tutar: number };
+  // 02.11.2026'dan beri kartla destek Shopier'den (ayrı pencerede); ödeme gelince shopier-bildirim → destek_tamamla
+  if (shopierHazir()) {
+    const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla topluluk desteği', tutar: Number(o.tutar), ref: `FC-DESTEK-${o.id.slice(0, 8)}`,
+      aciklama: 'Forest Club Urla topluluğuna destek. Teşekkürler!' });
+    await rpc('destek_istegi_token', { p_id: o.id, p_token: urun });
+    return { sayfa, id: o.id };
+  }
   const adres = { contactName: 'Forest Club Urla', city: 'Izmir', country: 'Turkey', address: 'Urla, İzmir' };
   const tutar = fiyat(Number(o.tutar));
   const sonuc = await iyzico('/payment/iyzipos/checkoutform/initialize/auth/ecom', {
