@@ -247,7 +247,7 @@ class Component extends DCLogic {
       tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN),
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
-      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali,
+      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın
       tekTvKapat: () => this.setState({ tekTvKapali: true }),
       tekTvGit: () => { location.href = '/#basvuru'; },
       anaTv: !tek && !this.state.uyeGirisli && !yakinda,
@@ -371,7 +371,8 @@ class Component extends DCLogic {
       tekrarDene: () => this.setState({ sAdim: 'bilgi' }),
       biletlerim: this.state.biletler,
       // "Tamam" denen duyuru bu tarayıcıda bir daha çıkmaz (yeni metinli duyuru yine çıkar)
-      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
+      // Duyuru yalnız giriş yapmış üyeye (müşteri isteği 02.11.2026: üye olmayana iptal yazısı çıkmasın); önizlemede herkese
+      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && (!canli || !!this.state.uyeGirisli) && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
       duyuruKapat: () => { try { localStorage.setItem('fc_duyuru_kapali', duyuruMetni); } catch (e) {} this.setState({ duyuruKapali: true }); },
       // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde (deneme sitesinde onlar görünmez)
       galeriVar: !canli, metinlerVar: !canli,
@@ -529,7 +530,7 @@ class Component extends DCLogic {
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
       cagriForm: () => { location.href = '/acik-cagri/'; },
-      yuzenSinif: tekId ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      yuzenSinif: tekId || this.state.sepetAcik ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),

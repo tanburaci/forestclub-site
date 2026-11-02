@@ -39,7 +39,7 @@ const veri = {
       const baglantilar = await page.locator('#fc-yakinda a, #fc-yakinda button').evaluateAll((l) => l.map((a) => `${a.getAttribute('href')}|${a.target}`));
       dogru(JSON.stringify(baglantilar) === JSON.stringify(['https://www.instagram.com/forestcluburla/|_blank', '/hakkimizda/|', '/teslimat-iade/|', '/gizlilik/|', '/mesafeli-satis/|']),
         `${ad}: kapakta yalnız Instagram (yeni sekmede) ve sözleşme bağlantıları var (${baglantilar})`);
-      dogru(await page.locator('#fc-yakinda .logo img').evaluate((i) => i.complete && i.naturalWidth > 0 && /iyzico ile Öde/.test(i.alt)), `${ad}: kapakta iyzico logo bandı yüklendi`);
+      dogru(await page.locator('#fc-yakinda .logo img').evaluate((i) => i.complete && i.naturalWidth > 0 && /Mastercard, Visa/.test(i.alt) && /logo-kart/.test(i.src)), `${ad}: kapakta kart logoları yüklendi (iyzico yok)`);
       const ig = page.locator('#fc-yakinda a.ig');
       await page.context().route('https://www.instagram.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>instagram</p>' }));
       const [sekme] = await Promise.all([page.context().waitForEvent('page'), ig.click()]);

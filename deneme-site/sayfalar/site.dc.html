@@ -1216,7 +1216,7 @@ Buluşmalar ✓</p>
             <sc-for list="{{ haklar }}" as="h" hint-placeholder-count="4"><li>{{ h }}</li></sc-for>
           </ul>
           <sc-if value="{{ kartliUyelik }}" hint-placeholder-val="{{ true }}">
-            <p style="margin: 0; color: #5E5E5E">Ödeme iyzico güvencesiyle yapılır; kart bilgilerin bize gelmez.</p>
+            <p style="margin: 0; color: #5E5E5E">Kartla ödeme Shopier güvencesiyle yapılır; kart bilgilerin bize gelmez.</p>
           </sc-if>
         </div>
         <sc-if value="{{ uyeFormda }}" hint-placeholder-val="{{ true }}">
@@ -1537,16 +1537,16 @@ Buluşmalar ✓</p>
         <a href="/gizlilik/">KVKK aydınlatma metni</a>
         <a href="/gizlilik/">Fotoğraf ve video izni</a>
         </sc-if>
-        <!-- Satış ve gizlilik sayfaları (iyzico şartı): her zaman görünür -->
+        <!-- Satış ve gizlilik sayfaları: her zaman görünür -->
         <h3 style="margin: 0 0 4px; font-size: 16px">Sözleşmeler</h3>
         <a href="/hakkimizda/">Hakkımızda</a>
         <a href="/teslimat-iade/">Teslimat ve iade şartları</a>
         <a href="/gizlilik/">Gizlilik sözleşmesi ve KVKK</a>
         <a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a>
       </div>
-      <!-- Ödeme logoları (iyzico şartı) sayfanın en altında, ortada -->
+      <!-- Kart logoları sayfanın en altında, ortada -->
       <div style="flex: 1 1 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 1.5px solid #E2E2DE; padding-top: 22px">
-        <img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32" style="height: 28px; width: auto; max-width: 100%">
+        <img src="/_blob/odeme/logo-kart.png" alt="Mastercard, Visa, American Express, Troy" width="300" height="32" style="height: 28px; width: auto; max-width: 100%">
         <a href="Main.dc.html" style="color: #5E5E5E; font-size: 14px">Yönetici girişi</a>
       </div>
     </footer>
@@ -1806,7 +1806,7 @@ class Component extends DCLogic {
       tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN),
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
-      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali,
+      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın
       tekTvKapat: () => this.setState({ tekTvKapali: true }),
       tekTvGit: () => { location.href = '/#basvuru'; },
       anaTv: !tek && !this.state.uyeGirisli && !yakinda,
@@ -1930,7 +1930,8 @@ class Component extends DCLogic {
       tekrarDene: () => this.setState({ sAdim: 'bilgi' }),
       biletlerim: this.state.biletler,
       // "Tamam" denen duyuru bu tarayıcıda bir daha çıkmaz (yeni metinli duyuru yine çıkar)
-      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
+      // Duyuru yalnız giriş yapmış üyeye (müşteri isteği 02.11.2026: üye olmayana iptal yazısı çıkmasın); önizlemede herkese
+      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && (!canli || !!this.state.uyeGirisli) && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
       duyuruKapat: () => { try { localStorage.setItem('fc_duyuru_kapali', duyuruMetni); } catch (e) {} this.setState({ duyuruKapali: true }); },
       // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde (deneme sitesinde onlar görünmez)
       galeriVar: !canli, metinlerVar: !canli,
@@ -2088,7 +2089,7 @@ class Component extends DCLogic {
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
       cagriForm: () => { location.href = '/acik-cagri/'; },
-      yuzenSinif: tekId ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      yuzenSinif: tekId || this.state.sepetAcik ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),

@@ -9,7 +9,7 @@ class Component extends DCLogic {
     this.BUGUN = window.FCU ? window.FCU.bugun : '2026-10-24';  // deneme sitesinde gerçek bugün
     // Önizleme hesapları: yönetici panelindeki demo verisiyle aynı kişiler ve durumlar
     this.HESAPLAR = window.FCU ? { [window.FCU.eposta]: window.FCU.hesap } : {
-      'deniz@ornek.com': { ad: 'Deniz Yılmaz', kod: 'FC-U-0001', bitis: '2026-10-26', odemeler: [{ tarih: '2026-09-26', yol: 'Kart · iyzico' }],
+      'deniz@ornek.com': { ad: 'Deniz Yılmaz', kod: 'FC-U-0001', bitis: '2026-10-26', odemeler: [{ tarih: '2026-09-26', yol: 'Kart · Shopier' }],
         profil: { telefon: '0532 000 00 00', dogum: '1992-11-03', kutlama: true, foto: true, ilgi: ['Yoga', 'Kahvaltı buluşmaları'], ozel: [{ ad: 'Evlilik yıldönümü', tarih: '2019-06-14' }] },
         katildi: ['ct', 'sk', 'bf'] },
       'can@ornek.com': { ad: 'Can Öztürk', kod: 'FC-U-0005', bitis: '2026-10-18', odemeler: [{ tarih: '2026-09-18', yol: 'Elden' }],
@@ -292,7 +292,14 @@ class Component extends DCLogic {
       { id: 'uyelik', ad: 'Üyeliğim' }, { id: 'profil', ad: 'Profilim' }, { id: 'veri', ad: 'Verilerim' },
     ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fu-sekme fu-sekme-aktif' : 'fu-sekme', sec: () => this.setState({ sekme: s.id }) }));
 
+    // Duyuru: metin ya da {metin, bitis}; bitis günü geçtiyse görünmez (Türkiye saatiyle)
+    const dy = canli ? window.FCU.duyuru : '';
+    const dyBugun = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
+    const duyuruMetni = (dy && typeof dy === 'object' ? (dy.bitis && dy.bitis < dyBugun ? '' : String(dy.metin || '')) : String(dy || '')).trim();
     return {
+      duyuru: duyuruMetni,
+      duyuruVar: !!duyuruMetni && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
+      duyuruKapat: () => { try { localStorage.setItem('fc_duyuru_kapali', duyuruMetni); } catch (e) {} this.setState({ duyuruKapali: true }); },
       girisEkrani: !girildi, panel: girildi,
       // Şifre sıfırlama bağlantısıyla gelindiyse yeni şifre formu; deneme hesapları yalnız deneme sitesinde
       sifreYenile: this.state.sifreYenile, girisNormal: !this.state.sifreYenile,
@@ -416,7 +423,7 @@ class Component extends DCLogic {
       sepetVar: sepetIdler.length > 0, sepetOdemede: this.state.sepetAdim === 'odeme', satinTamam: this.state.sepetAdim === 'tamam' && !sepetIdler.length,
       sepetDekontta: this.state.sepetAdim === 'dekont', biletGonderildi: this.state.sepetAdim === 'gonderildi' && !sepetIdler.length,
       sepetOdemeNotu: canli ? `Havale / EFT ile ödersin, dekontunu yüklersin; onaylanınca biletler ${this.state.hesap} adresine gelir.`
-        : `“Kartla öde”ye basınca iyzico’nun güvenli ödeme penceresi açılır; biletler ${this.state.hesap} adresine gelir.`,
+        : `“Kartla öde”ye basınca Shopier’in güvenli ödeme sayfası açılır; biletler ${this.state.hesap} adresine gelir.`,
       sepetHata: this.state.sepetHata, hakTutar: this.state.hak ? TL(Number(this.state.hak.tutar)) : '',
       odemeAlici: ((window.FC_AYAR && window.FC_AYAR.odeme) || {}).alici || '', odemeIban: ((window.FC_AYAR && window.FC_AYAR.odeme) || {}).iban || '',
       sepetDekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ sepetDosya: f || null, sepetHata: '' }); },
@@ -490,7 +497,7 @@ class Component extends DCLogic {
       // Deneme sitesi: iyzico ödeme sayfası → dönüşte üyelik uzamış, muhasebeye yazılmış, onay maili kuyrukta
       ode: () => (canli ? window.FCOdemeBaslat().catch((h) => { window.FC_ORTAK.bildir(h.message, true); this.setState({ odeme: 'hata' }); }) : this.setState((s) => ({
         odeme: 'basarili', bitis: yeniBitis,
-        odemeler: [{ tarih: BUGUN, yol: 'Kart · iyzico' }, ...s.odemeler],
+        odemeler: [{ tarih: BUGUN, yol: 'Kart · Shopier' }, ...s.odemeler],
       }))),
       odemeler: this.state.odemeler.map((o) => ({ ad: 'Üyelik · 30 gün', detay: `${tarihYaz(o.tarih)} · ${o.yol}`, tutar: o.tutar ? TL(o.tutar) : AIDAT })),
       odemeGecmisiYok: !this.state.odemeler.length,
