@@ -898,8 +898,15 @@
     const kurtarma = window.FC_ORTAK.kurtarma;
     let hata = '';
     const { data: { session } } = await sb.auth.getSession();
-    if (session && kurtarma) window.FC_SIFRE_YENILE = true;
-    else if (session) {
+    if (session && kurtarma) {
+      // İki adımlı giriş açık hesapta Supabase şifreyi yalnız aal2 oturumunda değiştirir ("AAL2 session is required…"):
+      // şifre sıfırlama bağlantısıyla gelen kişiye önce doğrulama kodu sorulur
+      const { data: f } = await sb.auth.mfa.listFactors();
+      const dogrulanmis = ((f && f.totp) || []).find((x) => x.status === 'verified');
+      const { data: seviye } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (dogrulanmis && (!seviye || seviye.currentLevel !== 'aal2')) await ikinciAdim(kok, dogrulanmis.id, null);
+      window.FC_SIFRE_YENILE = true;
+    } else if (session) {
       const { data: yon } = await sb.from('yoneticiler').select('ad').eq('user_id', session.user.id).maybeSingle();
       if (yon) {
         try {
