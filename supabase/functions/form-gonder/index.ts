@@ -89,8 +89,9 @@ async function destekBaslat(tutarHam: unknown, ip: string): Promise<{ sayfa: str
   const o = await rpc('destek_istegi_ac', { p_tutar: Number(tutarHam) }) as { id: string; tutar: number };
   // 02.11.2026'dan beri kartla destek Shopier'den (ayrı pencerede); ödeme gelince shopier-bildirim → destek_tamamla
   if (shopierHazir()) {
+    const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
     const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla topluluk desteği', tutar: Number(o.tutar), ref: `FC-DESTEK-${o.id.slice(0, 8)}`,
-      aciklama: 'Forest Club Urla topluluğuna destek. Teşekkürler!' });
+      aciklama: 'Forest Club Urla topluluğuna destek. Teşekkürler!', gorsel: `${site}/_blob/shopier/destek.jpg` });  // maskot (Be happy bro)
     await rpc('destek_istegi_token', { p_id: o.id, p_token: urun });
     return { sayfa, id: o.id };
   }
@@ -204,7 +205,8 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
       const o = await rpc('uyelik_kart_ac', { p_eposta: metin(v.eposta, 200) }) as { id: string; tutar: number; kod: string };
       const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
       const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla üyelik · 30 gün', tutar: Number(o.tutar), ref: `FC-UYELIK-${o.kod}`,
-        donus: `${site}/#basvuru`, aciklama: 'Forest Club Urla üyeliği · 30 gün. Ödemen gelince üyeliğin başlar, e-postana haber gelir.' });
+        donus: `${site}/#basvuru`, aciklama: 'Forest Club Urla üyeliği · 30 gün. Ödemen gelince üyeliğin başlar, e-postana haber gelir.',
+        gorsel: `${site}/_blob/shopier/uyelik.jpg` });  // maskot (Hello humans)
       await rpc('odeme_istegi_token', { p_id: o.id, p_token: urun });
       return { id: o.id, tutar: o.tutar, sayfa };
     }
