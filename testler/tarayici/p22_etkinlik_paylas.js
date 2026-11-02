@@ -51,29 +51,30 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
     global.fetch = eskiFetch;
     dogru(ef.config && ef.config.path === '/e/*', 'önizleme: /e/* yolunda çalışır');
 
-    // Bağlantıyla gelen: kart açık, ekranda
+    // Bağlantıyla gelen: eski /#etkinlik-<id> bağlantısı etkinliğin kendi sayfasına gider
     const s = await sayfaAc(tarayici, veri, null);
     await s.page.setViewportSize({ width: 1280, height: 800 });
+    // yerelde Edge Function yerine ana sayfa HTML'i
+    await s.page.route(`${SITE}/e/**`, (r) => r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8',
+      body: require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'deneme-site', 'index.html'), 'utf8') }));
     await s.page.goto(`${SITE}/#etkinlik-8`);
-    const kart = s.page.locator('#etkinlik-8');
-    await kart.waitFor({ timeout: 15000 });
-    await s.page.waitForTimeout(900);
-    dogru(await kart.getAttribute('aria-expanded') === 'true' && (await kart.innerText()).includes('Sunset Club'), 'bağlantı: paylaşılan etkinliğin kartı açık');
-    dogru(await kart.evaluate((el) => { const r = el.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; }), 'bağlantı: kart ekranda (kaydırıldı)');
-    dogru(await s.page.locator('#etkinlik-7').getAttribute('aria-expanded') === 'false', 'bağlantı: diğer kartlar kapalı');
+    await s.page.waitForURL(`${SITE}/e/8`, { timeout: 15000 });
+    await s.page.locator('.fe-ana').waitFor({ timeout: 15000 });
+    dogru((await s.page.locator('.fe-ana').innerText()).includes('Sunset Club'), 'bağlantı: eski #etkinlik bağlantısı /e/8 sayfasını açar');
 
-    // Geçmiş (listede ilk 3'te olmayan) etkinlik de açılır
-    await s.page.goto(`${SITE}/#etkinlik-3`);
-    await s.page.locator('#etkinlik-3').waitFor({ timeout: 8000 });
-    dogru(await s.page.locator('#etkinlik-3').getAttribute('aria-expanded') === 'true', 'bağlantı: eski geçmiş etkinlik de açılır');
+    // Geçmiş (listede ilk 3'te olmayan) etkinliğin de sayfası açılır
+    await s.page.goto(`${SITE}/e/3`);
+    await s.page.locator('.fe-ana').waitFor({ timeout: 8000 });
+    dogru(await s.page.locator('.fe-gecti').count() === 1, 'bağlantı: eski geçmiş etkinliğin sayfası açılır');
 
-    // Paylaş: bilgisayarda panoya kopyalanır
+    // Paylaş: bilgisayarda panoya kopyalanır, sayfa değişmez
+    await s.page.goto(`${SITE}/`);
     await s.page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: SITE });
     await s.page.locator('#etkinlik-7').getByRole('button', { name: 'Breakfast Club etkinliğini paylaş' }).click();
     await s.page.locator('#etkinlik-7').getByText('Bağlantı kopyalandı ✓').waitFor({ timeout: 4000 });
     const pano = await s.page.evaluate(() => navigator.clipboard.readText());
     dogru(pano === `${SITE}/e/7`, `paylaş: bağlantı panoya kopyalandı (${pano})`);
-    dogru(await s.page.locator('#etkinlik-7').getAttribute('aria-expanded') === 'false', 'paylaş: düğme kartı açıp kapatmaz');
+    dogru(new URL(s.page.url()).pathname === '/', 'paylaş: düğme sayfayı değiştirmez');
     // Açık Çağrı: menüde Üyelik ile SSS arasında, form sayfada kendi bölümünde; telefonda menü 3'erli iki sıra
     const menu = await s.page.locator('nav[aria-label="Site menüsü"] a.fs-menu').allTextContents();
     dogru(menu.join('|') === 'Biz Kimiz?|Etkinlikler|Üyelik|Açık Çağrı|SSS|İletişim', `menü: Açık Çağrı Üyelik ile SSS arasında (${menu.join(', ')})`);

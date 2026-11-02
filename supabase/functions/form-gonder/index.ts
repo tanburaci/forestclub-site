@@ -5,7 +5,7 @@
 //
 // "Yakında" modunda (ayarlar.yakinda) üyelik başvurusu ve tanışma bileti alınmaz; Açık Çağrı ve dekont açık.
 // "destek": kartla destek; iyzico ödeme sayfası açılır, dönüş odeme-donus?tur=destek (ayarlar.kart_odeme açıkken).
-// Etkinlik bileti havale + dekontla: "bilet_adres" isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
+// Etkinlik bileti: "bilet_adres" ödeme yolunu da alır (v.yol: havale | nakit | kart). Havale + dekontla: isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
 // imzalı yükleme adresi verir, dekont yüklenince "bilet_kaydet" isteği yöneticinin onayına düşürür.
 // "ozel_form": gizli bağlantılı özel form; girişsiz, ad + e-postayla (anahtar sunucuda denetlenir).
 // "dugun": /dugun/ sayfasındaki düğün tasarım talebi (seçimler kimlikle gelir, sunucuda adlarına çevrilir); özel davet
@@ -15,6 +15,7 @@
 // IYZICO_SECRET_KEY, IYZICO_ADRES, isteğe bağlı IYZICO_TCKN
 import { CORS, json, servisIstemcisi } from '../_ortak/ortak.ts';
 import { fiyat, iyzico } from '../_ortak/iyzico.ts';
+import { odemeUrunuAc, shopierHazir } from '../_ortak/shopier.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
 const SINIR: Record<string, number> = {
@@ -66,6 +67,12 @@ async function rpc(islev: string, parametre: Record<string, unknown>): Promise<u
     throw error;
   }
   return data;
+}
+
+// Kartla ödeme yönetimde açık mı (ayarlar.kart_odeme); kapalıyken kart seçeneği reddedilir
+async function kartAcikMi(): Promise<boolean> {
+  const { data } = await servisIstemcisi().from('ayarlar').select('deger').eq('anahtar', 'kart_odeme').maybeSingle();
+  return !!data && data.deger === true;
 }
 
 async function acildiMi(): Promise<void> {
@@ -146,9 +153,22 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
         .map((k: Record<string, unknown>) => ({ etkinlik: Number(k?.etkinlik) || 0, adet: Number(k?.adet) || 0 }));
       const rastgele = crypto.getRandomValues(new Uint8Array(8));
       const yol = `yeni/${Date.now()}-${Array.from(rastgele, (b) => b.toString(16).padStart(2, '0')).join('')}`;
-      const istek = await rpc('bilet_istegi_ac', {
+      // Ödeme yolu: havale (dekont, varsayılan eski davranış), nakit (girişte), kart (Shopier; yönetimde açıksa)
+      const odemeYolu = ['havale', 'nakit', 'kart'].includes(String(v.yol)) ? String(v.yol) : 'havale';
+      if (odemeYolu === 'kart' && !(shopierHazir() && await kartAcikMi())) {
+        throw new KullaniciHatasi('Kartla ödeme çok yakında açılıyor; şimdilik havale ya da nakit seçebilirsin.', 400);
+      }
+      const istek = await rpc('bilet_istegi_ac_yol', {
         p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60), p_kalemler: kalemler, p_user: kullanici, p_dosya: yol,
+        p_yol: odemeYolu,
       }) as { id: number; tutar: number };
+      if (odemeYolu === 'nakit') return { id: istek.id, tutar: istek.tutar, yol: 'nakit' };
+      if (odemeYolu === 'kart') {
+        const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
+        const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla · etkinlik bileti', tutar: Number(istek.tutar), ref: `FC-BILET-${istek.id}`, donus: `${site}/#bilet-kart-tamam` });
+        await rpc('bilet_shopier_urun', { p_id: istek.id, p_urun: urun });
+        return { id: istek.id, tutar: istek.tutar, yol: 'kart', sayfa };
+      }
       const { data, error } = await servisIstemcisi().storage.from('dekontlar').createSignedUploadUrl(yol);
       if (error || !data) throw error || new Error('İmzalı adres alınamadı');
       return { id: istek.id, tutar: istek.tutar, yol, jeton: data.token };

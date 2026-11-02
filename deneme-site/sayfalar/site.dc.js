@@ -25,6 +25,11 @@ class Component extends DCLogic {
     // iyzico'dan dönüş (odeme-donus?tur=destek): teşekkür ya da hata penceresi; adres temizlenir
     this.etkinligeGit();
     window.addEventListener('hashchange', () => this.etkinligeGit());
+    // Shopier ödeme sayfasından dönüş: biletler bildirim gelince kesinleşir ve e-postayla gider
+    if (location.hash === '#bilet-kart-tamam') {
+      this.setState({ sepetAcik: true, sAdim: 'kartdonus' });
+      history.replaceState(null, '', location.pathname + location.search);
+    }
     const donus = /^#destek-(tamam|hata)$/.exec(location.hash);
     if (donus) {
       this.setState({ destek: donus[1] });
@@ -165,6 +170,8 @@ class Component extends DCLogic {
     // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
     const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
     const kartAcik = !canli || AYAR.kart_odeme === true;
+    // Seçilen ödeme yolu: kart açıksa varsayılan kart; değilse kişi havale ya da nakidi bilerek seçer
+    const sYol = this.state.sYolSecim || (kartAcik ? 'kart' : null);
     const destekTutar = this.state.dsElle ? Math.round(Number(String(this.state.dsTutarYazi).replace(/[^\d]/g, ''))) : this.state.dsTutar;
     const kopyala = (hangi, metin) => {
       const bitti = () => this.setState({ dsKopya: hangi });
@@ -244,9 +251,9 @@ class Component extends DCLogic {
       sepetAdet: String(sepetToplamAdet), sepetEtiket: `Randevuları aç, ${sepetToplamAdet} kişi`,
       sepetAcik: this.state.sepetAcik,
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
-      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
+      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi', 'nakit', 'kartdonus'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
       sAdimlar: ADIMLAR.map((a) => {
-        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont' }[sAdim] || sAdim));
+        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont' }[sAdim] || sAdim));
         const i = ADIMLAR.indexOf(a);
         return { ad: a.ad, stil: `border-radius:999px;padding:5px 10px;border:2px solid #111111;${i <= sira ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
       }),
@@ -275,7 +282,22 @@ class Component extends DCLogic {
       uyeIndirimi: !canli && uyeMi && indirim > 0,
       uyeFiyatNotu: canli ? 'Aktif üyeysen önce üye girişi yap; üye fiyatı ödeme adımında uygulanır (her etkinlikte 1 kişi için).'
         : 'Aktif üyeysen, üye fiyatı bir sonraki adımda e-postanla kontrol edilip uygulanır (her etkinlikte 1 kişi için).',
-      odemeDugme: canli ? 'Ödemeye geç · havale / EFT' : toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)',
+      // Ödeme yöntemi: kart (Shopier, yönetimde açıksa varsayılan) · havale / EFT (bilerek seçilir). Nakit yalnız kapıda (yönetimden satış)
+      odemeYollari: [
+        { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında; biletin hemen gelir' : 'Çok yakında', kapali: !kartAcik },
+        { id: 'havale', ad: 'Havale / EFT', alt: 'IBAN\'a gönder, dekontunu yükle; 5–60 dakika içinde biletin e-posta adresine gönderilir', kapali: false },
+      ].map((y) => {
+        const secili = sYol === y.id;
+        return {
+          ...y, secili, kapaliYazi: y.kapali ? 'true' : 'false',
+          sec: () => { if (!y.kapali) this.setState({ sYolSecim: y.id, sHata: '' }); },
+          stil: `display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:inherit;color:#111111;border:2.5px solid #111111;border-radius:12px;padding:12px 14px;cursor:${y.kapali ? 'not-allowed' : 'pointer'};${secili ? 'background:#C9E33A;box-shadow:3px 3px 0 #111111' : 'background:#FFFFFF'};${y.kapali ? 'opacity:.55' : ''}`,
+          isaret: secili ? '●' : '○',
+        };
+      }),
+      odemeDugme: !canli ? (toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)')
+        : sYol === 'kart' ? `Kartla öde · ${TL(toplam || araToplam)}` : sYol === 'havale' ? 'Devam · havale / EFT' : 'Ödeme yöntemini seç',
+      sKartDonus: sAdim === 'kartdonus',
       sAd: this.state.sAd, sEposta: this.state.sEposta, sTel: this.state.sTel, sOnay: this.state.sOnay, sHata: this.state.sHata,
       sAdYaz: (e) => this.setState({ sAd: e.target.value, sHata: '' }),
       sEpostaYaz: (e) => this.setState({ sEposta: e.target.value, sHata: '' }),
@@ -297,8 +319,12 @@ class Component extends DCLogic {
           if (!window.FCSBiletAc) return this.setState({ sHata: 'Bilet satışı şu an yapılamıyor; biraz sonra tekrar dene.' });
           const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
           this.setState({ sHata: 'Hazırlanıyor…' });
-          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim() })
-            .then((h) => this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' }))
+          if (!sYol) return this.setState({ sHata: 'Ödeme yöntemini seç.' });
+          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol })
+            .then((h) => {
+              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) { location.href = h.sayfa; return; }
+              this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' });
+            })
             .catch((h) => this.setState({ sHata: h.message }));
           return;
         }

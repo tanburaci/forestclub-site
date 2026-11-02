@@ -294,14 +294,19 @@
     // Bilet dekontları (yalnız dekontu yüklenmiş istekler)
     const kalemYazi = (i) => i.kalemler.map((k) => `${b.etkinlikAd.get(k.etkinlik_id) || 'Etkinlik'} × ${k.adet}`).join(', ');
     const bIstek = b.biletIstekleri.filter((i) => i.yuklendi).sort((x, y) => y.created_at.localeCompare(x.created_at));
+    // Ödeme yolu: havale (dekont), nakit (girişte; parayı alınca onaylanır), kart (Shopier; kendiliğinden kesinleşir)
+    const YOL = { havale: 'Havale · dekont', nakit: 'Kapıda nakit', kart: 'Kart · Shopier' };
     const biletler = bIstek.filter((i) => i.durum === 'bekliyor').map((i) => ({
       ad: i.ad, eposta: i.eposta, tel: i.tel || '—', tarih: zaman(i.created_at), tutar: tl(i.tutar), kalemler: kalemYazi(i),
+      yol: YOL[i.odeme_yolu || 'havale'], yolStil: i.odeme_yolu === 'nakit' ? pill('#F6C945', '#111111') : pill('#F0F0EE', '#111111'),
+      dekontVar: (i.odeme_yolu || 'havale') === 'havale', onayYazi: i.odeme_yolu === 'nakit' ? 'Nakit alındı · onayla' : 'Onayla',
       ac: () => dekontAc(i.dosya), onayla: () => biletKarar(i, true), reddet: () => biletKarar(i, false),
     }));
     const biletKararlar = bIstek.filter((i) => i.durum !== 'bekliyor').slice(0, 50).map((i) => ({
       ad: i.ad, tarih: zaman(i.created_at), tutar: tl(i.tutar), kalemler: kalemYazi(i), sonuc: i.sonuc || '—',
       durum: i.durum === 'onaylandi' ? 'Onaylandı' : 'Reddedildi',
       rozet: i.durum === 'onaylandi' ? pill('#111111', '#FFFFFF') : pill('#F3DCD5', '#82301F'),
+      yol: YOL[i.odeme_yolu || 'havale'], dekontVar: (i.odeme_yolu || 'havale') === 'havale',
       ac: () => dekontAc(i.dosya),
     }));
     return {
