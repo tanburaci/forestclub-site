@@ -51,3 +51,29 @@ begin
 end $$;
 revoke execute on function public.giris_kontrol(bigint, text) from public, anon;
 grant execute on function public.giris_kontrol(bigint, text) to authenticated;
+
+-- Yeni başvuranın kartla aidat ödemesi (girişsiz): başvuru formundan sonra e-postayla Shopier ödeme isteği açılır
+-- (form-gonder "uyelik_kart", Turnstile'lı, service_role). Ödeme gelince shopier-bildirim → odeme_tamamla üyeliği başlatır.
+-- Aktif üyeliği 7 günden uzun süren kişi buradan ödeyemez (yenileme üye panelinden).
+create or replace function public.uyelik_kart_ac(p_eposta text)
+  returns jsonb language plpgsql security definer set search_path = public as $$
+declare u uyeler;
+begin
+  select * into u from uyeler where eposta = lower(trim(coalesce(p_eposta, '')));
+  if u.id is null then raise exception 'Başvurun bulunamadı; formu yeniden gönder.'; end if;
+  if u.bitis is not null and u.bitis > istanbul_bugun() + 7 then
+    raise exception 'Üyeliğin zaten aktif; yenilemeyi üye panelinden yapabilirsin.';
+  end if;
+  return odeme_istegi_ac(u.id);
+end $$;
+revoke execute on function public.uyelik_kart_ac(text) from public, anon, authenticated;
+grant execute on function public.uyelik_kart_ac(text) to service_role;
+
+-- Shopier penceresi açıkken başvuru ekranı ödemenin gelip gelmediğini sorar (istek numarası + e-posta birlikte doğru olmalı)
+create or replace function public.uyelik_odeme_durum(p_id uuid, p_eposta text)
+  returns text language sql stable security definer set search_path = public as $$
+  select o.durum from odeme_istekleri o join uyeler u on u.id = o.uye_id
+   where o.id = p_id and u.eposta = lower(trim(coalesce(p_eposta, '')));
+$$;
+revoke execute on function public.uyelik_odeme_durum(uuid, text) from public;
+grant execute on function public.uyelik_odeme_durum(uuid, text) to anon, authenticated;

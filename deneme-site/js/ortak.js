@@ -164,6 +164,13 @@
     return formGonder('bilet_adres', { kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, yol: yol || 'havale', kod: kod || null,
       oturum: session ? session.access_token : null });
   };
+  // Yeni başvuranın kartla aidatı (Shopier): {id, tutar, sayfa}; durum: 'basladi' | 'odendi' | 'basarisiz'
+  window.FCSUyelikKart = async (eposta) => formGonder('uyelik_kart', { eposta: String(eposta || '').trim().toLowerCase() });
+  window.FCSUyelikDurum = async (id, eposta) => {
+    const { data, error } = await sb.rpc('uyelik_odeme_durum', { p_id: id, p_eposta: String(eposta || '').trim().toLowerCase() });
+    if (error) throw new Error(error.message);
+    return data;
+  };
   // Kartla ödeme Shopier penceresindeyken: 'bekliyor' | 'onaylandi' | 'reddedildi' (istek numarası + e-posta)
   window.FCSBiletDurum = async (id, eposta) => {
     const { data, error } = await sb.rpc('bilet_istek_durum', { p_id: Number(id) || 0, p_eposta: String(eposta || '').trim().toLowerCase() });

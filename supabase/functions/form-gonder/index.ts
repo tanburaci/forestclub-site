@@ -19,7 +19,7 @@ import { odemeUrunuAc, shopierHazir } from '../_ortak/shopier.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
 const SINIR: Record<string, number> = {
-  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, ozel_form: 10, dugun: 5, hepsi: 30,
+  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, uyelik_kart: 10, ozel_form: 10, dugun: 5, hepsi: 30,
 };
 // yol zaten Turnstile'lı "dekont_adres" / "bilet_adres" adımında verildi
 const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet', 'bilet_kaydet']);
@@ -190,6 +190,16 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
       const { data, error } = await servisIstemcisi().storage.from('dekontlar').createSignedUploadUrl(yol);
       if (error || !data) throw error || new Error('İmzalı adres alınamadı');
       return { id: istek.id, tutar: istek.tutar, yol, jeton: data.token };
+    }
+    case 'uyelik_kart': {
+      // Yeni başvuranın kartla aidatı (girişsiz, Turnstile'lı): Shopier ödeme ürünü; ödeme gelince üyelik başlar
+      if (!(shopierHazir() && await kartAcikMi())) throw new KullaniciHatasi('Kartla ödeme şu an kapalı; havale / EFT ile ödeyebilirsin.', 400);
+      const o = await rpc('uyelik_kart_ac', { p_eposta: metin(v.eposta, 200) }) as { id: string; tutar: number; kod: string };
+      const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
+      const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla üyelik · 30 gün', tutar: Number(o.tutar), ref: `FC-UYELIK-${o.kod}`,
+        donus: `${site}/#basvuru`, aciklama: 'Forest Club Urla üyeliği · 30 gün. Ödemen gelince üyeliğin başlar, e-postana haber gelir.' });
+      await rpc('odeme_istegi_token', { p_id: o.id, p_token: urun });
+      return { id: o.id, tutar: o.tutar, sayfa };
     }
     case 'bilet_kaydet':
       return rpc('bilet_kaydet', { p_id: Number(v.id) || 0, p_eposta: metin(v.eposta, 200) });
