@@ -20,6 +20,7 @@ class Component extends DCLogic {
     };
   }
   componentDidMount() {
+    if (/^\/uyelik\/?$/.test(location.pathname)) document.title = 'Üyelik · Forest Club Urla';
     window.addEventListener('scroll', this.kaydir, { passive: true });
     this.kaydir();
     // Üye panelinde "Beni hatırla" ile giriş yapılmışsa düğme "Panelim" olur
@@ -231,6 +232,8 @@ class Component extends DCLogic {
     };
     // Etkinliğin kendi sayfası (/e/<id>): site.js FCS.tek'i yazar; önizlemede props.tek
     const tekId = window.FCS ? window.FCS.tek : (this.props.tek || null);
+    // Üyelik sayfası (/uyelik/): yalnız başvuru bölümü (ana sayfadakinin ikizi)
+    const uyelikSayfa = !tekId && /^\/uyelik\/?$/.test(location.pathname);
     const tekHam = tekId ? tumu.find((b) => String(b.id) === String(tekId)) : null;
     const tek = tekHam ? (tekHam.tarih >= BUGUN ? urunYap(tekHam) : { ...tekHam, fiyatYazi: '', uyeYazi: '', kalanYazi: '', dolu: true, dugme: 'Gerçekleşti', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} }) : null;
     const tekUyeYazi = tek && tek.satis ? (tek.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : tek.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : (tek ? 'Üyeliğe dahil' : '');
@@ -240,7 +243,7 @@ class Component extends DCLogic {
     }));
     return {
       // Ana sayfa ↔ etkinliğin kendi sayfası
-      anaSayfa: !tekId, tekSayfa: !!tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
+      anaSayfa: !tekId && !uyelikSayfa, tekSayfa: !!tekId, uyelikSayfa, basvuruGoster: !tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
       tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
       tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
       tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN), tekLinkVar: !!(tek && tek.linkVar),
@@ -249,7 +252,7 @@ class Component extends DCLogic {
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın
       tekTvKapat: () => this.setState({ tekTvKapali: true }),
-      tekTvGit: () => { location.href = '/#basvuru'; },
+      tekTvGit: () => { location.href = '/uyelik/'; },
       anaTv: !tek && !this.state.uyeGirisli && !yakinda,
       anaTvGit: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       digerler, digerVar: digerler.length > 0,
@@ -530,7 +533,7 @@ class Component extends DCLogic {
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
       cagriForm: () => { location.href = '/acik-cagri/'; },
-      yuzenSinif: tekId || this.state.sepetAcik ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      yuzenSinif: tekId || uyelikSayfa || this.state.sepetAcik ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),
