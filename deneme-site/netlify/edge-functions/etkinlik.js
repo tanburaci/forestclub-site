@@ -1,7 +1,8 @@
-// Forest Club Urla · paylaşılan etkinlik bağlantısı (/e/<id>): WhatsApp, Instagram gibi uygulamaların önizlemesi için
-// etkinliğin adı, tarihi, açıklaması ve afişi (og:image) sunucuda yazılır; ziyaretçi hemen sitedeki karta
-// (/#etkinlik-<id>) yönlendirilir. Önizleme botları betik çalıştırmadığı için bu sayfa sunucuda üretilir (Netlify
-// Edge Function). Veri herkese açık etkinlik listesinden (anon anahtar, taslaklar görünmez).
+// Forest Club Urla · etkinliğin kendi sayfası (/e/<id>): ana sayfanın HTML'i bu adreste sunulur, başlık ve önizleme
+// etiketleri (og:title, og:description, og:image = afiş) o etkinliğe göre yazılır; sayfadaki bileşen (site.js FCS.tek)
+// yalnız o etkinliği çizer. Önizleme botları betik çalıştırmadığı için etiketler sunucuda (Netlify Edge Function).
+// Ana sayfa alınamazsa eski davranış: kısa önizleme sayfası + ana sayfadaki karta (/#etkinlik-<id>) yönlendirme.
+// Veri herkese açık etkinlik listesinden (anon anahtar, taslaklar görünmez).
 const SB = 'https://gflabqnazkstsyafzdmn.supabase.co';
 const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmbGFicW5hemtzdHN5YWZ6ZG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNDg4MzUsImV4cCI6MjEwODYyNDgzNX0.bcPcUPsLdtZlYfL5ryRxcIGOzHa7GDEKyCkB1KH5upo';
 const LOGO = '/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png';
@@ -23,6 +24,24 @@ export function tarihYaz(tarih, saat) {
 export function paylasAdresi(afis) {
   const m = /^(https:\/\/[^/]+\/storage\/v1\/object\/public\/afisler\/)([^/?#]+?)\.[a-z]+$/i.exec(afis || '');
   return m ? `${m[1]}paylas/${m[2]}.jpg` : null;
+}
+
+// Ana sayfa HTML'ine etkinliğin başlık ve önizleme etiketlerini yazar
+export function etiketle(html, kok, id, e) {
+  const baslik = `${e.ad} · Forest Club Urla`;
+  const aciklama = kisalt([tarihYaz(e.tarih, e.saat), 'Pinya, Urla', e.aciklama || e.kim].filter(Boolean).join(' · '), 200);
+  const resim = /^https:\/\//.test(e.paylasResim || e.afis || '') ? (e.paylasResim || e.afis) : `${kok}${LOGO}`;
+  const adres = `${kok}/e/${id}`;
+  const deg = (h, re, yeni) => (re.test(h) ? h.replace(re, yeni) : h);
+  let h = html;
+  h = deg(h, /<title>[^<]*<\/title>/, `<title>${kacir(baslik)}</title>`);
+  h = deg(h, /<meta name="description" content="[^"]*">/, `<meta name="description" content="${kacir(aciklama)}">`);
+  h = deg(h, /<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${kacir(adres)}">`);
+  h = deg(h, /<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${kacir(baslik)}">`);
+  h = deg(h, /<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${kacir(aciklama)}">`);
+  h = deg(h, /<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${kacir(adres)}">`);
+  h = deg(h, /<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${kacir(resim)}">\n<meta property="og:image:alt" content="${kacir(`${e.ad} afişi`)}">\n<meta name="twitter:card" content="summary_large_image">`);
+  return h;
 }
 
 export function sayfa(kok, id, e) {
@@ -71,6 +90,18 @@ export default async (istek) => {
       const kucuk = e && paylasAdresi(e.afis);
       if (kucuk && (await fetch(kucuk, { method: 'HEAD' })).ok) e.paylasResim = kucuk;
     } catch (h) { /* veri okunamazsa genel önizleme */ }
+  }
+  // Etkinlik varsa: ana sayfa HTML'i etiketlenip bu adreste sunulur (sayfa bileşeni yalnız o etkinliği çizer)
+  if (e) {
+    try {
+      const ana = await fetch(new URL('/index.html', url.origin));
+      const html = ana.ok ? await ana.text() : '';
+      if (/<html[\s>]/i.test(html) && html.includes('site.js')) {
+        return new Response(etiketle(html, url.origin, id, e), {
+          headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' },
+        });
+      }
+    } catch (h) { /* ana sayfa alınamadı: kısa önizleme sayfası */ }
   }
   return new Response(sayfa(url.origin, id, e), {
     headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300', 'x-robots-tag': 'noindex' },
