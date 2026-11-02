@@ -28,20 +28,23 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
     const metin = kart.locator('.fs-ozet');
     dogru(await metin.count() === 1 && (await metin.evaluate((e) => e.scrollHeight > e.clientHeight + 4)), 'site: kart önce kısa özet (açıklama kısaltılmış)');
     dogru(await kart.locator('.fs-afis-ac').count() === 0, 'site: kapalı kartta afiş yok');
+    // Karta dokununca etkinliğin kendi sayfası (/e/<id>) açılır; yerelde Edge Function yerine ana sayfa HTML'i
+    await s.page.route(`${SITE}/e/**`, (r) => r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: require('fs').readFileSync(path.join(DENEME, 'index.html'), 'utf8') }));
     await kart.locator('h3').click();
-    dogru(await kart.locator('.fs-ozet').count() === 0 && await kart.locator('.fs-afis-ac').count() === 1, 'site: kartın başlığına dokununca açıldı, afiş göründü');
-    await kart.locator('.fs-afis-ac').click();
+    await s.page.waitForURL(`${SITE}/e/${etk.id}`, { timeout: 8000 });
+    await s.page.locator('.fe-afis').waitFor({ timeout: 10000 });
+    dogru(await s.page.getByRole('heading', { name: 'Breakfast Club' }).count() === 1 && await s.page.locator('a.fe-geri[href="/"]').count() === 1,
+      'site: karta dokununca etkinliğin sayfası açıldı (başlık + ana sayfaya dönüş)');
+    await s.page.locator('.fe-afis').click();
     const tam = s.page.locator('.fs-tam');
     dogru(await tam.isVisible() && (await tam.locator('img').getAttribute('src')) === AFIS, 'site: afiş tam ekran açıldı');
     await tam.click({ position: { x: 10, y: 10 } });
     dogru(await tam.count() === 0, 'site: tam ekran dokununca kapandı');
-    await kart.locator('.fs-afis-ac').click();
+    await s.page.locator('.fe-afis').click();
     await s.page.keyboard.press('Escape');
     dogru(await s.page.locator('.fs-tam').count() === 0, 'site: tam ekran Esc ile kapandı');
-    await kart.getByRole('button', { name: 'Randevu oluştur' }).click();
-    dogru(await kart.locator('.fs-afis-ac').count() === 1, 'site: düğmeye basmak kartı kapatmaz');
-    await kart.locator('div').filter({ hasText: /^10\.00 · Pinya, Urla$/ }).click();
-    dogru(await kart.locator('.fs-ozet').count() === 1, 'site: karta yeniden dokununca kapandı');
+    await s.page.locator('.fe-cubuk').getByRole('button', { name: 'Randevu oluştur' }).click();
+    dogru(await s.page.getByRole('dialog', { name: 'Sepet' }).isVisible(), 'site: etkinlik sayfasında Randevu oluştur sepeti açar');
     dogru(!s.konsol.some((x) => /pageerror/.test(x)), 'site: sayfa hatası yok');
 
     // ---------- Üye paneli ----------
@@ -56,14 +59,11 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
     await u.page.locator('button').filter({ hasText: /^Etkinlikler$/ }).first().click();
     const uk = u.page.locator('article.fu-kart').filter({ hasText: 'Breakfast Club' });
     await uk.waitFor({ timeout: 5000 });
-    dogru(await uk.getByRole('button', { name: 'Afişi tam ekran aç' }).count() === 0, 'üye: kapalı kartta afiş yok');
-    await uk.getByText('Normal fiyat 600 TL', { exact: false }).click();  // başlık değil, kartın altındaki fiyat yazısı
-    dogru(await uk.getByRole('button', { name: 'Afişi tam ekran aç' }).count() === 1, 'üye: kartın herhangi bir yerine dokununca açıldı');
-    await uk.getByRole('button', { name: 'Afişi tam ekran aç' }).click();
-    const ut = u.page.getByRole('dialog', { name: 'Breakfast Club afişi' });
-    dogru(await ut.isVisible(), 'üye: afiş tam ekran açıldı');
-    await ut.click({ position: { x: 10, y: 10 } });
-    dogru(await ut.count() === 0, 'üye: tam ekran dokununca kapandı');
+    // Üye panelinde de karta dokununca etkinliğin kendi sayfası açılır
+    await u.page.route(`${SITE}/e/**`, (r) => r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: '<!doctype html><title>etkinlik</title>' }));
+    await uk.getByText('Normal fiyat 600 TL', { exact: false }).click();
+    await u.page.waitForURL(`${SITE}/e/${etk.id}`, { timeout: 8000 });
+    dogru(u.page.url().endsWith(`/e/${etk.id}`), 'üye: karta dokununca etkinliğin sayfası açıldı');
     dogru(!u.konsol.some((x) => /pageerror/.test(x)), 'üye: sayfa hatası yok');
 
     // ---------- Aylık duyuru: yönetimden ayarlanır, sitede rozet + şerit ----------

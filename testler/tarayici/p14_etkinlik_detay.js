@@ -102,11 +102,13 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
     dogru(await u.page.getByRole('link', { name: 'Yönetim paneli' }).getAttribute('href') === '/yonetim', 'üye: yönetici olan üyede yönetim paneline geçiş');
     await u.page.locator('button').filter({ hasText: /^Etkinlikler$/ }).first().click();
     dogru(await u.page.getByRole('img', { name: 'Breakfast Club afişi' }).count() === 0, 'üye: afiş kapalı kartta görünmüyor');
-    await u.page.getByRole('button', { name: /Ayrıntılar ▼/ }).click();
-    await u.page.getByRole('img', { name: 'Breakfast Club afişi' }).waitFor({ timeout: 3000 });
-    dogru(await u.page.getByText('Ağaçların altında kahvaltı.').count() === 1 && await u.page.getByText('DJ Orman').count() === 1, 'üye: kart açılınca afiş, kim ve açıklama');
     dogru(await u.page.getByRole('button', { name: 'Randevu oluştur' }).count() === 1 && await u.page.getByText('Takvime ekle').count() === 0
       && await u.page.getByText('Bilet satışı yok').count() === 0, 'üye: "Randevu oluştur" var; "Takvime ekle" ve boş bilet düğmesi yok');
+    // Ayrıntılar etkinliğin kendi sayfasında (/e/<id>)
+    await u.page.route(`${SITE}/e/**`, (r) => r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: '<!doctype html><title>etkinlik</title>' }));
+    await u.page.getByRole('button', { name: /Etkinlik sayfası/ }).first().click();
+    await u.page.waitForURL(/\/e\/\d+$/, { timeout: 8000 });
+    dogru(true, 'üye: kart etkinliğin sayfasını açar');
     dogru(!u.konsol.some((x) => /pageerror/.test(x)), 'üye: sayfa hatası yok');
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 4).join(' | ')); kalan++;

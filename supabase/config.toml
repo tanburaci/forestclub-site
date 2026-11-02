@@ -433,3 +433,7 @@ verify_jwt = false
 
 [functions.odeme-donus]
 verify_jwt = false
+
+# Shopier ödeme bildirimi (webhook): JWT yok, Shopier-Signature imzası işlevin içinde doğrulanır
+[functions.shopier-bildirim]
+verify_jwt = false

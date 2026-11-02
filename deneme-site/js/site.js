@@ -40,7 +40,9 @@
     const ayar = Object.fromEntries((ayr.data || []).map((a) => [a.anahtar, a.deger]));
     const tanismaAcik = new Set((tan || []).map((x) => x.etkinlik_id));
     etkinlikler.forEach((e) => { e.tanisma = tanismaAcik.has(anahtar[`${e.tarih}|${e.ad}`]); });
-    return { bugun: B, etkinlikler, anahtar, ayar, oturum: !!(oturum.data && oturum.data.session) };
+    // Etkinliğin kendi sayfası: /e/<id> (Edge Function ana sayfayı bu adreste sunar; bileşen yalnız o etkinliği çizer)
+    const tek = (/^\/e\/(\d{1,12})\/?$/.exec(location.pathname) || [])[1] || null;
+    return { bugun: B, etkinlikler, anahtar, ayar, tek: tek ? Number(tek) : null, oturum: !!(oturum.data && oturum.data.session) };
   }
 
   const sayac = (adim) => { sb.rpc('sayac_artir', { p_adim: adim }).then(() => {}, () => {}); };  // kişisel veri yok, yalnız günlük toplam
