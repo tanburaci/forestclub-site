@@ -240,7 +240,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     // Muhasebe: kartla ödeme anahtarı, komisyon notu
     await sekme(y.page, 'Muhasebe');
     dogru(await y.page.getByText(/iyzico komisyonu her kart ödemesinde muhasebeye kendiliğinden/).count() === 1, 'komisyon notu: iyzico kendiliğinden');
-    await y.page.locator('label').filter({ hasText: 'Üyeler aidatı kartla ödeyebilsin' }).locator('input').click();
+    await y.page.locator('label').filter({ hasText: 'Kartla ödeme açık (Shopier)' }).locator('input').click();
     await y.page.waitForTimeout(500);
     const ay2 = y.istekler.filter((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/ayarlar').pop();
     dogru(ay2 && ay2.govde.deger === true && /kart_odeme/.test(ay2.ara), 'kartla ödeme açıldı');

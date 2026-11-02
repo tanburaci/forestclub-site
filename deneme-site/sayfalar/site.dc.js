@@ -191,6 +191,8 @@ class Component extends DCLogic {
     // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
     const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
     const kartAcik = !canli || AYAR.kart_odeme === true;
+    // Destek ol: kartla destek henüz iyzico'da (çalışmıyor); Shopier'e taşınana kadar yalnız IBAN
+    const destekKartAcik = !canli;
     // Seçilen ödeme yolu: kart açıksa varsayılan kart; değilse kişi havale ya da nakidi bilerek seçer
     const sYol = this.state.sYolSecim || (kartAcik ? 'kart' : null);
     const destekTutar = this.state.dsElle ? Math.round(Number(String(this.state.dsTutarYazi).replace(/[^\d]/g, ''))) : this.state.dsTutar;
@@ -490,11 +492,11 @@ class Component extends DCLogic {
       })),
       destekElle: this.state.dsElle, destekTutarYazi: this.state.dsTutarYazi, destekHata: this.state.dsHata,
       destekTutarYaz: (e) => this.setState({ dsTutarYazi: e.target.value, dsHata: '' }),
-      destekKartKapali: kartAcik ? 'false' : 'true', destekKartKapaliMi: !kartAcik,
-      destekKartStil: kartAcik ? 'width:100%' : 'width:100%;opacity:.45;cursor:not-allowed',
-      destekKartYazi: kartAcik ? `Kartla öde · ${TL(destekTutar)}` : 'Kartla öde',
+      destekKartKapali: destekKartAcik ? 'false' : 'true', destekKartKapaliMi: !destekKartAcik,
+      destekKartStil: destekKartAcik ? 'width:100%' : 'width:100%;opacity:.45;cursor:not-allowed',
+      destekKartYazi: destekKartAcik ? `Kartla öde · ${TL(destekTutar)}` : 'Kartla öde',
       destekKartla: () => {
-        if (!kartAcik) return this.setState({ dsHata: 'Kartla ödeme çok yakında; şimdilik IBAN ile gönderebilirsin.' });
+        if (!destekKartAcik) return this.setState({ dsHata: 'Kartla destek çok yakında; şimdilik IBAN ile gönderebilirsin.' });
         if (!(destekTutar >= 50)) return this.setState({ dsHata: 'En az 50 TL yaz.' });
         if (destekTutar > 100000) return this.setState({ dsHata: 'En çok 100.000 TL gönderebilirsin.' });
         if (!window.FCSDestek) return this.setState({ dsHata: 'Önizleme: gerçek sitede iyzico ödeme sayfası açılır.' });
