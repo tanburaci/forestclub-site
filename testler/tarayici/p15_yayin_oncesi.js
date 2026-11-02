@@ -21,7 +21,7 @@ const etk = { id: 7, tarih: gun(6), saat: '10.00', tur: 'bulusma', ad: 'Breakfas
       { anahtar: 'iletisim', deger: { eposta: 'forestcluburla@gmail.com', alan: 'Pinya, Urla', whatsapp: '', topluluk: '', instagram: '' } }] },
     rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null] } }, null);
     await s.page.goto(`${SITE}/`);
-    await s.page.getByText('Aramıza katıl').first().waitFor({ timeout: 15000 });
+    await s.page.locator('text=Aramıza katıl >> visible=true').first().waitFor({ timeout: 15000 });  // TV'deki gizli yazı değil
     const govde = await s.page.evaluate(() => document.body.innerText);
     dogru(/aidatı havale \/ EFT ile gönder ve dekontunu yükle/.test(govde), 'kart kapalı: üyelik metinleri havale + dekont diyor');
     dogru(!/kartla öde; üyeliğin hemen başlar|kartla ödemeni yaptığın anda/.test(govde), 'kart kapalı: "kartla öde, hemen başlar" yok');

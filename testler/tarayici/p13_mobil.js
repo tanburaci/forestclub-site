@@ -27,7 +27,7 @@ const tasma = (page) => page.evaluate(() => {
     return true;
   };
   const sarmalda = (e) => {
-    for (let x = e.parentElement; x && x !== document.body; x = x.parentElement) if (['auto', 'scroll'].includes(getComputedStyle(x).overflowX)) return true;
+    for (let x = e.parentElement; x && x !== document.body; x = x.parentElement) if (['auto', 'scroll', 'hidden', 'clip'].includes(getComputedStyle(x).overflowX)) return true;  // kırpılan / kaydırılan kutunun içi taşma sayılmaz
     return false;
   };
   const disari = [];

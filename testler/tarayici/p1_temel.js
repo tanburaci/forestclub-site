@@ -223,11 +223,14 @@ function yonetimVerisi() {
       const { page, konsol } = await sayfaAc(tarayici, v, null);
       await page.goto(`${SITE}/`);
       await page.getByText('Kötü Bağlantı').first().waitFor({ timeout: 15000 });
-      // Bağlantılar kart açılınca görünür: kartları sırayla açıp topla
+      // Bağlantı etkinliğin kendi sayfasında (/e/<id>) görünür; yerelde Edge Function yerine ana sayfa HTML'i
+      const anaHtml = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'deneme-site', 'index.html'), 'utf8');
+      await page.route(`${SITE}/e/**`, (r) => r.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: anaHtml }));
       const hrefler = [];
-      for (const ad of ['Kötü Bağlantı', 'İyi Bağlantı']) {
-        await page.locator('li.fs-urun h3', { hasText: ad }).click();
-        hrefler.push(...await page.locator('a', { hasText: "Instagram'da gör" }).evaluateAll((as) => as.map((a) => a.getAttribute('href'))));
+      for (const id of [1, 2]) {
+        await page.goto(`${SITE}/e/${id}`);
+        await page.locator('.fe-ana').waitFor({ timeout: 15000 });
+        hrefler.push(...await page.locator('.fe-ana a', { hasText: "Instagram'da gör" }).evaluateAll((as) => as.map((a) => a.getAttribute('href'))));
       }
       dogru(hrefler.includes('#') && hrefler.includes('https://www.instagram.com/p/x/') && !hrefler.some((h) => /javascript/i.test(h)), `G5: javascript: bağlantısı # oldu (${hrefler.join(', ')})`);
       dogru(!konsol.some((x) => /Content Security Policy|integrity/i.test(x)), 'G4: SRI ve CSP ile site yüklendi');

@@ -13,7 +13,9 @@ class Component extends DCLogic {
       this.bekle = requestAnimationFrame(() => {
         this.bekle = null;
         const asagi = window.scrollY > 620;
-        if (asagi !== this.state.asagi) this.setState({ asagi });
+        const b = document.getElementById('bulusmalar');
+        const uyelikTv = !!b && b.getBoundingClientRect().top < innerHeight * 0.6;
+        if (asagi !== this.state.asagi || uyelikTv !== !!this.state.uyelikTv) this.setState({ asagi, uyelikTv });
       });
     };
   }
@@ -25,6 +27,11 @@ class Component extends DCLogic {
     // iyzico'dan dönüş (odeme-donus?tur=destek): teşekkür ya da hata penceresi; adres temizlenir
     this.etkinligeGit();
     window.addEventListener('hashchange', () => this.etkinligeGit());
+    // Shopier ödeme sayfasından dönüş: biletler bildirim gelince kesinleşir ve e-postayla gider
+    if (location.hash === '#bilet-kart-tamam') {
+      this.setState({ sepetAcik: true, sAdim: 'kartdonus' });
+      history.replaceState(null, '', location.pathname + location.search);
+    }
     const donus = /^#destek-(tamam|hata)$/.exec(location.hash);
     if (donus) {
       this.setState({ destek: donus[1] });
@@ -38,6 +45,7 @@ class Component extends DCLogic {
     const liste = window.FCS ? window.FCS.etkinlikler : [];
     const b = liste.find((x) => String(x.id) === m[1] || (!x.id && x.tarih === m[1]));
     if (!b) return;
+    if (b.id && !(window.FCS && window.FCS.tek)) { location.replace(`/e/${b.id}`); return; }
     this.setState({ tur: 'tumu', gecmisTumu: true, acikEtk: `${b.tarih}|${b.ad}` }, () => {
       const el = document.getElementById(location.hash.slice(1));
       if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
@@ -100,11 +108,13 @@ class Component extends DCLogic {
       const capa = b.id ? `etkinlik-${b.id}` : `etkinlik-${b.tarih}`;
       const paylasLink = b.id ? `${location.origin}/e/${b.id}` : `${location.origin}/#${capa}`;
       return {
-        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAcik: acik && !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
-        acik, acikYazi: acik ? 'true' : 'false', metinSinif: acik ? '' : 'fs-ozet', acYazi: acik ? 'Kapat ▲' : 'Ayrıntılar ▼',
+        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAcik: false, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
+        acik: false, acikYazi: 'false', metinSinif: 'fs-ozet', acYazi: b.id ? 'Etkinlik sayfası →' : '',
+        sayfa: b.id ? `/e/${b.id}` : '',
+        // Karta dokununca etkinliğin kendi sayfası açılır (aşağı açılan kart yok)
         kartTikla: (e) => {
           if (e.target.closest('a, button, input, select, textarea, label')) return;
-          this.setState((st) => ({ acikEtk: st.acikEtk === kartKey ? null : kartKey }));
+          if (b.id) location.href = `/e/${b.id}`;
         },
         afisAc: () => this.setState({ afisTam: b.afis, afisTamAlt: `${b.ad} afişi` }),
         capa, paylasEtiket: `${b.ad} etkinliğini paylaş`, paylasYazi: this.state.paylasildi === kartKey ? 'Bağlantı kopyalandı ✓' : 'Paylaş',
@@ -156,12 +166,17 @@ class Component extends DCLogic {
     const AYAR = (window.FCS && window.FCS.ayar) || {};
     const yakinda = AYAR.yakinda === true;
     const YAKINDA_MESAJ = 'Üyelik başvuruları açılışla birlikte başlıyor. Instagram\'dan takipte kal!';
-    const duyuruMetni = String(canli ? (AYAR.site_duyurusu || '') : (this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.')).trim();
+    // Duyuru: metin ya da {metin, bitis}; bitis günü geçtiyse görünmez (Türkiye saatiyle)
+    const dy = canli ? AYAR.site_duyurusu : (this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.');
+    const duyuruBugun = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
+    const duyuruMetni = (dy && typeof dy === 'object' ? (dy.bitis && dy.bitis < duyuruBugun ? '' : String(dy.metin || '')) : String(dy || '')).trim();
     // SEPET: etkinlik biletleri. Gerçek sitede ödeme iyzico'da; başarılı ödeme biletleri kesinleştirir, muhasebeye "Etkinlik katılım ücreti" geliri yazar
     const TL = (n) => (n ? `${n.toLocaleString('tr-TR')} TL` : 'Ücretsiz');
     // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
     const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
     const kartAcik = !canli || AYAR.kart_odeme === true;
+    // Seçilen ödeme yolu: kart açıksa varsayılan kart; değilse kişi havale ya da nakidi bilerek seçer
+    const sYol = this.state.sYolSecim || (kartAcik ? 'kart' : null);
     const destekTutar = this.state.dsElle ? Math.round(Number(String(this.state.dsTutarYazi).replace(/[^\d]/g, ''))) : this.state.dsTutar;
     const kopyala = (hangi, metin) => {
       const bitti = () => this.setState({ dsKopya: hangi });
@@ -178,7 +193,11 @@ class Component extends DCLogic {
     const uyeMi = AKTIF_UYELER.includes(this.state.sEposta.trim().toLowerCase());
     const araToplam = sepetteKi.reduce((t, b) => t + b.satis.fiyat * sepet[`${b.tarih}|${b.ad}`], 0);
     const indirim = uyeMi ? sepetteKi.reduce((t, b) => t + (b.satis.fiyat - uyeFiyati(b)), 0) : 0;
-    const toplam = araToplam - indirim;
+    // İndirim kodu (sepette "Uygula"): üye fiyatından sonra düşer; asıl tutar sunucuda yeniden hesaplanır
+    const kodB = this.state.sKodBilgi;
+    const onceKod = araToplam - indirim;
+    const kodInd = kodB ? (kodB.tur === 'yuzde' ? Math.round(onceKod * Number(kodB.deger) / 100) : Math.min(Number(kodB.deger), onceKod)) : 0;
+    const toplam = onceKod - kodInd;
     const adetDegis = (key, fark, max) => this.setState((st) => {
       const yeni = Math.max(0, Math.min(max, (st.sepet[key] || 0) + fark));
       const s2 = { ...st.sepet };
@@ -190,7 +209,52 @@ class Component extends DCLogic {
       : [{ id: 'sepet', ad: '1 · Randevu' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
     const hak = this.state.hak;
     const sepetToplamAdet = Object.values(sepet).reduce((t, n) => t + n, 0);
+    // Etkinlik satış alanları (liste ve etkinlik sayfası aynı hesabı kullanır)
+    const urunYap = (b) => {
+        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
+        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        const key = `${b.tarih}|${b.ad}`;
+        const kalan = kalanYer(b);
+        const sepette = sepet[key] || 0;
+        return {
+          ...b,
+          fiyatYazi: TL(b.satis.fiyat),
+          uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : b.satis.uye === 'yuzde50' ? `Üyelere %50 · ${TL(uyeFiyati(b))}` : 'Üyelere de aynı fiyat',
+          kalanYazi: kalan <= 0 ? 'Tükendi' : kalan <= 5 ? `Son ${kalan} yer!` : `${kalan} yer kaldı`,
+          kalanStil: `font-size:13px;font-weight:700;color:${kalan <= 5 ? '#82301F' : '#5E5E5E'}`,
+          dolu: kalan <= sepette,
+          dugme: kalan <= 0 ? 'Tükendi' : sepette ? `Randevuda ${sepette} kişi · bir kişi daha` : 'Randevu oluştur',
+          dugmeStil: kalan <= sepette ? 'opacity:.5;cursor:default' : '',
+          sepeteEkle: () => { if (kalan > sepette) adetDegis(key, 1, kalan); },
+        };
+    };
+    // Etkinliğin kendi sayfası (/e/<id>): site.js FCS.tek'i yazar; önizlemede props.tek
+    const tekId = window.FCS ? window.FCS.tek : (this.props.tek || null);
+    const tekHam = tekId ? tumu.find((b) => String(b.id) === String(tekId)) : null;
+    const tek = tekHam ? (tekHam.tarih >= BUGUN ? urunYap(tekHam) : { ...tekHam, fiyatYazi: '', uyeYazi: '', kalanYazi: '', dolu: true, dugme: 'Gerçekleşti', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} }) : null;
+    const tekUyeYazi = tek && tek.satis ? (tek.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : tek.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : (tek ? 'Üyeliğe dahil' : '');
+    const digerler = tumu.filter((b) => b.tarih >= BUGUN && b.id && String(b.id) !== String(tekId)).slice(0, 3).map((b) => ({
+      ...b, sayfa: `/e/${b.id}`, zaman: `${b.gun} ${b.ay.charAt(0)}${b.ay.slice(1).toLocaleLowerCase('tr-TR')} ${b.haftaGunu}${b.saat ? ` · ${b.saat}` : ''}`,
+      uyeKisa: b.satis ? (b.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : b.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : 'Üyeliğe dahil', afisVar: !!b.afis,
+    }));
     return {
+      // Ana sayfa ↔ etkinliğin kendi sayfası
+      anaSayfa: !tekId, tekSayfa: !!tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
+      tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
+      tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
+      tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN), tekLinkVar: !!(tek && tek.linkVar),
+      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN),
+      tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
+      tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
+      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali,
+      tekTvKapat: () => this.setState({ tekTvKapali: true }),
+      tekTvGit: () => { location.href = '/#basvuru'; },
+      anaTv: !tek && !this.state.uyeGirisli && !yakinda,
+      anaTvGit: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
+      digerler, digerVar: digerler.length > 0,
+      // Etkinlik sayfasında "Randevu oluştur": bir kişi ekler ve sepeti hemen açar
+      tekRandevu: () => { if (!tek || tek.dolu) return; tek.sepeteEkle(); this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }); },
       uyeDugme: this.state.uyeGirisli ? 'Panelim' : 'Üye girişi',
       // Ürün kartları
       urunVals: null,
@@ -198,9 +262,9 @@ class Component extends DCLogic {
       sepetAdet: String(sepetToplamAdet), sepetEtiket: `Randevuları aç, ${sepetToplamAdet} kişi`,
       sepetAcik: this.state.sepetAcik,
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
-      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
+      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi', 'nakit', 'kartdonus'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
       sAdimlar: ADIMLAR.map((a) => {
-        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont' }[sAdim] || sAdim));
+        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont' }[sAdim] || sAdim));
         const i = ADIMLAR.indexOf(a);
         return { ad: a.ad, stil: `border-radius:999px;padding:5px 10px;border:2px solid #111111;${i <= sira ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
       }),
@@ -210,8 +274,12 @@ class Component extends DCLogic {
       odemeAlici: odemeBilgi.alici, odemeIban: odemeBilgi.iban,
       sDekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ sDosya: f || null, sHata: '' }); },
       sDekontGonder: () => {
+        // Seçilen dosya kutudan da okunur (seçip hemen gönderince durum henüz güncellenmemiş olabilir)
+        const kutu = document.querySelector('.fs-modal input[type="file"]');
+        const dosya = this.state.sDosya || (kutu && kutu.files && kutu.files[0]) || null;
+        if (!dosya) return this.setState({ sHata: 'Dekontu seç.' });
         this.setState({ sHata: 'Yükleniyor…' });
-        window.FCSBiletDekont(hak, this.state.sEposta, this.state.sDosya)
+        window.FCSBiletDekont(hak, this.state.sEposta, dosya)
           .then(() => this.setState({ sAdim: 'gonderildi', sepet: {}, hak: null, sDosya: null, sHata: '' }))
           .catch((h) => this.setState({ sHata: h.message }));
       },
@@ -227,9 +295,39 @@ class Component extends DCLogic {
       }),
       araToplamYazi: TL(araToplam), indirimYazi: indirim ? `−${TL(indirim)}` : '—', toplamYazi: toplam ? TL(toplam) : '0 TL',
       uyeIndirimi: !canli && uyeMi && indirim > 0,
+      sKod: this.state.sKod || '', sKodHata: this.state.sKodHata || '', kodVar: !!kodB, kodYok: !kodB,
+      kodAd: kodB ? kodB.kod : '', kodIndYazi: kodB ? `−${TL(kodInd)}` : '',
+      kodAciklama: kodB ? `${kodB.kod} uygulandı · ${kodB.tur === 'yuzde' ? `%${Number(kodB.deger)}` : TL(Number(kodB.deger))} indirim` : '',
+      sKodYaz: (e) => this.setState({ sKod: e.target.value.toUpperCase(), sKodHata: '' }),
+      kodKaldir: () => this.setState({ sKodBilgi: null, sKod: '', sKodHata: '' }),
+      kodUygula: () => {
+        // Kutudaki güncel değer (yazıp hemen "Uygula"ya basılınca durum henüz güncellenmemiş olabilir)
+        const kutu = document.getElementById('fs-kod');
+        const kod = ((kutu && kutu.value) || this.state.sKod || '').trim().toUpperCase();
+        if (!kod) return this.setState({ sKodHata: 'Kodu yaz.' });
+        const bak = window.FCSIndirimBak ? window.FCSIndirimBak(kod)
+          : (kod === 'FOREST20' ? Promise.resolve({ kod, tur: 'yuzde', deger: 20 }) : Promise.reject(new Error('Bu indirim kodu geçerli değil.')));
+        this.setState({ sKodHata: 'Kontrol ediliyor…' });
+        bak.then((k) => this.setState({ sKodBilgi: k, sKodHata: '' }), (h) => this.setState({ sKodBilgi: null, sKodHata: h.message }));
+      },
       uyeFiyatNotu: canli ? 'Aktif üyeysen önce üye girişi yap; üye fiyatı ödeme adımında uygulanır (her etkinlikte 1 kişi için).'
         : 'Aktif üyeysen, üye fiyatı bir sonraki adımda e-postanla kontrol edilip uygulanır (her etkinlikte 1 kişi için).',
-      odemeDugme: canli ? 'Ödemeye geç · havale / EFT' : toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)',
+      // Ödeme yöntemi: kart (Shopier, yönetimde açıksa varsayılan) · havale / EFT (bilerek seçilir). Nakit yalnız kapıda (yönetimden satış)
+      odemeYollari: [
+        { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında; biletin hemen gelir' : 'Çok yakında', kapali: !kartAcik },
+        { id: 'havale', ad: 'Havale / EFT', alt: 'IBAN\'a gönder, dekontunu yükle; 5–60 dakika içinde biletin e-posta adresine gönderilir', kapali: false },
+      ].map((y) => {
+        const secili = sYol === y.id;
+        return {
+          ...y, secili, kapaliYazi: y.kapali ? 'true' : 'false',
+          sec: () => { if (!y.kapali) this.setState({ sYolSecim: y.id, sHata: '' }); },
+          stil: `display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:inherit;color:#111111;border:2.5px solid #111111;border-radius:12px;padding:12px 14px;cursor:${y.kapali ? 'not-allowed' : 'pointer'};${secili ? 'background:#C9E33A;box-shadow:3px 3px 0 #111111' : 'background:#FFFFFF'};${y.kapali ? 'opacity:.55' : ''}`,
+          isaret: secili ? '●' : '○',
+        };
+      }),
+      odemeDugme: !canli ? (toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)')
+        : sYol === 'kart' ? `Kartla öde · ${TL(toplam || araToplam)}` : sYol === 'havale' ? 'Devam · havale / EFT' : 'Ödeme yöntemini seç',
+      sKartDonus: sAdim === 'kartdonus',
       sAd: this.state.sAd, sEposta: this.state.sEposta, sTel: this.state.sTel, sOnay: this.state.sOnay, sHata: this.state.sHata,
       sAdYaz: (e) => this.setState({ sAd: e.target.value, sHata: '' }),
       sEpostaYaz: (e) => this.setState({ sEposta: e.target.value, sHata: '' }),
@@ -251,8 +349,12 @@ class Component extends DCLogic {
           if (!window.FCSBiletAc) return this.setState({ sHata: 'Bilet satışı şu an yapılamıyor; biraz sonra tekrar dene.' });
           const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
           this.setState({ sHata: 'Hazırlanıyor…' });
-          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim() })
-            .then((h) => this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' }))
+          if (!sYol) return this.setState({ sHata: 'Ödeme yöntemini seç.' });
+          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol, kod: kodB ? kodB.kod : null })
+            .then((h) => {
+              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) { location.href = h.sayfa; return; }
+              this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' });
+            })
             .catch((h) => this.setState({ sHata: h.message }));
           return;
         }
@@ -268,8 +370,9 @@ class Component extends DCLogic {
       sOdemeHata: () => this.setState({ sAdim: 'hata' }),
       tekrarDene: () => this.setState({ sAdim: 'bilgi' }),
       biletlerim: this.state.biletler,
-      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali,
-      duyuruKapat: () => this.setState({ duyuruKapali: true }),
+      // "Tamam" denen duyuru bu tarayıcıda bir daha çıkmaz (yeni metinli duyuru yine çıkar)
+      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
+      duyuruKapat: () => { try { localStorage.setItem('fc_duyuru_kapali', duyuruMetni); } catch (e) {} this.setState({ duyuruKapali: true }); },
       // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde (deneme sitesinde onlar görünmez)
       galeriVar: !canli, metinlerVar: !canli,
       sss: [
@@ -426,7 +529,7 @@ class Component extends DCLogic {
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
       cagriForm: () => { location.href = '/acik-cagri/'; },
-      yuzenSinif: acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      yuzenSinif: tekId ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),
@@ -440,6 +543,8 @@ class Component extends DCLogic {
       afisKapat: () => this.setState({ afisTam: '' }),
       yuzenGizli: acik ? 'false' : 'true',
       basaDon: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+      yuzenUyelik: !!this.state.uyelikTv && !this.state.uyeGirisli && !yakinda, yuzenVideo: !(this.state.uyelikTv && !this.state.uyeGirisli && !yakinda),
+      yuzenUyeOl: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       yuzenKapat: () => this.setState({ kapali: true }),
       ozellikler: [
         { ad: 'Breakfast Club', metin: 'Her ay ağaçların altında kahvaltı buluşması' },
@@ -448,25 +553,7 @@ class Component extends DCLogic {
         { ad: 'Hareket', metin: 'Yoga, Tai Chi ve farkındalık çalışmaları' },
       ],
       filtreler,
-      yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map((b) => {
-        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
-        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        const key = `${b.tarih}|${b.ad}`;
-        const kalan = kalanYer(b);
-        const sepette = sepet[key] || 0;
-        return {
-          ...b,
-          fiyatYazi: TL(b.satis.fiyat),
-          uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : b.satis.uye === 'yuzde50' ? `Üyelere %50 · ${TL(uyeFiyati(b))}` : 'Üyelere de aynı fiyat',
-          kalanYazi: kalan <= 0 ? 'Tükendi' : kalan <= 5 ? `Son ${kalan} yer!` : `${kalan} yer kaldı`,
-          kalanStil: `font-size:13px;font-weight:700;color:${kalan <= 5 ? '#82301F' : '#5E5E5E'}`,
-          dolu: kalan <= sepette,
-          dugme: kalan <= 0 ? 'Tükendi' : sepette ? `Randevuda ${sepette} kişi · bir kişi daha` : 'Randevu oluştur',
-          dugmeStil: kalan <= sepette ? 'opacity:.5;cursor:default' : '',
-          sepeteEkle: () => { if (kalan > sepette) adetDegis(key, 1, kalan); },
-        };
-      }),
+      yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map(urunYap),
       // Geçmiş: en yakın tarihten en eskiye
       gecmisler: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih < BUGUN).reverse().slice(0, this.state.gecmisTumu ? undefined : 3),
       gecmisDahaVar: !this.state.gecmisTumu && (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih < BUGUN).length > 3,

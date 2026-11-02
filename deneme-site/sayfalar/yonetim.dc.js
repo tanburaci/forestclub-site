@@ -91,6 +91,9 @@ class Component extends DCLogic {
       adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
       girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
       elden: { acik: false, ad: '', tutar: '3.000', tarih: this.BUGUN, hata: '' },
+      // İndirim kodları (bilet sepeti); önizlemede örnek kod
+      kodlar: window.FC ? null : [{ kod: 'FOREST20', tur: 'yuzde', deger: 20, son_tarih: null, sinir: 50, kullanilan: 7, aktif: true, aciklama: 'Instagram' }],
+      kodForm: { kod: '', tur: 'yuzde', deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: '',
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
       etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: window.FC ? window.FC.etkDurum : {},
@@ -107,7 +110,7 @@ class Component extends DCLogic {
       ilt: { eposta: 'forestcluburla@gmail.com', alan: 'Pinya, Urla', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}), whatsapp: undefined },
       iltMesaj: '', kameraAcik: false,
       yakinda: window.FC ? window.FC.ayarlar.yakinda === true : false,
-      siteDuyurusu: window.FC ? String(window.FC.ayarlar.site_duyurusu || '') : '', duyuruMesaj: '',
+      siteDuyurusu: window.FC ? String((window.FC.ayarlar.site_duyurusu && window.FC.ayarlar.site_duyurusu.metin) || (typeof window.FC.ayarlar.site_duyurusu === 'string' ? window.FC.ayarlar.site_duyurusu : '')) : '', duyuruMesaj: '',
       aylik: window.FC_AYLIK ? window.FC_AYLIK.oku(window.FC && window.FC.ayarlar.aylik_duyuru) : {}, aylikMesaj: '', aylikYukleniyor: false,
       biletler: this.DEMO.biletler,
       komisyonOran: '',
@@ -448,6 +451,48 @@ class Component extends DCLogic {
     // Deneme sitesi: oturum Supabase'de tutulur (Beni hatırla kapalıysa tarayıcı kapanınca biter)
   }
   componentWillUnmount() { this.kameraKapat(); }
+  // İndirim kodları bölümü (Etkinlikler sekmesi)
+  indirimKodlari() {
+    if (this.state.kodlar === null && window.FCIndirim && !this.kodYukleniyor) {
+      this.kodYukleniyor = true;
+      window.FCIndirim.liste().then((l) => this.setState({ kodlar: l }), (h) => this.setState({ kodlar: [], kodMesaj2: h.message }));
+    }
+    const f = this.state.kodForm;
+    const alan = (a) => (e) => { const v = a === 'kod' ? e.target.value.toUpperCase().replace(/\s/g, '') : e.target.value; this.setState((s) => ({ kodForm: { ...s.kodForm, [a]: v }, kodMesaj2: '' })); };
+    const tarih = (t) => (t ? t.split('-').reverse().join('.') : '');
+    return {
+      kodForm: f, kodMesaj2: this.state.kodMesaj2,
+      kodAlan: { kod: alan('kod'), tur: alan('tur'), deger: alan('deger'), son_tarih: alan('son_tarih'), sinir: alan('sinir'), aciklama: alan('aciklama') },
+      kodDegerEtiket: f.tur === 'yuzde' ? 'İndirim (%)' : 'İndirim (TL)',
+      kodlarYok: !(this.state.kodlar || []).length,
+      kodListe: (this.state.kodlar || []).map((k) => {
+        const bitti = (k.son_tarih && k.son_tarih < this.BUGUN) || (k.sinir && k.kullanilan >= k.sinir);
+        return {
+          kod: k.kod,
+          ozet: `${k.tur === 'yuzde' ? `%${Number(k.deger)}` : `${Number(k.deger).toLocaleString('tr-TR')} TL`} · ${k.kullanilan}${k.sinir ? `/${k.sinir}` : ''} kullanıldı${k.son_tarih ? ` · son gün ${tarih(k.son_tarih)}` : ''}${k.aciklama ? ` · ${k.aciklama}` : ''}`,
+          durum: !k.aktif ? 'Kapalı' : bitti ? 'Bitti' : 'Geçerli',
+          dugme: k.aktif ? 'Kapat' : 'Aç',
+          degis: () => {
+            const yeni = !k.aktif;
+            const yaz = (a) => this.setState((s) => ({ kodlar: s.kodlar.map((x) => (x.kod === k.kod ? { ...x, aktif: a } : x)) }));
+            yaz(yeni);
+            if (window.FCIndirim) window.FCIndirim.aktif(k.kod, yeni).catch((h) => { yaz(!yeni); this.setState({ kodMesaj2: h.message }); });
+          },
+        };
+      }),
+      kodEkle: () => {
+        const kod = f.kod.trim().toUpperCase();
+        const deger = Number(String(f.deger).replace(',', '.'));
+        if (!/^[A-Z0-9-]{3,30}$/.test(kod)) return this.setState({ kodMesaj2: 'Kod 3–30 karakter olmalı: harf (Türkçe karakter yok), rakam ya da tire.' });
+        if (!(deger > 0) || (f.tur === 'yuzde' && deger >= 100)) return this.setState({ kodMesaj2: f.tur === 'yuzde' ? 'Yüzde 1 ile 99 arasında olmalı.' : 'İndirim tutarını yazın.' });
+        const yeni = { kod, tur: f.tur, deger, son_tarih: f.son_tarih || null, sinir: f.sinir ? Math.max(1, parseInt(f.sinir, 10)) : null, aciklama: f.aciklama.trim() || null };
+        const bitir = (k) => this.setState((s) => ({ kodlar: [{ kullanilan: 0, aktif: true, ...k }, ...(s.kodlar || [])], kodForm: { kod: '', tur: f.tur, deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: `${kod} eklendi ✓` }));
+        if (!window.FCIndirim) return bitir(yeni);
+        this.setState({ kodMesaj2: 'Kaydediliyor…' });
+        window.FCIndirim.ekle(yeni).then(bitir, (h) => this.setState({ kodMesaj2: h.message }));
+      },
+    };
+  }
   // Açık / kapalı ayar: ekranda hemen değişir, kaydedilemezse geri alınır
   ayarDegis(alan, anahtar, etiket) {
     const yeni = !this.state[alan];
@@ -509,13 +554,14 @@ class Component extends DCLogic {
       },
     };
   }
-  // Sitenin en üstündeki duyuru (ayarlar.site_duyurusu); boş metin kaldırır
-  duyuruYaz(metin) {
+  // Sitenin en üstündeki duyuru (ayarlar.site_duyurusu = {metin, bitis}); boş metin kaldırır. bitis günü bitince
+  // sitede kendiliğinden kaybolur (müşteri isteği 02.11.2026: iptal duyurusu ertesi güne kalmasın); elle yazılanınki bugün
+  duyuruYaz(metin, bitis) {
     if (metin.length > 300) return this.setState({ duyuruMesaj: 'Duyuru en çok 300 karakter olabilir.' });
     const tamam = metin ? 'Yayında ✓ Sitenin en üstünde görünüyor.' : 'Duyuru kaldırıldı ✓';
     if (!window.FCAyarKaydet) return this.setState({ siteDuyurusu: metin, duyuruMesaj: `Önizleme: ${tamam}` });
     this.setState({ duyuruMesaj: 'Kaydediliyor…' });
-    return window.FCAyarKaydet('site_duyurusu', metin).then(() => this.setState({ siteDuyurusu: metin, duyuruMesaj: tamam }),
+    return window.FCAyarKaydet('site_duyurusu', metin ? { metin, bitis: bitis || this.BUGUN } : '').then(() => this.setState({ siteDuyurusu: metin, duyuruMesaj: tamam }),
       (h) => this.setState({ duyuruMesaj: h.message }));
   }
   // Kapıda kamera: okunan kod yoklama kutusuna yazılır ve hemen işlenir
@@ -846,7 +892,8 @@ class Component extends DCLogic {
           window.FCEtkinlikDurum(p.key, ip.tur, ip.tarih, ip.neden, ip.mesaj || varsayilan)
             .then((r) => {
               // Ekrandaki söz: duyuru "sitenin üstünde ve maille"
-              if (window.FCAyarKaydet) window.FCAyarKaydet('site_duyurusu', (ip.mesaj || varsayilan).slice(0, 300)).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
+              // İptal / erteleme duyurusu etkinliğin (eski) günü bitince sitede kaybolur
+              if (window.FCAyarKaydet) window.FCAyarKaydet('site_duyurusu', { metin: (ip.mesaj || varsayilan).slice(0, 300), bitis: t < this.BUGUN ? this.BUGUN : t }).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
               return r;
             })
             .then((r) => this.setState((s) => ({
@@ -1484,6 +1531,7 @@ class Component extends DCLogic {
       anaSayfa: sekme === 'ana',
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
+      ...this.indirimKodlari(),
       ...this.aylikGorunum(),
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',

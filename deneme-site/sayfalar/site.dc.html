@@ -73,6 +73,7 @@ a{color:#111111}a:hover{color:#000000}
 .fs-tv-bacak{width:64%;margin:-.3em auto 0}
 .fs-yuzen{position:fixed;right:28px;bottom:var(--fs-yuzen-alt,0px);width:300px;z-index:40;transform:translateY(115%);transition:transform .6s cubic-bezier(.2,.9,.25,1.12);pointer-events:none}
 .fs-yuzen .fs-tv{font-size:7px}
+.fs-yuzen-uyelik{position:relative}.fs-yuzen-uyelik .fs-yuzen-git{z-index:2}.fs-yuzen-uyelik .fs-yuzen-kapat{z-index:3}.fs-yuzen .fu-tv{font-size:7px}
 .fs-destek{position:fixed;left:20px;bottom:20px;z-index:41;display:inline-flex;align-items:center;gap:8px;background:#2F6B3F;color:#FFFFFF;border:2.5px solid #111111;box-shadow:3px 3px 0 #111111;border-radius:999px;padding:8px 16px 8px 10px;min-height:46px;box-sizing:border-box;font:700 15px Figtree,sans-serif;cursor:pointer;transition:transform .15s}
 .fs-destek:hover{background:#255732;transform:translateY(-2px)}
 .fs-destek svg{flex:none;transform-origin:50% 90%;animation:fs-yaprak 3.2s ease-in-out infinite}
@@ -90,10 +91,11 @@ a{color:#111111}a:hover{color:#000000}
 .fs-wa-sec a{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#111111;text-decoration:none;font-weight:700;border:2px solid #111111;border-radius:10px;padding:10px 12px;min-height:44px;box-sizing:border-box}
 .fs-wa-sec a:hover{background:#E9F2EA}
 .fs-yuzen-acik{transform:translateY(0);pointer-events:auto}
+.fs-yuzen-yok{display:none}
 .fs-yuzen-git{position:absolute;inset:0;border:0;background:transparent;cursor:pointer}
 .fs-yuzen-kapat{position:absolute;top:30px;right:-10px;width:34px;height:34px;border-radius:50%;border:2.5px solid #111111;background:#FFFFFF;color:#111111;font:700 18px Figtree,sans-serif;cursor:pointer;z-index:1}
 /* Tablet: mini TV içeriği kapatmasın, çağrı rozeti ekrandan taşmasın */
-@media (max-width: 1024px){.fs-yuzen{width:190px;right:14px}.fs-yuzen .fs-tv{font-size:4.4px}.fs-cagri-rozet{left:12px !important}}
+@media (max-width: 1024px){.fs-yuzen{width:190px;right:14px}.fs-yuzen .fs-tv,.fs-yuzen .fu-tv{font-size:4.4px}.fs-cagri-rozet{left:12px !important}}
 @media (max-width: 640px){.fs-tv{font-size:11px}.fs-yuzen{width:118px;right:8px}.fs-yuzen .fs-tv{font-size:3.2px}.fs-tv-kol{display:none}.fs-yuzen-kapat{top:6px;right:-6px;width:30px;height:30px;font-size:16px}}
 .fs-sadece-tel{display:none}
 @media (max-width: 640px){.fs-filtre{flex-wrap:nowrap !important;gap:4px !important}.fs-filtre button{padding:7px 9px !important;font-size:13px !important;min-height:40px !important;white-space:nowrap;flex:none}}
@@ -296,6 +298,155 @@ html.gok-gece .fs-parti{opacity:1}
 @media (max-width: 1280px){.fs-dar-gizle{display:none}}
 
 .fs-foto{background:repeating-linear-gradient(135deg,#DEDEDC 0 12px,#E9E9E7 12px 24px);border-radius:20px;display:flex;align-items:center;justify-content:center;color:#5E5E5E;font:600 14px Figtree,sans-serif;text-align:center;padding:12px;box-sizing:border-box}
+/* Küçük TV: ana sayfadaki yüzen TV'nin aynısı; kaydırınca alttan çıkar */
+.fu-yuzen{position:fixed;right:28px;bottom:0;width:300px;z-index:40;transform:translateY(115%);transition:transform .6s cubic-bezier(.2,.9,.25,1.12);pointer-events:none}
+.fu-yuzen-acik{transform:translateY(0);pointer-events:auto}
+.fu-tv{position:relative;font-size:7px;padding:0 3.6em}
+.fu-tv-tac{width:78%;margin:0 auto -3.2em;position:relative;z-index:0}
+.fu-tv-tac svg,.fu-tv-bacak svg{display:block;width:100%;height:auto}
+.fu-tv-govde{position:relative;z-index:1;background:#FFFFFF;border:.26em solid #111111;border-radius:2.2em 2.2em 1.8em 1.8em;padding:1.1em;box-shadow:.45em .45em 0 #111111;transform:rotate(-1.2deg)}
+.fu-tv-ekran{border:.24em solid #111111;border-radius:1.7em / 2.1em;overflow:hidden;background:#FFFFFF}
+.fu-tv-kol{position:absolute;top:34%;width:4.6em;height:auto}
+.fu-tv-kol-sol{left:-4.4em}
+.fu-tv-kol-sag{right:-4.4em}
+.fu-tv-bacak{width:64%;margin:-.3em auto 0}
+.fu-yuzen-git{position:absolute;inset:0;border:0;background:transparent;cursor:pointer;z-index:2}
+.fu-yuzen-kapat{position:absolute;top:30px;right:-10px;width:34px;height:34px;border-radius:50%;border:2.5px solid #111111;background:#FFFFFF;color:#111111;font:700 18px Figtree,sans-serif;cursor:pointer;z-index:3}
+/* Ekranın içi (24 sn döngü, 6 sahne): 1) maskot "Topluluğun bir parçası ol" 1b) sabah yogası 1c) gün batımında müzik 2) kış boyu fiyat 3) neler ücretsiz 4) çağrı */
+.fu-tv-sahne{position:relative;aspect-ratio:816/576;overflow:hidden;background:#FFFFFF}
+.fu-tv-s{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5em;padding:1em 1.4em;box-sizing:border-box;text-align:center}
+.fu-tv-s p{margin:0}
+.fu-tv-s1{animation:fu-tv-p1 24s infinite}.fu-tv-sy{animation:fu-tv-py 24s infinite}.fu-tv-sm{animation:fu-tv-pm 24s infinite}.fu-tv-s2{animation:fu-tv-p2 24s infinite}.fu-tv-s3{animation:fu-tv-p3 24s infinite}.fu-tv-s4{animation:fu-tv-p4 24s infinite}
+@keyframes fu-tv-p1{0%,16%{opacity:1}16.7%,100%{opacity:0}}
+@keyframes fu-tv-p2{0%,50.1%{opacity:0}50.8%,67.3%{opacity:1}68%,100%{opacity:0}}
+@keyframes fu-tv-p3{0%,68%{opacity:0}68.7%,81.3%{opacity:1}82%,100%{opacity:0}}
+@keyframes fu-tv-p4{0%,82%{opacity:0}82.7%,99.3%{opacity:1}100%{opacity:0}}
+.fu-tv-m{position:absolute;transform-origin:50% 100%}
+/* 1: maskot el sallayarak yürüyüp gelir, balon çıkar */
+.fu-tv-m1{width:36%;left:3%;bottom:4%;animation:fu-tv-gel 24s linear infinite}
+@keyframes fu-tv-gel{0%{left:-40%;transform:rotate(-6deg)}1.3%{transform:translateY(-.8em) rotate(6deg)}2.7%{transform:rotate(-6deg)}4%{transform:translateY(-.8em) rotate(6deg)}5.3%{left:3%;transform:none}100%{left:3%;transform:none}}
+.fu-tv-yesil{color:#111111;background:#C9E33A;border:.06em solid #111111;border-radius:.2em;padding:0 .12em;white-space:nowrap;display:inline-block;margin-bottom:.12em;font-size:.88em}
+.fu-tv-balon{position:absolute;right:3%;top:22%;width:60%;box-sizing:border-box;text-align:center;font:700 3.9em/1.1 'Amatic SC',cursive;color:#111111;letter-spacing:.02em;opacity:0;animation:fu-tv-pop1 24s infinite}
+@keyframes fu-tv-pop1{0%,5.9%{opacity:0;transform:scale(.6)}7.3%{opacity:1;transform:scale(1.08)}8.1%,100%{opacity:1;transform:none}}
+/* 1b: sabah yogası (4-8 sn): güneş doğar, maskot minderde nefes alır */
+@keyframes fu-tv-py{0%,16.6%{opacity:0}17.3%,32.6%{opacity:1}33.2%,100%{opacity:0}}
+@keyframes fu-tv-pm{0%,33.2%{opacity:0}34%,49.4%{opacity:1}50.1%,100%{opacity:0}}
+.fu-tv-sy,.fu-tv-sm{align-items:flex-end;justify-content:center;gap:.25em;padding:1em 1.3em 1em 44%}
+.fu-tv-gunes{position:absolute;left:27%;top:7%;width:3.6em;height:3.6em;border-radius:50%;border:.25em solid #111111}
+.fu-tv-sy .fu-tv-gunes{background:#F6C945;animation:fu-tv-dog 24s infinite}
+@keyframes fu-tv-dog{0%,16.6%{transform:translateY(2.6em)}30%,100%{transform:none}}
+.fu-tv-sm .fu-tv-gunes{background:#EE6B2F;animation:fu-tv-bat 24s infinite}
+@keyframes fu-tv-bat{0%,33.2%{transform:none}49%,100%{transform:translateY(3em)}}
+.fu-tv-minder{position:absolute;left:4%;bottom:9%;width:34%;height:.9em;border-radius:.45em;background:#7FA7C9;border:.22em solid #111111}
+.fu-tv-m5{width:30%;left:6%;bottom:12%;animation:fu-tv-nefes 2.4s ease-in-out infinite}
+@keyframes fu-tv-nefes{0%,100%{transform:scale(1)}50%{transform:scale(1.05) translateY(-.2em)}}
+.fu-tv-om{position:absolute;left:13%;top:28%;font:700 3em/1 'Amatic SC',cursive;color:#111111;animation:fu-tv-nefes 2.4s ease-in-out infinite}
+.fu-tv-d{font:700 3em/1.05 'Amatic SC',cursive;color:#111111;text-align:right;opacity:0;letter-spacing:.02em}
+.fu-tv-d1{animation:fu-tv-d1 24s infinite}
+@keyframes fu-tv-d1{0%,17.3%{opacity:0;transform:translateX(.6em)}20%,100%{opacity:1;transform:none}}
+/* 1c: gün batımında müzik (8-12 sn): güneş batar, maskot ritimle zıplar, notalar uçar */
+.fu-tv-m6{width:26%;left:4%;bottom:6%;animation:fu-tv-ritim .45s ease-in-out infinite alternate}
+@keyframes fu-tv-ritim{from{transform:translateY(0) rotate(-6deg)}to{transform:translateY(-.9em) rotate(6deg)}}
+.fu-tv-nota{position:absolute;font:700 3.4em/1 Figtree,sans-serif;color:#111111;animation:fu-tv-uc-nota 1.6s linear infinite}
+.fu-tv-nota-1{left:30%;top:46%}.fu-tv-nota-2{left:8%;top:30%;animation-delay:-.6s}.fu-tv-nota-3{left:24%;top:24%;animation-delay:-1.1s}
+@keyframes fu-tv-uc-nota{0%{opacity:0;transform:translateY(.8em)}30%{opacity:1}100%{opacity:0;transform:translateY(-1.6em) rotate(15deg)}}
+.fu-tv-d2{animation:fu-tv-d2 24s infinite}.fu-tv-d3{animation:fu-tv-d3 24s infinite}
+@keyframes fu-tv-d2{0%,34%{opacity:0;transform:translateX(.6em)}36.6%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-d3{0%,39.6%{opacity:0;transform:scale(.7)}41.5%{opacity:1;transform:scale(1.08)}43.1%,100%{opacity:1;transform:none}}
+.fu-tv-d3{font-size:2.8em;white-space:nowrap;background:#C9E33A;border:.06em solid #111111;border-radius:.25em;padding:0 .2em;margin-top:.25em}
+/* 2: hesap; satırlar sırayla düşer, bilet toplamının üstü çizilir */
+.fu-tv-s2{align-items:center;justify-content:center;gap:.3em;padding:1em 33% 1em 1.4em}
+.fu-tv-k{font:700 3.4em/1 'Amatic SC',cursive;color:#111111;text-align:left;letter-spacing:.02em}
+.fu-tv-s2 .fu-tv-k{opacity:0}
+.fu-tv-ciz{position:relative;animation:fu-tv-dus2 24s infinite !important}
+.fu-tv-ust{font-size:3.3em !important;white-space:nowrap;opacity:0;animation:fu-tv-dus 24s infinite}
+/* Fiyat: 6.000 TL gelir, 6 aşağı düşüp yuvarlanır, yerine yukarıdan 3 iner, kutu yeşile döner */
+.fu-tv-fiyat{font:700 5em/1 'Amatic SC',cursive !important;white-space:nowrap;border:.06em solid transparent;border-radius:.25em;padding:.02em .2em;animation:fu-tv-fgel 24s infinite,fu-tv-fkutu 24s infinite !important}
+.fu-tv-hane{position:relative;display:inline-block}
+.fu-tv-alti{display:inline-block;transform-origin:50% 100%;animation:fu-tv-alti 24s infinite}
+.fu-tv-uc{position:absolute;left:0;top:0;opacity:0;animation:fu-tv-uc3 24s infinite}
+@keyframes fu-tv-fgel{0%,53%{opacity:0;transform:translateY(-.4em)}55%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-alti{0%,57.5%{transform:none;opacity:1}60%{transform:translateY(.9em) rotate(35deg);opacity:1}61.5%,100%{transform:translateY(2.2em) rotate(80deg);opacity:0}}
+@keyframes fu-tv-uc3{0%,60.5%{opacity:0;transform:translateY(-1.4em)}62%{opacity:1;transform:translateY(.12em)}62.8%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-fkutu{0%,62.3%{background:transparent;border-color:transparent}63.3%,100%{background:#C9E33A;border-color:#111111}}
+.fu-tv-ciz{color:#6B6B6B;font-size:3.6em !important}
+.fu-tv-ciz::after{content:'';position:absolute;left:-.1em;right:-.1em;top:48%;height:.14em;border-radius:1em;background:#D6342C;transform:scaleX(0);transform-origin:left;animation:fu-tv-cizgi 24s infinite}
+.fu-tv-buyuk{font:700 4.8em/1 'Amatic SC',cursive !important;white-space:nowrap;background:#C9E33A;border:.06em solid #111111;border-radius:.25em;padding:.02em .2em;margin-top:.08em;animation:fu-tv-dus3 24s infinite !important}
+@keyframes fu-tv-dus{0%,50.8%{opacity:0;transform:translateY(-.6em)}52.7%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-dus2{0%,54%{opacity:0;transform:translateY(-.6em)}56%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-cizgi{0%,58%{transform:scaleX(0)}60%,100%{transform:scaleX(1)}}
+@keyframes fu-tv-dus3{0%,60.7%{opacity:0;transform:scale(.6)}62.7%{opacity:1;transform:scale(1.12)}64.1%,100%{opacity:1;transform:none}}
+.fu-tv-m2{width:28%;right:1%;bottom:8%;animation:fu-tv-zipla 24s infinite}
+@keyframes fu-tv-zipla{0%,62.7%{transform:none}64.1%{transform:translateY(-1.2em) rotate(-6deg)}65.3%{transform:none}66.7%{transform:translateY(-.8em) rotate(6deg)}68%,100%{transform:none}}
+/* 3: neler ücretsiz */
+.fu-tv-s3{justify-content:flex-start;padding-top:.8em;gap:.3em}
+.fu-tv-dahil{font:700 2.9em/1 'Amatic SC',cursive;color:#555555;letter-spacing:.02em}
+.fu-tv-tik{font:700 3.3em/1.05 'Amatic SC',cursive;white-space:pre-line;letter-spacing:.02em}
+.fu-tv-s3 .fu-tv-k{text-align:center;background:#C9E33A;border:.07em solid #111111;border-radius:999px;padding:.05em .5em;font-size:3.2em}
+.fu-tv-m3{width:18%;right:4%;left:auto;bottom:-4%;animation:fu-tv-salla 1s ease-in-out infinite alternate}
+@keyframes fu-tv-salla{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+/* 4: çağrı */
+.fu-tv-s4{align-items:flex-end;justify-content:center;gap:.5em;padding:1em 1.2em 1em 34%}
+.fu-tv-m4{width:32%;left:2%;bottom:6%;animation:fu-tv-uc 24s infinite}
+@keyframes fu-tv-uc{0%,82.7%{transform:translateY(3em)}85.3%{transform:translateY(-.6em) rotate(-4deg)}88%{transform:translateY(0) rotate(4deg)}90.7%{transform:translateY(-.6em) rotate(-4deg)}93.4%,100%{transform:none}}
+.fu-tv-yazi{margin:0;font:700 3.9em/1.05 'Amatic SC',cursive;color:#111111;text-align:right}
+.fu-tv-alt{font:700 1.9em Figtree,sans-serif;letter-spacing:.01em;white-space:nowrap;color:#FFFFFF;background:#111111;border-radius:999px;padding:.35em 1em;animation:fu-tv-nabiz .8s ease-in-out infinite alternate}
+@keyframes fu-tv-nabiz{from{transform:scale(1)}to{transform:scale(1.07)}}
+@media (max-width: 1024px){.fu-yuzen{width:190px;right:14px}.fu-yuzen .fu-tv{font-size:4.4px}}
+@media (max-width: 640px){.fu-yuzen{width:64vw;right:4px}.fu-yuzen .fu-tv{font-size:calc(64vw / 43)}.fu-tv-kol{display:none}.fu-yuzen-kapat{top:6px;right:-6px;width:30px;height:30px;font-size:16px}}
+@media (prefers-reduced-motion: reduce){.fu-yuzen{transition:none}.fu-tv-s,.fu-tv-s *{animation:none !important}.fu-tv-s{opacity:0}.fu-tv-s4,.fu-tv-s4 *{opacity:1}}
+/* Etkinliğin kendi sayfası */
+.fe-ust{max-width:1100px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:2}
+.fe-geri,.fe-tumu{font:700 15px Figtree,sans-serif;color:#111111;background:#FFFFFF;border:2.5px solid #111111;border-radius:999px;padding:9px 16px;text-decoration:none;white-space:nowrap;box-shadow:3px 3px 0 #111111}
+.fe-logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:#111111}.fe-logo img{width:42px}.fe-logo span{font:700 30px/1 'Amatic SC',cursive}
+.fe-ana{max-width:1100px;margin:0 auto;padding:8px 20px 36px;display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:36px;align-items:start;position:relative;z-index:1}
+.fe-afis{padding:0;border:0;background:transparent;cursor:zoom-in}.fe-afis img{width:100%;display:block;border:2.5px solid #111111;border-radius:16px;box-shadow:6px 6px 0 #111111}
+.fe-baslik{font-size:72px;margin:10px 0 4px;line-height:.95}
+.fe-kim{font-weight:600;color:#3A3A3A;margin:0 0 12px}
+.fe-kutular{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}.fe-kutular span{border:2px solid #111111;border-radius:12px;padding:7px 12px;font-weight:600;font-size:15px;background:#FAFAF7;white-space:nowrap}
+.fe-satis{border:2.5px solid #111111;border-radius:16px;box-shadow:5px 5px 0 #111111;padding:18px 20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px;background:#FFFFFF}
+.fe-fiyat{display:block;font-size:30px;line-height:1.1}
+.fe-uye{display:inline-block;background:#C9E33A;border:2px solid #111111;border-radius:8px;padding:1px 8px;font-weight:700;font-size:14px;margin:4px 0}
+.fe-dugmeler{display:flex;flex-wrap:wrap;gap:10px}
+.fe-gecti{background:#F0F0EE;border-radius:12px;padding:12px 14px;font-weight:600}
+.fe-metin{white-space:pre-line;color:#333333;line-height:1.6;margin-bottom:16px}
+.fe-alt-dugmeler{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.fe-takvim{font-weight:600;font-size:14px}
+.fe-neden,.fe-diger,.fe-tv-yer{max-width:1100px;margin:0 auto;padding:0 20px 34px;position:relative;z-index:1}
+.fe-neden h2,.fe-diger h2,.fe-tv-yer h2{font-size:48px;margin:0 0 14px}
+.fe-kartlar{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.fe-kart{border:2.5px solid #111111;border-radius:14px;padding:16px 18px;box-shadow:4px 4px 0 #111111;background:#FFFFFF}.fe-kart b{font:700 30px/1 'Amatic SC',cursive;display:block;margin-bottom:6px}
+.fe-liste{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.fe-mini{display:flex;gap:12px;align-items:center;border:2px solid #111111;border-radius:14px;padding:10px;text-decoration:none;color:#111111;background:#FFFFFF}
+.fe-mini img{width:70px;height:88px;object-fit:cover;border-radius:8px;border:1.5px solid #111111;flex:none}
+.fe-mini span{display:flex;flex-direction:column}.fe-mini small{color:#555555}.fe-mini em{font-style:normal;font-size:13px;font-weight:700;color:#2F6B3F}
+.fe-anaya{display:block;width:max-content;margin:0 auto 40px;font:700 16px Figtree,sans-serif;color:#111111;border:2.5px solid #111111;border-radius:999px;padding:11px 20px;text-decoration:none;background:#FFFFFF;box-shadow:3px 3px 0 #111111;position:relative;z-index:1}
+.fe-yok{max-width:640px;margin:40px auto;padding:0 20px;text-align:center}
+.fe-cubuk{display:none}
+/* Masaüstünde TV sağ altta yüzer; telefonda sayfa içinde tam boy */
+.fe-tv-yer h2{display:none}
+.fs-ana-tv{display:none;flex-direction:column;align-items:center;gap:6px;margin:8px 0 0}
+.fs-ana-tv h3{font-size:44px;margin:0;text-align:center}
+.fs-ana-tv .fu-tv-ekran{overflow:hidden}.fs-ana-tv .fe-tv{position:static;width:340px;max-width:100%;margin:0 auto}
+.fs-ana-tv .fe-tv .fu-tv{font-size:8px}
+@media (max-width: 640px){.fs-ana-tv{display:flex}}
+.fe-tv-yer .fe-tv{position:fixed;right:28px;bottom:0;width:300px;z-index:40}
+@media (max-width: 760px){
+  .fe-ust{padding:10px 14px}.fe-logo span{display:none}.fe-tumu{display:none}
+  .fe-ana{grid-template-columns:1fr;gap:18px;padding:4px 16px 24px}
+  .fe-afis{max-width:300px;justify-self:center}
+  .fe-baslik{font-size:56px}
+  .fe-kutular{flex-wrap:nowrap;overflow-x:auto;gap:6px}.fe-kutular span{font-size:13px;padding:6px 9px}
+  .fe-satis{display:none}
+  .fe-kartlar,.fe-liste{grid-template-columns:1fr}
+  .fe-tv-yer h2{display:block;text-align:center;font-size:44px;margin-bottom:6px}
+  .fe-tv-yer .fe-tv{position:static;width:300px;max-width:100%;margin:0 auto}
+  .fe-tv-yer .fe-tv .fu-tv{font-size:7px}
+  .fe-tv-yer .fu-yuzen-kapat{display:none}
+  .fe-cubuk{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:#FFFFFF;border-top:2.5px solid #111111;padding:10px 14px calc(10px + env(safe-area-inset-bottom));align-items:center;justify-content:space-between;gap:10px;box-shadow:0 -4px 14px rgba(0,0,0,.12)}
+  .fe-cubuk b{display:block;font-size:22px;line-height:1.1}.fe-cubuk .fe-uye{font-size:12px}
+  .fe-cubuk .fs-btn{padding:12px 16px}
+  .fe-anaya{margin-bottom:110px}
+}
 </style>
 </helmet>
 
@@ -358,7 +509,30 @@ html.gok-gece .fs-parti{opacity:1}
               <input type="tel" value="{{ sTel }}" onChange="{{ sTelYaz }}" style="font: 400 16px Figtree, sans-serif; padding: 12px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
             </label>
             <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ sOnay }}" onChange="{{ sOnayDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="/mesafeli-satis/" target="_blank" rel="noopener">Mesafeli satış sözleşmesi</a>, <a href="/teslimat-iade/" target="_blank" rel="noopener">teslimat ve iade şartları</a>, <a href="/dogal-alan/" target="_blank" rel="noopener">doğal alan beyanı</a> ve <a href="/gizlilik/" target="_blank" rel="noopener">KVKK metnini</a> okudum. *</span></label>
-            <img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32" style="height: 22px; width: auto; max-width: 100%; align-self: flex-start">
+            <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+              <legend style="font-weight: 700; font-size: 15px; margin-bottom: 6px">Ödeme yöntemi</legend>
+              <sc-for list="{{ odemeYollari }}" as="y" hint-placeholder-count="3">
+                <button type="button" role="radio" aria-checked="{{ y.secili }}" aria-disabled="{{ y.kapaliYazi }}" onClick="{{ y.sec }}" style="{{ y.stil }}">
+                  <span aria-hidden="true" style="font-size: 18px; line-height: 1.2">{{ y.isaret }}</span>
+                  <span style="display: flex; flex-direction: column; gap: 2px"><strong>{{ y.ad }}</strong><span style="font-size: 13px; color: #3A3A3A">{{ y.alt }}</span></span>
+                </button>
+              </sc-for>
+            </fieldset>
+            <div class="fs-kod" style="display: flex; flex-direction: column; gap: 6px">
+              <sc-if value="{{ kodYok }}" hint-placeholder-val="{{ true }}">
+                <label for="fs-kod" style="font-weight: 600; font-size: 14px">İndirim kodun var mı?</label>
+                <div style="display: flex; gap: 8px">
+                  <input id="fs-kod" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="30" placeholder="KOD" value="{{ sKod }}" onChange="{{ sKodYaz }}" style="flex: 1 1 auto; min-width: 0; font: 600 16px Figtree, sans-serif; letter-spacing: .04em; padding: 10px 14px; border: 2px solid #111111; border-radius: 10px; min-height: 46px; box-sizing: border-box">
+                  <button type="button" class="fs-btn fs-btn-acik" onClick="{{ kodUygula }}" style="flex: 0 0 auto; min-height: 46px; padding: 0 18px">Uygula</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ kodVar }}" hint-placeholder-val="{{ false }}">
+                <p role="status" style="margin: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #C9E33A; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600"><span>{{ kodAciklama }}</span><button type="button" onClick="{{ kodKaldir }}" style="background: none; border: 0; font: 600 14px Figtree, sans-serif; text-decoration: underline; cursor: pointer; padding: 4px">Kaldır</button></p>
+              </sc-if>
+              <sc-if value="{{ sKodHata }}" hint-placeholder-val="{{ false }}">
+                <span role="alert" style="font-size: 13px; color: #82301F">{{ sKodHata }}</span>
+              </sc-if>
+            </div>
             <sc-if value="{{ uyeIndirimi }}" hint-placeholder-val="{{ false }}">
               <p role="status" style="margin: 0; background: #C9E33A; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600">Aktif üyeliğin bulundu 🌲 Üye fiyatı uygulandı.</p>
             </sc-if>
@@ -368,6 +542,9 @@ html.gok-gece .fs-parti{opacity:1}
             <div style="display: flex; flex-direction: column; gap: 6px; border-top: 2px solid #111111; padding-top: 10px; font-size: 15px">
               <div style="display: flex; justify-content: space-between"><span>Ara toplam</span><span>{{ araToplamYazi }}</span></div>
               <div style="display: flex; justify-content: space-between"><span>Üye indirimi</span><span>{{ indirimYazi }}</span></div>
+              <sc-if value="{{ kodVar }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; justify-content: space-between"><span>İndirim kodu ({{ kodAd }})</span><span>{{ kodIndYazi }}</span></div>
+              </sc-if>
               <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: 700"><span>Ödenecek</span><span>{{ toplamYazi }}</span></div>
             </div>
             <button type="button" class="fs-btn" onClick="{{ odemeyeGec }}">{{ odemeDugme }}</button>
@@ -392,7 +569,8 @@ html.gok-gece .fs-parti{opacity:1}
             <sc-if value="{{ hakIndirimli }}" hint-placeholder-val="{{ false }}">
               <p role="status" style="margin: 0; background: #C9E33A; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600">Aktif üyeliğin bulundu 🌲 Üye fiyatı uygulandı.</p>
             </sc-if>
-            <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3A3A3A">Yerlerin dekontunu yükleyince ayrılır. Tutarı aşağıdaki hesaba havale / EFT ile gönder, dekontunu yükle; onaylanınca biletlerin e-postana gelir.</p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3A3A3A">Yerlerin dekontunu yükleyince ayrılır. Tutarı aşağıdaki hesaba havale / EFT ile gönder ve dekontunu yükle.</p>
+            <p role="note" style="margin: 0; background: #F6C945; border: 2px solid #111111; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 700">Ödemenden sonra 5–60 dakika içinde biletin e-posta adresine gönderilecektir.</p>
             <div style="background: #F0F0EE; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; font-size: 15px">
               <span><strong>Alıcı:</strong> {{ odemeAlici }}</span>
               <span style="font-variant-numeric: tabular-nums"><strong>IBAN:</strong> {{ odemeIban }}</span>
@@ -407,10 +585,17 @@ html.gok-gece .fs-parti{opacity:1}
             <button type="button" class="fs-btn" onClick="{{ sDekontGonder }}">Dekontu gönder</button>
           </div>
         </sc-if>
+        <sc-if value="{{ sKartDonus }}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="display: flex; flex-direction: column; gap: 12px">
+            <span class="fs-baslik" style="font-size: 44px">Teşekkürler! 🎟️</span>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5">Ödemen Shopier'den bize ulaşınca biletlerin birkaç dakika içinde e-postana gelir. Gelmezse spam klasörüne de bak; yine yoksa bize yaz.</p>
+            <button type="button" class="fs-btn" onClick="{{ sepetKapat }}">Tamam</button>
+          </div>
+        </sc-if>
         <sc-if value="{{ sGonderildi }}" hint-placeholder-val="{{ false }}">
           <div role="status" style="display: flex; flex-direction: column; gap: 12px">
             <span class="fs-baslik" style="font-size: 44px">Teşekkürler! 🌲</span>
-            <p style="margin: 0; font-size: 15px; line-height: 1.5">Dekontun bize ulaştı. Onaylanınca biletlerin <strong>{{ sEposta }}</strong> adresine gelecek; girişte bilet kodunu göstermen yeterli.</p>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5">Dekontun bize ulaştı. 5–60 dakika içinde biletlerin <strong>{{ sEposta }}</strong> adresine gönderilecek; girişte bilet kodunu göstermen yeterli.</p>
             <button type="button" class="fs-btn" onClick="{{ sepetKapat }}">Tamam</button>
           </div>
         </sc-if>
@@ -619,7 +804,59 @@ html.gok-gece .fs-parti{opacity:1}
       <button type="button" class="fs-tam-kapat" aria-label="Kapat">×</button>
     </div>
   </sc-if>
+  <!-- Köşedeki TV: sayfa başında video; Etkinlikler bölümüne inince üye olmayanlara üyelik TV'si (tıklayınca başvuru) -->
   <div class="{{ yuzenSinif }}" aria-hidden="{{ yuzenGizli }}">
+    <sc-if value="{{ yuzenUyelik }}" hint-placeholder-val="{{ false }}">
+    <div class="fs-yuzen-uyelik">
+      <div class="fu-tv">
+                <div class="fu-tv-tac"><svg viewBox="0 0 300 156" aria-hidden="true"><g stroke="#111111" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(150 150) rotate(-80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(0)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g></g></svg></div>
+      <div class="fu-tv-govde">
+        <svg class="fu-tv-kol fu-tv-kol-sol" viewBox="0 0 60 50" aria-hidden="true"><g stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M58 30 L18 24"/><path d="M18 24 l-12 -14 M18 24 l-15 1 M18 24 l-9 14"/></g></svg><svg class="fu-tv-kol fu-tv-kol-sag" viewBox="0 0 60 50" aria-hidden="true"><g stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M2 30 L42 18"/><path d="M42 18 l10 -14 M42 18 l15 0 M42 18 l12 10"/></g></svg>
+        <div class="fu-tv-ekran"><div class="fu-tv-sahne">
+            <div class="fu-tv-s fu-tv-s1">
+              <img class="fu-tv-m fu-tv-m1" src="/_blob/49a6d3a14dbcdce5ef3a64ccb68bdce2" alt="">
+              <p class="fu-tv-balon"><span class="fu-tv-yesil">Topluluğumuzun</span> bir parçası ol!</p>
+            </div>
+            <div class="fu-tv-s fu-tv-sy">
+              <span class="fu-tv-gunes"></span>
+              <span class="fu-tv-minder"></span>
+              <img class="fu-tv-m fu-tv-m5" src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="">
+              <span class="fu-tv-om">om</span>
+              <p class="fu-tv-d fu-tv-d1">Ağaçların altında<br>sabah yogası,<br>bir fincan kahve</p>
+            </div>
+            <div class="fu-tv-s fu-tv-sm">
+              <span class="fu-tv-gunes"></span>
+              <img class="fu-tv-m fu-tv-m6" src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="">
+              <span class="fu-tv-nota fu-tv-nota-1">♪</span><span class="fu-tv-nota fu-tv-nota-2">♫</span><span class="fu-tv-nota fu-tv-nota-3">♪</span>
+              <p class="fu-tv-d fu-tv-d2">Gün batımında müzik,<br>aynı sofrada<br>yeni dostlar</p>
+              <p class="fu-tv-d fu-tv-d3">Hepsi üyeliğe dahil</p>
+            </div>
+            <div class="fu-tv-s fu-tv-s2">
+              <p class="fu-tv-k fu-tv-ust">Kış boyu aramızdasın</p>
+              <p class="fu-tv-k fu-tv-fiyat"><span class="fu-tv-hane"><span class="fu-tv-alti">6</span><span class="fu-tv-uc">3</span></span>.000 TL</p>
+              <img class="fu-tv-m fu-tv-m2" src="/_blob/5d4246c48f300edcce7178b1c6845750" alt="">
+            </div>
+            <div class="fu-tv-s fu-tv-s3">
+              <p class="fu-tv-dahil">Üyelerimize:</p>
+              <p class="fu-tv-tik">Breakfast Club ✓
+Sunset Club ✓
+Buluşmalar ✓</p>
+              <p class="fu-tv-k">Atölyelerde üyelere %50</p>
+              <img class="fu-tv-m fu-tv-m3" src="/_blob/426f104f4634b69c53f59c397459ea29" alt="">
+            </div>
+            <div class="fu-tv-s fu-tv-s4">
+              <img class="fu-tv-m fu-tv-m4" src="/_blob/7ace25b1e01f5deeaf99b9c072450d33" alt="">
+              <p class="fu-tv-yazi">Senin için de<br>bir sandalye var.</p>
+              <span class="fu-tv-alt">Aramıza katıl →</span>
+            </div>
+          </div></div>
+      </div>
+      <div class="fu-tv-bacak"><svg viewBox="0 0 300 66" aria-hidden="true"><g stroke="#111111" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M70 0 l10 34 l-16 24 l22 2"/><path d="M118 0 l10 34 l-16 24 l22 2"/><path d="M182 0 l-10 34 l16 24 l-22 2"/><path d="M230 0 l-10 34 l16 24 l-22 2"/></g></svg></div>
+      <button type="button" class="fs-yuzen-git" aria-label="Üye ol" onClick="{{ yuzenUyeOl }}"></button>
+      <button type="button" class="fs-yuzen-kapat" aria-label="Küçük TV'yi kapat" onClick="{{ yuzenKapat }}">×</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ yuzenVideo }}" hint-placeholder-val="{{ true }}">
     <div class="fs-tv">
       <div class="fs-tv-tac"><svg viewBox="0 0 300 156" aria-hidden="true"><g stroke="#111111" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(150 150) rotate(-80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(0)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g></g></svg></div>
       <div class="fs-tv-govde">
@@ -630,6 +867,7 @@ html.gok-gece .fs-parti{opacity:1}
       <button type="button" class="fs-yuzen-git" aria-label="Başa dön" onClick="{{ basaDon }}"></button>
       <button type="button" class="fs-yuzen-kapat" aria-label="Küçük TV'yi kapat" onClick="{{ yuzenKapat }}">×</button>
     </div>
+    </sc-if>
   </div>
   <div class="fs-arka" aria-hidden="true">
     <img src="/_blob/49a6d3a14dbcdce5ef3a64ccb68bdce2" alt="">
@@ -687,6 +925,7 @@ html.gok-gece .fs-parti{opacity:1}
         </div>
       </div>
     </sc-if>
+    <sc-if value="{{ anaSayfa }}" hint-placeholder-val="{{ true }}">
     <!-- ÜST MENÜ -->
     <!-- İlk ekran: açılışta tam ekranı doldurur, orman şeridi en altta -->
     <div class="fs-ilk-ekran">
@@ -836,6 +1075,60 @@ html.gok-gece .fs-parti{opacity:1}
         <p style="margin: 0; color: #5E5E5E; font-size: 13px">Önizleme: fiyatlar örnektir. Üye fiyatları ödeme adımında e-postayla üyelik kontrol edilerek uygulanır.</p>
       </sc-if>
       <p style="margin: 0; color: #3A3A3A; font-size: 15px">Üyeysen yerini <a href="Uye.dc.html">üye panelinden</a> ayırabilirsin; kontenjan dolunca bekleme listesine yazılırsın.</p>
+      <!-- Üye olmayanlara üyelik TV'si (etkinlik sayfasındakiyle aynı animasyon); tıklayınca üyelik başvurusu -->
+      <sc-if value="{{ anaTv }}" hint-placeholder-val="{{ true }}">
+        <section class="fs-ana-tv" aria-label="Üyelik">
+          <h3 class="fs-baslik">Üye olunca hepsi dahil</h3>
+            <div class="fe-tv fs-ana-tv-kutu fu-yuzen fu-yuzen-acik">
+              <div class="fu-tv">
+                <div class="fu-tv-tac"><svg viewBox="0 0 300 156" aria-hidden="true"><g stroke="#111111" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(150 150) rotate(-80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(0)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g></g></svg></div>
+      <div class="fu-tv-govde">
+        <svg class="fu-tv-kol fu-tv-kol-sol" viewBox="0 0 60 50" aria-hidden="true"><g stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M58 30 L18 24"/><path d="M18 24 l-12 -14 M18 24 l-15 1 M18 24 l-9 14"/></g></svg><svg class="fu-tv-kol fu-tv-kol-sag" viewBox="0 0 60 50" aria-hidden="true"><g stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M2 30 L42 18"/><path d="M42 18 l10 -14 M42 18 l15 0 M42 18 l12 10"/></g></svg>
+        <div class="fu-tv-ekran"><div class="fu-tv-sahne">
+            <div class="fu-tv-s fu-tv-s1">
+              <img class="fu-tv-m fu-tv-m1" src="/_blob/49a6d3a14dbcdce5ef3a64ccb68bdce2" alt="">
+              <p class="fu-tv-balon"><span class="fu-tv-yesil">Topluluğumuzun</span> bir parçası ol!</p>
+            </div>
+            <div class="fu-tv-s fu-tv-sy">
+              <span class="fu-tv-gunes"></span>
+              <span class="fu-tv-minder"></span>
+              <img class="fu-tv-m fu-tv-m5" src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="">
+              <span class="fu-tv-om">om</span>
+              <p class="fu-tv-d fu-tv-d1">Ağaçların altında<br>sabah yogası,<br>bir fincan kahve</p>
+            </div>
+            <div class="fu-tv-s fu-tv-sm">
+              <span class="fu-tv-gunes"></span>
+              <img class="fu-tv-m fu-tv-m6" src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="">
+              <span class="fu-tv-nota fu-tv-nota-1">♪</span><span class="fu-tv-nota fu-tv-nota-2">♫</span><span class="fu-tv-nota fu-tv-nota-3">♪</span>
+              <p class="fu-tv-d fu-tv-d2">Gün batımında müzik,<br>aynı sofrada<br>yeni dostlar</p>
+              <p class="fu-tv-d fu-tv-d3">Hepsi üyeliğe dahil</p>
+            </div>
+            <div class="fu-tv-s fu-tv-s2">
+              <p class="fu-tv-k fu-tv-ust">Kış boyu aramızdasın</p>
+              <p class="fu-tv-k fu-tv-fiyat"><span class="fu-tv-hane"><span class="fu-tv-alti">6</span><span class="fu-tv-uc">3</span></span>.000 TL</p>
+              <img class="fu-tv-m fu-tv-m2" src="/_blob/5d4246c48f300edcce7178b1c6845750" alt="">
+            </div>
+            <div class="fu-tv-s fu-tv-s3">
+              <p class="fu-tv-dahil">Üyelerimize:</p>
+              <p class="fu-tv-tik">Breakfast Club ✓
+Sunset Club ✓
+Buluşmalar ✓</p>
+              <p class="fu-tv-k">Atölyelerde üyelere %50</p>
+              <img class="fu-tv-m fu-tv-m3" src="/_blob/426f104f4634b69c53f59c397459ea29" alt="">
+            </div>
+            <div class="fu-tv-s fu-tv-s4">
+              <img class="fu-tv-m fu-tv-m4" src="/_blob/7ace25b1e01f5deeaf99b9c072450d33" alt="">
+              <p class="fu-tv-yazi">Senin için de<br>bir sandalye var.</p>
+              <span class="fu-tv-alt">Aramıza katıl →</span>
+            </div>
+          </div></div>
+      </div>
+      <div class="fu-tv-bacak"><svg viewBox="0 0 300 66" aria-hidden="true"><g stroke="#111111" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M70 0 l10 34 l-16 24 l22 2"/><path d="M118 0 l10 34 l-16 24 l22 2"/><path d="M182 0 l-10 34 l16 24 l-22 2"/><path d="M230 0 l-10 34 l16 24 l-22 2"/></g></svg></div>
+                <button type="button" class="fu-yuzen-git" aria-label="Üye ol" onClick="{{ anaTvGit }}"></button>
+              </div>
+            </div>
+        </section>
+      </sc-if>
       <h3 style="margin: 16px 0 0; font-size: 22px">Geçmiş etkinlikler</h3>
       <ol class="fs-gecmis" aria-label="Geçmiş etkinlikler" style="list-style: none; margin: 0; padding: 4px 14px 12px 4px; display: flex; flex-direction: column; gap: 14px">
         <sc-for list="{{ gecmisler }}" as="b" hint-placeholder-count="6">
@@ -1070,6 +1363,149 @@ html.gok-gece .fs-parti{opacity:1}
       </div>
     </section>
 
+    </sc-if>
+
+    <!-- ETKİNLİĞİN KENDİ SAYFASI (/e/<id>): afiş, bilgiler, satış; telefonda alta yapışık fiyat + randevu, TV sayfa içinde -->
+    <sc-if value="{{ tekSayfa }}" hint-placeholder-val="{{ false }}">
+      <header class="fe-ust">
+        <a class="fe-geri" href="/">← Ana sayfa</a>
+        <a class="fe-logo" href="/"><img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt=""><span>Forest Club Urla</span></a>
+        <a class="fe-tumu" href="/#bulusmalar">Tüm etkinlikler</a>
+      </header>
+      <sc-if value="{{ tekYok }}" hint-placeholder-val="{{ false }}">
+        <main class="fe-yok">
+          <h1 class="fs-baslik">Bu etkinlik bulunamadı</h1>
+          <p>Etkinlik kaldırılmış ya da bağlantı hatalı olabilir.</p>
+          <a class="fs-btn" href="/#bulusmalar">Tüm etkinliklere bak</a>
+        </main>
+      </sc-if>
+      <sc-if value="{{ tekVar }}" hint-placeholder-val="{{ false }}">
+        <main class="fe-ana">
+          <sc-if value="{{ tekAfisVar }}" hint-placeholder-val="{{ false }}">
+            <button type="button" class="fe-afis" onClick="{{ tek.afisAc }}" aria-label="Afişi tam ekran aç"><img src="{{ tek.afis }}" alt="{{ tek.afisAlt }}"></button>
+          </sc-if>
+          <div class="fe-bilgi">
+            <span style="{{ tek.rozet }}">{{ tek.etiket }}</span>
+            <h1 class="fs-baslik fe-baslik">{{ tek.ad }}</h1>
+            <sc-if value="{{ tekKimVar }}" hint-placeholder-val="{{ false }}"><p class="fe-kim">{{ tekKim }}</p></sc-if>
+            <div class="fe-kutular">
+              <span>📅 {{ tekZaman }}</span>
+              <sc-if value="{{ tekSaatVar }}" hint-placeholder-val="{{ true }}"><span>🕙 {{ tek.saat }}</span></sc-if>
+              <span>📍 Pinya, Urla</span>
+            </div>
+            <sc-if value="{{ tekSatisVar }}" hint-placeholder-val="{{ true }}">
+              <div class="fe-satis">
+                <div>
+                  <b class="fe-fiyat">{{ tek.fiyatYazi }}</b>
+                  <sc-if value="{{ tekUyeVar }}" hint-placeholder-val="{{ true }}"><span class="fe-uye">{{ tekUyeYazi }}</span></sc-if>
+                  <div style="{{ tek.kalanStil }}">{{ tek.kalanYazi }}</div>
+                </div>
+                <div class="fe-dugmeler">
+                  <sc-if value="{{ tekUyeDegil }}" hint-placeholder-val="{{ true }}">
+                    <button type="button" class="fs-btn" onClick="{{ tekRandevu }}" disabled="{{ tek.dolu }}" style="{{ tek.dugmeStil }}">{{ tek.dugme }}</button>
+                    <a class="fs-btn fs-btn-acik" href="/#basvuru">Üye ol, dahil olsun</a>
+                  </sc-if>
+                  <sc-if value="{{ tekUyeGirisli }}" hint-placeholder-val="{{ false }}">
+                    <a class="fs-btn" href="{{ tekUyePanel }}">Üye panelinde yerimi ayır</a>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ tekGecti }}" hint-placeholder-val="{{ false }}"><p class="fe-gecti">Bu buluşma gerçekleşti. Yaklaşan etkinliklere aşağıdan bakabilirsin.</p></sc-if>
+            <div class="fe-metin">{{ tek.metin }}</div>
+            <div class="fe-alt-dugmeler">
+              <button type="button" class="fs-paylas" onClick="{{ tek.paylas }}" aria-label="{{ tek.paylasEtiket }}">{{ tek.paylasYazi }}</button>
+              <sc-if value="{{ tekGelecek }}" hint-placeholder-val="{{ true }}"><a href="{{ tek.takvim }}" class="fe-takvim">Takvime ekle</a></sc-if>
+              <sc-if value="{{ tekLinkVar }}" hint-placeholder-val="{{ true }}"><a href="{{ tek.link }}" class="fe-takvim">Instagram'da gör</a></sc-if>
+            </div>
+          </div>
+        </main>
+        <sc-if value="{{ tekTv }}" hint-placeholder-val="{{ true }}">
+          <section class="fe-tv-yer">
+            <h2 class="fs-baslik">Üye olunca hepsi dahil</h2>
+            <div class="fe-tv fu-yuzen fu-yuzen-acik">
+              <div class="fu-tv">
+                <div class="fu-tv-tac"><svg viewBox="0 0 300 156" aria-hidden="true"><g stroke="#111111" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(150 150) rotate(-80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(0)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g></g></svg></div>
+      <div class="fu-tv-govde">
+        <svg class="fu-tv-kol fu-tv-kol-sol" viewBox="0 0 60 50" aria-hidden="true"><g stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M58 30 L18 24"/><path d="M18 24 l-12 -14 M18 24 l-15 1 M18 24 l-9 14"/></g></svg><svg class="fu-tv-kol fu-tv-kol-sag" viewBox="0 0 60 50" aria-hidden="true"><g stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M2 30 L42 18"/><path d="M42 18 l10 -14 M42 18 l15 0 M42 18 l12 10"/></g></svg>
+        <div class="fu-tv-ekran"><div class="fu-tv-sahne">
+            <div class="fu-tv-s fu-tv-s1">
+              <img class="fu-tv-m fu-tv-m1" src="/_blob/49a6d3a14dbcdce5ef3a64ccb68bdce2" alt="">
+              <p class="fu-tv-balon"><span class="fu-tv-yesil">Topluluğumuzun</span> bir parçası ol!</p>
+            </div>
+            <div class="fu-tv-s fu-tv-sy">
+              <span class="fu-tv-gunes"></span>
+              <span class="fu-tv-minder"></span>
+              <img class="fu-tv-m fu-tv-m5" src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="">
+              <span class="fu-tv-om">om</span>
+              <p class="fu-tv-d fu-tv-d1">Ağaçların altında<br>sabah yogası,<br>bir fincan kahve</p>
+            </div>
+            <div class="fu-tv-s fu-tv-sm">
+              <span class="fu-tv-gunes"></span>
+              <img class="fu-tv-m fu-tv-m6" src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="">
+              <span class="fu-tv-nota fu-tv-nota-1">♪</span><span class="fu-tv-nota fu-tv-nota-2">♫</span><span class="fu-tv-nota fu-tv-nota-3">♪</span>
+              <p class="fu-tv-d fu-tv-d2">Gün batımında müzik,<br>aynı sofrada<br>yeni dostlar</p>
+              <p class="fu-tv-d fu-tv-d3">Hepsi üyeliğe dahil</p>
+            </div>
+            <div class="fu-tv-s fu-tv-s2">
+              <p class="fu-tv-k fu-tv-ust">Kış boyu aramızdasın</p>
+              <p class="fu-tv-k fu-tv-fiyat"><span class="fu-tv-hane"><span class="fu-tv-alti">6</span><span class="fu-tv-uc">3</span></span>.000 TL</p>
+              <img class="fu-tv-m fu-tv-m2" src="/_blob/5d4246c48f300edcce7178b1c6845750" alt="">
+            </div>
+            <div class="fu-tv-s fu-tv-s3">
+              <p class="fu-tv-dahil">Üyelerimize:</p>
+              <p class="fu-tv-tik">Breakfast Club ✓
+Sunset Club ✓
+Buluşmalar ✓</p>
+              <p class="fu-tv-k">Atölyelerde üyelere %50</p>
+              <img class="fu-tv-m fu-tv-m3" src="/_blob/426f104f4634b69c53f59c397459ea29" alt="">
+            </div>
+            <div class="fu-tv-s fu-tv-s4">
+              <img class="fu-tv-m fu-tv-m4" src="/_blob/7ace25b1e01f5deeaf99b9c072450d33" alt="">
+              <p class="fu-tv-yazi">Senin için de<br>bir sandalye var.</p>
+              <span class="fu-tv-alt">Aramıza katıl →</span>
+            </div>
+          </div></div>
+      </div>
+      <div class="fu-tv-bacak"><svg viewBox="0 0 300 66" aria-hidden="true"><g stroke="#111111" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M70 0 l10 34 l-16 24 l22 2"/><path d="M118 0 l10 34 l-16 24 l22 2"/><path d="M182 0 l-10 34 l16 24 l-22 2"/><path d="M230 0 l-10 34 l16 24 l-22 2"/></g></svg></div>
+                <button type="button" class="fu-yuzen-git" aria-label="Üye ol" onClick="{{ tekTvGit }}"></button>
+                <button type="button" class="fu-yuzen-kapat" aria-label="Küçük TV'yi kapat" onClick="{{ tekTvKapat }}">×</button>
+              </div>
+            </div>
+          </section>
+        </sc-if>
+        <section class="fe-neden">
+          <h2 class="fs-baslik">Neden Forest Club?</h2>
+          <div class="fe-kartlar">
+            <div class="fe-kart"><b>Ağaçların altında</b>Sabah yogası, nefes ve hareket; şehirden uzak, doğanın ortasında.</div>
+            <div class="fe-kart"><b>Gün batımında</b>Müzik, sofra ve sohbet; her ay yeni bir hikâye.</div>
+            <div class="fe-kart"><b>Bir topluluk</b>Her buluşmada tanıdık yüzler, yeni dostlar. Üyeliğe dahil.</div>
+          </div>
+        </section>
+        <sc-if value="{{ digerVar }}" hint-placeholder-val="{{ true }}">
+          <section class="fe-diger">
+            <h2 class="fs-baslik">Diğer buluşmalar</h2>
+            <div class="fe-liste">
+              <sc-for list="{{ digerler }}" as="d" hint-placeholder-count="3">
+                <a class="fe-mini" href="{{ d.sayfa }}">
+                  <sc-if value="{{ d.afisVar }}" hint-placeholder-val="{{ false }}"><img src="{{ d.afis }}" alt="" loading="lazy"></sc-if>
+                  <span><b>{{ d.ad }}</b><small>{{ d.zaman }}</small><em>{{ d.uyeKisa }}</em></span>
+                </a>
+              </sc-for>
+            </div>
+          </section>
+        </sc-if>
+        <a class="fe-anaya" href="/">← Ana sayfaya dön</a>
+        <sc-if value="{{ tekSatisVar }}" hint-placeholder-val="{{ true }}">
+          <div class="fe-cubuk">
+            <div><b>{{ tek.fiyatYazi }}</b><sc-if value="{{ tekUyeVar }}" hint-placeholder-val="{{ true }}"><span class="fe-uye">{{ tekUyeYazi }}</span></sc-if></div>
+            <sc-if value="{{ tekUyeDegil }}" hint-placeholder-val="{{ true }}"><button type="button" class="fs-btn" onClick="{{ tekRandevu }}" disabled="{{ tek.dolu }}" style="{{ tek.dugmeStil }}">{{ tek.dugme }}</button></sc-if>
+            <sc-if value="{{ tekUyeGirisli }}" hint-placeholder-val="{{ false }}"><a class="fs-btn" href="{{ tekUyePanel }}">Yerimi ayır</a></sc-if>
+          </div>
+        </sc-if>
+      </sc-if>
+    </sc-if>
+
     <!-- İLETİŞİM / ALT -->
     <svg viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true" style="display:block;width:100%;height:48px"><path d="M0 10 Q40 34 80 18 T160 18 T240 18 T320 18 T400 18 T480 18 T560 18 T640 18 T720 18 T800 18 T880 18 T960 18 T1040 18 T1120 18 T1200 14" fill="none" stroke="#111111" stroke-width="3"/><path d="M40 12.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="40" cy="28.0" rx="7" ry="10" fill="#F08A24" stroke="#111111" stroke-width="2.5"/><path d="M120 32.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="120" cy="48.0" rx="7" ry="10" fill="#F6C945" stroke="#111111" stroke-width="2.5"/><path d="M200 12.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="200" cy="28.0" rx="7" ry="10" fill="#F08A24" stroke="#111111" stroke-width="2.5"/><path d="M280 32.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="280" cy="48.0" rx="7" ry="10" fill="#F6C945" stroke="#111111" stroke-width="2.5"/><path d="M360 12.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="360" cy="28.0" rx="7" ry="10" fill="#F08A24" stroke="#111111" stroke-width="2.5"/><path d="M440 32.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="440" cy="48.0" rx="7" ry="10" fill="#F6C945" stroke="#111111" stroke-width="2.5"/><path d="M520 12.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="520" cy="28.0" rx="7" ry="10" fill="#F08A24" stroke="#111111" stroke-width="2.5"/><path d="M600 32.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="600" cy="48.0" rx="7" ry="10" fill="#F6C945" stroke="#111111" stroke-width="2.5"/><path d="M680 12.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="680" cy="28.0" rx="7" ry="10" fill="#F08A24" stroke="#111111" stroke-width="2.5"/><path d="M760 32.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="760" cy="48.0" rx="7" ry="10" fill="#F6C945" stroke="#111111" stroke-width="2.5"/><path d="M840 12.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="840" cy="28.0" rx="7" ry="10" fill="#F08A24" stroke="#111111" stroke-width="2.5"/><path d="M920 32.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="920" cy="48.0" rx="7" ry="10" fill="#F6C945" stroke="#111111" stroke-width="2.5"/><path d="M1000 12.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="1000" cy="28.0" rx="7" ry="10" fill="#F08A24" stroke="#111111" stroke-width="2.5"/><path d="M1080 32.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="1080" cy="48.0" rx="7" ry="10" fill="#F6C945" stroke="#111111" stroke-width="2.5"/><path d="M1160 12.0v8" stroke="#111111" stroke-width="3"/><ellipse cx="1160" cy="28.0" rx="7" ry="10" fill="#F08A24" stroke="#111111" stroke-width="2.5"/></svg>
     <footer id="iletisim" style="max-width: 1200px; margin: 0 auto; padding: 64px 20px 48px; display: flex; flex-wrap: wrap; gap: 32px; justify-content: space-between">
@@ -1136,7 +1572,9 @@ class Component extends DCLogic {
       this.bekle = requestAnimationFrame(() => {
         this.bekle = null;
         const asagi = window.scrollY > 620;
-        if (asagi !== this.state.asagi) this.setState({ asagi });
+        const b = document.getElementById('bulusmalar');
+        const uyelikTv = !!b && b.getBoundingClientRect().top < innerHeight * 0.6;
+        if (asagi !== this.state.asagi || uyelikTv !== !!this.state.uyelikTv) this.setState({ asagi, uyelikTv });
       });
     };
   }
@@ -1148,6 +1586,11 @@ class Component extends DCLogic {
     // iyzico'dan dönüş (odeme-donus?tur=destek): teşekkür ya da hata penceresi; adres temizlenir
     this.etkinligeGit();
     window.addEventListener('hashchange', () => this.etkinligeGit());
+    // Shopier ödeme sayfasından dönüş: biletler bildirim gelince kesinleşir ve e-postayla gider
+    if (location.hash === '#bilet-kart-tamam') {
+      this.setState({ sepetAcik: true, sAdim: 'kartdonus' });
+      history.replaceState(null, '', location.pathname + location.search);
+    }
     const donus = /^#destek-(tamam|hata)$/.exec(location.hash);
     if (donus) {
       this.setState({ destek: donus[1] });
@@ -1161,6 +1604,7 @@ class Component extends DCLogic {
     const liste = window.FCS ? window.FCS.etkinlikler : [];
     const b = liste.find((x) => String(x.id) === m[1] || (!x.id && x.tarih === m[1]));
     if (!b) return;
+    if (b.id && !(window.FCS && window.FCS.tek)) { location.replace(`/e/${b.id}`); return; }
     this.setState({ tur: 'tumu', gecmisTumu: true, acikEtk: `${b.tarih}|${b.ad}` }, () => {
       const el = document.getElementById(location.hash.slice(1));
       if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
@@ -1223,11 +1667,13 @@ class Component extends DCLogic {
       const capa = b.id ? `etkinlik-${b.id}` : `etkinlik-${b.tarih}`;
       const paylasLink = b.id ? `${location.origin}/e/${b.id}` : `${location.origin}/#${capa}`;
       return {
-        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAcik: acik && !!b.afis, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
-        acik, acikYazi: acik ? 'true' : 'false', metinSinif: acik ? '' : 'fs-ozet', acYazi: acik ? 'Kapat ▲' : 'Ayrıntılar ▼',
+        ...b, takvim, satis: sat ? { ...sat } : null, afisVar: !!b.afis, afisAcik: false, afisAlt: `${b.ad} afişi`, linkVar: !!b.link && b.link !== '#',
+        acik: false, acikYazi: 'false', metinSinif: 'fs-ozet', acYazi: b.id ? 'Etkinlik sayfası →' : '',
+        sayfa: b.id ? `/e/${b.id}` : '',
+        // Karta dokununca etkinliğin kendi sayfası açılır (aşağı açılan kart yok)
         kartTikla: (e) => {
           if (e.target.closest('a, button, input, select, textarea, label')) return;
-          this.setState((st) => ({ acikEtk: st.acikEtk === kartKey ? null : kartKey }));
+          if (b.id) location.href = `/e/${b.id}`;
         },
         afisAc: () => this.setState({ afisTam: b.afis, afisTamAlt: `${b.ad} afişi` }),
         capa, paylasEtiket: `${b.ad} etkinliğini paylaş`, paylasYazi: this.state.paylasildi === kartKey ? 'Bağlantı kopyalandı ✓' : 'Paylaş',
@@ -1279,12 +1725,17 @@ class Component extends DCLogic {
     const AYAR = (window.FCS && window.FCS.ayar) || {};
     const yakinda = AYAR.yakinda === true;
     const YAKINDA_MESAJ = 'Üyelik başvuruları açılışla birlikte başlıyor. Instagram\'dan takipte kal!';
-    const duyuruMetni = String(canli ? (AYAR.site_duyurusu || '') : (this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.')).trim();
+    // Duyuru: metin ya da {metin, bitis}; bitis günü geçtiyse görünmez (Türkiye saatiyle)
+    const dy = canli ? AYAR.site_duyurusu : (this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.');
+    const duyuruBugun = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
+    const duyuruMetni = (dy && typeof dy === 'object' ? (dy.bitis && dy.bitis < duyuruBugun ? '' : String(dy.metin || '')) : String(dy || '')).trim();
     // SEPET: etkinlik biletleri. Gerçek sitede ödeme iyzico'da; başarılı ödeme biletleri kesinleştirir, muhasebeye "Etkinlik katılım ücreti" geliri yazar
     const TL = (n) => (n ? `${n.toLocaleString('tr-TR')} TL` : 'Ücretsiz');
     // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
     const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
     const kartAcik = !canli || AYAR.kart_odeme === true;
+    // Seçilen ödeme yolu: kart açıksa varsayılan kart; değilse kişi havale ya da nakidi bilerek seçer
+    const sYol = this.state.sYolSecim || (kartAcik ? 'kart' : null);
     const destekTutar = this.state.dsElle ? Math.round(Number(String(this.state.dsTutarYazi).replace(/[^\d]/g, ''))) : this.state.dsTutar;
     const kopyala = (hangi, metin) => {
       const bitti = () => this.setState({ dsKopya: hangi });
@@ -1301,7 +1752,11 @@ class Component extends DCLogic {
     const uyeMi = AKTIF_UYELER.includes(this.state.sEposta.trim().toLowerCase());
     const araToplam = sepetteKi.reduce((t, b) => t + b.satis.fiyat * sepet[`${b.tarih}|${b.ad}`], 0);
     const indirim = uyeMi ? sepetteKi.reduce((t, b) => t + (b.satis.fiyat - uyeFiyati(b)), 0) : 0;
-    const toplam = araToplam - indirim;
+    // İndirim kodu (sepette "Uygula"): üye fiyatından sonra düşer; asıl tutar sunucuda yeniden hesaplanır
+    const kodB = this.state.sKodBilgi;
+    const onceKod = araToplam - indirim;
+    const kodInd = kodB ? (kodB.tur === 'yuzde' ? Math.round(onceKod * Number(kodB.deger) / 100) : Math.min(Number(kodB.deger), onceKod)) : 0;
+    const toplam = onceKod - kodInd;
     const adetDegis = (key, fark, max) => this.setState((st) => {
       const yeni = Math.max(0, Math.min(max, (st.sepet[key] || 0) + fark));
       const s2 = { ...st.sepet };
@@ -1313,7 +1768,52 @@ class Component extends DCLogic {
       : [{ id: 'sepet', ad: '1 · Randevu' }, { id: 'bilgi', ad: '2 · Bilgiler' }, { id: 'tamam', ad: '3 · Bilet' }];
     const hak = this.state.hak;
     const sepetToplamAdet = Object.values(sepet).reduce((t, n) => t + n, 0);
+    // Etkinlik satış alanları (liste ve etkinlik sayfası aynı hesabı kullanır)
+    const urunYap = (b) => {
+        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
+        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
+        const key = `${b.tarih}|${b.ad}`;
+        const kalan = kalanYer(b);
+        const sepette = sepet[key] || 0;
+        return {
+          ...b,
+          fiyatYazi: TL(b.satis.fiyat),
+          uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : b.satis.uye === 'yuzde50' ? `Üyelere %50 · ${TL(uyeFiyati(b))}` : 'Üyelere de aynı fiyat',
+          kalanYazi: kalan <= 0 ? 'Tükendi' : kalan <= 5 ? `Son ${kalan} yer!` : `${kalan} yer kaldı`,
+          kalanStil: `font-size:13px;font-weight:700;color:${kalan <= 5 ? '#82301F' : '#5E5E5E'}`,
+          dolu: kalan <= sepette,
+          dugme: kalan <= 0 ? 'Tükendi' : sepette ? `Randevuda ${sepette} kişi · bir kişi daha` : 'Randevu oluştur',
+          dugmeStil: kalan <= sepette ? 'opacity:.5;cursor:default' : '',
+          sepeteEkle: () => { if (kalan > sepette) adetDegis(key, 1, kalan); },
+        };
+    };
+    // Etkinliğin kendi sayfası (/e/<id>): site.js FCS.tek'i yazar; önizlemede props.tek
+    const tekId = window.FCS ? window.FCS.tek : (this.props.tek || null);
+    const tekHam = tekId ? tumu.find((b) => String(b.id) === String(tekId)) : null;
+    const tek = tekHam ? (tekHam.tarih >= BUGUN ? urunYap(tekHam) : { ...tekHam, fiyatYazi: '', uyeYazi: '', kalanYazi: '', dolu: true, dugme: 'Gerçekleşti', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} }) : null;
+    const tekUyeYazi = tek && tek.satis ? (tek.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : tek.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : (tek ? 'Üyeliğe dahil' : '');
+    const digerler = tumu.filter((b) => b.tarih >= BUGUN && b.id && String(b.id) !== String(tekId)).slice(0, 3).map((b) => ({
+      ...b, sayfa: `/e/${b.id}`, zaman: `${b.gun} ${b.ay.charAt(0)}${b.ay.slice(1).toLocaleLowerCase('tr-TR')} ${b.haftaGunu}${b.saat ? ` · ${b.saat}` : ''}`,
+      uyeKisa: b.satis ? (b.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : b.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : 'Üyeliğe dahil', afisVar: !!b.afis,
+    }));
     return {
+      // Ana sayfa ↔ etkinliğin kendi sayfası
+      anaSayfa: !tekId, tekSayfa: !!tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
+      tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
+      tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
+      tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN), tekLinkVar: !!(tek && tek.linkVar),
+      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN),
+      tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
+      tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
+      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali,
+      tekTvKapat: () => this.setState({ tekTvKapali: true }),
+      tekTvGit: () => { location.href = '/#basvuru'; },
+      anaTv: !tek && !this.state.uyeGirisli && !yakinda,
+      anaTvGit: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
+      digerler, digerVar: digerler.length > 0,
+      // Etkinlik sayfasında "Randevu oluştur": bir kişi ekler ve sepeti hemen açar
+      tekRandevu: () => { if (!tek || tek.dolu) return; tek.sepeteEkle(); this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }); },
       uyeDugme: this.state.uyeGirisli ? 'Panelim' : 'Üye girişi',
       // Ürün kartları
       urunVals: null,
@@ -1321,9 +1821,9 @@ class Component extends DCLogic {
       sepetAdet: String(sepetToplamAdet), sepetEtiket: `Randevuları aç, ${sepetToplamAdet} kişi`,
       sepetAcik: this.state.sepetAcik,
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
-      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
+      sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi', 'nakit', 'kartdonus'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
       sAdimlar: ADIMLAR.map((a) => {
-        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont' }[sAdim] || sAdim));
+        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont' }[sAdim] || sAdim));
         const i = ADIMLAR.indexOf(a);
         return { ad: a.ad, stil: `border-radius:999px;padding:5px 10px;border:2px solid #111111;${i <= sira ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
       }),
@@ -1333,8 +1833,12 @@ class Component extends DCLogic {
       odemeAlici: odemeBilgi.alici, odemeIban: odemeBilgi.iban,
       sDekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ sDosya: f || null, sHata: '' }); },
       sDekontGonder: () => {
+        // Seçilen dosya kutudan da okunur (seçip hemen gönderince durum henüz güncellenmemiş olabilir)
+        const kutu = document.querySelector('.fs-modal input[type="file"]');
+        const dosya = this.state.sDosya || (kutu && kutu.files && kutu.files[0]) || null;
+        if (!dosya) return this.setState({ sHata: 'Dekontu seç.' });
         this.setState({ sHata: 'Yükleniyor…' });
-        window.FCSBiletDekont(hak, this.state.sEposta, this.state.sDosya)
+        window.FCSBiletDekont(hak, this.state.sEposta, dosya)
           .then(() => this.setState({ sAdim: 'gonderildi', sepet: {}, hak: null, sDosya: null, sHata: '' }))
           .catch((h) => this.setState({ sHata: h.message }));
       },
@@ -1350,9 +1854,39 @@ class Component extends DCLogic {
       }),
       araToplamYazi: TL(araToplam), indirimYazi: indirim ? `−${TL(indirim)}` : '—', toplamYazi: toplam ? TL(toplam) : '0 TL',
       uyeIndirimi: !canli && uyeMi && indirim > 0,
+      sKod: this.state.sKod || '', sKodHata: this.state.sKodHata || '', kodVar: !!kodB, kodYok: !kodB,
+      kodAd: kodB ? kodB.kod : '', kodIndYazi: kodB ? `−${TL(kodInd)}` : '',
+      kodAciklama: kodB ? `${kodB.kod} uygulandı · ${kodB.tur === 'yuzde' ? `%${Number(kodB.deger)}` : TL(Number(kodB.deger))} indirim` : '',
+      sKodYaz: (e) => this.setState({ sKod: e.target.value.toUpperCase(), sKodHata: '' }),
+      kodKaldir: () => this.setState({ sKodBilgi: null, sKod: '', sKodHata: '' }),
+      kodUygula: () => {
+        // Kutudaki güncel değer (yazıp hemen "Uygula"ya basılınca durum henüz güncellenmemiş olabilir)
+        const kutu = document.getElementById('fs-kod');
+        const kod = ((kutu && kutu.value) || this.state.sKod || '').trim().toUpperCase();
+        if (!kod) return this.setState({ sKodHata: 'Kodu yaz.' });
+        const bak = window.FCSIndirimBak ? window.FCSIndirimBak(kod)
+          : (kod === 'FOREST20' ? Promise.resolve({ kod, tur: 'yuzde', deger: 20 }) : Promise.reject(new Error('Bu indirim kodu geçerli değil.')));
+        this.setState({ sKodHata: 'Kontrol ediliyor…' });
+        bak.then((k) => this.setState({ sKodBilgi: k, sKodHata: '' }), (h) => this.setState({ sKodBilgi: null, sKodHata: h.message }));
+      },
       uyeFiyatNotu: canli ? 'Aktif üyeysen önce üye girişi yap; üye fiyatı ödeme adımında uygulanır (her etkinlikte 1 kişi için).'
         : 'Aktif üyeysen, üye fiyatı bir sonraki adımda e-postanla kontrol edilip uygulanır (her etkinlikte 1 kişi için).',
-      odemeDugme: canli ? 'Ödemeye geç · havale / EFT' : toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)',
+      // Ödeme yöntemi: kart (Shopier, yönetimde açıksa varsayılan) · havale / EFT (bilerek seçilir). Nakit yalnız kapıda (yönetimden satış)
+      odemeYollari: [
+        { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında; biletin hemen gelir' : 'Çok yakında', kapali: !kartAcik },
+        { id: 'havale', ad: 'Havale / EFT', alt: 'IBAN\'a gönder, dekontunu yükle; 5–60 dakika içinde biletin e-posta adresine gönderilir', kapali: false },
+      ].map((y) => {
+        const secili = sYol === y.id;
+        return {
+          ...y, secili, kapaliYazi: y.kapali ? 'true' : 'false',
+          sec: () => { if (!y.kapali) this.setState({ sYolSecim: y.id, sHata: '' }); },
+          stil: `display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:inherit;color:#111111;border:2.5px solid #111111;border-radius:12px;padding:12px 14px;cursor:${y.kapali ? 'not-allowed' : 'pointer'};${secili ? 'background:#C9E33A;box-shadow:3px 3px 0 #111111' : 'background:#FFFFFF'};${y.kapali ? 'opacity:.55' : ''}`,
+          isaret: secili ? '●' : '○',
+        };
+      }),
+      odemeDugme: !canli ? (toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)')
+        : sYol === 'kart' ? `Kartla öde · ${TL(toplam || araToplam)}` : sYol === 'havale' ? 'Devam · havale / EFT' : 'Ödeme yöntemini seç',
+      sKartDonus: sAdim === 'kartdonus',
       sAd: this.state.sAd, sEposta: this.state.sEposta, sTel: this.state.sTel, sOnay: this.state.sOnay, sHata: this.state.sHata,
       sAdYaz: (e) => this.setState({ sAd: e.target.value, sHata: '' }),
       sEpostaYaz: (e) => this.setState({ sEposta: e.target.value, sHata: '' }),
@@ -1374,8 +1908,12 @@ class Component extends DCLogic {
           if (!window.FCSBiletAc) return this.setState({ sHata: 'Bilet satışı şu an yapılamıyor; biraz sonra tekrar dene.' });
           const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
           this.setState({ sHata: 'Hazırlanıyor…' });
-          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim() })
-            .then((h) => this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' }))
+          if (!sYol) return this.setState({ sHata: 'Ödeme yöntemini seç.' });
+          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol, kod: kodB ? kodB.kod : null })
+            .then((h) => {
+              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) { location.href = h.sayfa; return; }
+              this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' });
+            })
             .catch((h) => this.setState({ sHata: h.message }));
           return;
         }
@@ -1391,8 +1929,9 @@ class Component extends DCLogic {
       sOdemeHata: () => this.setState({ sAdim: 'hata' }),
       tekrarDene: () => this.setState({ sAdim: 'bilgi' }),
       biletlerim: this.state.biletler,
-      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali,
-      duyuruKapat: () => this.setState({ duyuruKapali: true }),
+      // "Tamam" denen duyuru bu tarayıcıda bir daha çıkmaz (yeni metinli duyuru yine çıkar)
+      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
+      duyuruKapat: () => { try { localStorage.setItem('fc_duyuru_kapali', duyuruMetni); } catch (e) {} this.setState({ duyuruKapali: true }); },
       // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde (deneme sitesinde onlar görünmez)
       galeriVar: !canli, metinlerVar: !canli,
       sss: [
@@ -1549,7 +2088,7 @@ class Component extends DCLogic {
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
       cagriForm: () => { location.href = '/acik-cagri/'; },
-      yuzenSinif: acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      yuzenSinif: tekId ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),
@@ -1563,6 +2102,8 @@ class Component extends DCLogic {
       afisKapat: () => this.setState({ afisTam: '' }),
       yuzenGizli: acik ? 'false' : 'true',
       basaDon: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+      yuzenUyelik: !!this.state.uyelikTv && !this.state.uyeGirisli && !yakinda, yuzenVideo: !(this.state.uyelikTv && !this.state.uyeGirisli && !yakinda),
+      yuzenUyeOl: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       yuzenKapat: () => this.setState({ kapali: true }),
       ozellikler: [
         { ad: 'Breakfast Club', metin: 'Her ay ağaçların altında kahvaltı buluşması' },
@@ -1571,25 +2112,7 @@ class Component extends DCLogic {
         { ad: 'Hareket', metin: 'Yoga, Tai Chi ve farkındalık çalışmaları' },
       ],
       filtreler,
-      yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map((b) => {
-        // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
-        if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
-        const key = `${b.tarih}|${b.ad}`;
-        const kalan = kalanYer(b);
-        const sepette = sepet[key] || 0;
-        return {
-          ...b,
-          fiyatYazi: TL(b.satis.fiyat),
-          uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : b.satis.uye === 'yuzde50' ? `Üyelere %50 · ${TL(uyeFiyati(b))}` : 'Üyelere de aynı fiyat',
-          kalanYazi: kalan <= 0 ? 'Tükendi' : kalan <= 5 ? `Son ${kalan} yer!` : `${kalan} yer kaldı`,
-          kalanStil: `font-size:13px;font-weight:700;color:${kalan <= 5 ? '#82301F' : '#5E5E5E'}`,
-          dolu: kalan <= sepette,
-          dugme: kalan <= 0 ? 'Tükendi' : sepette ? `Randevuda ${sepette} kişi · bir kişi daha` : 'Randevu oluştur',
-          dugmeStil: kalan <= sepette ? 'opacity:.5;cursor:default' : '',
-          sepeteEkle: () => { if (kalan > sepette) adetDegis(key, 1, kalan); },
-        };
-      }),
+      yaklasanlar: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih >= BUGUN).map(urunYap),
       // Geçmiş: en yakın tarihten en eskiye
       gecmisler: (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih < BUGUN).reverse().slice(0, this.state.gecmisTumu ? undefined : 3),
       gecmisDahaVar: !this.state.gecmisTumu && (tur === 'tumu' ? tumu : tumu.filter((b) => b.tur === tur)).filter((b) => b.tarih < BUGUN).length > 3,

@@ -1,9 +1,12 @@
-// Forest Club Urla · kartla aidat ödemesini başlatır (iyzico Checkout Form). Giriş yapmış üye çağırır; tutar sunucuda
-// (ayarlar.aidat) belirlenir. Dönüş: {sayfa} iyzico'nun ödeme sayfası; ödeme bitince iyzico odeme-donus'a döner.
+// Forest Club Urla · kartla aidat ödemesini başlatır. Giriş yapmış üye çağırır; tutar sunucuda (ayarlar.aidat).
+// 02.11.2026'dan beri kart ödemeleri Shopier'den: SHOPIER_PAT varsa Shopier ödeme ürünü açılır (bildirim
+// shopier-bildirim'e gelir, odeme_tamamla üyeliği uzatır); yoksa eski iyzico Checkout Form yolu (geçiş için).
+// Dönüş: {sayfa} ödeme sayfası.
 // Secrets: IYZICO_API_KEY, IYZICO_SECRET_KEY, IYZICO_ADRES, SITE_ADRESI; isteğe bağlı IYZICO_TCKN (alıcı kimlik no;
 // boşsa iyzico'nun kabul ettiği 11111111111)
 import { CORS, json, servisIstemcisi } from '../_ortak/ortak.ts';
 import { fiyat, iyzico } from '../_ortak/iyzico.ts';
+import { odemeUrunuAc, shopierHazir } from '../_ortak/shopier.ts';
 
 function telefon(t: string | null): string | undefined {
   const r = String(t || '').replace(/\D/g, '');
@@ -26,6 +29,12 @@ Deno.serve(async (istek) => {
     const { data: o, error } = await sb.rpc('odeme_istegi_ac', { p_uye: uye.id });
     if (error) return json(error.code === 'P0001' ? 400 : 500, { hata: error.code === 'P0001' ? error.message : 'Ödeme başlatılamadı.' });
 
+    if (shopierHazir()) {
+      const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
+      const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla üyelik · 30 gün', tutar: Number(o.tutar), ref: `FC-UYELIK-${o.kod}`, donus: `${site}/uye/#odeme-tamam` });
+      await sb.rpc('odeme_istegi_token', { p_id: o.id, p_token: urun });
+      return json(200, { sayfa });
+    }
     const [ad, ...soyad] = String(o.ad).trim().split(/\s+/);
     const ip = istek.headers.get('cf-connecting-ip') || (istek.headers.get('x-forwarded-for') || '').split(',')[0].trim() || '85.34.78.112';
     const adres = { contactName: o.ad, city: 'Izmir', country: 'Turkey', address: 'Urla, İzmir' };

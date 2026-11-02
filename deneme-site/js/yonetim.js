@@ -294,14 +294,19 @@
     // Bilet dekontları (yalnız dekontu yüklenmiş istekler)
     const kalemYazi = (i) => i.kalemler.map((k) => `${b.etkinlikAd.get(k.etkinlik_id) || 'Etkinlik'} × ${k.adet}`).join(', ');
     const bIstek = b.biletIstekleri.filter((i) => i.yuklendi).sort((x, y) => y.created_at.localeCompare(x.created_at));
+    // Ödeme yolu: havale (dekont), nakit (girişte; parayı alınca onaylanır), kart (Shopier; kendiliğinden kesinleşir)
+    const YOL = { havale: 'Havale · dekont', nakit: 'Kapıda nakit', kart: 'Kart · Shopier' };
     const biletler = bIstek.filter((i) => i.durum === 'bekliyor').map((i) => ({
       ad: i.ad, eposta: i.eposta, tel: i.tel || '—', tarih: zaman(i.created_at), tutar: tl(i.tutar), kalemler: kalemYazi(i),
+      yol: YOL[i.odeme_yolu || 'havale'], yolStil: i.odeme_yolu === 'nakit' ? pill('#F6C945', '#111111') : pill('#F0F0EE', '#111111'),
+      dekontVar: (i.odeme_yolu || 'havale') === 'havale', onayYazi: i.odeme_yolu === 'nakit' ? 'Nakit alındı · onayla' : 'Onayla',
       ac: () => dekontAc(i.dosya), onayla: () => biletKarar(i, true), reddet: () => biletKarar(i, false),
     }));
     const biletKararlar = bIstek.filter((i) => i.durum !== 'bekliyor').slice(0, 50).map((i) => ({
       ad: i.ad, tarih: zaman(i.created_at), tutar: tl(i.tutar), kalemler: kalemYazi(i), sonuc: i.sonuc || '—',
       durum: i.durum === 'onaylandi' ? 'Onaylandı' : 'Reddedildi',
       rozet: i.durum === 'onaylandi' ? pill('#111111', '#FFFFFF') : pill('#F3DCD5', '#82301F'),
+      yol: YOL[i.odeme_yolu || 'havale'], dekontVar: (i.odeme_yolu || 'havale') === 'havale',
       ac: () => dekontAc(i.dosya),
     }));
     return {
@@ -610,6 +615,23 @@
     // Tek etkinliğin paylaşım bağlantısı (/e/<id>: önizlemede afiş, açılınca kart); kaydedilmemiş etkinlikte null
     window.FCEtkinlikLink = (key) => { const id = keyEtk[key]; return id && id !== 'yaziliyor' ? `${location.origin}/e/${id}` : null; };
     // Kapıda karekod: kod sunucuda uyeler.kod ile eşleşir (giris_kaydet). Dönüş: {ad, uye_id, zaten}
+    // İndirim kodları (bilet sepeti): liste, ekle, aç/kapat
+    window.FCIndirim = {
+      liste: async () => {
+        const { data, error } = await sb.from('indirim_kodlari').select('*').order('created_at', { ascending: false });
+        if (error) throw new Error(error.message);
+        return data;
+      },
+      ekle: async (k) => {
+        const { data, error } = await sb.from('indirim_kodlari').insert(k).select('*').single();
+        if (error) throw new Error(error.code === '23505' ? 'Bu kod zaten var.' : error.code === '23514' ? 'Kod 3–30 harf/rakam olmalı; yüzde 1–99 arası.' : error.message);
+        return data;
+      },
+      aktif: async (kod, aktif) => {
+        const { error } = await sb.from('indirim_kodlari').update({ aktif }).eq('kod', kod).select('kod').single();
+        if (error) throw new Error(error.message);
+      },
+    };
     window.FCGirisKaydet = async (key, kod) => {
       const etkId = keyEtk[key];
       if (!etkId || etkId === 'yaziliyor') throw new Error('Etkinlik henüz kaydedilmedi; biraz sonra tekrar deneyin.');
@@ -876,8 +898,15 @@
     const kurtarma = window.FC_ORTAK.kurtarma;
     let hata = '';
     const { data: { session } } = await sb.auth.getSession();
-    if (session && kurtarma) window.FC_SIFRE_YENILE = true;
-    else if (session) {
+    if (session && kurtarma) {
+      // İki adımlı giriş açık hesapta Supabase şifreyi yalnız aal2 oturumunda değiştirir ("AAL2 session is required…"):
+      // şifre sıfırlama bağlantısıyla gelen kişiye önce doğrulama kodu sorulur
+      const { data: f } = await sb.auth.mfa.listFactors();
+      const dogrulanmis = ((f && f.totp) || []).find((x) => x.status === 'verified');
+      const { data: seviye } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (dogrulanmis && (!seviye || seviye.currentLevel !== 'aal2')) await ikinciAdim(kok, dogrulanmis.id, null);
+      window.FC_SIFRE_YENILE = true;
+    } else if (session) {
       const { data: yon } = await sb.from('yoneticiler').select('ad').eq('user_id', session.user.id).maybeSingle();
       if (yon) {
         try {

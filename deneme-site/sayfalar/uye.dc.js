@@ -70,6 +70,14 @@ class Component extends DCLogic {
   componentDidMount() {
     // Deneme sitesi: oturum Supabase'de; giriş yapılmışsa panel kendi verisiyle açılır
     if (window.FCU) this.hesapAc(window.FCU.eposta);
+    // Etkinlik sayfasından "Üye panelinde yerimi ayır" (/uye/?etkinlik=<id>): Etkinlikler açılır, o kart vurgulanır
+    const etkSec = new URLSearchParams(location.search).get('etkinlik');
+    if (etkSec && /^\d{1,12}$/.test(etkSec)) {
+      this.setState({ sekme: 'etkinlikler', vurguEtk: etkSec }, () => {
+        setTimeout(() => { const k = document.getElementById(`etk-${etkSec}`); if (k) k.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+      });
+      history.replaceState(null, '', location.pathname);
+    }
     // iyzico ödeme sayfasından dönüş
     const donus = /^#odeme-(tamam|hata)$/.exec(location.hash);
     if (window.FCU && donus) {
@@ -153,12 +161,15 @@ class Component extends DCLogic {
         id, gun: d, ay: AYLAR[Number(m) - 1], ad: e.ad, bilgi: `${e.bilgi} · Pinya, Urla · ${e.kayitli}/${e.kontenjan} kişi`,
         durum, rozet, dugme, islem, dugmeSinif, takvim: takvimLink(e.ad, e.tarih, e.saat, e.bitisSaat),
         acik: this.state.acikEtk === id, acikYazi: this.state.acikEtk === id ? 'true' : 'false',
-        acYazi: this.state.acikEtk === id ? 'Ayrıntıları gizle ▲' : 'Ayrıntılar ▼',
-        ac: () => this.setState((s) => ({ acikEtk: s.acikEtk === id ? null : id })),
+        // Canlıda karta dokununca etkinliğin kendi sayfası (/e/<id>) açılır; önizlemede (örnek veri) kart açılır
+        acYazi: canli ? 'Etkinlik sayfası →' : this.state.acikEtk === id ? 'Ayrıntıları gizle ▲' : 'Ayrıntılar ▼',
+        ac: () => (canli ? location.assign(`/e/${id}`) : this.setState((s) => ({ acikEtk: s.acikEtk === id ? null : id }))),
         kartTikla: (e) => {
           if (e.target.closest('a, button:not(.fu-kart-bas), input, select, textarea, label')) return;
+          if (canli) { location.assign(`/e/${id}`); return; }
           this.setState((s) => ({ acikEtk: s.acikEtk === id ? null : id }));
         },
+        kartId: `etk-${id}`, vurgu: this.state.vurguEtk === id ? 'outline:4px solid #C9E33A;outline-offset:3px' : '',
         afisAc: () => this.setState({ afisTam: e.afis, afisTamAlt: `${e.ad} afişi` }),
         satisVar: !!e.fiyat, afisVar: !!e.afis, afis: e.afis || '', afisAlt: `${e.ad} afişi`, kimVar: !!e.kim, kim: e.kim || '',
         aciklama: e.aciklama || 'Ayrıntılar yakında.',
