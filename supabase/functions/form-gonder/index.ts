@@ -167,8 +167,13 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
         const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
         // Ürün görseli ve adı: sepetteki ilk etkinliğin afişi ve adı
         const { data: ilk } = await servisIstemcisi().from('etkinlikler').select('ad, afis').eq('id', kalemler[0]?.etkinlik || 0).maybeSingle();
+        // Paylaşım için üretilen JPG kopyası (afisler/paylas/<ad>.jpg; WhatsApp önizlemesindeki) her zaman Shopier'e uygun;
+        // yoksa afişin kendisi (jpg / png ise), o da yoksa logo
+        const m = /^(https:\/\/[^/]+\/storage\/v1\/object\/public\/afisler\/)([^/?#]+?)\.[a-z]+$/i.exec(ilk?.afis || '');
+        const kucuk = m ? `${m[1]}paylas/${m[2]}.jpg` : null;
+        const kucukVar = kucuk ? await fetch(kucuk, { method: 'HEAD' }).then((r) => r.ok, () => false) : false;
         const { urun, sayfa } = await odemeUrunuAc({ baslik: `Forest Club Urla · ${ilk?.ad || 'etkinlik'} bileti`, tutar: Number(istek.tutar), ref: `FC-BILET-${istek.id}`,
-          donus: `${site}/#bilet-kart-tamam`, gorsel: ilk?.afis || null });
+          donus: `${site}/#bilet-kart-tamam`, gorsel: kucukVar ? kucuk : (ilk?.afis || null) });
         await rpc('bilet_shopier_urun', { p_id: istek.id, p_urun: urun });
         return { id: istek.id, tutar: istek.tutar, yol: 'kart', sayfa };
       }
