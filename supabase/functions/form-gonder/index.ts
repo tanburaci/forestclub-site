@@ -165,7 +165,10 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
       if (odemeYolu === 'nakit') return { id: istek.id, tutar: istek.tutar, yol: 'nakit' };
       if (odemeYolu === 'kart') {
         const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
-        const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla · etkinlik bileti', tutar: Number(istek.tutar), ref: `FC-BILET-${istek.id}`, donus: `${site}/#bilet-kart-tamam` });
+        // Ürün görseli ve adı: sepetteki ilk etkinliğin afişi ve adı
+        const { data: ilk } = await servisIstemcisi().from('etkinlikler').select('ad, afis').eq('id', kalemler[0]?.etkinlik || 0).maybeSingle();
+        const { urun, sayfa } = await odemeUrunuAc({ baslik: `Forest Club Urla · ${ilk?.ad || 'etkinlik'} bileti`, tutar: Number(istek.tutar), ref: `FC-BILET-${istek.id}`,
+          donus: `${site}/#bilet-kart-tamam`, gorsel: ilk?.afis || null });
         await rpc('bilet_shopier_urun', { p_id: istek.id, p_urun: urun });
         return { id: istek.id, tutar: istek.tutar, yol: 'kart', sayfa };
       }
