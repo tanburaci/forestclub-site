@@ -165,14 +165,24 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
       if (odemeYolu === 'nakit') return { id: istek.id, tutar: istek.tutar, yol: 'nakit' };
       if (odemeYolu === 'kart') {
         const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
-        // Ürün görseli ve adı: sepetteki ilk etkinliğin afişi ve adı
-        const { data: ilk } = await servisIstemcisi().from('etkinlikler').select('ad, afis').eq('id', kalemler[0]?.etkinlik || 0).maybeSingle();
+        // Ürün adı sepetteki bütün etkinlikleri sayar (kişi kaç etkinliğe bilet aldığını Shopier'de de görsün);
+        // görsel ilk etkinliğin afişi
+        const ids = kalemler.map((k: { etkinlik: number }) => k.etkinlik);
+        const { data: etkler } = await servisIstemcisi().from('etkinlikler').select('id, ad, tarih, saat, afis').in('id', ids);
+        const sirali = ids.map((id: number) => (etkler || []).find((e: { id: number }) => e.id === id)).filter(Boolean) as { id: number; ad: string; tarih: string; saat: string | null; afis: string | null }[];
+        const adet = (id: number) => kalemler.find((k: { etkinlik: number }) => k.etkinlik === id)?.adet || 0;
+        const trTarih = (t: string) => t.split('-').reverse().join('.');
+        const baslik = sirali.length > 1
+          ? `${sirali.length} etkinlik bileti: ${sirali.map((e) => e.ad).join(' + ')}`
+          : `${sirali[0]?.ad || 'Etkinlik'} bileti · ${adet(sirali[0]?.id)} kişi`;
+        const aciklama = sirali.map((e) => `• ${e.ad} · ${trTarih(e.tarih)}${e.saat ? ` · ${e.saat}` : ''} · ${adet(e.id)} kişi`).join('\n');
+        const ilk = sirali[0];
         // Paylaşım için üretilen JPG kopyası (afisler/paylas/<ad>.jpg; WhatsApp önizlemesindeki) her zaman Shopier'e uygun;
         // yoksa afişin kendisi (jpg / png ise), o da yoksa logo
         const m = /^(https:\/\/[^/]+\/storage\/v1\/object\/public\/afisler\/)([^/?#]+?)\.[a-z]+$/i.exec(ilk?.afis || '');
         const kucuk = m ? `${m[1]}paylas/${m[2]}.jpg` : null;
         const kucukVar = kucuk ? await fetch(kucuk, { method: 'HEAD' }).then((r) => r.ok, () => false) : false;
-        const { urun, sayfa } = await odemeUrunuAc({ baslik: `Forest Club Urla · ${ilk?.ad || 'etkinlik'} bileti`, tutar: Number(istek.tutar), ref: `FC-BILET-${istek.id}`,
+        const { urun, sayfa } = await odemeUrunuAc({ baslik: `Forest Club Urla · ${baslik}`, aciklama, tutar: Number(istek.tutar), ref: `FC-BILET-${istek.id}`,
           donus: `${site}/#bilet-kart-tamam`, gorsel: kucukVar ? kucuk : (ilk?.afis || null) });
         await rpc('bilet_shopier_urun', { p_id: istek.id, p_urun: urun });
         return { id: istek.id, tutar: istek.tutar, yol: 'kart', sayfa };

@@ -28,19 +28,19 @@ async function cagir(yol: string, secenek: RequestInit = {}): Promise<any> {
 }
 
 // Tek kullanımlık ödeme ürünü açar; dönüş { urun, sayfa } (ürün numarası ve ödeme sayfası adresi)
-export async function odemeUrunuAc(p: { baslik: string; tutar: number; ref: string; donus?: string; gorsel?: string | null }): Promise<{ urun: string; sayfa: string }> {
+export async function odemeUrunuAc(p: { baslik: string; tutar: number; ref: string; donus?: string; gorsel?: string | null; aciklama?: string }): Promise<{ urun: string; sayfa: string }> {
   const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
   const veri = await cagir('/products', {
     method: 'POST',
     body: JSON.stringify({
-      title: `${p.baslik} · ${p.ref}`.slice(0, 120),
+      title: p.baslik.slice(0, 120 - p.ref.length - 3) + ` · ${p.ref}`,
       type: 'digital',
       // Görsel: etkinliğin afişi (Shopier yalnız jpg / png / bmp alır; webp ya da afiş yoksa Forest logosu)
       media: [{ type: 'image', url: /^https:\/\/[^\s]+\.(jpe?g|png|bmp)(\?.*)?$/i.test(p.gorsel || '') ? p.gorsel : `${site}/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png`, placement: 1 }],
       priceData: { currency: 'TRY', price: p.tutar.toFixed(2) },
       stockQuantity: 1,
       shippingPayer: 'sellerPays',
-      description: `Forest Club Urla · ${p.ref}. Ödemeden sonra biletlerin / üyelik onayın e-postana gelir.`,
+      description: `${p.aciklama ? `${p.aciklama}\n\n` : ''}Forest Club Urla · ${p.ref}. Ödemeden sonra biletlerin / üyelik onayın e-postana gelir.`.slice(0, 2000),
     }),
   });
   const d = veri && (veri.data || veri);
