@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(9);
+select plan(14);
 
 insert into auth.users (id, email) values ('00000000-0000-4000-8000-0000000000f7', 'gk-yon@test.invalid');
 insert into yoneticiler (user_id, ad) values ('00000000-0000-4000-8000-0000000000f7', 'GK Yönetici');
@@ -31,6 +31,18 @@ select is((select durum from biletler where kod = (select kod from t_b)), 'gecer
 select lives_ok(format($$ select giris_kaydet(%s, %L) $$, (select yoga from t_e), (select kod from t_b)), 'onay: giriş kaydedildi');
 select throws_ok(format($$ select giris_kontrol(%s, %L) $$, (select baska from t_e), (select kod from t_b)), 'P0001', null, 'başka etkinliğin bileti reddedilir');
 reset role;
+
+
+-- Yeni başvuran kartla aidat: istek açılır, durum sorulur, Shopier ödemesi üyeliği başlatır
+insert into ayarlar (anahtar, deger) values ('kart_odeme', 'true') on conflict (anahtar) do update set deger = 'true';
+insert into uyeler (kod, ad, eposta, tel, durum) values (yeni_uye_kodu(), 'Yeni Başvuran', 'yeni-uk@test.invalid', '05321110000', 'basvuru');
+create temp table t_u as select uyelik_kart_ac(' YENI-UK@test.invalid ') as r;
+select is((select durum from odeme_istekleri where id = (select (r ->> 'id')::uuid from t_u)), 'basladi', 'başvuran için kartla ödeme isteği açıldı');
+select is(uyelik_odeme_durum((select (r ->> 'id')::uuid from t_u), 'baska@test.invalid'), null, 'yanlış e-postayla ödeme durumu dönmez');
+select lives_ok(format($$ select odeme_istegi_token(%L, 'urun-uk-1') $$, (select r ->> 'id' from t_u)), 'Shopier ürün numarası kaydedildi');
+select lives_ok(format($$ select odeme_tamamla('urun-uk-1', 'SIP-UK-1', %s, 0) $$, (select r ->> 'tutar' from t_u)), 'Shopier ödemesi işlendi');
+select ok(uyelik_odeme_durum((select (r ->> 'id')::uuid from t_u), 'yeni-uk@test.invalid') = 'odendi'
+  and (select bitis >= current_date from uyeler where eposta = 'yeni-uk@test.invalid'), 'ödeme gelince durum odendi, üyelik başladı');
 
 select * from finish();
 rollback;

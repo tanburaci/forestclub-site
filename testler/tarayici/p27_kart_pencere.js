@@ -55,6 +55,50 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
       dogru(!s.konsol.some((x) => /pageerror/.test(x)), `${ad}: sayfa hatası yok`);
       await s.ctx.close();
     }
+    // ---------- Yeni üye başvurusu: kartla aidat (Shopier ayrı pencerede), ödeme gelince üyelik başladı ----------
+    for (const [ad, boy] of [['bilgisayar', { width: 1280, height: 860 }], ['telefon', { width: 390, height: 844 }]]) {
+      let sor = 0;
+      const v = { tablolar: { etkinlikler: [etk], ayarlar: [{ anahtar: 'yakinda', deger: false }, { anahtar: 'kart_odeme', deger: true }] },
+        rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null], uyelik_odeme_durum: (g) => [200, (++sor >= 2 && g.p_id === 'u-1' && g.p_eposta === 'yeni@posta.test') ? 'odendi' : 'basladi'] } };
+      const s = await sayfaAc(tarayici, v);
+      await s.page.unroute('https://fonts.googleapis.com/**').catch(() => {});
+      await s.page.setViewportSize(boy);
+      const gelen = [];
+      await s.page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript',
+        body: "window.turnstile = { n: 0, render(el, o) { setTimeout(() => o.callback('jeton-' + (++this.n)), 20); return this.n; }, remove() {} };" }));
+      await s.page.route(`${SB}/functions/v1/form-gonder`, (r) => {
+        if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 200, headers: CORS });
+        const g = JSON.parse(r.request().postData()); gelen.push(g);
+        const sonuc = g.tur === 'uyelik_kart' ? { id: 'u-1', tutar: 3000, sayfa: 'https://shopier.test/uyelik/1' } : 'tamam';
+        r.fulfill({ status: 200, contentType: 'application/json', headers: CORS, body: JSON.stringify({ sonuc }) });
+      });
+      await s.ctx.route('https://shopier.test/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>Shopier</title><h1>Shopier ödeme</h1>' }));
+      await s.page.goto(`${SITE}/`);
+      const b = s.page.locator('#basvuru');
+      await b.scrollIntoViewIfNeeded();
+      await b.locator('input[autocomplete="name"]').fill('Yeni Üye');
+      await b.locator('input[type="tel"]').fill('0532 111 22 33');
+      await b.locator('input[type="email"]').fill('yeni@posta.test');
+      const kutular = b.locator('input[type="checkbox"]');
+      for (let i = 0; i < 3; i++) await kutular.nth(i).check();
+      await b.getByRole('button', { name: 'Aramıza katıl' }).click();
+      const kart = b.getByRole('button', { name: /Kartla öde/ });
+      await kart.waitFor({ timeout: 8000 });
+      dogru(await b.getByText('ya da havale / EFT ile').count() === 1, `${ad} üyelik: kartla öde + havale seçeneği`);
+      const pencereSoz = s.ctx.waitForEvent('page');
+      await kart.click();
+      const pencere = await pencereSoz;
+      await pencere.waitForURL('https://shopier.test/uyelik/1', { timeout: 8000 });
+      await b.getByText('Ödemen bekleniyor…').waitFor({ timeout: 5000 });
+      dogru(s.page.url() === `${SITE}/` && gelen.some((g) => g.tur === 'uyelik_kart' && g.veri.eposta === 'yeni@posta.test' && g.jeton),
+        `${ad} üyelik: Shopier ayrı pencerede, istek Turnstile'lı, site yerinde`);
+      if (S) await s.page.screenshot({ path: `${S}/uyelik_kart_${ad}_1_bekliyor.png` });
+      await b.getByText('Aramıza hoş geldin! 🌲').waitFor({ timeout: 15000 });
+      dogru(await b.getByText(/Ödemen alındı, üyeliğin başladı!/).count() === 1, `${ad} üyelik: ödeme gelince "üyeliğin başladı"`);
+      if (S) await s.page.screenshot({ path: `${S}/uyelik_kart_${ad}_2_basladi.png` });
+      dogru(!s.konsol.some((x) => /pageerror/.test(x)), `${ad} üyelik: sayfa hatası yok`);
+      await s.ctx.close();
+    }
   } catch (h) {
     console.log('HATA', h.message.split('\n').slice(0, 3).join(' | ')); kalan++;
   } finally {

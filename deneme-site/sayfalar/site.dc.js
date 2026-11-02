@@ -68,6 +68,7 @@ class Component extends DCLogic {
   }
   componentWillUnmount() {
     clearInterval(this.kartTakip);
+    clearInterval(this.uyeTakip);
     window.removeEventListener('scroll', this.kaydir);
     if (this.bekle) cancelAnimationFrame(this.bekle);
   }
@@ -536,7 +537,34 @@ class Component extends DCLogic {
           .catch((h) => this.setState({ dHata: h.message }));
       },
       dekontSonra: () => this.setState({ uyeAdim: 'tamam', dekontGitti: false }),
-      uyeTamamMetin: this.state.dekontGitti
+      uyeKartVar: canli && kartAcik && !!window.FCSUyelikKart,
+      uyeKartYazi: `Kartla öde · ${odemeBilgi.tutar}`, uKartHata: this.state.uKartHata || '',
+      uyeKartBekle: this.state.uyeAdim === 'kartbekle',
+      uOdemeSayfa: this.state.uOdemeSayfa || '#', uPencereYazi: this.state.uPencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
+      uyeKartVazgec: () => { clearInterval(this.uyeTakip); this.setState({ uyeAdim: 'odeme', uKartHata: '' }); },
+      uyeKartla: () => {
+        const eposta = (this.state.bEposta || '').trim();
+        if (!eposta) return this.setState({ uKartHata: 'Önce başvuru formunu doldur.' });
+        let pencere = null;
+        try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
+        this.setState({ uKartHata: 'Hazırlanıyor…' });
+        window.FCSUyelikKart(eposta).then((h) => {
+          if (pencere && !pencere.closed) pencere.location.href = h.sayfa;
+          this.setState({ uyeAdim: 'kartbekle', uOdemeSayfa: h.sayfa, uPencereYok: !pencere || pencere.closed, uKartHata: '' });
+          clearInterval(this.uyeTakip);
+          const bas = Date.now();
+          this.uyeTakip = setInterval(() => {
+            if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSUyelikDurum) { clearInterval(this.uyeTakip); return; }
+            window.FCSUyelikDurum(h.id, eposta).then((d) => {
+              if (d === 'odendi') { clearInterval(this.uyeTakip); this.setState({ uyeAdim: 'tamam', uyeKartli: true }); }
+              else if (d === 'basarisiz') { clearInterval(this.uyeTakip); this.setState({ uyeAdim: 'hata' }); }
+            }, () => {});
+          }, 4000);
+        }).catch((hata) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ uKartHata: hata.message }); });
+      },
+      uyeTamamMetin: this.state.uyeKartli
+        ? `Ödemen alındı, üyeliğin başladı! Hoş geldin e-postası ${(this.state.bEposta || '').trim()} adresine gelir; üye paneline bu e-postayla giriş yapabilirsin.`
+        : this.state.dekontGitti
         ? 'Teşekkürler! Başvurun ve dekontun bize ulaştı. Ödemen onaylanınca üyeliğin başlayacak; e-posta ile haber vereceğiz.'
         : 'Teşekkürler! Başvurun bize ulaştı. Ödemeyi yaptıktan sonra dekontunu dekont sayfasından iletebilirsin; onaylanınca üyeliğin başlar.',
       bDogalDegis: () => this.setState((s) => ({ bDogal: !s.bDogal, bHata: '' })),
