@@ -49,6 +49,103 @@ a{color:#111111}a:hover{color:#000000}
 .fu-siteye{font:600 14px Figtree,sans-serif;color:#111111;text-decoration:none;border:2px solid #111111;border-radius:999px;padding:7px 12px;white-space:nowrap}
 .fu-siteye:hover{background:#EDEDEB}
 .fu-baslik{margin:0;font-family:'Amatic SC',cursive;font-weight:700;line-height:1;color:#111111}
+/* Küçük TV: ana sayfadaki yüzen TV'nin aynısı; kaydırınca alttan çıkar */
+.fu-yuzen{position:fixed;right:28px;bottom:0;width:300px;z-index:40;transform:translateY(115%);transition:transform .6s cubic-bezier(.2,.9,.25,1.12);pointer-events:none}
+.fu-yuzen-acik{transform:translateY(0);pointer-events:auto}
+.fu-tv{position:relative;font-size:7px;padding:0 3.6em}
+.fu-tv-tac{width:78%;margin:0 auto -3.2em;position:relative;z-index:0}
+.fu-tv-tac svg,.fu-tv-bacak svg{display:block;width:100%;height:auto}
+.fu-tv-govde{position:relative;z-index:1;background:#FFFFFF;border:.26em solid #111111;border-radius:2.2em 2.2em 1.8em 1.8em;padding:1.1em;box-shadow:.45em .45em 0 #111111;transform:rotate(-1.2deg)}
+.fu-tv-ekran{border:.24em solid #111111;border-radius:1.7em / 2.1em;overflow:hidden;background:#FFFFFF}
+.fu-tv-kol{position:absolute;top:34%;width:4.6em;height:auto}
+.fu-tv-kol-sol{left:-4.4em}
+.fu-tv-kol-sag{right:-4.4em}
+.fu-tv-bacak{width:64%;margin:-.3em auto 0}
+.fu-yuzen-git{position:absolute;inset:0;border:0;background:transparent;cursor:pointer;z-index:2}
+.fu-yuzen-kapat{position:absolute;top:30px;right:-10px;width:34px;height:34px;border-radius:50%;border:2.5px solid #111111;background:#FFFFFF;color:#111111;font:700 18px Figtree,sans-serif;cursor:pointer;z-index:3}
+/* Ekranın içi (24 sn döngü, 6 sahne): 1) maskot "Topluluğun bir parçası ol" 1b) sabah yogası 1c) gün batımında müzik 2) kış boyu fiyat 3) neler ücretsiz 4) çağrı */
+.fu-tv-sahne{position:relative;aspect-ratio:816/576;overflow:hidden;background:#FFFFFF}
+.fu-tv-s{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5em;padding:1em 1.4em;box-sizing:border-box;text-align:center}
+.fu-tv-s p{margin:0}
+.fu-tv-s1{animation:fu-tv-p1 24s infinite}.fu-tv-sy{animation:fu-tv-py 24s infinite}.fu-tv-sm{animation:fu-tv-pm 24s infinite}.fu-tv-s2{animation:fu-tv-p2 24s infinite}.fu-tv-s3{animation:fu-tv-p3 24s infinite}.fu-tv-s4{animation:fu-tv-p4 24s infinite}
+@keyframes fu-tv-p1{0%,16%{opacity:1}16.7%,100%{opacity:0}}
+@keyframes fu-tv-p2{0%,50.1%{opacity:0}50.8%,67.3%{opacity:1}68%,100%{opacity:0}}
+@keyframes fu-tv-p3{0%,68%{opacity:0}68.7%,81.3%{opacity:1}82%,100%{opacity:0}}
+@keyframes fu-tv-p4{0%,82%{opacity:0}82.7%,99.3%{opacity:1}100%{opacity:0}}
+.fu-tv-m{position:absolute;transform-origin:50% 100%}
+/* 1: maskot el sallayarak yürüyüp gelir, balon çıkar */
+.fu-tv-m1{width:36%;left:3%;bottom:4%;animation:fu-tv-gel 24s linear infinite}
+@keyframes fu-tv-gel{0%{left:-40%;transform:rotate(-6deg)}1.3%{transform:translateY(-.8em) rotate(6deg)}2.7%{transform:rotate(-6deg)}4%{transform:translateY(-.8em) rotate(6deg)}5.3%{left:3%;transform:none}100%{left:3%;transform:none}}
+.fu-tv-yesil{color:#111111;background:#C9E33A;border:.06em solid #111111;border-radius:.2em;padding:0 .12em;white-space:nowrap;display:inline-block;margin-bottom:.12em;font-size:.88em}
+.fu-tv-balon{position:absolute;right:3%;top:22%;width:60%;box-sizing:border-box;text-align:center;font:700 3.9em/1.1 'Amatic SC',cursive;color:#111111;letter-spacing:.02em;opacity:0;animation:fu-tv-pop1 24s infinite}
+@keyframes fu-tv-pop1{0%,5.9%{opacity:0;transform:scale(.6)}7.3%{opacity:1;transform:scale(1.08)}8.1%,100%{opacity:1;transform:none}}
+/* 1b: sabah yogası (4-8 sn): güneş doğar, maskot minderde nefes alır */
+@keyframes fu-tv-py{0%,16.6%{opacity:0}17.3%,32.6%{opacity:1}33.2%,100%{opacity:0}}
+@keyframes fu-tv-pm{0%,33.2%{opacity:0}34%,49.4%{opacity:1}50.1%,100%{opacity:0}}
+.fu-tv-sy,.fu-tv-sm{align-items:flex-end;justify-content:center;gap:.25em;padding:1em 1.3em 1em 44%}
+.fu-tv-gunes{position:absolute;left:27%;top:7%;width:3.6em;height:3.6em;border-radius:50%;border:.25em solid #111111}
+.fu-tv-sy .fu-tv-gunes{background:#F6C945;animation:fu-tv-dog 24s infinite}
+@keyframes fu-tv-dog{0%,16.6%{transform:translateY(2.6em)}30%,100%{transform:none}}
+.fu-tv-sm .fu-tv-gunes{background:#EE6B2F;animation:fu-tv-bat 24s infinite}
+@keyframes fu-tv-bat{0%,33.2%{transform:none}49%,100%{transform:translateY(3em)}}
+.fu-tv-minder{position:absolute;left:4%;bottom:9%;width:34%;height:.9em;border-radius:.45em;background:#7FA7C9;border:.22em solid #111111}
+.fu-tv-m5{width:30%;left:6%;bottom:12%;animation:fu-tv-nefes 2.4s ease-in-out infinite}
+@keyframes fu-tv-nefes{0%,100%{transform:scale(1)}50%{transform:scale(1.05) translateY(-.2em)}}
+.fu-tv-om{position:absolute;left:13%;top:28%;font:700 3em/1 'Amatic SC',cursive;color:#111111;animation:fu-tv-nefes 2.4s ease-in-out infinite}
+.fu-tv-d{font:700 3em/1.05 'Amatic SC',cursive;color:#111111;text-align:right;opacity:0;letter-spacing:.02em}
+.fu-tv-d1{animation:fu-tv-d1 24s infinite}
+@keyframes fu-tv-d1{0%,17.3%{opacity:0;transform:translateX(.6em)}20%,100%{opacity:1;transform:none}}
+/* 1c: gün batımında müzik (8-12 sn): güneş batar, maskot ritimle zıplar, notalar uçar */
+.fu-tv-m6{width:26%;left:4%;bottom:6%;animation:fu-tv-ritim .45s ease-in-out infinite alternate}
+@keyframes fu-tv-ritim{from{transform:translateY(0) rotate(-6deg)}to{transform:translateY(-.9em) rotate(6deg)}}
+.fu-tv-nota{position:absolute;font:700 3.4em/1 Figtree,sans-serif;color:#111111;animation:fu-tv-uc-nota 1.6s linear infinite}
+.fu-tv-nota-1{left:30%;top:46%}.fu-tv-nota-2{left:8%;top:30%;animation-delay:-.6s}.fu-tv-nota-3{left:24%;top:24%;animation-delay:-1.1s}
+@keyframes fu-tv-uc-nota{0%{opacity:0;transform:translateY(.8em)}30%{opacity:1}100%{opacity:0;transform:translateY(-1.6em) rotate(15deg)}}
+.fu-tv-d2{animation:fu-tv-d2 24s infinite}.fu-tv-d3{animation:fu-tv-d3 24s infinite}
+@keyframes fu-tv-d2{0%,34%{opacity:0;transform:translateX(.6em)}36.6%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-d3{0%,39.6%{opacity:0;transform:scale(.7)}41.5%{opacity:1;transform:scale(1.08)}43.1%,100%{opacity:1;transform:none}}
+.fu-tv-d3{font-size:2.8em;white-space:nowrap;background:#C9E33A;border:.06em solid #111111;border-radius:.25em;padding:0 .2em;margin-top:.25em}
+/* 2: hesap; satırlar sırayla düşer, bilet toplamının üstü çizilir */
+.fu-tv-s2{align-items:center;justify-content:center;gap:.3em;padding:1em 33% 1em 1.4em}
+.fu-tv-k{font:700 3.4em/1 'Amatic SC',cursive;color:#111111;text-align:left;letter-spacing:.02em}
+.fu-tv-s2 .fu-tv-k{opacity:0}
+.fu-tv-ciz{position:relative;animation:fu-tv-dus2 24s infinite !important}
+.fu-tv-ust{font-size:3.3em !important;white-space:nowrap;opacity:0;animation:fu-tv-dus 24s infinite}
+/* Fiyat: 6.000 TL gelir, 6 aşağı düşüp yuvarlanır, yerine yukarıdan 3 iner, kutu yeşile döner */
+.fu-tv-fiyat{font:700 5em/1 'Amatic SC',cursive !important;white-space:nowrap;border:.06em solid transparent;border-radius:.25em;padding:.02em .2em;animation:fu-tv-fgel 24s infinite,fu-tv-fkutu 24s infinite !important}
+.fu-tv-hane{position:relative;display:inline-block}
+.fu-tv-alti{display:inline-block;transform-origin:50% 100%;animation:fu-tv-alti 24s infinite}
+.fu-tv-uc{position:absolute;left:0;top:0;opacity:0;animation:fu-tv-uc3 24s infinite}
+@keyframes fu-tv-fgel{0%,53%{opacity:0;transform:translateY(-.4em)}55%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-alti{0%,57.5%{transform:none;opacity:1}60%{transform:translateY(.9em) rotate(35deg);opacity:1}61.5%,100%{transform:translateY(2.2em) rotate(80deg);opacity:0}}
+@keyframes fu-tv-uc3{0%,60.5%{opacity:0;transform:translateY(-1.4em)}62%{opacity:1;transform:translateY(.12em)}62.8%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-fkutu{0%,62.3%{background:transparent;border-color:transparent}63.3%,100%{background:#C9E33A;border-color:#111111}}
+.fu-tv-ciz{color:#6B6B6B;font-size:3.6em !important}
+.fu-tv-ciz::after{content:'';position:absolute;left:-.1em;right:-.1em;top:48%;height:.14em;border-radius:1em;background:#D6342C;transform:scaleX(0);transform-origin:left;animation:fu-tv-cizgi 24s infinite}
+.fu-tv-buyuk{font:700 4.8em/1 'Amatic SC',cursive !important;white-space:nowrap;background:#C9E33A;border:.06em solid #111111;border-radius:.25em;padding:.02em .2em;margin-top:.08em;animation:fu-tv-dus3 24s infinite !important}
+@keyframes fu-tv-dus{0%,50.8%{opacity:0;transform:translateY(-.6em)}52.7%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-dus2{0%,54%{opacity:0;transform:translateY(-.6em)}56%,100%{opacity:1;transform:none}}
+@keyframes fu-tv-cizgi{0%,58%{transform:scaleX(0)}60%,100%{transform:scaleX(1)}}
+@keyframes fu-tv-dus3{0%,60.7%{opacity:0;transform:scale(.6)}62.7%{opacity:1;transform:scale(1.12)}64.1%,100%{opacity:1;transform:none}}
+.fu-tv-m2{width:28%;right:1%;bottom:8%;animation:fu-tv-zipla 24s infinite}
+@keyframes fu-tv-zipla{0%,62.7%{transform:none}64.1%{transform:translateY(-1.2em) rotate(-6deg)}65.3%{transform:none}66.7%{transform:translateY(-.8em) rotate(6deg)}68%,100%{transform:none}}
+/* 3: neler ücretsiz */
+.fu-tv-s3{justify-content:flex-start;padding-top:.8em;gap:.3em}
+.fu-tv-dahil{font:700 2.9em/1 'Amatic SC',cursive;color:#555555;letter-spacing:.02em}
+.fu-tv-tik{font:700 3.3em/1.05 'Amatic SC',cursive;white-space:pre-line;letter-spacing:.02em}
+.fu-tv-s3 .fu-tv-k{text-align:center;background:#C9E33A;border:.07em solid #111111;border-radius:999px;padding:.05em .5em;font-size:3.2em}
+.fu-tv-m3{width:18%;right:4%;left:auto;bottom:-4%;animation:fu-tv-salla 1s ease-in-out infinite alternate}
+@keyframes fu-tv-salla{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+/* 4: çağrı */
+.fu-tv-s4{align-items:flex-end;justify-content:center;gap:.5em;padding:1em 1.2em 1em 34%}
+.fu-tv-m4{width:32%;left:2%;bottom:6%;animation:fu-tv-uc 24s infinite}
+@keyframes fu-tv-uc{0%,82.7%{transform:translateY(3em)}85.3%{transform:translateY(-.6em) rotate(-4deg)}88%{transform:translateY(0) rotate(4deg)}90.7%{transform:translateY(-.6em) rotate(-4deg)}93.4%,100%{transform:none}}
+.fu-tv-yazi{margin:0;font:700 3.9em/1.05 'Amatic SC',cursive;color:#111111;text-align:right}
+.fu-tv-alt{font:700 1.9em Figtree,sans-serif;letter-spacing:.01em;white-space:nowrap;color:#FFFFFF;background:#111111;border-radius:999px;padding:.35em 1em;animation:fu-tv-nabiz .8s ease-in-out infinite alternate}
+@keyframes fu-tv-nabiz{from{transform:scale(1)}to{transform:scale(1.07)}}
+@media (max-width: 1024px){.fu-yuzen{width:190px;right:14px}.fu-yuzen .fu-tv{font-size:4.4px}}
+@media (max-width: 640px){.fu-yuzen{width:64vw;right:4px}.fu-yuzen .fu-tv{font-size:calc(64vw / 43)}.fu-tv-kol{display:none}.fu-yuzen-kapat{top:6px;right:-6px;width:30px;height:30px;font-size:16px}}
+@media (prefers-reduced-motion: reduce){.fu-yuzen{transition:none}.fu-tv-s,.fu-tv-s *{animation:none !important}.fu-tv-s{opacity:0}.fu-tv-s4,.fu-tv-s4 *{opacity:1}}
 </style>
 </helmet>
 
@@ -574,6 +671,56 @@ a{color:#111111}a:hover{color:#000000}
     </nav>
     <img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32" style="height: 24px; width: auto; max-width: 100%">
   </footer>
+  <!-- Küçük TV (ana sayfadakinin aynısı): Etkinlikler'de üyeliği aktif olmayana, sayfa kayınca sağ altta belirir; içinde maskot yürür -->
+  <sc-if value="{{ tvVar }}" hint-placeholder-val="{{ false }}">
+  <div id="fu-yuzen" class="fu-yuzen">
+    <div class="fu-tv">
+      <div class="fu-tv-tac"><svg viewBox="0 0 300 156" aria-hidden="true"><g stroke="#111111" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(150 150) rotate(-80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(-20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(0)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(20)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(40)"><path d="M0 0 C-24 -28 -21 -85 0 -118 C21 -85 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-104 M0 -35 l-10 -11 M0 -35 l10 -11 M0 -61 l-9 -10 M0 -61 l9 -10 M0 -85 l-6 -8 M0 -85 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(60)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g><g transform="translate(150 150) rotate(80)"><path d="M0 0 C-24 -28 -21 -72 0 -100 C21 -72 24 -28 0 0 Z" fill="#FFFFFF"/><path d="M0 -8 V-86 M0 -30 l-10 -11 M0 -30 l10 -11 M0 -52 l-9 -10 M0 -52 l9 -10 M0 -72 l-6 -8 M0 -72 l6 -8" fill="none" stroke-width="2.4"/></g></g></svg></div>
+      <div class="fu-tv-govde">
+        <svg class="fu-tv-kol fu-tv-kol-sol" viewBox="0 0 60 50" aria-hidden="true"><g stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M58 30 L18 24"/><path d="M18 24 l-12 -14 M18 24 l-15 1 M18 24 l-9 14"/></g></svg><svg class="fu-tv-kol fu-tv-kol-sag" viewBox="0 0 60 50" aria-hidden="true"><g stroke="#111111" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M2 30 L42 18"/><path d="M42 18 l10 -14 M42 18 l15 0 M42 18 l12 10"/></g></svg>
+        <div class="fu-tv-ekran"><div class="fu-tv-sahne">
+            <div class="fu-tv-s fu-tv-s1">
+              <img class="fu-tv-m fu-tv-m1" src="/_blob/49a6d3a14dbcdce5ef3a64ccb68bdce2" alt="">
+              <p class="fu-tv-balon"><span class="fu-tv-yesil">Topluluğumuzun</span> bir parçası ol!</p>
+            </div>
+            <div class="fu-tv-s fu-tv-sy">
+              <span class="fu-tv-gunes"></span>
+              <span class="fu-tv-minder"></span>
+              <img class="fu-tv-m fu-tv-m5" src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="">
+              <span class="fu-tv-om">om</span>
+              <p class="fu-tv-d fu-tv-d1">Ağaçların altında<br>sabah yogası,<br>bir fincan kahve</p>
+            </div>
+            <div class="fu-tv-s fu-tv-sm">
+              <span class="fu-tv-gunes"></span>
+              <img class="fu-tv-m fu-tv-m6" src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt="">
+              <span class="fu-tv-nota fu-tv-nota-1">♪</span><span class="fu-tv-nota fu-tv-nota-2">♫</span><span class="fu-tv-nota fu-tv-nota-3">♪</span>
+              <p class="fu-tv-d fu-tv-d2">Gün batımında müzik,<br>aynı sofrada<br>yeni dostlar</p>
+              <p class="fu-tv-d fu-tv-d3">Hepsi üyeliğe dahil</p>
+            </div>
+            <div class="fu-tv-s fu-tv-s2">
+              <p class="fu-tv-k fu-tv-ust">Kış boyu aramızdasın</p>
+              <p class="fu-tv-k fu-tv-fiyat"><span class="fu-tv-hane"><span class="fu-tv-alti">6</span><span class="fu-tv-uc">3</span></span>.000 TL</p>
+              <img class="fu-tv-m fu-tv-m2" src="/_blob/5d4246c48f300edcce7178b1c6845750" alt="">
+            </div>
+            <div class="fu-tv-s fu-tv-s3">
+              <p class="fu-tv-dahil">Üyelerimize:</p>
+              <p class="fu-tv-tik">{{ tvAdlar }}</p>
+              <p class="fu-tv-k">{{ tvAtolye }}</p>
+              <img class="fu-tv-m fu-tv-m3" src="/_blob/426f104f4634b69c53f59c397459ea29" alt="">
+            </div>
+            <div class="fu-tv-s fu-tv-s4">
+              <img class="fu-tv-m fu-tv-m4" src="/_blob/7ace25b1e01f5deeaf99b9c072450d33" alt="">
+              <p class="fu-tv-yazi">Senin için de<br>bir sandalye var.</p>
+              <span class="fu-tv-alt">{{ tvDugme }}</span>
+            </div>
+          </div></div>
+      </div>
+      <div class="fu-tv-bacak"><svg viewBox="0 0 300 66" aria-hidden="true"><g stroke="#111111" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M70 0 l10 34 l-16 24 l22 2"/><path d="M118 0 l10 34 l-16 24 l22 2"/><path d="M182 0 l-10 34 l16 24 l-22 2"/><path d="M230 0 l-10 34 l16 24 l-22 2"/></g></svg></div>
+      <button type="button" class="fu-yuzen-git" aria-label="Üyeliğim sayfasına git" onClick="{{ tvGit }}"></button>
+      <button type="button" class="fu-yuzen-kapat" aria-label="Küçük TV'yi kapat" onClick="{{ tvKapat }}">×</button>
+    </div>
+  </div>
+  </sc-if>
   <!-- Afiş tam ekran: dokununca ya da Esc ile kapanır -->
   <sc-if value="{{ afisTamVar }}" hint-placeholder-val="{{ false }}">
     <div role="dialog" aria-modal="true" aria-label="{{ afisTamAlt }}" onClick="{{ afisKapat }}" style="position: fixed; inset: 0; z-index: 2147483100; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; cursor: zoom-out">
@@ -613,7 +760,15 @@ class Component extends DCLogic {
       dondurma: null, dondurmaSecim: false, silmeSoru: false, silmeIstendi: false, veriMesaj: '',
       anket: { ct: { puan: 0, yorum: '', bitti: false }, sk: { puan: 5, yorum: '', bitti: true }, bf: { puan: 0, yorum: '', bitti: false } },
       galeri: '',
+      // Küçük TV: kapatan üyeye o gün bir daha çıkmaz
+      tvKapali: (() => { try { return localStorage.getItem('fc_tv_kapali') === new Date().toISOString().slice(0, 10); } catch (e) { return false; } })(),
     };
+    // Küçük TV: Etkinlikler açılınca kısa bir gecikmeyle alttan kayarak çıkar ve açık kalır
+    const tvKonum = () => {
+      const t = document.getElementById('fu-yuzen');
+      if (t && !t.classList.contains('fu-yuzen-acik')) setTimeout(() => t.classList.add('fu-yuzen-acik'), 400);
+    };
+    setInterval(tvKonum, 300);  // sekme değişince TV yeniden çizilir; yakalayıp açar
     this.pAlan = {};
     ['telefon', 'dogum'].forEach((k) => {
       this.pAlan[k] = (e) => { const v = e.target.value; this.setState((s) => ({ profil: { ...s.profil, [k]: v }, profilMesaj: '' })); };
@@ -915,6 +1070,33 @@ class Component extends DCLogic {
       sUyelik: sekme === 'uyelik', sProfil: sekme === 'profil', sVeri: sekme === 'veri',
       afisTamVar: !!this.state.afisTam, afisTam: this.state.afisTam || '', afisTamAlt: this.state.afisTamAlt || 'Afiş',
       afisKapat: () => this.setState({ afisTam: '' }),
+      // Küçük TV yalnız Etkinlikler'de ve üyeliği aktif olmayana (muaf da aktif sayılır)
+      tvVar: sekme === 'etkinlikler' && !aktif && !this.state.tvKapali,
+      ...(() => {
+        // TV'deki hesap gerçek veriden: önümüzdeki 30 günde üyeye ücretsiz buluşmaların bilet toplamı ↔ üyelik
+        const aidatSayi = canli ? window.FCU.aidat || 3000 : 3000;
+        const sinir = gunEkle(BUGUN, 30);
+        const liste = Object.values(this.state.kayit || {}).filter((e) => e.tarih >= BUGUN && e.tarih <= sinir);
+        const ucretsizHepsi = liste.filter((e) => e.uye === 'ucretsiz' && e.fiyat > 0).sort((a, b) => a.tarih.localeCompare(b.tarih));
+        // Fark abartılı görünmesin (ucuz/kalitesiz algısı): yakın tarihli buluşmalar aidatın 2 katına ulaşana kadar sayılır
+        const ucretsiz = [];
+        let toplam = 0;
+        for (const e of ucretsizHepsi) { if (toplam >= 2 * aidatSayi) break; ucretsiz.push(e); toplam += e.fiyat; }
+        const adlar = [...new Set(ucretsizHepsi.map((e) => e.ad.split(/[—·×]/)[0].trim()))].slice(0, 2);
+        const kazanc = toplam > aidatSayi;
+        return {
+          tvSatir2: kazanc ? TL(toplam) : 'Bilet derdi yok',
+          tvSatir3: TL(aidatSayi),
+          tvAdlar: [...(adlar.length ? adlar : ['Yoga', 'Sunset']), 'Buluşmalar'].map((a) => `${a} ✓`).join('\n'),
+          tvAtolye: liste.some((e) => e.uye === 'yuzde50') ? 'Atölyelerde üyelere %50' : 'Üyelere özel buluşmalar',
+          tvDugme: 'Aramıza katıl →',
+        };
+      })(),
+      tvGit: () => { this.setState({ sekme: 'uyelik' }); scrollTo(0, 0); },
+      tvKapat: () => {
+        try { localStorage.setItem('fc_tv_kapali', new Date().toISOString().slice(0, 10)); } catch (h) { /* gizli sekme */ }
+        this.setState({ tvKapali: true });
+      },
       ben, aktif, pasif: !aktif, uyari, muaf, kalanGoster: aktif && !muaf, yoneticiMi: !!(window.FCU && window.FCU.yonetici),
       formVar: !!(window.FCU && window.FCU.formlar && window.FCU.formlar.length),
       formlar: ((window.FCU && window.FCU.formlar) || []).map((f) => ({
