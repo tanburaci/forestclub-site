@@ -4,9 +4,11 @@
 // Secrets: SHOPIER_PAT (Personal Access Token: ürün yazma + sipariş okuma), SHOPIER_WEBHOOK_TOKEN (bildirim imza
 // anahtarı), SITE_ADRESI. İsteğe bağlı SHOPIER_API (varsayılan https://api.shopier.com/v1).
 //
-// DİKKAT (02.11.2026): Shopier'in resmi API belgesine henüz erişilemedi; uç noktalar ve alan adları topluluk
-// örneklerinden (REST v1, PAT, Shopier-Signature HMAC-SHA256). Hesap onaylanınca Shopier panelindeki belgeyle
-// doğrulanacak; o zamana kadar kart ödemesi yönetimde (ayarlar.kart_odeme) kapalı tutulur.
+// Resmi belgeyle karşılaştırıldı (developer.shopier.com, 02.11.2026): POST /products zorunlu alanları title, type,
+// media (jpg/png adresi), priceData, shippingPayer; yanıt Product modeli (id, url). Ödeme sonrası siteye dönüş adresi
+// YOK: kişi Shopier'de kalır, biletler e-postayla gelir. Order modeli: paymentStatus 'paid', totals.total (metin),
+// lineItems[].productId, refunds[].status. Bildirim: order.created, gövde Order modeli, Shopier-Signature HMAC-SHA256.
+// Bildirim aboneliği PAT hesabında API'den açıldı (POST /webhooks); imza anahtarı SHOPIER_WEBHOOK_TOKEN.
 const API = () => (Deno.env.get('SHOPIER_API') || 'https://api.shopier.com/v1').replace(/\/$/, '');
 
 export function shopierHazir(): boolean {
@@ -26,18 +28,18 @@ async function cagir(yol: string, secenek: RequestInit = {}): Promise<any> {
 }
 
 // Tek kullanımlık ödeme ürünü açar; dönüş { urun, sayfa } (ürün numarası ve ödeme sayfası adresi)
-export async function odemeUrunuAc(p: { baslik: string; tutar: number; ref: string; donus: string }): Promise<{ urun: string; sayfa: string }> {
+export async function odemeUrunuAc(p: { baslik: string; tutar: number; ref: string; donus?: string }): Promise<{ urun: string; sayfa: string }> {
+  const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
   const veri = await cagir('/products', {
     method: 'POST',
     body: JSON.stringify({
-      title: p.baslik.slice(0, 120),
+      title: `${p.baslik} · ${p.ref}`.slice(0, 120),
       type: 'digital',
+      media: [{ type: 'image', url: `${site}/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png`, placement: 1 }],
       priceData: { currency: 'TRY', price: p.tutar.toFixed(2) },
       stockQuantity: 1,
       shippingPayer: 'sellerPays',
-      description: `Forest Club Urla · ${p.ref}`,
-      customNote: p.ref,
-      successUrl: p.donus,
+      description: `Forest Club Urla · ${p.ref}. Ödemeden sonra biletlerin / üyelik onayın e-postana gelir.`,
     }),
   });
   const d = veri && (veri.data || veri);
@@ -55,9 +57,10 @@ export async function siparisOku(siparis: string): Promise<{ odendi: boolean; ia
   const durum = String(d && (d.status ?? '') || '').toLowerCase();
   const kalemler: any[] = (d && (d.lineItems || d.items || d.products)) || [];
   const tutar = Number((d && (d.totals?.total ?? d.total ?? d.totalPrice ?? d.amount)) ?? NaN);
+  const iadeli = ((d && d.refunds) || []).some((r: any) => String(r && r.status || '') !== 'failed');
   return {
     odendi: odeme === 'paid',
-    iade: /refund|cancel|iptal|iade/.test(`${odeme} ${durum}`),
+    iade: iadeli || /refund|cancel|iptal|iade/.test(`${odeme} ${durum}`),
     tutar,
     urunler: kalemler.map((k) => String(k.productId ?? k.product_id ?? k.id ?? '')).filter(Boolean),
   };
