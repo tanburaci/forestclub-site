@@ -188,7 +188,11 @@ class Component extends DCLogic {
     const uyeMi = AKTIF_UYELER.includes(this.state.sEposta.trim().toLowerCase());
     const araToplam = sepetteKi.reduce((t, b) => t + b.satis.fiyat * sepet[`${b.tarih}|${b.ad}`], 0);
     const indirim = uyeMi ? sepetteKi.reduce((t, b) => t + (b.satis.fiyat - uyeFiyati(b)), 0) : 0;
-    const toplam = araToplam - indirim;
+    // İndirim kodu (sepette "Uygula"): üye fiyatından sonra düşer; asıl tutar sunucuda yeniden hesaplanır
+    const kodB = this.state.sKodBilgi;
+    const onceKod = araToplam - indirim;
+    const kodInd = kodB ? (kodB.tur === 'yuzde' ? Math.round(onceKod * Number(kodB.deger) / 100) : Math.min(Number(kodB.deger), onceKod)) : 0;
+    const toplam = onceKod - kodInd;
     const adetDegis = (key, fark, max) => this.setState((st) => {
       const yeni = Math.max(0, Math.min(max, (st.sepet[key] || 0) + fark));
       const s2 = { ...st.sepet };
@@ -280,6 +284,19 @@ class Component extends DCLogic {
       }),
       araToplamYazi: TL(araToplam), indirimYazi: indirim ? `−${TL(indirim)}` : '—', toplamYazi: toplam ? TL(toplam) : '0 TL',
       uyeIndirimi: !canli && uyeMi && indirim > 0,
+      sKod: this.state.sKod || '', sKodHata: this.state.sKodHata || '', kodVar: !!kodB, kodYok: !kodB,
+      kodAd: kodB ? kodB.kod : '', kodIndYazi: kodB ? `−${TL(kodInd)}` : '',
+      kodAciklama: kodB ? `${kodB.kod} uygulandı · ${kodB.tur === 'yuzde' ? `%${Number(kodB.deger)}` : TL(Number(kodB.deger))} indirim` : '',
+      sKodYaz: (e) => this.setState({ sKod: e.target.value.toUpperCase(), sKodHata: '' }),
+      kodKaldir: () => this.setState({ sKodBilgi: null, sKod: '', sKodHata: '' }),
+      kodUygula: () => {
+        const kod = (this.state.sKod || '').trim().toUpperCase();
+        if (!kod) return this.setState({ sKodHata: 'Kodu yaz.' });
+        const bak = window.FCSIndirimBak ? window.FCSIndirimBak(kod)
+          : (kod === 'FOREST20' ? Promise.resolve({ kod, tur: 'yuzde', deger: 20 }) : Promise.reject(new Error('Bu indirim kodu geçerli değil.')));
+        this.setState({ sKodHata: 'Kontrol ediliyor…' });
+        bak.then((k) => this.setState({ sKodBilgi: k, sKodHata: '' }), (h) => this.setState({ sKodBilgi: null, sKodHata: h.message }));
+      },
       uyeFiyatNotu: canli ? 'Aktif üyeysen önce üye girişi yap; üye fiyatı ödeme adımında uygulanır (her etkinlikte 1 kişi için).'
         : 'Aktif üyeysen, üye fiyatı bir sonraki adımda e-postanla kontrol edilip uygulanır (her etkinlikte 1 kişi için).',
       // Ödeme yöntemi: kart (Shopier, yönetimde açıksa varsayılan) · havale / EFT (bilerek seçilir). Nakit yalnız kapıda (yönetimden satış)
@@ -320,7 +337,7 @@ class Component extends DCLogic {
           const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
           this.setState({ sHata: 'Hazırlanıyor…' });
           if (!sYol) return this.setState({ sHata: 'Ödeme yöntemini seç.' });
-          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol })
+          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol, kod: kodB ? kodB.kod : null })
             .then((h) => {
               if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) { location.href = h.sayfa; return; }
               this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' });

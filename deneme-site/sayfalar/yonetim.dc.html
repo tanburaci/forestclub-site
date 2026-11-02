@@ -790,6 +790,51 @@ a{color:#111111}a:hover{color:#000000}
               </section>
             </sc-if>
 
+            <!-- İndirim kodları: bilet sepetinde "İndirim kodun var mı?" kutusuna yazılır -->
+            <section class="fc-kodlar" style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 14px; margin-top: 8px">
+              <div>
+                <h3 style="margin: 0; font-size: 20px">İndirim kodları</h3>
+                <p style="margin: 4px 0 0; color: #5E5E5E; font-size: 14px">Bilet alırken sepette yazılır; yüzde ya da TL olarak toplamdan düşer (üye fiyatından sonra). Kullanım, bilet kesinleşince sayılır.</p>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; align-items: end">
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Kod
+                  <input class="fc-input" type="text" placeholder="FOREST20" maxlength="30" value="{{ kodForm.kod }}" onChange="{{ kodAlan.kod }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Tür
+                  <select class="fc-input" value="{{ kodForm.tur }}" onChange="{{ kodAlan.tur }}"><option value="yuzde">Yüzde (%)</option><option value="tl">Tutar (TL)</option></select>
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">{{ kodDegerEtiket }}
+                  <input class="fc-input" type="text" inputmode="decimal" value="{{ kodForm.deger }}" onChange="{{ kodAlan.deger }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Son gün (isteğe bağlı)
+                  <input class="fc-input" type="date" value="{{ kodForm.son_tarih }}" onChange="{{ kodAlan.son_tarih }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">En çok kaç kez (boş: sınırsız)
+                  <input class="fc-input" type="text" inputmode="numeric" value="{{ kodForm.sinir }}" onChange="{{ kodAlan.sinir }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Not (kimin için)
+                  <input class="fc-input" type="text" maxlength="80" placeholder="Instagram" value="{{ kodForm.aciklama }}" onChange="{{ kodAlan.aciklama }}">
+                </label>
+              </div>
+              <button type="button" class="fc-btn" onClick="{{ kodEkle }}" style="align-self: flex-start">Kodu ekle</button>
+              <sc-if value="{{ kodMesaj2 }}" hint-placeholder-val="{{ false }}">
+                <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px">{{ kodMesaj2 }}</p>
+              </sc-if>
+              <sc-if value="{{ kodlarYok }}" hint-placeholder-val="{{ false }}">
+                <span style="color: #5E5E5E; font-size: 14px">Henüz indirim kodu yok.</span>
+              </sc-if>
+              <div style="border: 1px solid #DADAD8; border-radius: 12px">
+                <sc-for list="{{ kodListe }}" as="k" hint-placeholder-count="2">
+                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #ECECEA; flex-wrap: wrap">
+                    <strong style="font-size: 16px; letter-spacing: .04em">{{ k.kod }}</strong>
+                    <span style="flex: 1 1 200px; color: #3A3A3A; font-size: 14px">{{ k.ozet }}</span>
+                    <span style="font-size: 13px; font-weight: 700">{{ k.durum }}</span>
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ k.degis }}" style="padding: 6px 14px; min-height: 40px; font-size: 14px">{{ k.dugme }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+
             <!-- Tanışma biletleri: üyeliği hiç aktif olmamış e-postaya tek kullanımlık ücretsiz giriş -->
             <section style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 16px; margin-top: 8px">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap">
@@ -1999,6 +2044,9 @@ class Component extends DCLogic {
       adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
       girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
       elden: { acik: false, ad: '', tutar: '3.000', tarih: this.BUGUN, hata: '' },
+      // İndirim kodları (bilet sepeti); önizlemede örnek kod
+      kodlar: window.FC ? null : [{ kod: 'FOREST20', tur: 'yuzde', deger: 20, son_tarih: null, sinir: 50, kullanilan: 7, aktif: true, aciklama: 'Instagram' }],
+      kodForm: { kod: '', tur: 'yuzde', deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: '',
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
       etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: window.FC ? window.FC.etkDurum : {},
@@ -2356,6 +2404,48 @@ class Component extends DCLogic {
     // Deneme sitesi: oturum Supabase'de tutulur (Beni hatırla kapalıysa tarayıcı kapanınca biter)
   }
   componentWillUnmount() { this.kameraKapat(); }
+  // İndirim kodları bölümü (Etkinlikler sekmesi)
+  indirimKodlari() {
+    if (this.state.kodlar === null && window.FCIndirim && !this.kodYukleniyor) {
+      this.kodYukleniyor = true;
+      window.FCIndirim.liste().then((l) => this.setState({ kodlar: l }), (h) => this.setState({ kodlar: [], kodMesaj2: h.message }));
+    }
+    const f = this.state.kodForm;
+    const alan = (a) => (e) => { const v = a === 'kod' ? e.target.value.toUpperCase().replace(/\s/g, '') : e.target.value; this.setState((s) => ({ kodForm: { ...s.kodForm, [a]: v }, kodMesaj2: '' })); };
+    const tarih = (t) => (t ? t.split('-').reverse().join('.') : '');
+    return {
+      kodForm: f, kodMesaj2: this.state.kodMesaj2,
+      kodAlan: { kod: alan('kod'), tur: alan('tur'), deger: alan('deger'), son_tarih: alan('son_tarih'), sinir: alan('sinir'), aciklama: alan('aciklama') },
+      kodDegerEtiket: f.tur === 'yuzde' ? 'İndirim (%)' : 'İndirim (TL)',
+      kodlarYok: !(this.state.kodlar || []).length,
+      kodListe: (this.state.kodlar || []).map((k) => {
+        const bitti = (k.son_tarih && k.son_tarih < this.BUGUN) || (k.sinir && k.kullanilan >= k.sinir);
+        return {
+          kod: k.kod,
+          ozet: `${k.tur === 'yuzde' ? `%${Number(k.deger)}` : `${Number(k.deger).toLocaleString('tr-TR')} TL`} · ${k.kullanilan}${k.sinir ? `/${k.sinir}` : ''} kullanıldı${k.son_tarih ? ` · son gün ${tarih(k.son_tarih)}` : ''}${k.aciklama ? ` · ${k.aciklama}` : ''}`,
+          durum: !k.aktif ? 'Kapalı' : bitti ? 'Bitti' : 'Geçerli',
+          dugme: k.aktif ? 'Kapat' : 'Aç',
+          degis: () => {
+            const yeni = !k.aktif;
+            const yaz = (a) => this.setState((s) => ({ kodlar: s.kodlar.map((x) => (x.kod === k.kod ? { ...x, aktif: a } : x)) }));
+            yaz(yeni);
+            if (window.FCIndirim) window.FCIndirim.aktif(k.kod, yeni).catch((h) => { yaz(!yeni); this.setState({ kodMesaj2: h.message }); });
+          },
+        };
+      }),
+      kodEkle: () => {
+        const kod = f.kod.trim().toUpperCase();
+        const deger = Number(String(f.deger).replace(',', '.'));
+        if (!/^[A-Z0-9-]{3,30}$/.test(kod)) return this.setState({ kodMesaj2: 'Kod 3–30 karakter olmalı: harf (Türkçe karakter yok), rakam ya da tire.' });
+        if (!(deger > 0) || (f.tur === 'yuzde' && deger >= 100)) return this.setState({ kodMesaj2: f.tur === 'yuzde' ? 'Yüzde 1 ile 99 arasında olmalı.' : 'İndirim tutarını yazın.' });
+        const yeni = { kod, tur: f.tur, deger, son_tarih: f.son_tarih || null, sinir: f.sinir ? Math.max(1, parseInt(f.sinir, 10)) : null, aciklama: f.aciklama.trim() || null };
+        const bitir = (k) => this.setState((s) => ({ kodlar: [{ kullanilan: 0, aktif: true, ...k }, ...(s.kodlar || [])], kodForm: { kod: '', tur: f.tur, deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: `${kod} eklendi ✓` }));
+        if (!window.FCIndirim) return bitir(yeni);
+        this.setState({ kodMesaj2: 'Kaydediliyor…' });
+        window.FCIndirim.ekle(yeni).then(bitir, (h) => this.setState({ kodMesaj2: h.message }));
+      },
+    };
+  }
   // Açık / kapalı ayar: ekranda hemen değişir, kaydedilemezse geri alınır
   ayarDegis(alan, anahtar, etiket) {
     const yeni = !this.state[alan];
@@ -3392,6 +3482,7 @@ class Component extends DCLogic {
       anaSayfa: sekme === 'ana',
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
+      ...this.indirimKodlari(),
       ...this.aylikGorunum(),
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',

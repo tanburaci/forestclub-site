@@ -15,8 +15,8 @@ create function pg_temp.ol(sub text) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', sub, 'role', 'authenticated', 'aal', 'aal2')::text, true);
 $$;
 
-select ok(not has_function_privilege('anon', 'public.bilet_istegi_ac_yol(text,text,text,jsonb,uuid,text,text)', 'execute')
-  and not has_function_privilege('authenticated', 'public.bilet_istegi_ac_yol(text,text,text,jsonb,uuid,text,text)', 'execute')
+select ok(not has_function_privilege('anon', 'public.bilet_istegi_ac_yol(text,text,text,jsonb,uuid,text,text,text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.bilet_istegi_ac_yol(text,text,text,jsonb,uuid,text,text,text)', 'execute')
   and not has_function_privilege('authenticated', 'public.bilet_kart_odendi(bigint,text,numeric)', 'execute')
   and not has_function_privilege('authenticated', 'public.bilet_shopier_urun(bigint,text)', 'execute'),
   'ödeme yolu işlevleri yalnız service_role ile');

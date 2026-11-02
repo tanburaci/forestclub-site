@@ -159,9 +159,16 @@
   // Etkinlik bileti (havale + dekont): 1) istek açılır, sunucu tutarı söyler ve yerleri dekont gelene dek ayırmaz;
   // 2) dekont imzalı adrese yüklenir, istek yöneticinin onayına düşer. kalemler: [{etkinlik: id, adet}]
   // yol: kart (Shopier ödeme sayfası adresi döner) | havale (dekont yükleme hakkı) | nakit (yer ayrılır)
-  window.FCSBiletAc = async ({ kalemler, ad, eposta, tel, yol }) => {
+  window.FCSBiletAc = async ({ kalemler, ad, eposta, tel, yol, kod }) => {
     const { data: { session } } = await sb.auth.getSession();
-    return formGonder('bilet_adres', { kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, yol: yol || 'havale', oturum: session ? session.access_token : null });
+    return formGonder('bilet_adres', { kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, yol: yol || 'havale', kod: kod || null,
+      oturum: session ? session.access_token : null });
+  };
+  // İndirim kodu: geçerliyse {kod, tur: 'yuzde' | 'tl', deger}; tutar sunucuda yeniden hesaplanır
+  window.FCSIndirimBak = async (kod) => {
+    const { data, error } = await sb.rpc('indirim_kodu_bak', { p_kod: String(kod || '').trim() });
+    if (error) throw new Error(/geçerli değil/.test(error.message) ? 'Bu indirim kodu geçerli değil.' : 'Kod şu an denetlenemedi; biraz sonra tekrar dene.');
+    return data;
   };
   window.FCSBiletDekont = async (hak, eposta, dosya) => {
     const { tur } = dekontDosyasi(dosya);
