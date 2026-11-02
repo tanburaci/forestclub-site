@@ -9,7 +9,7 @@ insert into auth.users (id, email) values ('00000000-0000-4000-8000-0000000000f1
 insert into yoneticiler (user_id, ad) values ('00000000-0000-4000-8000-0000000000f1', 'Kod Yönetici');
 insert into etkinlikler (tarih, saat, tur, ad, kontenjan, bilet_fiyati, uyelere, durum) values
   (current_date + 7, '10.00', 'yoga', 'Kod Yoga', 20, 1000, 'ucretsiz', 'yayinda'),
-  (current_date + 8, '19.00', 'konser', 'Kod Konser', 20, 3000, 'ucretsiz', 'yayinda');
+  (current_date + 8, '19.00', 'bulusma', 'Kod Konser', 20, 3000, 'ucretsiz', 'yayinda');
 create temp table t_e as select (select id from etkinlikler where ad = 'Kod Yoga') as yoga, (select id from etkinlikler where ad = 'Kod Konser') as konser;
 insert into indirim_kodlari (kod, tur, deger, son_tarih, sinir) values
   ('YUZDE20', 'yuzde', 20, null, null), ('TL500', 'tl', 500, null, 1), ('ESKI', 'yuzde', 10, current_date - 1, null), ('KOCAMAN', 'tl', 99999, null, null);
@@ -30,6 +30,7 @@ select is((select string_agg(k ->> 'tutar', ',' order by (k ->> 'etkinlik_id')::
 
 -- Onay: muhasebeye indirimli tutarlar, kod kullanımı sayılır
 update bilet_istekleri set yuklendi = true where id = (select (r ->> 'id')::bigint from t_y);
+grant select on t_y to authenticated;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-4000-8000-0000000000f1', 'role', 'authenticated', 'aal', 'aal2')::text, true);
 select lives_ok(format($$ select bilet_karar(%s, true) $$, (select r ->> 'id' from t_y)), 'indirimli bilet onaylanır');
