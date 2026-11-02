@@ -2063,7 +2063,7 @@ class Component extends DCLogic {
       ilt: { eposta: 'forestcluburla@gmail.com', alan: 'Pinya, Urla', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}), whatsapp: undefined },
       iltMesaj: '', kameraAcik: false,
       yakinda: window.FC ? window.FC.ayarlar.yakinda === true : false,
-      siteDuyurusu: window.FC ? String(window.FC.ayarlar.site_duyurusu || '') : '', duyuruMesaj: '',
+      siteDuyurusu: window.FC ? String((window.FC.ayarlar.site_duyurusu && window.FC.ayarlar.site_duyurusu.metin) || (typeof window.FC.ayarlar.site_duyurusu === 'string' ? window.FC.ayarlar.site_duyurusu : '')) : '', duyuruMesaj: '',
       aylik: window.FC_AYLIK ? window.FC_AYLIK.oku(window.FC && window.FC.ayarlar.aylik_duyuru) : {}, aylikMesaj: '', aylikYukleniyor: false,
       biletler: this.DEMO.biletler,
       komisyonOran: '',
@@ -2507,13 +2507,14 @@ class Component extends DCLogic {
       },
     };
   }
-  // Sitenin en üstündeki duyuru (ayarlar.site_duyurusu); boş metin kaldırır
-  duyuruYaz(metin) {
+  // Sitenin en üstündeki duyuru (ayarlar.site_duyurusu = {metin, bitis}); boş metin kaldırır. bitis günü bitince
+  // sitede kendiliğinden kaybolur (müşteri isteği 02.11.2026: iptal duyurusu ertesi güne kalmasın); elle yazılanınki bugün
+  duyuruYaz(metin, bitis) {
     if (metin.length > 300) return this.setState({ duyuruMesaj: 'Duyuru en çok 300 karakter olabilir.' });
     const tamam = metin ? 'Yayında ✓ Sitenin en üstünde görünüyor.' : 'Duyuru kaldırıldı ✓';
     if (!window.FCAyarKaydet) return this.setState({ siteDuyurusu: metin, duyuruMesaj: `Önizleme: ${tamam}` });
     this.setState({ duyuruMesaj: 'Kaydediliyor…' });
-    return window.FCAyarKaydet('site_duyurusu', metin).then(() => this.setState({ siteDuyurusu: metin, duyuruMesaj: tamam }),
+    return window.FCAyarKaydet('site_duyurusu', metin ? { metin, bitis: bitis || this.BUGUN } : '').then(() => this.setState({ siteDuyurusu: metin, duyuruMesaj: tamam }),
       (h) => this.setState({ duyuruMesaj: h.message }));
   }
   // Kapıda kamera: okunan kod yoklama kutusuna yazılır ve hemen işlenir
@@ -2844,7 +2845,8 @@ class Component extends DCLogic {
           window.FCEtkinlikDurum(p.key, ip.tur, ip.tarih, ip.neden, ip.mesaj || varsayilan)
             .then((r) => {
               // Ekrandaki söz: duyuru "sitenin üstünde ve maille"
-              if (window.FCAyarKaydet) window.FCAyarKaydet('site_duyurusu', (ip.mesaj || varsayilan).slice(0, 300)).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
+              // İptal / erteleme duyurusu etkinliğin (eski) günü bitince sitede kaybolur
+              if (window.FCAyarKaydet) window.FCAyarKaydet('site_duyurusu', { metin: (ip.mesaj || varsayilan).slice(0, 300), bitis: t < this.BUGUN ? this.BUGUN : t }).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
               return r;
             })
             .then((r) => this.setState((s) => ({
