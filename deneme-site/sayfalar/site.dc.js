@@ -69,6 +69,7 @@ class Component extends DCLogic {
   componentWillUnmount() {
     clearInterval(this.kartTakip);
     clearInterval(this.uyeTakip);
+    clearInterval(this.destekTakip);
     window.removeEventListener('scroll', this.kaydir);
     if (this.bekle) cancelAnimationFrame(this.bekle);
   }
@@ -193,7 +194,7 @@ class Component extends DCLogic {
     const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
     const kartAcik = !canli || AYAR.kart_odeme === true;
     // Destek ol: kartla destek henüz iyzico'da (çalışmıyor); Shopier'e taşınana kadar yalnız IBAN
-    const destekKartAcik = !canli;
+    const destekKartAcik = kartAcik;
     // Seçilen ödeme yolu: kart açıksa varsayılan kart; değilse kişi havale ya da nakidi bilerek seçer
     const sYol = this.state.sYolSecim || (kartAcik ? 'kart' : null);
     const destekTutar = this.state.dsElle ? Math.round(Number(String(this.state.dsTutarYazi).replace(/[^\d]/g, ''))) : this.state.dsTutar;
@@ -484,7 +485,8 @@ class Component extends DCLogic {
       destekAcik: !!this.state.destek, destekForm: this.state.destek === 'form',
       destekTamam: this.state.destek === 'tamam', destekBasarisiz: this.state.destek === 'hata',
       destekAc: () => this.setState({ destek: 'form', dsHata: '', dsKopya: '' }),
-      destekKapat: () => this.setState({ destek: '' }),
+      destekKapat: () => { clearInterval(this.destekTakip); this.setState({ destek: '', dsBekle: false }); },
+      dsBekle: !!this.state.dsBekle, dsSayfa: this.state.dsSayfa || '#',
       destekTekrar: () => this.setState({ destek: 'form', dsHata: '' }),
       destekTutarlar: [1000, 2500, 5000, 0].map((n) => ({
         ad: n ? TL(n) : 'Başka tutar',
@@ -500,9 +502,25 @@ class Component extends DCLogic {
         if (!destekKartAcik) return this.setState({ dsHata: 'Kartla destek çok yakında; şimdilik IBAN ile gönderebilirsin.' });
         if (!(destekTutar >= 50)) return this.setState({ dsHata: 'En az 50 TL yaz.' });
         if (destekTutar > 100000) return this.setState({ dsHata: 'En çok 100.000 TL gönderebilirsin.' });
-        if (!window.FCSDestek) return this.setState({ dsHata: 'Önizleme: gerçek sitede iyzico ödeme sayfası açılır.' });
+        if (!window.FCSDestek) return this.setState({ dsHata: 'Önizleme: gerçek sitede Shopier ödeme sayfası açılır.' });
+        // Shopier ayrı pencerede; bu pencere ödemeyi bekler, gelince "Desteğin bize ulaştı"
+        let pencere = null;
+        try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
         this.setState({ dsHata: 'Ödeme sayfası açılıyor…' });
-        window.FCSDestek(destekTutar).then((sayfa) => { location.href = sayfa; }).catch((h) => this.setState({ dsHata: h.message }));
+        window.FCSDestek(destekTutar).then((h) => {
+          const sayfa = typeof h === 'string' ? h : h.sayfa;
+          if (!h.id) { if (pencere && !pencere.closed) pencere.close(); location.href = sayfa; return; }  // eski (iyzico) yol
+          if (pencere && !pencere.closed) pencere.location.href = sayfa;
+          this.setState({ dsHata: '', dsBekle: true, dsSayfa: sayfa });
+          clearInterval(this.destekTakip);
+          const bas = Date.now();
+          this.destekTakip = setInterval(() => {
+            if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSDestekDurum) { clearInterval(this.destekTakip); return; }
+            window.FCSDestekDurum(h.id).then((d) => {
+              if (d === 'odendi') { clearInterval(this.destekTakip); this.setState({ destek: 'tamam', dsBekle: false }); }
+            }, () => {});
+          }, 4000);
+        }).catch((hata) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ dsHata: hata.message }); });
       },
       aliciKopyaYazi: this.state.dsKopya === 'alici' ? 'Kopyalandı ✓' : 'Kopyala',
       ibanKopyaYazi: this.state.dsKopya === 'iban' ? 'Kopyalandı ✓' : 'Kopyala',
