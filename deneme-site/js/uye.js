@@ -91,7 +91,7 @@
     });
     return {
       bugun: B, eposta: u.eposta, uyeId: u.id, kayit, gecmis, anket, formlar, yonetici: !!yon,
-      kartOdeme: ayar.kart_odeme === true, aidat: Number(ayar.aidat) || 3000, dondurmaKurali: ayar.dondurma || { gunler: [7, 14], yillik: 2 },
+      kartOdeme: ayar.kart_odeme === true, duyuru: ayar.site_duyurusu || '', aidat: Number(ayar.aidat) || 3000, dondurmaKurali: ayar.dondurma || { gunler: [7, 14], yillik: 2 },
       hesap: {
         ad: u.ad, kod: u.kod, bitis: u.bitis || '', muaf: !!u.aidat_muaf, dekontBekliyor,
         odemeler: ods.data.map((o) => ({ tarih: o.tarih, yol: ({ kart: 'Kart', havale: 'Havale · dekont', elden: 'Elden' })[o.yol] || o.yol, tutar: Number(o.tutar) })),

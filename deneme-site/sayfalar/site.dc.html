@@ -1203,6 +1203,17 @@ Buluşmalar ✓</p>
     </section>
     </sc-if>
 
+    </sc-if>
+
+    <!-- ÜYELİK SAYFASI (/uyelik/): ana sayfadaki BAŞVURU bölümünün ikizi; etkinlik sayfası ve TV buraya getirir -->
+    <sc-if value="{{ uyelikSayfa }}" hint-placeholder-val="{{ false }}">
+      <header class="fe-ust">
+        <a class="fe-geri" href="/">← Ana sayfa</a>
+        <a class="fe-logo" href="/"><img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt=""><span>Forest Club Urla</span></a>
+        <a class="fe-tumu" href="/#bulusmalar">Etkinlikler</a>
+      </header>
+    </sc-if>
+    <sc-if value="{{ basvuruGoster }}" hint-placeholder-val="{{ true }}">
     <!-- BAŞVURU -->
     <section id="basvuru" style="position: relative; overflow: hidden; background: #FFFFFF; border-top: 3px solid #111111; border-bottom: 3px solid #111111">
       <div style="max-width: 1200px; margin: 0 auto; padding: 72px 20px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center">
@@ -1216,7 +1227,7 @@ Buluşmalar ✓</p>
             <sc-for list="{{ haklar }}" as="h" hint-placeholder-count="4"><li>{{ h }}</li></sc-for>
           </ul>
           <sc-if value="{{ kartliUyelik }}" hint-placeholder-val="{{ true }}">
-            <p style="margin: 0; color: #5E5E5E">Ödeme iyzico güvencesiyle yapılır; kart bilgilerin bize gelmez.</p>
+            <p style="margin: 0; color: #5E5E5E">Kartla ödeme Shopier güvencesiyle yapılır; kart bilgilerin bize gelmez.</p>
           </sc-if>
         </div>
         <sc-if value="{{ uyeFormda }}" hint-placeholder-val="{{ true }}">
@@ -1287,7 +1298,9 @@ Buluşmalar ✓</p>
         </sc-if>
       </div>
     </section>
+    </sc-if>
 
+    <sc-if value="{{ anaSayfa }}" hint-placeholder-val="{{ true }}">
     <!-- GÖNÜLLÜ OL: etkinliklerde yardım edecek gönüllüler; form yönetim › Başvurular › Gönüllüler'e düşer -->
     <section id="gonullu" style="max-width: 1200px; margin: 0 auto; padding: 56px 20px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
       <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
@@ -1403,7 +1416,7 @@ Buluşmalar ✓</p>
                 <div class="fe-dugmeler">
                   <sc-if value="{{ tekUyeDegil }}" hint-placeholder-val="{{ true }}">
                     <button type="button" class="fs-btn" onClick="{{ tekRandevu }}" disabled="{{ tek.dolu }}" style="{{ tek.dugmeStil }}">{{ tek.dugme }}</button>
-                    <a class="fs-btn fs-btn-acik" href="/#basvuru">Üye ol, dahil olsun</a>
+                    <a class="fs-btn fs-btn-acik" href="/uyelik/">Üye ol, dahil olsun</a>
                   </sc-if>
                   <sc-if value="{{ tekUyeGirisli }}" hint-placeholder-val="{{ false }}">
                     <a class="fs-btn" href="{{ tekUyePanel }}">Üye panelinde yerimi ayır</a>
@@ -1537,16 +1550,16 @@ Buluşmalar ✓</p>
         <a href="/gizlilik/">KVKK aydınlatma metni</a>
         <a href="/gizlilik/">Fotoğraf ve video izni</a>
         </sc-if>
-        <!-- Satış ve gizlilik sayfaları (iyzico şartı): her zaman görünür -->
+        <!-- Satış ve gizlilik sayfaları: her zaman görünür -->
         <h3 style="margin: 0 0 4px; font-size: 16px">Sözleşmeler</h3>
         <a href="/hakkimizda/">Hakkımızda</a>
         <a href="/teslimat-iade/">Teslimat ve iade şartları</a>
         <a href="/gizlilik/">Gizlilik sözleşmesi ve KVKK</a>
         <a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a>
       </div>
-      <!-- Ödeme logoları (iyzico şartı) sayfanın en altında, ortada -->
+      <!-- Kart logoları sayfanın en altında, ortada -->
       <div style="flex: 1 1 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 1.5px solid #E2E2DE; padding-top: 22px">
-        <img src="/_blob/odeme/logo-band.png" alt="iyzico ile Öde, Mastercard, Visa, American Express, Troy" width="429" height="32" style="height: 28px; width: auto; max-width: 100%">
+        <img src="/_blob/odeme/logo-kart.png" alt="Mastercard, Visa, American Express, Troy" width="300" height="32" style="height: 28px; width: auto; max-width: 100%">
         <a href="Main.dc.html" style="color: #5E5E5E; font-size: 14px">Yönetici girişi</a>
       </div>
     </footer>
@@ -1579,6 +1592,7 @@ class Component extends DCLogic {
     };
   }
   componentDidMount() {
+    if (/^\/uyelik\/?$/.test(location.pathname)) document.title = 'Üyelik · Forest Club Urla';
     window.addEventListener('scroll', this.kaydir, { passive: true });
     this.kaydir();
     // Üye panelinde "Beni hatırla" ile giriş yapılmışsa düğme "Panelim" olur
@@ -1790,6 +1804,8 @@ class Component extends DCLogic {
     };
     // Etkinliğin kendi sayfası (/e/<id>): site.js FCS.tek'i yazar; önizlemede props.tek
     const tekId = window.FCS ? window.FCS.tek : (this.props.tek || null);
+    // Üyelik sayfası (/uyelik/): yalnız başvuru bölümü (ana sayfadakinin ikizi)
+    const uyelikSayfa = !tekId && /^\/uyelik\/?$/.test(location.pathname);
     const tekHam = tekId ? tumu.find((b) => String(b.id) === String(tekId)) : null;
     const tek = tekHam ? (tekHam.tarih >= BUGUN ? urunYap(tekHam) : { ...tekHam, fiyatYazi: '', uyeYazi: '', kalanYazi: '', dolu: true, dugme: 'Gerçekleşti', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} }) : null;
     const tekUyeYazi = tek && tek.satis ? (tek.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : tek.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : (tek ? 'Üyeliğe dahil' : '');
@@ -1799,16 +1815,16 @@ class Component extends DCLogic {
     }));
     return {
       // Ana sayfa ↔ etkinliğin kendi sayfası
-      anaSayfa: !tekId, tekSayfa: !!tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
+      anaSayfa: !tekId && !uyelikSayfa, tekSayfa: !!tekId, uyelikSayfa, basvuruGoster: !tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
       tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
       tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
       tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN), tekLinkVar: !!(tek && tek.linkVar),
       tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN),
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
-      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali,
+      tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın
       tekTvKapat: () => this.setState({ tekTvKapali: true }),
-      tekTvGit: () => { location.href = '/#basvuru'; },
+      tekTvGit: () => { location.href = '/uyelik/'; },
       anaTv: !tek && !this.state.uyeGirisli && !yakinda,
       anaTvGit: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       digerler, digerVar: digerler.length > 0,
@@ -1930,7 +1946,8 @@ class Component extends DCLogic {
       tekrarDene: () => this.setState({ sAdim: 'bilgi' }),
       biletlerim: this.state.biletler,
       // "Tamam" denen duyuru bu tarayıcıda bir daha çıkmaz (yeni metinli duyuru yine çıkar)
-      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
+      // Duyuru yalnız giriş yapmış üyeye (müşteri isteği 02.11.2026: üye olmayana iptal yazısı çıkmasın); önizlemede herkese
+      duyuru: duyuruMetni, duyuruVar: !!duyuruMetni && (!canli || !!this.state.uyeGirisli) && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
       duyuruKapat: () => { try { localStorage.setItem('fc_duyuru_kapali', duyuruMetni); } catch (e) {} this.setState({ duyuruKapali: true }); },
       // Bilinen cevaplar yazıldı; kulübün kararı gerekenler köşeli parantezde (deneme sitesinde onlar görünmez)
       galeriVar: !canli, metinlerVar: !canli,
@@ -2088,7 +2105,7 @@ class Component extends DCLogic {
       cagriAc: () => this.setState({ cagriAcik: true, cagriAdim: 'afis' }),
       cagriKapat: () => this.setState({ cagriAcik: false }),
       cagriForm: () => { location.href = '/acik-cagri/'; },
-      yuzenSinif: tekId ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
+      yuzenSinif: tekId || uyelikSayfa || this.state.sepetAcik ? 'fs-yuzen fs-yuzen-yok' : acik ? 'fs-yuzen fs-yuzen-acik' : 'fs-yuzen',
       aylikRozetStil: `background:${window.FC_AYLIK ? window.FC_AYLIK.renkKodu(AYLIK.renk) : '#F6C945'};color:#111111`,
       aylikGoster: AYLIK.goster !== false, aylikAy: AYLIK.ay, aylikUst: ayDoldur(AYLIK.ust), aylikAna: ayDoldur(AYLIK.ana), aylikAltYazi: ayDoldur(AYLIK.alt),
       aylikResim: AYLIK.resim || '', aylikAlt: `${ayDoldur(AYLIK.ana)} ${ayDoldur(AYLIK.ust)}`.trim(),

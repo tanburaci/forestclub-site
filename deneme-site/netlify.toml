@@ -5,6 +5,17 @@
   # Paylaşılan etkinlik bağlantısı /e/<id>: önizlemede afiş (netlify/edge-functions/etkinlik.js)
   edge_functions = "netlify/edge-functions"
 
+# Üyelik sayfası (/uyelik/): ana sayfa HTML'i sunulur, bileşen yalnız başvuru bölümünü çizer
+[[redirects]]
+  from = "/uyelik"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/uyelik/"
+  to = "/index.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
