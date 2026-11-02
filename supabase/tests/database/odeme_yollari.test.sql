@@ -36,6 +36,7 @@ select is((select odeme_yolu || '/' || yuklendi from bilet_istekleri where id = 
 select lives_ok(format($$ select bilet_shopier_urun(%s, 'urun-123') $$, (select r ->> 'id' from t_k)), 'Shopier ürün numarası kaydedilir');
 
 -- Yönetici: nakit parayı alınca onaylar; kart isteğine karar veremez
+grant select on t_n, t_k to authenticated;
 set local role authenticated;
 select pg_temp.ol('00000000-0000-4000-8000-0000000000e1');
 select is((bilet_karar((select (r ->> 'id')::bigint from t_n), true) ->> 'adet')::int, 2, 'nakit: yönetici onaylayınca 2 bilet');
