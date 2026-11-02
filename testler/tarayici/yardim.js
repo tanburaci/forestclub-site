@@ -110,6 +110,7 @@ function yonetimVerisi() {
     rpc: {
       elden_odeme: (g) => { rpcler.push(['elden_odeme', g]); return [200, { bitis: gun(35), odeme_id: 1, hareket_id: 501, ref: 'elden:abc', tekrar: false, ad: 'Elif Kaya', kod: 'FC-U-0003' }]; },
       giris_kaydet: (g) => { rpcler.push(['giris_kaydet', g]); return [200, { ad: 'Üye 5', uye_id: 5, zaten: false }]; },
+      giris_kontrol: (g) => { rpcler.push(['giris_kontrol', g]); return [200, { kod: g.p_kod, ad: 'Üye 5', tur: 'uye', zaten: rpcler.some((x) => x[0] === 'giris_kaydet') }]; },
       etkinlik_durum_degistir: (g) => { rpcler.push(['etkinlik_durum_degistir', g]); return [200, { durum: 'iptal', tarih: gun(10), eski_tarih: null, kisi: 2 }]; },
     },
   };

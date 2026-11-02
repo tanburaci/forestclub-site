@@ -164,6 +164,12 @@
     return formGonder('bilet_adres', { kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, yol: yol || 'havale', kod: kod || null,
       oturum: session ? session.access_token : null });
   };
+  // Kartla ödeme Shopier penceresindeyken: 'bekliyor' | 'onaylandi' | 'reddedildi' (istek numarası + e-posta)
+  window.FCSBiletDurum = async (id, eposta) => {
+    const { data, error } = await sb.rpc('bilet_istek_durum', { p_id: Number(id) || 0, p_eposta: String(eposta || '').trim().toLowerCase() });
+    if (error) throw new Error(error.message);
+    return data;
+  };
   // İndirim kodu: geçerliyse {kod, tur: 'yuzde' | 'tl', deger}; tutar sunucuda yeniden hesaplanır
   window.FCSIndirimBak = async (kod) => {
     const { data, error } = await sb.rpc('indirim_kodu_bak', { p_kod: String(kod || '').trim() });

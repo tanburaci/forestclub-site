@@ -52,7 +52,22 @@ class Component extends DCLogic {
       if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
     });
   }
+  // Shopier penceresindeki ödemeyi bekler: 4 sn'de bir sorulur, en çok 30 dk; gelince "Ödemen alındı" ve sepet boşalır
+  kartTakipBaslat(id, eposta) {
+    clearInterval(this.kartTakip);
+    const bas = Date.now();
+    this.kartTakip = setInterval(() => {
+      if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSBiletDurum) { clearInterval(this.kartTakip); return; }
+      window.FCSBiletDurum(id, eposta).then((d) => {
+        if (d === 'onaylandi') {
+          clearInterval(this.kartTakip);
+          this.setState({ sAdim: 'kartdonus', sepet: {}, hak: null, sepetAcik: true, sHata: '' });
+        }
+      }, () => {});
+    }, 4000);
+  }
   componentWillUnmount() {
+    clearInterval(this.kartTakip);
     window.removeEventListener('scroll', this.kaydir);
     if (this.bekle) cancelAnimationFrame(this.bekle);
   }
@@ -267,7 +282,7 @@ class Component extends DCLogic {
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
       sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi', 'nakit', 'kartdonus'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
       sAdimlar: ADIMLAR.map((a) => {
-        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont' }[sAdim] || sAdim));
+        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont', kartbekle: 'dekont' }[sAdim] || sAdim));
         const i = ADIMLAR.indexOf(a);
         return { ad: a.ad, stil: `border-radius:999px;padding:5px 10px;border:2px solid #111111;${i <= sira ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
       }),
@@ -330,7 +345,9 @@ class Component extends DCLogic {
       }),
       odemeDugme: !canli ? (toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)')
         : sYol === 'kart' ? `Kartla öde · ${TL(toplam || araToplam)}` : sYol === 'havale' ? 'Devam · havale / EFT' : 'Ödeme yöntemini seç',
-      sKartDonus: sAdim === 'kartdonus',
+      sKartDonus: sAdim === 'kartdonus', sKartBekle: sAdim === 'kartbekle',
+      sOdemeSayfa: this.state.sOdemeSayfa || '#', sPencereYok: !!this.state.sPencereYok,
+      sPencereYazi: this.state.sPencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
       sAd: this.state.sAd, sEposta: this.state.sEposta, sTel: this.state.sTel, sOnay: this.state.sOnay, sHata: this.state.sHata,
       sAdYaz: (e) => this.setState({ sAd: e.target.value, sHata: '' }),
       sEpostaYaz: (e) => this.setState({ sEposta: e.target.value, sHata: '' }),
@@ -353,12 +370,25 @@ class Component extends DCLogic {
           const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
           this.setState({ sHata: 'Hazırlanıyor…' });
           if (!sYol) return this.setState({ sHata: 'Ödeme yöntemini seç.' });
+          // Kart: Shopier ayrı pencerede açılır, bu sayfa kapanmaz; pencere tıklama anında açılmalı (sonra açılırsa
+          // tarayıcı engeller), adres sunucudan gelince yüklenir. Engellenirse ekranda "Shopier'de öde" bağlantısı çıkar.
+          let pencere = null;
+          if (sYol === 'kart') {
+            try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
+            try { if (pencere) pencere.document.title = 'Shopier ödeme sayfası açılıyor…'; } catch (e) { /* başka kaynak */ }
+          }
           window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol, kod: kodB ? kodB.kod : null })
             .then((h) => {
-              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) { location.href = h.sayfa; return; }
+              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) {
+                if (pencere && !pencere.closed) pencere.location.href = h.sayfa;
+                this.setState({ sAdim: 'kartbekle', hak: { ...h, adet: sepetToplamAdet, araToplam }, sOdemeSayfa: h.sayfa, sPencereYok: !pencere || pencere.closed, sHata: '' });
+                this.kartTakipBaslat(h.id, sEposta.trim());
+                return;
+              }
+              if (pencere && !pencere.closed) pencere.close();
               this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' });
             })
-            .catch((h) => this.setState({ sHata: h.message }));
+            .catch((h) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ sHata: h.message }); });
           return;
         }
         let no = 4821;
