@@ -426,7 +426,7 @@ html.gok-gece .fs-parti{opacity:1}
 .fe-tv-yer h2{display:none}
 .fs-ana-tv{display:none;flex-direction:column;align-items:center;gap:6px;margin:8px 0 0}
 .fs-ana-tv h3{font-size:44px;margin:0;text-align:center}
-.fs-ana-tv .fe-tv{position:static;width:340px;max-width:100%;margin:0 auto}
+.fs-ana-tv .fu-tv-ekran{overflow:hidden}.fs-ana-tv .fe-tv{position:static;width:340px;max-width:100%;margin:0 auto}
 .fs-ana-tv .fe-tv .fu-tv{font-size:8px}
 @media (max-width: 640px){.fs-ana-tv{display:flex}}
 .fe-tv-yer .fe-tv{position:fixed;right:28px;bottom:0;width:300px;z-index:40}
@@ -1809,7 +1809,7 @@ class Component extends DCLogic {
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali,
       tekTvKapat: () => this.setState({ tekTvKapali: true }),
       tekTvGit: () => { location.href = '/#basvuru'; },
-      anaTv: !tek && !this.state.uyeGirisli,
+      anaTv: !tek && !this.state.uyeGirisli && !yakinda,
       anaTvGit: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       digerler, digerVar: digerler.length > 0,
       // Etkinlik sayfasında "Randevu oluştur": bir kişi ekler ve sepeti hemen açar
@@ -2102,7 +2102,7 @@ class Component extends DCLogic {
       afisKapat: () => this.setState({ afisTam: '' }),
       yuzenGizli: acik ? 'false' : 'true',
       basaDon: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
-      yuzenUyelik: !!this.state.uyelikTv && !this.state.uyeGirisli, yuzenVideo: !(this.state.uyelikTv && !this.state.uyeGirisli),
+      yuzenUyelik: !!this.state.uyelikTv && !this.state.uyeGirisli && !yakinda, yuzenVideo: !(this.state.uyelikTv && !this.state.uyeGirisli && !yakinda),
       yuzenUyeOl: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       yuzenKapat: () => this.setState({ kapali: true }),
       ozellikler: [
