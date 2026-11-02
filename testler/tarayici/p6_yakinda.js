@@ -74,6 +74,19 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
       'açılışta tanışma bileti ve bilet satışı açık');
     await s2.page.getByRole('button', { name: 'Tamam' }).first().click();
     dogru(await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').count() === 0, 'duyuru "Tamam" ile kapanıyor');
+    // "Tamam" denen duyuru sayfaya yeniden gelince çıkmaz
+    await s2.page.reload();
+    await s2.page.getByRole('button', { name: 'Randevu oluştur' }).first().waitFor({ timeout: 15000 });
+    dogru(await s2.page.getByText('Yağmur nedeniyle pazar buluşması ertelendi.').count() === 0, 'Tamam denen duyuru sayfa yenilenince çıkmıyor');
+    // Günü geçmiş duyuru görünmez; günü gelmemiş görünür
+    const s4 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: { metin: 'Dünkü buluşma iptal edildi.', bitis: gun(-1) } }]), null);
+    await s4.page.goto(`${SITE}/`);
+    await s4.page.getByRole('button', { name: 'Randevu oluştur' }).first().waitFor({ timeout: 15000 });
+    dogru(await s4.page.getByText('Dünkü buluşma iptal edildi.').count() === 0, 'günü geçmiş iptal duyurusu görünmüyor');
+    const s5 = await sayfaAc(tarayici, siteVerisi([{ anahtar: 'yakinda', deger: false }, { anahtar: 'site_duyurusu', deger: { metin: 'Bugünkü buluşma iptal.', bitis: gun(0) } }]), null);
+    await s5.page.goto(`${SITE}/`);
+    await s5.page.getByText('Bugünkü buluşma iptal.').waitFor({ timeout: 15000 });
+    dogru(true, 'günü bitmemiş duyuru görünüyor');
 
     // Veri gelmezse de örnek duyuru çıkmaz
     const v3 = siteVerisi([]);
@@ -106,7 +119,8 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     await y.page.getByRole('button', { name: 'Duyuruyu kaldır' }).click();
     await y.page.getByText('Duyuru kaldırıldı ✓').waitFor({ timeout: 3000 });
     const dy = y.istekler.filter((x) => x.yontem === 'PATCH' && /anahtar=eq.site_duyurusu/.test(x.ara)).map((x) => x.govde.deger);
-    dogru(JSON.stringify(dy) === JSON.stringify(['Bu pazar buluşma 10.00 yerine 11.00\'de.', '']), `duyuru yayınlandı ve kaldırıldı (${JSON.stringify(dy)})`);
+    dogru(dy.length === 2 && dy[0].metin === 'Bu pazar buluşma 10.00 yerine 11.00\'de.' && /^\d{4}-\d{2}-\d{2}$/.test(dy[0].bitis) && dy[1] === '',
+      `duyuru yayınlandı (bugün bitecek) ve kaldırıldı (${JSON.stringify(dy)})`);
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
 
     // Canlıda "yakinda" satırı eksikse kutu boş görünür; işaretlenince satır herkese açık olarak oluşturulur
