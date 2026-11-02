@@ -40,7 +40,8 @@ async function biletSahte(page, tutar) {
   const tarayici = await chromium.launch();
   try {
     // ---------- Site (açılıştan sonra): misafir ----------
-    const sv = { tablolar: { etkinlikler: [etk], ayarlar: [{ anahtar: 'yakinda', deger: false }] }, rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null] } };
+    const sv = { tablolar: { etkinlikler: [etk], ayarlar: [{ anahtar: 'yakinda', deger: false }] }, rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null],
+      indirim_kodu_bak: (g) => (g.p_kod === 'FOREST20' ? [200, { kod: 'FOREST20', tur: 'yuzde', deger: 20 }] : [400, { code: 'P0001', message: 'Bu indirim kodu geçerli değil.' }]) } };
     const s = await sayfaAc(tarayici, sv);
     const sf = await biletSahte(s.page, 2000);
     await s.page.goto(`${SITE}/`);
@@ -57,6 +58,16 @@ async function biletSahte(page, tutar) {
     // Kart kapalıyken varsayılan yöntem yok: kişi havaleyi bilerek seçer; nakit seçeneği yok (yalnız kapıda)
     dogru(await modal.getByRole('radio', { name: /Kredi \/ banka kartı/ }).getAttribute('aria-disabled') === 'true'
       && await modal.getByRole('radio', { name: /nakit/i }).count() === 0, 'site: kart çok yakında (kapalı), nakit seçeneği yok');
+    // İndirim kodu: yanlışı reddedilir, doğrusu toplamdan düşer (%20: 2000 → 1600)
+    await modal.getByLabel('İndirim kodun var mı?').fill('yanlis1');
+    await modal.getByRole('button', { name: 'Uygula' }).click();
+    await modal.getByText('Bu indirim kodu geçerli değil.').waitFor({ timeout: 4000 });
+    dogru(true, 'site: geçersiz indirim kodu reddedildi');
+    await modal.getByLabel('İndirim kodun var mı?').fill('forest20');
+    await modal.getByRole('button', { name: 'Uygula' }).click();
+    await modal.getByText('FOREST20 uygulandı · %20 indirim').waitFor({ timeout: 4000 });
+    dogru(await modal.getByText('İndirim kodu (FOREST20)').count() === 1 && await modal.locator('span', { hasText: /^1.600 TL$/ }).count() >= 1,
+      'site: indirim kodu satırı ve 1.600 TL ödenecek');
     await modal.getByRole('button', { name: 'Ödeme yöntemini seç' }).click();
     dogru(await modal.getByText('Ödeme yöntemini seç.').count() === 1, 'site: yöntem seçilmeden devam edilmez');
     await modal.getByRole('radio', { name: /Havale \/ EFT/ }).click();
@@ -68,7 +79,7 @@ async function biletSahte(page, tutar) {
       `site: istek sunucuya (2 bilet, oturumsuz, Turnstile'lı) (${JSON.stringify(ac && ac.veri)})`);
     dogru(await modal.getByText('TR59 0015 7000 0000 0205 1344 62').count() === 1, 'site: IBAN görünüyor');
     dogru(await modal.getByText('Ödemenden sonra 5–60 dakika içinde biletin e-posta adresine gönderilecektir.').count() === 1, 'site: havalede 5–60 dk uyarısı');
-    dogru(ac && ac.veri.yol === 'havale', 'site: istek havale yoluyla gitti');
+    dogru(ac && ac.veri.yol === 'havale' && ac.veri.kod === 'FOREST20', 'site: istek havale yoluyla, indirim koduyla gitti');
     await modal.locator('input[type="file"]').setInputFiles(PDF);
     await modal.getByRole('button', { name: 'Dekontu gönder' }).click();
     await modal.getByText('Teşekkürler! 🌲').waitFor({ timeout: 5000 });

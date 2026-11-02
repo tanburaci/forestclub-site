@@ -160,7 +160,7 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
       }
       const istek = await rpc('bilet_istegi_ac_yol', {
         p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60), p_kalemler: kalemler, p_user: kullanici, p_dosya: yol,
-        p_yol: odemeYolu,
+        p_yol: odemeYolu, p_kod: metin(v.kod, 40).trim() || null,
       }) as { id: number; tutar: number };
       if (odemeYolu === 'nakit') return { id: istek.id, tutar: istek.tutar, yol: 'nakit' };
       if (odemeYolu === 'kart') {

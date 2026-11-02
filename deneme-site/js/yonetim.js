@@ -615,6 +615,23 @@
     // Tek etkinliğin paylaşım bağlantısı (/e/<id>: önizlemede afiş, açılınca kart); kaydedilmemiş etkinlikte null
     window.FCEtkinlikLink = (key) => { const id = keyEtk[key]; return id && id !== 'yaziliyor' ? `${location.origin}/e/${id}` : null; };
     // Kapıda karekod: kod sunucuda uyeler.kod ile eşleşir (giris_kaydet). Dönüş: {ad, uye_id, zaten}
+    // İndirim kodları (bilet sepeti): liste, ekle, aç/kapat
+    window.FCIndirim = {
+      liste: async () => {
+        const { data, error } = await sb.from('indirim_kodlari').select('*').order('created_at', { ascending: false });
+        if (error) throw new Error(error.message);
+        return data;
+      },
+      ekle: async (k) => {
+        const { data, error } = await sb.from('indirim_kodlari').insert(k).select('*').single();
+        if (error) throw new Error(error.code === '23505' ? 'Bu kod zaten var.' : error.code === '23514' ? 'Kod 3–30 harf/rakam olmalı; yüzde 1–99 arası.' : error.message);
+        return data;
+      },
+      aktif: async (kod, aktif) => {
+        const { error } = await sb.from('indirim_kodlari').update({ aktif }).eq('kod', kod).select('kod').single();
+        if (error) throw new Error(error.message);
+      },
+    };
     window.FCGirisKaydet = async (key, kod) => {
       const etkId = keyEtk[key];
       if (!etkId || etkId === 'yaziliyor') throw new Error('Etkinlik henüz kaydedilmedi; biraz sonra tekrar deneyin.');
