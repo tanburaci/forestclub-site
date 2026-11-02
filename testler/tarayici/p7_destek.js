@@ -8,6 +8,7 @@ let kalan = 0;
 const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if (!k) kalan++; };
 const SB = 'https://gflabqnazkstsyafzdmn.supabase.co';
 const IYZICO = 'https://sandbox-cpp.iyzipay.com/?token=destek-tok';
+const SHOPIER = 'https://shopier.test/destek/1';
 
 const veri = (ayarlar, kapak = false) => ({
   kapak,
@@ -26,8 +27,9 @@ async function sahteSunucu(page) {
     if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 200, headers: cors });
     const g = JSON.parse(r.request().postData());
     formlar.push(g);
-    r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ sonuc: { sayfa: IYZICO } }) });
+    r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ sonuc: { sayfa: SHOPIER, id: 'd-1' } }) });
   });
+  await page.context().route('https://shopier.test/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>Shopier ödeme</p>' }));
   await page.route('https://sandbox-cpp.iyzipay.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>iyzico ödeme</p>' }));
   return formlar;
 }
@@ -73,8 +75,11 @@ async function sahteSunucu(page) {
     dogru(!/wa\.me/.test(html) && await s1.page.getByRole('button', { name: "WhatsApp'tan yaz" }).count() === 0, 'sitede WhatsApp numarası ve "WhatsApp\'tan yaz" yok');
     dogru(!s1.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'kart kapalı: sayfa / CSP hatası yok');
 
-    // ---------- Kart açık: iyzico'ya gider ----------
-    const s2 = await sayfaAc(tarayici, veri([{ anahtar: 'yakinda', deger: false }, { anahtar: 'kart_odeme', deger: true }]), null);
+    // ---------- Kart açık: Shopier ayrı pencerede, site yerinde; ödeme gelince "Desteğin bize ulaştı" ----------
+    let sor = 0;
+    const v2 = veri([{ anahtar: 'yakinda', deger: false }, { anahtar: 'kart_odeme', deger: true }]);
+    v2.rpc.destek_durum = (g) => [200, (++sor >= 2 && g.p_id === 'd-1') ? 'odendi' : 'basladi'];
+    const s2 = await sayfaAc(tarayici, v2, null);
     const formlar2 = await sahteSunucu(s2.page);
     await s2.page.goto(`${SITE}/`);
     await s2.page.locator('.fs-destek').click();
@@ -85,10 +90,14 @@ async function sahteSunucu(page) {
     dogru(await p2.getByText('En az 50 TL yaz.').count() === 1 && formlar2.length === 0, 'elle 40 TL: en az 50 TL uyarısı');
     await p2.getByRole('button', { name: '2.500 TL' }).click();
     dogru(await p2.getByRole('button', { name: 'Kartla öde · 2.500 TL' }).count() === 1, 'düğmede seçilen tutar');
-    await Promise.all([s2.page.waitForURL(IYZICO, { timeout: 10000 }), p2.getByRole('button', { name: 'Kartla öde · 2.500 TL' }).click()]);
-    dogru(formlar2.length === 1 && formlar2[0].tur === 'destek' && formlar2[0].veri.tutar === 2500 && /^jeton-/.test(formlar2[0].jeton),
-      `form-gonder "destek" 2500 TL, Turnstile jetonlu (${JSON.stringify(formlar2[0])})`);
-    dogru(s2.page.url() === IYZICO, 'iyzico ödeme sayfasına gidildi');
+    const pencereSoz = s2.ctx.waitForEvent('page');
+    await p2.getByRole('button', { name: 'Kartla öde · 2.500 TL' }).click();
+    const spencere = await pencereSoz;
+    await spencere.waitForURL(SHOPIER, { timeout: 8000 });
+    dogru(formlar2.length === 1 && formlar2[0].tur === 'destek' && formlar2[0].veri.tutar === 2500 && /^jeton-/.test(formlar2[0].jeton) && s2.page.url() === `${SITE}/`,
+      `destek: Shopier ayrı pencerede, 2500 TL, Turnstile'lı, site yerinde (${JSON.stringify(formlar2[0])})`);
+    await s2.page.getByText('Desteğin bize ulaştı.').first().waitFor({ timeout: 15000 });
+    dogru(sor >= 2, 'destek: ödeme gelince teşekkür penceresi');
 
     // ---------- Dönüş ----------
     for (const [hash, metin, ad] of [['#destek-tamam', 'Desteğin bize ulaştı.', 'başarılı'], ['#destek-hata', 'Ödeme tamamlanamadı', 'başarısız']]) {

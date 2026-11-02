@@ -805,6 +805,33 @@ class Component extends DCLogic {
       ['neden', 'tarih', 'mesaj'].forEach((a) => {
         iptalAlan[a] = (e) => { const v = e.target.value; this.setState((s) => ({ iptal: { ...s.iptal, [a]: v }, iptalMesaj: '' })); };
       });
+      // Girişi yazar (onaydan sonra; deneme sitesinde doğrudan): kod sunucuda eşleşir ve "geldi" orada yazılır (giris_kaydet)
+      const girisYaz = (kod) => {
+        if (window.FCGirisKaydet) {
+          this.setState({ kodMesaj: 'Kaydediliyor…' });
+          window.FCGirisKaydet(p.key, kod).then((r) => this.setState((s) => {
+              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : r.bilet ? ' (bilet)' : ''}`;
+              if (r.bilet) return { kodMesaj: mesaj, kod: '' };
+              // Tanışma bileti: sunucuda "geldi" yazıldı; liste yalnız ekranda güncellenir (kapida: ikinci kez yazılmasın)
+              if (r.tanisma) return { kodMesaj: mesaj, kod: '', biletler: s.biletler.map((b) => (b.id === r.bilet_id ? { ...b, durum: 'geldi', kapida: true } : b)) };
+              const i = this.DEMO.kisiler.findIndex((x) => x.id === r.uye_id);
+              if (i < 0) return { kodMesaj: `${mesaj} (Liste sayfa yenilenince güncellenir.)`, kod: '' };
+              const kk = s.kayitlar[p.key] || { kontenjan: 0, kayitli: [], bekleme: [], gelen: [] };
+              return {
+                kayitlar: { ...s.kayitlar, [p.key]: { ...kk, kayitli: kk.kayitli.includes(i) ? kk.kayitli : [...kk.kayitli, i],
+                  bekleme: kk.bekleme.filter((x) => x !== i), gelen: kk.gelen.includes(i) ? kk.gelen : [...kk.gelen, i] } },
+                kodMesaj: mesaj, kod: '',
+              };
+            })).catch((h) => this.setState({ kodMesaj: h.message }));
+            return;
+          }
+          const m = /FC-U-\d+/i.exec(kod);
+          const i = m ? this.DEMO.kisiler.findIndex((x) => x.kod === m[0].toUpperCase()) : -1;
+          if (i < 0 || !k.kayitli.includes(i)) return this.setState({ kodMesaj: 'Bu kod bu etkinliğe kayıtlı değil.' });
+          if (k.gelen.includes(i)) return this.setState({ kodMesaj: `${this.KISILER[i]} zaten giriş yapmış.`, kod: '' });
+          kGuncelle({ gelen: [...k.gelen, i] });
+          this.setState({ kodMesaj: `Hoş geldin ${this.KISILER[i]}! Giriş işlendi.`, kod: '' });
+      };
       return {
         epAcik: true, epYoklama: p.mod === 'yoklama', epIptal: p.mod === 'iptal',
         epKapat: () => { this.kameraKapat(); this.setState({ etkPanel: null }); },
@@ -844,35 +871,34 @@ class Component extends DCLogic {
         kodYaz: (e) => this.setState({ kod: e.target.value, kodMesaj: '' }),
         kameraAcik: this.state.kameraAcik, kameraYazi: this.state.kameraAcik ? 'Kamerayı kapat' : 'Kamerayla okut',
         kameraDegis: () => (this.state.kameraAcik ? this.kameraKapat() : this.kameraAc()),
+        // İki aşamalı giriş: 1) okut / yaz → kim, daha önce girdi mi (giris_kontrol, yazmaz) 2) "Girişi onayla" → giris_kaydet
+        girisOnayVar: !!this.state.girisOnay,
+        girisOnay: (() => {
+          const g = this.state.girisOnay;
+          if (!g) return {};
+          return {
+            ad: g.ad, kod: g.kod, tur: { bilet: 'Bilet', tanisma: 'Tanışma bileti', uye: 'Üye' }[g.tur] || g.tur,
+            durum: g.zaten ? '⚠ Bu kod daha önce giriş yaptı!' : 'Henüz giriş yapmadı.', girebilir: !g.zaten, vazgecYazi: g.zaten ? 'Tamam' : 'Vazgeç',
+            stil: `display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border:2.5px solid #111111;border-radius:12px;padding:14px 16px;background:${g.zaten ? '#F3DCD5' : '#C9E33A'}`,
+          };
+        })(),
+        girisVazgec: () => this.setState({ girisOnay: null, kodMesaj: '', kod: '' }),
+        girisOnayla: () => {
+          const g = this.state.girisOnay;
+          if (!g) return;
+          this.setState({ girisOnay: null, kod: '' }); girisYaz(g.kod);
+        },
         kodOkut: (e) => {
           if (e && e.preventDefault) e.preventDefault();
           const kod = this.state.kod.trim();
           if (!kod) return this.setState({ kodMesaj: 'Kodu yazın ya da okutun.' });
-          // Deneme sitesi: kod sunucuda uyeler.kod ile eşleşir ve "geldi" orada yazılır (giris_kaydet)
-          if (window.FCGirisKaydet) {
-            this.setState({ kodMesaj: 'Kontrol ediliyor…' });
-            window.FCGirisKaydet(p.key, kod).then((r) => this.setState((s) => {
-              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : r.bilet ? ' (bilet)' : ''}`;
-              if (r.bilet) return { kodMesaj: mesaj, kod: '' };
-              // Tanışma bileti: sunucuda "geldi" yazıldı; liste yalnız ekranda güncellenir (kapida: ikinci kez yazılmasın)
-              if (r.tanisma) return { kodMesaj: mesaj, kod: '', biletler: s.biletler.map((b) => (b.id === r.bilet_id ? { ...b, durum: 'geldi', kapida: true } : b)) };
-              const i = this.DEMO.kisiler.findIndex((x) => x.id === r.uye_id);
-              if (i < 0) return { kodMesaj: `${mesaj} (Liste sayfa yenilenince güncellenir.)`, kod: '' };
-              const kk = s.kayitlar[p.key] || { kontenjan: 0, kayitli: [], bekleme: [], gelen: [] };
-              return {
-                kayitlar: { ...s.kayitlar, [p.key]: { ...kk, kayitli: kk.kayitli.includes(i) ? kk.kayitli : [...kk.kayitli, i],
-                  bekleme: kk.bekleme.filter((x) => x !== i), gelen: kk.gelen.includes(i) ? kk.gelen : [...kk.gelen, i] } },
-                kodMesaj: mesaj, kod: '',
-              };
-            })).catch((h) => this.setState({ kodMesaj: h.message }));
+          if (window.FCGirisKontrol) {
+            this.setState({ kodMesaj: 'Kontrol ediliyor…', girisOnay: null });
+            window.FCGirisKontrol(p.key, kod).then((r) => this.setState({ girisOnay: r, kodMesaj: '', kod: '' }))
+              .catch((h) => this.setState({ kodMesaj: h.message, kod: '' }));
             return;
           }
-          const m = /FC-U-\d+/i.exec(kod);
-          const i = m ? this.DEMO.kisiler.findIndex((x) => x.kod === m[0].toUpperCase()) : -1;
-          if (i < 0 || !k.kayitli.includes(i)) return this.setState({ kodMesaj: 'Bu kod bu etkinliğe kayıtlı değil.' });
-          if (k.gelen.includes(i)) return this.setState({ kodMesaj: `${this.KISILER[i]} zaten giriş yapmış.`, kod: '' });
-          kGuncelle({ gelen: [...k.gelen, i] });
-          this.setState({ kodMesaj: `Hoş geldin ${this.KISILER[i]}! Giriş işlendi.`, kod: '' });
+          girisYaz(kod);
         },
         // Katılımcı sayısı kaydedilmez: muhasebe ekranı sayfa açılışında yoklamadan sayar
         muhasebeyeAktar: () => this.setState((s) => ({ katilimci: { ...s.katilimci, [p.key]: k.gelen.length }, kodMesaj: `Kişi başı maliyet bu ekranda ${k.gelen.length} kişiye göre hesaplanıyor. Bu sayı kaydedilmez; sayfa açılışında yoklamadan yeniden sayılır.` })),

@@ -95,6 +95,7 @@ function yonetimVerisi() {
     rpc: {
       elden_odeme: (g) => { rpcler.push(['elden_odeme', g]); return [200, { bitis: gun(35), odeme_id: 1, hareket_id: 501, ref: 'elden:abc', tekrar: false, ad: 'Elif Kaya', kod: 'FC-U-0003' }]; },
       giris_kaydet: (g) => { rpcler.push(['giris_kaydet', g]); return [200, { ad: 'Üye 5', uye_id: 5, zaten: false }]; },
+      giris_kontrol: (g) => { rpcler.push(['giris_kontrol', g]); return [200, { kod: g.p_kod, ad: 'Üye 5', tur: 'uye', zaten: rpcler.some((x) => x[0] === 'giris_kaydet') }]; },
       etkinlik_durum_degistir: (g) => { rpcler.push(['etkinlik_durum_degistir', g]); return [200, { durum: 'iptal', tarih: gun(10), eski_tarih: null, kisi: 2, mail: 2 }]; },
     },
   };
@@ -144,10 +145,19 @@ function yonetimVerisi() {
       await page.getByRole('button', { name: 'Katılımcılar · yoklama' }).first().click();
       dogru(await page.getByText('FC-U-0005', { exact: true }).count() === 1, 'D2: yoklama listesinde gerçek üye kodu');
       await page.locator('input[placeholder="FC-U-0001"]').fill('fc-u-0005-1106');
-      await page.getByRole('button', { name: 'Giriş yaptı' }).click();
+      // İki aşamalı: önce kim olduğu (yazılmaz), "Girişi onayla" ile yazılır; ikinci okutmada uyarı, onay düğmesi yok
+      await page.getByRole('button', { name: 'Kontrol et' }).click();
+      await page.getByText('Henüz giriş yapmadı.').waitFor({ timeout: 5000 });
+      dogru(await page.locator('.fc-giris-onay').getByText('Üye 5').count() === 1 && !v.rpcler.some((x) => x[0] === 'giris_kaydet'), 'D2: okutunca önce kişi gösterildi, giriş henüz yazılmadı');
+      await page.getByRole('button', { name: 'Girişi onayla' }).click();
       await page.getByText('Hoş geldin Üye 5! Giriş işlendi.').waitFor({ timeout: 5000 });
       const g = v.rpcler.find((x) => x[0] === 'giris_kaydet');
       dogru(g && g[1].p_etkinlik === 10 && g[1].p_kod === 'fc-u-0005-1106', `D2: giris_kaydet çağrıldı (${JSON.stringify(g && g[1])})`);
+      await page.locator('input[placeholder="FC-U-0001"]').fill('fc-u-0005-1106');
+      await page.getByRole('button', { name: 'Kontrol et' }).click();
+      await page.getByText('⚠ Bu kod daha önce giriş yaptı!').waitFor({ timeout: 5000 });
+      dogru(await page.getByRole('button', { name: 'Girişi onayla' }).count() === 0 && v.rpcler.filter((x) => x[0] === 'giris_kaydet').length === 1, 'D2: ikinci okutmada "daha önce giriş yaptı" uyarısı, onay yok');
+      await page.locator('.fc-giris-onay').getByRole('button', { name: 'Tamam' }).click();
       await page.getByRole('button', { name: 'İptal / ertele' }).first().click();
       await page.getByRole('button', { name: 'İptal et' }).click();
       await page.getByRole('button', { name: 'Duyur', exact: true }).click();

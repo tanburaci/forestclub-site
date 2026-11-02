@@ -36,6 +36,14 @@ Deno.serve(async (istek) => {
         return yanit(200, 'üyelik tamam');
       }
     }
+    for (const urun of s.urunler) {
+      const { data: d } = await servisIstemcisi().from('destekler').select('id').eq('token', urun).maybeSingle();
+      if (d) {
+        const { error } = await servisIstemcisi().rpc('destek_tamamla', { p_token: urun, p_odeme_no: siparis, p_odenen: s.tutar, p_komisyon: 0 });
+        if (error) { console.error('destek_tamamla', error); return yanit(500, 'destek işlenemedi'); }
+        return yanit(200, 'destek tamam');
+      }
+    }
     return yanit(200, 'bu siparişte bizim ödeme ürünümüz yok');
   } catch (h) {
     console.error('shopier-bildirim', h);

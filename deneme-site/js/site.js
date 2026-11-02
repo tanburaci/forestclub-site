@@ -56,7 +56,13 @@
   window.FCSCagri = (alanlar) => formGonder('cagri', alanlar);
   window.FCSGonullu = (veri) => formGonder('gonullu', veri);
   // Destek ol (kartla): sunucu iyzico ödeme sayfasının adresini döndürür
-  window.FCSDestek = async (tutar) => (await formGonder('destek', { tutar })).sayfa;
+  // Kartla destek: {sayfa, id} (Shopier ayrı pencerede); durum: 'basladi' | 'odendi' | 'basarisiz'
+  window.FCSDestek = async (tutar) => formGonder('destek', { tutar });
+  window.FCSDestekDurum = async (id) => {
+    const { data, error } = await sb.rpc('destek_durum', { p_id: id });
+    if (error) throw new Error(error.message);
+    return data;
+  };
   // Tanışma biletiyle rezervasyon (bileti bir üye verir; site bilet dağıtmaz)
   window.FCSTanisma = async (veri, etkAnahtar) => {
     const id = window.FCS && window.FCS.anahtar[etkAnahtar];

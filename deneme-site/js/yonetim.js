@@ -632,6 +632,14 @@
         if (error) throw new Error(error.message);
       },
     };
+    // Kapıda iki aşamalı giriş: önce kim olduğu ve daha önce girip girmediği (hiçbir şey yazılmaz), sonra onay
+    window.FCGirisKontrol = async (key, kod) => {
+      const etkId = keyEtk[key];
+      if (!etkId || etkId === 'yaziliyor') throw new Error('Etkinlik henüz kaydedilmedi; biraz sonra tekrar deneyin.');
+      const { data, error } = await sb.rpc('giris_kontrol', { p_etkinlik: etkId, p_kod: kod });
+      if (error) throw new Error(error.message);
+      return data;
+    };
     window.FCGirisKaydet = async (key, kod) => {
       const etkId = keyEtk[key];
       if (!etkId || etkId === 'yaziliyor') throw new Error('Etkinlik henüz kaydedilmedi; biraz sonra tekrar deneyin.');

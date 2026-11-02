@@ -410,6 +410,8 @@ html.gok-gece .fs-parti{opacity:1}
 .fe-dugmeler{display:flex;flex-wrap:wrap;gap:10px}
 .fe-gecti{background:#F0F0EE;border-radius:12px;padding:12px 14px;font-weight:600}
 .fe-metin{white-space:pre-line;color:#333333;line-height:1.6;margin-bottom:16px}
+@keyframes fs-bekle{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.fs-bekle-nokta{width:12px;height:12px;border-radius:50%;background:#111111;flex:none;animation:fs-bekle 1.2s ease-in-out infinite}
 .fe-alt-dugmeler{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.fe-takvim{font-weight:600;font-size:14px}
 .fe-neden,.fe-diger,.fe-tv-yer{max-width:1100px;margin:0 auto;padding:0 20px 34px;position:relative;z-index:1}
 .fe-neden h2,.fe-diger h2,.fe-tv-yer h2{font-size:48px;margin:0 0 14px}
@@ -585,10 +587,23 @@ html.gok-gece .fs-parti{opacity:1}
             <button type="button" class="fs-btn" onClick="{{ sDekontGonder }}">Dekontu gönder</button>
           </div>
         </sc-if>
+        <!-- Kartla ödeme: Shopier ayrı pencerede; bu ekran ödemenin gelmesini bekler (bilet_istek_durum) -->
+        <sc-if value="{{ sKartBekle }}" hint-placeholder-val="{{ false }}">
+          <div class="fs-kart-bekle" role="status" aria-live="polite" style="display: flex; flex-direction: column; gap: 12px">
+            <span class="fs-baslik" style="font-size: 44px">Ödeme Shopier'de 💳</span>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5"><strong>{{ hakTutarYazi }}</strong> ödemeni açılan Shopier penceresinde tamamla. Bu sayfayı kapatma; ödeme gelince burası kendiliğinden değişir, biletlerin <strong>{{ sEposta }}</strong> adresine gelir.</p>
+            <p style="margin: 0; display: flex; align-items: center; gap: 10px; background: #F0F0EE; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600"><span class="fs-bekle-nokta" aria-hidden="true"></span>Ödemen bekleniyor…</p>
+            <sc-if value="{{ sPencereYok }}" hint-placeholder-val="{{ false }}">
+              <p style="margin: 0; font-size: 14px; color: #82301F">Tarayıcın ödeme penceresini açmadı. Aşağıdaki düğmeyle aç.</p>
+            </sc-if>
+            <a class="fs-btn" href="{{ sOdemeSayfa }}" target="shopier-odeme" rel="noopener">{{ sPencereYazi }}</a>
+            <button type="button" class="fs-btn fs-btn-acik" onClick="{{ sepetKapat }}">Daha sonra · pencereyi kapat</button>
+          </div>
+        </sc-if>
         <sc-if value="{{ sKartDonus }}" hint-placeholder-val="{{ false }}">
           <div role="status" style="display: flex; flex-direction: column; gap: 12px">
-            <span class="fs-baslik" style="font-size: 44px">Teşekkürler! 🎟️</span>
-            <p style="margin: 0; font-size: 15px; line-height: 1.5">Ödemen Shopier'den bize ulaşınca biletlerin birkaç dakika içinde e-postana gelir. Gelmezse spam klasörüne de bak; yine yoksa bize yaz.</p>
+            <span class="fs-baslik" style="font-size: 44px">Ödemen alındı! 🎟️</span>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5">Teşekkürler! Biletlerin <strong>{{ sEposta }}</strong> adresine gönderildi; girişte e-postadaki karekodu göstermen yeterli. Gelmezse spam klasörüne de bak; yine yoksa bize yaz.</p>
             <button type="button" class="fs-btn" onClick="{{ sepetKapat }}">Tamam</button>
           </div>
         </sc-if>
@@ -655,6 +670,10 @@ html.gok-gece .fs-parti{opacity:1}
             <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ destekHata }}</p>
           </sc-if>
           <button type="button" class="fs-btn" onClick="{{ destekKartla }}" aria-disabled="{{ destekKartKapali }}" style="{{ destekKartStil }}">{{ destekKartYazi }}</button>
+          <sc-if value="{{ dsBekle }}" hint-placeholder-val="{{ false }}">
+            <p role="status" aria-live="polite" style="margin: 0; display: flex; align-items: center; gap: 10px; background: #F0F0EE; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600"><span class="fs-bekle-nokta" aria-hidden="true"></span>Shopier penceresinde ödemen bekleniyor…</p>
+            <a href="{{ dsSayfa }}" target="shopier-odeme" rel="noopener" style="font-size: 14px; font-weight: 600">Ödeme penceresini yeniden aç</a>
+          </sc-if>
           <sc-if value="{{ destekKartKapaliMi }}" hint-placeholder-val="{{ true }}">
             <p style="margin: -6px 0 0; font-size: 13px; color: #5E5E5E">Kartla ödeme çok yakında; şimdilik IBAN ile gönderebilirsin.</p>
           </sc-if>
@@ -1262,6 +1281,15 @@ Buluşmalar ✓</p>
               <span style="font-size: 17px">Forest Club Urla üyeliği · 30 gün</span>
               <span style="font-size: 32px; font-weight: 700">{{ odeme.tutar }}</span>
             </div>
+            <!-- Kartla aidat (Shopier, ayrı pencerede); kart kapalıyken yalnız havale -->
+            <sc-if value="{{ uyeKartVar }}" hint-placeholder-val="{{ false }}">
+              <button type="button" class="fs-btn" onClick="{{ uyeKartla }}">{{ uyeKartYazi }}</button>
+              <p style="margin: -6px 0 0; font-size: 13px; color: #5E5E5E">Shopier'in güvenli ödeme sayfası ayrı pencerede açılır; ödeme gelince üyeliğin hemen başlar. Kart bilgilerin bize gelmez.</p>
+              <sc-if value="{{ uKartHata }}" hint-placeholder-val="{{ false }}">
+                <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ uKartHata }}</p>
+              </sc-if>
+              <div style="display: flex; align-items: center; gap: 10px; color: #5E5E5E; font-size: 13px; font-weight: 600"><span style="flex: 1; border-top: 1.5px dashed #BFBFBF"></span>ya da havale / EFT ile<span style="flex: 1; border-top: 1.5px dashed #BFBFBF"></span></div>
+            </sc-if>
             <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3A3A3A">Başvurun kaydedildi. Aidatı aşağıdaki hesaba havale / EFT ile gönder, dekontunu yükle. Ödemen onaylanınca üyeliğin başlar ve e-posta ile haber veririz.</p>
             <div style="background: #F0F0EE; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; font-size: 15px">
               <span><strong>Alıcı:</strong> {{ odeme.alici }}</span>
@@ -1277,6 +1305,17 @@ Buluşmalar ✓</p>
             <button type="button" class="fs-btn" onClick="{{ dekontGonder }}">Dekontu gönder</button>
             <button type="button" class="fs-btn fs-btn-acik" onClick="{{ dekontSonra }}">Ödemeyi sonra yapacağım</button>
             <p style="margin: 0; font-size: 14px; color: #3A3A3A">Dekontu sonra da <a href="/dekont">dekont sayfasından</a> gönderebilirsin. Sorun mu var? <a href="{{ ilt.epostaLink }}">Bize e-posta gönder</a></p>
+          </div>
+        </sc-if>
+
+        <!-- Kartla aidat: Shopier ayrı pencerede; ödeme gelince (uyelik_odeme_durum) üyelik başladı ekranı -->
+        <sc-if value="{{ uyeKartBekle }}" hint-placeholder-val="{{ false }}">
+          <div class="fs-uye-kart-bekle" role="status" aria-live="polite" style="flex: 1 1 440px; min-width: 0; background: #FFFFFF; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+            <h3 style="margin: 0; font-size: 22px">Ödeme Shopier'de 💳</h3>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5">Aidatını (<strong>{{ odeme.tutar }}</strong>) açılan Shopier penceresinde öde. Bu sayfayı kapatma; ödeme gelince burası kendiliğinden değişir ve üyeliğin başlar.</p>
+            <p style="margin: 0; display: flex; align-items: center; gap: 10px; background: #F0F0EE; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600"><span class="fs-bekle-nokta" aria-hidden="true"></span>Ödemen bekleniyor…</p>
+            <a class="fs-btn" href="{{ uOdemeSayfa }}" target="shopier-odeme" rel="noopener">{{ uPencereYazi }}</a>
+            <button type="button" class="fs-btn fs-btn-acik" onClick="{{ uyeKartVazgec }}">Havale / EFT ile ödeyeceğim</button>
           </div>
         </sc-if>
 
@@ -1624,7 +1663,24 @@ class Component extends DCLogic {
       if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
     });
   }
+  // Shopier penceresindeki ödemeyi bekler: 4 sn'de bir sorulur, en çok 30 dk; gelince "Ödemen alındı" ve sepet boşalır
+  kartTakipBaslat(id, eposta) {
+    clearInterval(this.kartTakip);
+    const bas = Date.now();
+    this.kartTakip = setInterval(() => {
+      if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSBiletDurum) { clearInterval(this.kartTakip); return; }
+      window.FCSBiletDurum(id, eposta).then((d) => {
+        if (d === 'onaylandi') {
+          clearInterval(this.kartTakip);
+          this.setState({ sAdim: 'kartdonus', sepet: {}, hak: null, sepetAcik: true, sHata: '' });
+        }
+      }, () => {});
+    }, 4000);
+  }
   componentWillUnmount() {
+    clearInterval(this.kartTakip);
+    clearInterval(this.uyeTakip);
+    clearInterval(this.destekTakip);
     window.removeEventListener('scroll', this.kaydir);
     if (this.bekle) cancelAnimationFrame(this.bekle);
   }
@@ -1748,6 +1804,8 @@ class Component extends DCLogic {
     // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
     const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
     const kartAcik = !canli || AYAR.kart_odeme === true;
+    // Destek ol: kartla destek henüz iyzico'da (çalışmıyor); Shopier'e taşınana kadar yalnız IBAN
+    const destekKartAcik = kartAcik;
     // Seçilen ödeme yolu: kart açıksa varsayılan kart; değilse kişi havale ya da nakidi bilerek seçer
     const sYol = this.state.sYolSecim || (kartAcik ? 'kart' : null);
     const destekTutar = this.state.dsElle ? Math.round(Number(String(this.state.dsTutarYazi).replace(/[^\d]/g, ''))) : this.state.dsTutar;
@@ -1839,7 +1897,7 @@ class Component extends DCLogic {
       sepetAc: () => this.setState({ sepetAcik: true, sAdim: 'sepet', sHata: '' }),
       sepetKapat: () => this.setState((st) => ({ sepetAcik: false, ...(['tamam', 'gonderildi', 'nakit', 'kartdonus'].includes(st.sAdim) ? { sAdim: 'sepet' } : {}) })),
       sAdimlar: ADIMLAR.map((a) => {
-        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont' }[sAdim] || sAdim));
+        const sira = ADIMLAR.findIndex((x) => x.id === ({ hata: 'bilgi', gonderildi: 'dekont', nakit: 'dekont', kartdonus: 'dekont', kartbekle: 'dekont' }[sAdim] || sAdim));
         const i = ADIMLAR.indexOf(a);
         return { ad: a.ad, stil: `border-radius:999px;padding:5px 10px;border:2px solid #111111;${i <= sira ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
       }),
@@ -1902,7 +1960,9 @@ class Component extends DCLogic {
       }),
       odemeDugme: !canli ? (toplam ? `Kartla öde · ${TL(toplam)}` : 'Biletleri al (ücretsiz)')
         : sYol === 'kart' ? `Kartla öde · ${TL(toplam || araToplam)}` : sYol === 'havale' ? 'Devam · havale / EFT' : 'Ödeme yöntemini seç',
-      sKartDonus: sAdim === 'kartdonus',
+      sKartDonus: sAdim === 'kartdonus', sKartBekle: sAdim === 'kartbekle',
+      sOdemeSayfa: this.state.sOdemeSayfa || '#', sPencereYok: !!this.state.sPencereYok,
+      sPencereYazi: this.state.sPencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
       sAd: this.state.sAd, sEposta: this.state.sEposta, sTel: this.state.sTel, sOnay: this.state.sOnay, sHata: this.state.sHata,
       sAdYaz: (e) => this.setState({ sAd: e.target.value, sHata: '' }),
       sEpostaYaz: (e) => this.setState({ sEposta: e.target.value, sHata: '' }),
@@ -1925,12 +1985,25 @@ class Component extends DCLogic {
           const kalemler = sepetteKi.map((b) => ({ etkinlik: window.FCS.anahtar[`${b.tarih}|${b.ad}`], adet: sepet[`${b.tarih}|${b.ad}`] }));
           this.setState({ sHata: 'Hazırlanıyor…' });
           if (!sYol) return this.setState({ sHata: 'Ödeme yöntemini seç.' });
+          // Kart: Shopier ayrı pencerede açılır, bu sayfa kapanmaz; pencere tıklama anında açılmalı (sonra açılırsa
+          // tarayıcı engeller), adres sunucudan gelince yüklenir. Engellenirse ekranda "Shopier'de öde" bağlantısı çıkar.
+          let pencere = null;
+          if (sYol === 'kart') {
+            try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
+            try { if (pencere) pencere.document.title = 'Shopier ödeme sayfası açılıyor…'; } catch (e) { /* başka kaynak */ }
+          }
           window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol, kod: kodB ? kodB.kod : null })
             .then((h) => {
-              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) { location.href = h.sayfa; return; }
+              if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) {
+                if (pencere && !pencere.closed) pencere.location.href = h.sayfa;
+                this.setState({ sAdim: 'kartbekle', hak: { ...h, adet: sepetToplamAdet, araToplam }, sOdemeSayfa: h.sayfa, sPencereYok: !pencere || pencere.closed, sHata: '' });
+                this.kartTakipBaslat(h.id, sEposta.trim());
+                return;
+              }
+              if (pencere && !pencere.closed) pencere.close();
               this.setState({ sAdim: 'dekont', hak: { ...h, adet: sepetToplamAdet, araToplam }, sHata: '' });
             })
-            .catch((h) => this.setState({ sHata: h.message }));
+            .catch((h) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ sHata: h.message }); });
           return;
         }
         let no = 4821;
@@ -2023,7 +2096,8 @@ class Component extends DCLogic {
       destekAcik: !!this.state.destek, destekForm: this.state.destek === 'form',
       destekTamam: this.state.destek === 'tamam', destekBasarisiz: this.state.destek === 'hata',
       destekAc: () => this.setState({ destek: 'form', dsHata: '', dsKopya: '' }),
-      destekKapat: () => this.setState({ destek: '' }),
+      destekKapat: () => { clearInterval(this.destekTakip); this.setState({ destek: '', dsBekle: false }); },
+      dsBekle: !!this.state.dsBekle, dsSayfa: this.state.dsSayfa || '#',
       destekTekrar: () => this.setState({ destek: 'form', dsHata: '' }),
       destekTutarlar: [1000, 2500, 5000, 0].map((n) => ({
         ad: n ? TL(n) : 'Başka tutar',
@@ -2032,16 +2106,32 @@ class Component extends DCLogic {
       })),
       destekElle: this.state.dsElle, destekTutarYazi: this.state.dsTutarYazi, destekHata: this.state.dsHata,
       destekTutarYaz: (e) => this.setState({ dsTutarYazi: e.target.value, dsHata: '' }),
-      destekKartKapali: kartAcik ? 'false' : 'true', destekKartKapaliMi: !kartAcik,
-      destekKartStil: kartAcik ? 'width:100%' : 'width:100%;opacity:.45;cursor:not-allowed',
-      destekKartYazi: kartAcik ? `Kartla öde · ${TL(destekTutar)}` : 'Kartla öde',
+      destekKartKapali: destekKartAcik ? 'false' : 'true', destekKartKapaliMi: !destekKartAcik,
+      destekKartStil: destekKartAcik ? 'width:100%' : 'width:100%;opacity:.45;cursor:not-allowed',
+      destekKartYazi: destekKartAcik ? `Kartla öde · ${TL(destekTutar)}` : 'Kartla öde',
       destekKartla: () => {
-        if (!kartAcik) return this.setState({ dsHata: 'Kartla ödeme çok yakında; şimdilik IBAN ile gönderebilirsin.' });
+        if (!destekKartAcik) return this.setState({ dsHata: 'Kartla destek çok yakında; şimdilik IBAN ile gönderebilirsin.' });
         if (!(destekTutar >= 50)) return this.setState({ dsHata: 'En az 50 TL yaz.' });
         if (destekTutar > 100000) return this.setState({ dsHata: 'En çok 100.000 TL gönderebilirsin.' });
-        if (!window.FCSDestek) return this.setState({ dsHata: 'Önizleme: gerçek sitede iyzico ödeme sayfası açılır.' });
+        if (!window.FCSDestek) return this.setState({ dsHata: 'Önizleme: gerçek sitede Shopier ödeme sayfası açılır.' });
+        // Shopier ayrı pencerede; bu pencere ödemeyi bekler, gelince "Desteğin bize ulaştı"
+        let pencere = null;
+        try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
         this.setState({ dsHata: 'Ödeme sayfası açılıyor…' });
-        window.FCSDestek(destekTutar).then((sayfa) => { location.href = sayfa; }).catch((h) => this.setState({ dsHata: h.message }));
+        window.FCSDestek(destekTutar).then((h) => {
+          const sayfa = typeof h === 'string' ? h : h.sayfa;
+          if (!h.id) { if (pencere && !pencere.closed) pencere.close(); location.href = sayfa; return; }  // eski (iyzico) yol
+          if (pencere && !pencere.closed) pencere.location.href = sayfa;
+          this.setState({ dsHata: '', dsBekle: true, dsSayfa: sayfa });
+          clearInterval(this.destekTakip);
+          const bas = Date.now();
+          this.destekTakip = setInterval(() => {
+            if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSDestekDurum) { clearInterval(this.destekTakip); return; }
+            window.FCSDestekDurum(h.id).then((d) => {
+              if (d === 'odendi') { clearInterval(this.destekTakip); this.setState({ destek: 'tamam', dsBekle: false }); }
+            }, () => {});
+          }, 4000);
+        }).catch((hata) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ dsHata: hata.message }); });
       },
       aliciKopyaYazi: this.state.dsKopya === 'alici' ? 'Kopyalandı ✓' : 'Kopyala',
       ibanKopyaYazi: this.state.dsKopya === 'iban' ? 'Kopyalandı ✓' : 'Kopyala',
@@ -2076,7 +2166,34 @@ class Component extends DCLogic {
           .catch((h) => this.setState({ dHata: h.message }));
       },
       dekontSonra: () => this.setState({ uyeAdim: 'tamam', dekontGitti: false }),
-      uyeTamamMetin: this.state.dekontGitti
+      uyeKartVar: canli && kartAcik && !!window.FCSUyelikKart,
+      uyeKartYazi: `Kartla öde · ${odemeBilgi.tutar}`, uKartHata: this.state.uKartHata || '',
+      uyeKartBekle: this.state.uyeAdim === 'kartbekle',
+      uOdemeSayfa: this.state.uOdemeSayfa || '#', uPencereYazi: this.state.uPencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
+      uyeKartVazgec: () => { clearInterval(this.uyeTakip); this.setState({ uyeAdim: 'odeme', uKartHata: '' }); },
+      uyeKartla: () => {
+        const eposta = (this.state.bEposta || '').trim();
+        if (!eposta) return this.setState({ uKartHata: 'Önce başvuru formunu doldur.' });
+        let pencere = null;
+        try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
+        this.setState({ uKartHata: 'Hazırlanıyor…' });
+        window.FCSUyelikKart(eposta).then((h) => {
+          if (pencere && !pencere.closed) pencere.location.href = h.sayfa;
+          this.setState({ uyeAdim: 'kartbekle', uOdemeSayfa: h.sayfa, uPencereYok: !pencere || pencere.closed, uKartHata: '' });
+          clearInterval(this.uyeTakip);
+          const bas = Date.now();
+          this.uyeTakip = setInterval(() => {
+            if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSUyelikDurum) { clearInterval(this.uyeTakip); return; }
+            window.FCSUyelikDurum(h.id, eposta).then((d) => {
+              if (d === 'odendi') { clearInterval(this.uyeTakip); this.setState({ uyeAdim: 'tamam', uyeKartli: true }); }
+              else if (d === 'basarisiz') { clearInterval(this.uyeTakip); this.setState({ uyeAdim: 'hata' }); }
+            }, () => {});
+          }, 4000);
+        }).catch((hata) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ uKartHata: hata.message }); });
+      },
+      uyeTamamMetin: this.state.uyeKartli
+        ? `Ödemen alındı, üyeliğin başladı! Hoş geldin e-postası ${(this.state.bEposta || '').trim()} adresine gelir; üye paneline bu e-postayla giriş yapabilirsin.`
+        : this.state.dekontGitti
         ? 'Teşekkürler! Başvurun ve dekontun bize ulaştı. Ödemen onaylanınca üyeliğin başlayacak; e-posta ile haber vereceğiz.'
         : 'Teşekkürler! Başvurun bize ulaştı. Ödemeyi yaptıktan sonra dekontunu dekont sayfasından iletebilirsin; onaylanınca üyeliğin başlar.',
       bDogalDegis: () => this.setState((s) => ({ bDogal: !s.bDogal, bHata: '' })),

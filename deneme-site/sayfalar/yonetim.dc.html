@@ -702,13 +702,29 @@ a{color:#111111}a:hover{color:#000000}
                       <label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Karekod okut
                         <input class="fc-input" type="text" placeholder="FC-U-0001" value="{{ kod }}" onChange="{{ kodYaz }}">
                       </label>
-                      <button type="button" onClick="{{ kodOkut }}" class="fc-btn">Giriş yaptı</button>
+                      <button type="button" onClick="{{ kodOkut }}" class="fc-btn">Kontrol et</button>
                       <button type="button" onClick="{{ kameraDegis }}" class="fc-btn fc-btn-ikincil">{{ kameraYazi }}</button>
                       <sc-if value="{{ kameraAcik }}" hint-placeholder-val="{{ false }}">
                         <video id="fc-kamera" muted playsinline aria-label="Kamera görüntüsü" style="flex: 1 1 100%; width: 100%; max-width: 420px; aspect-ratio: 4 / 3; object-fit: cover; background: #111111; border-radius: 10px"></video>
                       </sc-if>
-                      <span style="flex: 1 1 100%; color: #5E5E5E; font-size: 13px">Üyenin (FC-U-…), tanışma biletinin (FC-T-…) ya da biletin (FC-B-…) kodunu kameraya gösterin; okunan kod kendiliğinden işlenir. Kamera yoksa kodu elle yazın.</span>
+                      <span style="flex: 1 1 100%; color: #5E5E5E; font-size: 13px">Üyenin (FC-U-…), tanışma biletinin (FC-T-…) ya da biletin (FC-B-…) kodunu kameraya gösterin ya da elle yazıp “Kontrol et”e basın. Önce kişinin adı ve daha önce girip girmediği çıkar; giriş “Girişi onayla” ile kaydedilir.</span>
                     </form>
+                    <!-- İki aşamalı giriş: okunan kodun sahibi gösterilir, giriş "Girişi onayla" ile yazılır -->
+                    <sc-if value="{{ girisOnayVar }}" hint-placeholder-val="{{ false }}">
+                      <div class="fc-giris-onay" role="alertdialog" aria-label="Girişi onayla" style="{{ girisOnay.stil }}">
+                        <div style="display: flex; flex-direction: column; gap: 4px">
+                          <strong style="font-size: 22px">{{ girisOnay.ad }}</strong>
+                          <span style="font-size: 14px">{{ girisOnay.tur }} · {{ girisOnay.kod }}</span>
+                          <span style="font-size: 15px; font-weight: 700">{{ girisOnay.durum }}</span>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                          <sc-if value="{{ girisOnay.girebilir }}" hint-placeholder-val="{{ true }}">
+                            <button type="button" class="fc-btn" onClick="{{ girisOnayla }}">Girişi onayla</button>
+                          </sc-if>
+                          <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ girisVazgec }}">{{ girisOnay.vazgecYazi }}</button>
+                        </div>
+                      </div>
+                    </sc-if>
                     <sc-if value="{{ kodMesaj }}" hint-placeholder-val="{{ false }}">
                       <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px">{{ kodMesaj }}</p>
                     </sc-if>
@@ -916,8 +932,8 @@ a{color:#111111}a:hover{color:#000000}
             </label>
             <label style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; min-height: 44px">
               <input type="checkbox" checked="{{ kartOdeme }}" onChange="{{ kartOdemeDegis }}" style="width: 20px; height: 20px">
-              Üyeler aidatı kartla ödeyebilsin (iyzico)
-              <span style="font-weight: 400; color: #5E5E5E">Sitedeki “Destek ol” penceresinde de kartla ödeme açılır. Kapalıyken üye paneli havale + dekont sayfasına yönlendirir, destek yalnız IBAN ile gelir.</span>
+              Kartla ödeme açık (Shopier)
+              <span style="font-weight: 400; color: #5E5E5E">Açıkken etkinlik biletleri ve üye aidatı Shopier'in güvenli ödeme sayfasında kartla ödenir (biletlerde varsayılan kart; havale / EFT seçilebilir). Sitedeki “Destek ol” da kartla ödenir. Kapalıyken yalnız havale + dekont / IBAN.</span>
             </label>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
@@ -2758,6 +2774,33 @@ class Component extends DCLogic {
       ['neden', 'tarih', 'mesaj'].forEach((a) => {
         iptalAlan[a] = (e) => { const v = e.target.value; this.setState((s) => ({ iptal: { ...s.iptal, [a]: v }, iptalMesaj: '' })); };
       });
+      // Girişi yazar (onaydan sonra; deneme sitesinde doğrudan): kod sunucuda eşleşir ve "geldi" orada yazılır (giris_kaydet)
+      const girisYaz = (kod) => {
+        if (window.FCGirisKaydet) {
+          this.setState({ kodMesaj: 'Kaydediliyor…' });
+          window.FCGirisKaydet(p.key, kod).then((r) => this.setState((s) => {
+              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : r.bilet ? ' (bilet)' : ''}`;
+              if (r.bilet) return { kodMesaj: mesaj, kod: '' };
+              // Tanışma bileti: sunucuda "geldi" yazıldı; liste yalnız ekranda güncellenir (kapida: ikinci kez yazılmasın)
+              if (r.tanisma) return { kodMesaj: mesaj, kod: '', biletler: s.biletler.map((b) => (b.id === r.bilet_id ? { ...b, durum: 'geldi', kapida: true } : b)) };
+              const i = this.DEMO.kisiler.findIndex((x) => x.id === r.uye_id);
+              if (i < 0) return { kodMesaj: `${mesaj} (Liste sayfa yenilenince güncellenir.)`, kod: '' };
+              const kk = s.kayitlar[p.key] || { kontenjan: 0, kayitli: [], bekleme: [], gelen: [] };
+              return {
+                kayitlar: { ...s.kayitlar, [p.key]: { ...kk, kayitli: kk.kayitli.includes(i) ? kk.kayitli : [...kk.kayitli, i],
+                  bekleme: kk.bekleme.filter((x) => x !== i), gelen: kk.gelen.includes(i) ? kk.gelen : [...kk.gelen, i] } },
+                kodMesaj: mesaj, kod: '',
+              };
+            })).catch((h) => this.setState({ kodMesaj: h.message }));
+            return;
+          }
+          const m = /FC-U-\d+/i.exec(kod);
+          const i = m ? this.DEMO.kisiler.findIndex((x) => x.kod === m[0].toUpperCase()) : -1;
+          if (i < 0 || !k.kayitli.includes(i)) return this.setState({ kodMesaj: 'Bu kod bu etkinliğe kayıtlı değil.' });
+          if (k.gelen.includes(i)) return this.setState({ kodMesaj: `${this.KISILER[i]} zaten giriş yapmış.`, kod: '' });
+          kGuncelle({ gelen: [...k.gelen, i] });
+          this.setState({ kodMesaj: `Hoş geldin ${this.KISILER[i]}! Giriş işlendi.`, kod: '' });
+      };
       return {
         epAcik: true, epYoklama: p.mod === 'yoklama', epIptal: p.mod === 'iptal',
         epKapat: () => { this.kameraKapat(); this.setState({ etkPanel: null }); },
@@ -2797,35 +2840,34 @@ class Component extends DCLogic {
         kodYaz: (e) => this.setState({ kod: e.target.value, kodMesaj: '' }),
         kameraAcik: this.state.kameraAcik, kameraYazi: this.state.kameraAcik ? 'Kamerayı kapat' : 'Kamerayla okut',
         kameraDegis: () => (this.state.kameraAcik ? this.kameraKapat() : this.kameraAc()),
+        // İki aşamalı giriş: 1) okut / yaz → kim, daha önce girdi mi (giris_kontrol, yazmaz) 2) "Girişi onayla" → giris_kaydet
+        girisOnayVar: !!this.state.girisOnay,
+        girisOnay: (() => {
+          const g = this.state.girisOnay;
+          if (!g) return {};
+          return {
+            ad: g.ad, kod: g.kod, tur: { bilet: 'Bilet', tanisma: 'Tanışma bileti', uye: 'Üye' }[g.tur] || g.tur,
+            durum: g.zaten ? '⚠ Bu kod daha önce giriş yaptı!' : 'Henüz giriş yapmadı.', girebilir: !g.zaten, vazgecYazi: g.zaten ? 'Tamam' : 'Vazgeç',
+            stil: `display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border:2.5px solid #111111;border-radius:12px;padding:14px 16px;background:${g.zaten ? '#F3DCD5' : '#C9E33A'}`,
+          };
+        })(),
+        girisVazgec: () => this.setState({ girisOnay: null, kodMesaj: '', kod: '' }),
+        girisOnayla: () => {
+          const g = this.state.girisOnay;
+          if (!g) return;
+          this.setState({ girisOnay: null, kod: '' }); girisYaz(g.kod);
+        },
         kodOkut: (e) => {
           if (e && e.preventDefault) e.preventDefault();
           const kod = this.state.kod.trim();
           if (!kod) return this.setState({ kodMesaj: 'Kodu yazın ya da okutun.' });
-          // Deneme sitesi: kod sunucuda uyeler.kod ile eşleşir ve "geldi" orada yazılır (giris_kaydet)
-          if (window.FCGirisKaydet) {
-            this.setState({ kodMesaj: 'Kontrol ediliyor…' });
-            window.FCGirisKaydet(p.key, kod).then((r) => this.setState((s) => {
-              const mesaj = r.zaten ? `${r.ad} zaten giriş yapmış.` : `Hoş geldin ${r.ad}! Giriş işlendi.${r.tanisma ? ' (tanışma bileti)' : r.bilet ? ' (bilet)' : ''}`;
-              if (r.bilet) return { kodMesaj: mesaj, kod: '' };
-              // Tanışma bileti: sunucuda "geldi" yazıldı; liste yalnız ekranda güncellenir (kapida: ikinci kez yazılmasın)
-              if (r.tanisma) return { kodMesaj: mesaj, kod: '', biletler: s.biletler.map((b) => (b.id === r.bilet_id ? { ...b, durum: 'geldi', kapida: true } : b)) };
-              const i = this.DEMO.kisiler.findIndex((x) => x.id === r.uye_id);
-              if (i < 0) return { kodMesaj: `${mesaj} (Liste sayfa yenilenince güncellenir.)`, kod: '' };
-              const kk = s.kayitlar[p.key] || { kontenjan: 0, kayitli: [], bekleme: [], gelen: [] };
-              return {
-                kayitlar: { ...s.kayitlar, [p.key]: { ...kk, kayitli: kk.kayitli.includes(i) ? kk.kayitli : [...kk.kayitli, i],
-                  bekleme: kk.bekleme.filter((x) => x !== i), gelen: kk.gelen.includes(i) ? kk.gelen : [...kk.gelen, i] } },
-                kodMesaj: mesaj, kod: '',
-              };
-            })).catch((h) => this.setState({ kodMesaj: h.message }));
+          if (window.FCGirisKontrol) {
+            this.setState({ kodMesaj: 'Kontrol ediliyor…', girisOnay: null });
+            window.FCGirisKontrol(p.key, kod).then((r) => this.setState({ girisOnay: r, kodMesaj: '', kod: '' }))
+              .catch((h) => this.setState({ kodMesaj: h.message, kod: '' }));
             return;
           }
-          const m = /FC-U-\d+/i.exec(kod);
-          const i = m ? this.DEMO.kisiler.findIndex((x) => x.kod === m[0].toUpperCase()) : -1;
-          if (i < 0 || !k.kayitli.includes(i)) return this.setState({ kodMesaj: 'Bu kod bu etkinliğe kayıtlı değil.' });
-          if (k.gelen.includes(i)) return this.setState({ kodMesaj: `${this.KISILER[i]} zaten giriş yapmış.`, kod: '' });
-          kGuncelle({ gelen: [...k.gelen, i] });
-          this.setState({ kodMesaj: `Hoş geldin ${this.KISILER[i]}! Giriş işlendi.`, kod: '' });
+          girisYaz(kod);
         },
         // Katılımcı sayısı kaydedilmez: muhasebe ekranı sayfa açılışında yoklamadan sayar
         muhasebeyeAktar: () => this.setState((s) => ({ katilimci: { ...s.katilimci, [p.key]: k.gelen.length }, kodMesaj: `Kişi başı maliyet bu ekranda ${k.gelen.length} kişiye göre hesaplanıyor. Bu sayı kaydedilmez; sayfa açılışında yoklamadan yeniden sayılır.` })),
