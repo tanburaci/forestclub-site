@@ -1716,8 +1716,12 @@ class Component extends DCLogic {
       odemeAlici: odemeBilgi.alici, odemeIban: odemeBilgi.iban,
       sDekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ sDosya: f || null, sHata: '' }); },
       sDekontGonder: () => {
+        // Seçilen dosya kutudan da okunur (seçip hemen gönderince durum henüz güncellenmemiş olabilir)
+        const kutu = document.querySelector('.fs-modal input[type="file"]');
+        const dosya = this.state.sDosya || (kutu && kutu.files && kutu.files[0]) || null;
+        if (!dosya) return this.setState({ sHata: 'Dekontu seç.' });
         this.setState({ sHata: 'Yükleniyor…' });
-        window.FCSBiletDekont(hak, this.state.sEposta, this.state.sDosya)
+        window.FCSBiletDekont(hak, this.state.sEposta, dosya)
           .then(() => this.setState({ sAdim: 'gonderildi', sepet: {}, hak: null, sDosya: null, sHata: '' }))
           .catch((h) => this.setState({ sHata: h.message }));
       },
@@ -1739,7 +1743,9 @@ class Component extends DCLogic {
       sKodYaz: (e) => this.setState({ sKod: e.target.value.toUpperCase(), sKodHata: '' }),
       kodKaldir: () => this.setState({ sKodBilgi: null, sKod: '', sKodHata: '' }),
       kodUygula: () => {
-        const kod = (this.state.sKod || '').trim().toUpperCase();
+        // Kutudaki güncel değer (yazıp hemen "Uygula"ya basılınca durum henüz güncellenmemiş olabilir)
+        const kutu = document.getElementById('fs-kod');
+        const kod = ((kutu && kutu.value) || this.state.sKod || '').trim().toUpperCase();
         if (!kod) return this.setState({ sKodHata: 'Kodu yaz.' });
         const bak = window.FCSIndirimBak ? window.FCSIndirimBak(kod)
           : (kod === 'FOREST20' ? Promise.resolve({ kod, tur: 'yuzde', deger: 20 }) : Promise.reject(new Error('Bu indirim kodu geçerli değil.')));
