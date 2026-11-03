@@ -80,7 +80,8 @@ select pg_temp.ol('00000000-0000-4000-8000-0000000000a1');
 select throws_ok(format($$ select giris_kontrol(%s, 'FC-U-8801') $$, (select ucretli from t_e)), 'P0001', null, 'ücretli etkinlikte üye karekodu geçmez (kontrol)');
 select throws_ok(format($$ select giris_kaydet(%s, 'FC-U-8801') $$, (select ucretli from t_e)), 'P0001', null, 'ücretli etkinlikte üye karekodu geçmez (kayıt)');
 reset role;
-select is(uye_durumlarini_guncelle(), 0, 'bitiş günü bugün olan üye gece "doldu" olmaz');
+select uye_durumlarini_guncelle();
+select is((select durum::text from uyeler where kod = 'FC-U-8801'), 'aktif', 'bitiş günü bugün olan üye gece "doldu" olmaz');
 
 -- Üye indirimi (%50) etkinlik başına bir kez
 create temp table t_u as select bilet_istegi_ac_yol('Denetim Üye', 'den-uye@test.invalid', '', jsonb_build_array(jsonb_build_object('etkinlik', (select ucretli from t_e), 'adet', 1)),
