@@ -566,6 +566,37 @@ class Component extends DCLogic {
     return window.FCAyarKaydet('site_duyurusu', metin ? { metin, bitis: bitis || this.BUGUN } : '').then(() => this.setState({ siteDuyurusu: metin, duyuruMesaj: tamam }),
       (h) => this.setState({ duyuruMesaj: h.message }));
   }
+  // Üyelere duyuru maili (İletişim): hedef → konu + metin → "Gönder…" kaç kişiye gideceğini gösterir → onay
+  uyeDuyurusu() {
+    const s = this.state;
+    const hedef = s.udHedef || 'aktif';
+    const AD = { aktif: 'Aktif üyeler', pasif: 'Süresi dolmuş üyeler', hepsi: 'Hepsi' };
+    const yaz = (alan) => (e) => this.setState({ [alan]: e.target.value, udOnay: null, udMesaj: '' });
+    return {
+      udHedefler: Object.keys(AD).map((k) => ({ ad: AD[k], secili: k === hedef ? 'true' : 'false', sinif: k === hedef ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme',
+        sec: () => this.setState({ udHedef: k, udOnay: null, udMesaj: '' }) })),
+      udKonu: s.udKonu || '', udMetin: s.udMetin || '', udKonuYaz: yaz('udKonu'), udMetinYaz: yaz('udMetin'),
+      udMesaj: s.udMesaj || '', udMesajVar: !!s.udMesaj, udOnayVar: s.udOnay != null, udOnayYok: s.udOnay == null,
+      udOnayYazi: `Evet, ${s.udOnay || 0} kişiye gönder`,
+      udVazgec: () => this.setState({ udOnay: null, udMesaj: '' }),
+      udHazirla: () => {
+        const konu = (s.udKonu || '').trim(); const metin = (s.udMetin || '').trim();
+        if (konu.length < 3) return this.setState({ udMesaj: 'Konuyu yaz.' });
+        if (metin.length < 10) return this.setState({ udMesaj: 'Metni yaz.' });
+        if (!window.FCUyeDuyurusu) return this.setState({ udOnay: 12, udMesaj: `Önizleme: ${AD[hedef]} · 12 kişiye gidecek.` });
+        this.setState({ udMesaj: 'Sayılıyor…' });
+        window.FCUyeDuyurusu.sayi(hedef).then((n) => this.setState(n ? { udOnay: n, udMesaj: `${AD[hedef]}: ${n} kişiye gidecek. Emin misin?` } : { udMesaj: 'Bu grupta mail gidecek üye yok.' }),
+          (h) => this.setState({ udMesaj: h.message }));
+      },
+      udGonder: () => {
+        if (!window.FCUyeDuyurusu) return this.setState({ udOnay: null, udMesaj: 'Önizleme: gönderildi ✓', udKonu: '', udMetin: '' });
+        this.setState({ udMesaj: 'Gönderiliyor…' });
+        window.FCUyeDuyurusu.gonder(hedef, s.udKonu.trim(), s.udMetin.trim())
+          .then((r) => this.setState({ udOnay: null, udKonu: '', udMetin: '', udMesaj: `${r.alici} kişiye kuyruğa eklendi ✓ Mailler birkaç dakika içinde gider.` }),
+            (h) => this.setState({ udOnay: null, udMesaj: h.message }));
+      },
+    };
+  }
   // Kapıda kamera: okunan kod yoklama kutusuna yazılır ve hemen işlenir
   kameraKapat() {
     if (this.kameraDur) { this.kameraDur(); this.kameraDur = null; }
@@ -1700,6 +1731,7 @@ class Component extends DCLogic {
         this.ayarDegis('yakinda', 'yakinda', '“Yakında” modu');
       },
       siteDuyurusu: this.state.siteDuyurusu, duyuruMesaj: this.state.duyuruMesaj,
+      ...this.uyeDuyurusu(),
       siteDuyurusuYaz: (e) => this.setState({ siteDuyurusu: e.target.value, duyuruMesaj: '' }),
       siteDuyurusuKaydet: () => this.duyuruYaz(this.state.siteDuyurusu.trim()),
       siteDuyurusuKaldir: () => this.duyuruYaz(''),

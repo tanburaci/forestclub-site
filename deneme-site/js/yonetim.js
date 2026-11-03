@@ -615,6 +615,19 @@
     // Tek etkinliğin paylaşım bağlantısı (/e/<id>: önizlemede afiş, açılınca kart); kaydedilmemiş etkinlikte null
     window.FCEtkinlikLink = (key) => { const id = keyEtk[key]; return id && id !== 'yaziliyor' ? `${location.origin}/e/${id}` : null; };
     // Kapıda karekod: kod sunucuda uyeler.kod ile eşleşir (giris_kaydet). Dönüş: {ad, uye_id, zaten}
+    // Üyelere duyuru maili: hedef aktif | pasif | hepsi
+    window.FCUyeDuyurusu = {
+      sayi: async (hedef) => {
+        const { data, error } = await sb.rpc('uye_duyurusu_sayi', { p_hedef: hedef });
+        if (error) throw new Error(error.message);
+        return data;
+      },
+      gonder: async (hedef, konu, metin) => {
+        const { data, error } = await sb.rpc('uye_duyurusu_gonder', { p_hedef: hedef, p_konu: konu, p_metin: metin });
+        if (error) throw new Error(error.message);
+        return data;
+      },
+    };
     // İndirim kodları (bilet sepeti): liste, ekle, aç/kapat
     window.FCIndirim = {
       liste: async () => {
