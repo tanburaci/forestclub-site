@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(7);
+select plan(10);
 
 insert into auth.users (id, email) values ('00000000-0000-4000-8000-0000000000f9', 'dy-yon@test.invalid'), ('00000000-0000-4000-8000-0000000000fa', 'dy-uye@test.invalid');
 insert into yoneticiler (user_id, ad) values ('00000000-0000-4000-8000-0000000000f9', 'DY Yönetici');
@@ -27,6 +27,17 @@ select ok(exists (select 1 from eposta_kuyrugu where sablon = 'duyuru' and alici
   'pasif üyeye duyuru maili kuyrukta');
 select ok(not exists (select 1 from eposta_kuyrugu where sablon = 'duyuru' and alici in ('dy-aktif@test.invalid', 'dy-basvuru@test.invalid')),
   'aktif ve hiç ödememiş üyeye gitmedi');
+
+
+-- Etkinlik seçilince: yaklaşanda tarih + üye fiyatı + yer ayırma bağlantısı, geçmişte yalnız ad + tarih
+insert into etkinlikler (tarih, saat, tur, ad, kontenjan, bilet_fiyati, uyelere, durum) values
+  (current_date + 4, '16.00', 'hareket', 'DY Tai Chi', 20, 1500, 'yuzde50', 'yayinda'),
+  (current_date - 3, '10.00', 'hareket', 'DY Chi Gong', 20, null, null, 'yayinda');
+select ok(uye_duyurusu_etkinlik_metni((select id from etkinlikler where ad = 'DY Tai Chi')) like '%Üyelere \%50 indirim: 1.500 TL yerine 750 TL%Yerini ayır: https://www.forestcluburla.com/e/%',
+  'yaklaşan etkinlik: üye fiyatı ve yer ayırma bağlantısı');
+select ok(uye_duyurusu_etkinlik_metni((select id from etkinlikler where ad = 'DY Chi Gong')) not like '%Yerini ayır%'
+  and uye_duyurusu_etkinlik_metni((select id from etkinlikler where ad = 'DY Chi Gong')) like '%DY Chi Gong%', 'geçmiş etkinlik: yalnız ad ve tarih');
+select is(uye_duyurusu_etkinlik_metni(null), '', 'etkinlik seçilmezse ek yok');
 
 select * from finish();
 rollback;

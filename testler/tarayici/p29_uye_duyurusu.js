@@ -28,6 +28,10 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
       dogru(await k.getByText('Konuyu yaz.').count() === 1, `${ad}: konu boşsa uyarı`);
       await k.getByLabel('Konu').fill('Tai Chi Atölyesi · 7 Kasım · Üyelere %50');
       await k.getByLabel('Metin').fill('7 Kasım Cumartesi 16.00, Gizem Kara ile Tai Chi. Üyelere %50 indirimli.');
+      const sec = k.getByLabel('Etkinlik (isteğe bağlı)');
+      const sec1 = await sec.locator('option').nth(1).getAttribute('value');
+      await sec.selectOption(sec1);
+      await k.getByText(/sistemden eklenir|eklenir/).first().waitFor({ timeout: 3000 });
       await k.getByRole('button', { name: 'Gönder…' }).click();
       await k.getByText('Süresi dolmuş üyeler: 42 kişiye gidecek. Emin misin?').waitFor({ timeout: 5000 });
       dogru(!v.rpcler.some((x) => x[0] === 'gonder'), `${ad}: sayım gösterildi, henüz gönderilmedi`);
@@ -36,7 +40,7 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
       await k.getByRole('button', { name: 'Evet, 42 kişiye gönder' }).click();
       await k.getByText('42 kişiye kuyruğa eklendi ✓ Mailler birkaç dakika içinde gider.').waitFor({ timeout: 5000 });
       const g = v.rpcler.find((x) => x[0] === 'gonder');
-      dogru(g && g[1].p_hedef === 'pasif' && /Tai Chi/.test(g[1].p_konu) && /Gizem/.test(g[1].p_metin), `${ad}: uye_duyurusu_gonder pasif hedefe (${JSON.stringify(g && g[1].p_hedef)})`);
+      dogru(g && g[1].p_hedef === 'pasif' && /Tai Chi/.test(g[1].p_konu) && /Gizem/.test(g[1].p_metin) && g[1].p_etkinlik === Number(v.tablolar.etkinlikler[0].id), `${ad}: uye_duyurusu_gonder pasif hedefe (${JSON.stringify(g && g[1].p_hedef)})`);
       dogru(!y.konsol.some((x) => /pageerror/.test(x)), `${ad}: sayfa hatası yok`);
       await y.ctx.close();
     }
