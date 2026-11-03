@@ -15,6 +15,8 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
       const v = yonetimVerisi(); v.tablolar.uyeler = v.tablolar.uyeler.slice(0, 5);
       v.rpc.uye_duyurusu_sayi = (g) => { v.rpcler.push(['sayi', g]); return [200, g.p_hedef === 'pasif' ? 42 : 7]; };
       v.rpc.uye_duyurusu_gonder = (g) => { v.rpcler.push(['gonder', g]); return [200, { id: 1, alici: 42 }]; };
+      v.rpc.uye_duyurusu_onizle = (g) => { v.rpcler.push(['oniz', g]); return [200, { konu: g.p_konu, metin: `Merhaba Ayşe,\n\n${g.p_metin}\n\n— Ek satır\n\nForest Club Urla` }]; };
+      v.rpc.uye_duyurusu_deneme = (g) => { v.rpcler.push(['deneme', g]); return [200, 'yonetici@posta.test']; };
       const y = await sayfaAc(tarayici, v, oturum('yon-1', 'yonetici@posta.test'));
       await y.page.unroute('https://fonts.googleapis.com/**').catch(() => {});
       await y.page.setViewportSize(boy);
@@ -32,6 +34,13 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
       const sec1 = await sec.locator('option').nth(1).getAttribute('value');
       await sec.selectOption(sec1);
       await k.getByText(/sistemden eklenir|eklenir/).first().waitFor({ timeout: 3000 });
+      await k.getByRole('button', { name: 'Önizle' }).click();
+      await k.locator('.fc-ud-oniz').getByText(/Merhaba Ayşe,[\s\S]*Gizem Kara[\s\S]*Forest Club Urla/).waitFor({ timeout: 5000 });
+      dogru(true, `${ad}: önizleme gerçek şablonla görünüyor`);
+      if (S) await k.screenshot({ path: `${S}/duyuru_onizleme_${ad}.png` });
+      await k.getByRole('button', { name: 'Bana deneme gönder' }).click();
+      await k.getByText(/Deneme maili yalnız yonetici@posta.test adresine gönderildi/).waitFor({ timeout: 5000 });
+      dogru(!v.rpcler.some((x) => x[0] === 'gonder') && v.rpcler.some((x) => x[0] === 'deneme'), `${ad}: deneme yalnız yöneticiye, üyelere gitmedi`);
       await k.getByRole('button', { name: 'Gönder…' }).click();
       await k.getByText('Süresi dolmuş üyeler: 42 kişiye gidecek. Emin misin?').waitFor({ timeout: 5000 });
       dogru(!v.rpcler.some((x) => x[0] === 'gonder'), `${ad}: sayım gösterildi, henüz gönderilmedi`);
