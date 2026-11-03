@@ -145,7 +145,8 @@ a{color:#111111}a:hover{color:#000000}
 @keyframes fu-tv-nabiz{from{transform:scale(1)}to{transform:scale(1.07)}}
 @media (max-width: 1024px){.fu-yuzen{width:190px;right:14px}.fu-yuzen .fu-tv{font-size:4.4px}}
 @media (max-width: 640px){.fu-yuzen{width:64vw;right:4px}.fu-yuzen .fu-tv{font-size:calc(64vw / 43)}.fu-tv-kol{display:none}.fu-yuzen-kapat{top:6px;right:-6px;width:30px;height:30px;font-size:16px}}
-@media (prefers-reduced-motion: reduce){.fu-yuzen{transition:none}.fu-tv-s,.fu-tv-s *{animation:none !important}.fu-tv-s{opacity:0}.fu-tv-s4,.fu-tv-s4 *{opacity:1}}
+/* Üyelik TV'si "hareketi azalt" açık olsa da oynar (yumuşak geçişli kısa animasyon; müşteri isteği 03.11.2026) */
+@media (prefers-reduced-motion: reduce){.fu-yuzen{transition:none}}
 </style>
 </helmet>
 
