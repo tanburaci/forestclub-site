@@ -572,7 +572,19 @@ class Component extends DCLogic {
     const hedef = s.udHedef || 'aktif';
     const AD = { aktif: 'Aktif üyeler', pasif: 'Süresi dolmuş üyeler', hepsi: 'Hepsi' };
     const yaz = (alan) => (e) => this.setState({ [alan]: e.target.value, udOnay: null, udMesaj: '' });
+    // Kayıtlı etkinlikler: yaklaşanlar önce (yakından uzağa), sonra geçmişler (yeniden eskiye)
+    const tYaz = (t) => t.split('-').reverse().join('.');
+    const etk = (s.etkinlikler || []).filter((e) => e.id);
+    const yak = etk.filter((e) => e.tarih >= this.BUGUN).sort((a, b) => a.tarih.localeCompare(b.tarih));
+    const gec = etk.filter((e) => e.tarih < this.BUGUN).sort((a, b) => b.tarih.localeCompare(a.tarih));
+    const secili = etk.find((e) => String(e.id) === String(s.udEtkinlik || ''));
     return {
+      udEtkinlikler: [...yak.map((e) => ({ id: String(e.id), ad: `${tYaz(e.tarih)} · ${e.ad}` })), ...gec.map((e) => ({ id: String(e.id), ad: `${tYaz(e.tarih)} · ${e.ad} (geçti)` }))],
+      udEtkinlik: s.udEtkinlik || '',
+      udEtkinlikSec: (e) => this.setState({ udEtkinlik: e.target.value, udOnay: null, udMesaj: '' }),
+      udEtkinlikNot: !secili ? 'Seçersen mailin sonuna etkinliğin bilgileri sistemden eklenir.'
+        : secili.tarih >= this.BUGUN ? 'Mailin sonuna tarih, saat, üye fiyatı ve "Yerini ayır" bağlantısı eklenir.'
+        : 'Geçmiş etkinlik: mailin sonuna yalnız adı ve tarihi eklenir (ör. teşekkür maili).',
       udHedefler: Object.keys(AD).map((k) => ({ ad: AD[k], secili: k === hedef ? 'true' : 'false', sinif: k === hedef ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme',
         sec: () => this.setState({ udHedef: k, udOnay: null, udMesaj: '' }) })),
       udKonu: s.udKonu || '', udMetin: s.udMetin || '', udKonuYaz: yaz('udKonu'), udMetinYaz: yaz('udMetin'),
@@ -591,8 +603,8 @@ class Component extends DCLogic {
       udGonder: () => {
         if (!window.FCUyeDuyurusu) return this.setState({ udOnay: null, udMesaj: 'Önizleme: gönderildi ✓', udKonu: '', udMetin: '' });
         this.setState({ udMesaj: 'Gönderiliyor…' });
-        window.FCUyeDuyurusu.gonder(hedef, s.udKonu.trim(), s.udMetin.trim())
-          .then((r) => this.setState({ udOnay: null, udKonu: '', udMetin: '', udMesaj: `${r.alici} kişiye kuyruğa eklendi ✓ Mailler birkaç dakika içinde gider.` }),
+        window.FCUyeDuyurusu.gonder(hedef, s.udKonu.trim(), s.udMetin.trim(), s.udEtkinlik ? Number(s.udEtkinlik) : null)
+          .then((r) => this.setState({ udOnay: null, udKonu: '', udMetin: '', udEtkinlik: '', udMesaj: `${r.alici} kişiye kuyruğa eklendi ✓ Mailler birkaç dakika içinde gider.` }),
             (h) => this.setState({ udOnay: null, udMesaj: h.message }));
       },
     };
