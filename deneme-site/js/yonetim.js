@@ -654,7 +654,7 @@
       const etkId = keyEtk[key];
       if (!etkId || etkId === 'yaziliyor') throw new Error('Etkinlik henüz kaydedilmedi; biraz sonra tekrar deneyin.');
       const { data, error } = await sb.rpc('etkinlik_durum_degistir', {
-        p_id: etkId, p_durum: tur === 'iptal' ? 'iptal' : 'ertelendi', p_yeni_tarih: yeniTarih || null, p_neden: neden || null,
+        p_id: etkId, p_durum: tur === 'iptal' ? 'iptal' : tur === 'yayinda' ? 'yayinda' : 'ertelendi', p_yeni_tarih: yeniTarih || null, p_neden: neden || null,
         p_duyuru: duyuru || null,
       });
       if (error) throw new Error(error.message);

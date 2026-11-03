@@ -164,6 +164,16 @@ function yonetimVerisi() {
       await page.getByText(/İptal edildi: etkinlik sitedeki listeden kalktı\. Duyuru sitenin en üstünde yayında .* ve 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
       const d = v.rpcler.find((x) => x[0] === 'etkinlik_durum_degistir');
       dogru(d && d[1].p_id === 10 && d[1].p_durum === 'iptal', `D5: etkinlik_durum_degistir (${JSON.stringify(d && d[1])})`);
+      await page.waitForTimeout(500);
+      const dy = istekler.filter((x) => x.yontem === 'PATCH' && x.yol.endsWith('/ayarlar') && /site_duyurusu/.test(x.ara)).pop();
+      dogru(dy && dy.govde.deger && dy.govde.deger.bitisAt === new Date(`${gun(10)}T13:00:00+03:00`).toISOString(),
+        `D5: iptal duyurusu etkinlik başlangıcından 3 saat sonra kalkar (${JSON.stringify(dy && dy.govde.deger && dy.govde.deger.bitisAt)})`);
+      page.once('dialog', (dg) => dg.accept());
+      await page.getByRole('button', { name: 'İptali geri al' }).click();
+      await page.getByText(/İptal geri alındı/).waitFor({ timeout: 5000 });
+      const geri = v.rpcler.filter((x) => x[0] === 'etkinlik_durum_degistir').pop();
+      dogru(geri && geri[1].p_id === 10 && geri[1].p_durum === 'yayinda', `D5: iptal geri alındı (${JSON.stringify(geri && geri[1])})`);
+      dogru(await page.getByRole('button', { name: 'İptali geri al' }).count() === 0, 'D5: geri alınınca düğme kayboldu');
       dogru(!(await page.content()).includes('mail gitti'), 'D5: "mail gitti" yazısı yok');
       dogru(await page.locator('input[type=checkbox]').filter({ has: page.locator('xpath=..') }).first().isEnabled(), 'D5: "Tanışma rezervasyonu açık" ayarlardan, açılabilir');
       // Profil notu: üye numarasıyla

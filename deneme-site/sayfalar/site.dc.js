@@ -200,7 +200,7 @@ class Component extends DCLogic {
     // Duyuru: metin ya da {metin, bitis}; bitis günü geçtiyse görünmez (Türkiye saatiyle)
     const dy = canli ? AYAR.site_duyurusu : (this.props.duyuru ?? 'Örnek duyuru: Yağmur nedeniyle bu haftaki buluşma ertelendi; yeni tarih e-postana geldi.');
     const duyuruBugun = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
-    const duyuruMetni = (dy && typeof dy === 'object' ? (dy.bitis && dy.bitis < duyuruBugun ? '' : String(dy.metin || '')) : String(dy || '')).trim();
+    const duyuruMetni = (dy && typeof dy === 'object' ? ((dy.bitis && dy.bitis < duyuruBugun) || (dy.bitisAt && Date.now() > Date.parse(dy.bitisAt)) ? '' : String(dy.metin || '')) : String(dy || '')).trim();
     // SEPET: etkinlik biletleri. Gerçek sitede ödeme iyzico'da; başarılı ödeme biletleri kesinleştirir, muhasebeye "Etkinlik katılım ücreti" geliri yazar
     const TL = (n) => (n ? `${n.toLocaleString('tr-TR')} TL` : 'Ücretsiz');
     // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
