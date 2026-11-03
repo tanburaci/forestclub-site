@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(10);
+select plan(11);
 
 insert into auth.users (id, email) values ('00000000-0000-4000-8000-0000000000f9', 'dy-yon@test.invalid'), ('00000000-0000-4000-8000-0000000000fa', 'dy-uye@test.invalid');
 insert into yoneticiler (user_id, ad) values ('00000000-0000-4000-8000-0000000000f9', 'DY Yönetici');
@@ -23,9 +23,9 @@ select ok((select aktif + pasif = hepsi and pasif >= 1 from t_n), 'hepsi aktif i
 select throws_ok($$ select uye_duyurusu_gonder('herkes', 'Konu', 'Bir duyuru metni') $$, 'P0001', 'Kime gideceğini seç.', 'geçersiz hedef reddedilir');
 select is((uye_duyurusu_gonder('pasif', 'Tai Chi · üyelere %50', 'Tai Chi atölyesi 7 Kasım.') ->> 'alici')::int, (select pasif from t_n), 'pasif hedefe kuyruğa mail eklendi');
 reset role;
-select ok(exists (select 1 from eposta_kuyrugu where sablon = 'duyuru' and alici = 'dy-pasif@test.invalid' and veri ->> 'konu' = 'Tai Chi · üyelere %50'),
+select ok(exists (select 1 from eposta_kuyrugu where sablon = 'uye_duyuru' and alici = 'dy-pasif@test.invalid' and veri ->> 'konu' = 'Tai Chi · üyelere %50'),
   'pasif üyeye duyuru maili kuyrukta');
-select ok(not exists (select 1 from eposta_kuyrugu where sablon = 'duyuru' and alici in ('dy-aktif@test.invalid', 'dy-basvuru@test.invalid')),
+select ok(not exists (select 1 from eposta_kuyrugu where sablon = 'uye_duyuru' and alici in ('dy-aktif@test.invalid', 'dy-basvuru@test.invalid')),
   'aktif ve hiç ödememiş üyeye gitmedi');
 
 
@@ -38,6 +38,8 @@ select ok(uye_duyurusu_etkinlik_metni((select id from etkinlikler where ad = 'DY
 select ok(uye_duyurusu_etkinlik_metni((select id from etkinlikler where ad = 'DY Chi Gong')) not like '%Yerini ayır%'
   and uye_duyurusu_etkinlik_metni((select id from etkinlikler where ad = 'DY Chi Gong')) like '%DY Chi Gong%', 'geçmiş etkinlik: yalnız ad ve tarih');
 select is(uye_duyurusu_etkinlik_metni(null), '', 'etkinlik seçilmezse ek yok');
+select ok((select metin like '%{metin}%' and konu = '{konu}' from eposta_sablonlari where id = 'uye_duyuru')
+  and (select metin like '%{tarih}%' from eposta_sablonlari where id = 'duyuru'), 'üye duyurusu kendi şablonunu kullanır; etkinlik duyurusu şablonu bozulmadı');
 
 select * from finish();
 rollback;
