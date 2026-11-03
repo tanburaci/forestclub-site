@@ -617,6 +617,16 @@
     // Kapıda karekod: kod sunucuda uyeler.kod ile eşleşir (giris_kaydet). Dönüş: {ad, uye_id, zaten}
     // Üyelere duyuru maili: hedef aktif | pasif | hepsi
     window.FCUyeDuyurusu = {
+      onizle: async (konu, metin, etkinlik) => {
+        const { data, error } = await sb.rpc('uye_duyurusu_onizle', { p_konu: konu, p_metin: metin, p_etkinlik: etkinlik || null });
+        if (error) throw new Error(error.message);
+        return data;
+      },
+      deneme: async (konu, metin, etkinlik) => {
+        const { data, error } = await sb.rpc('uye_duyurusu_deneme', { p_konu: konu, p_metin: metin, p_etkinlik: etkinlik || null });
+        if (error) throw new Error(error.message);
+        return data;
+      },
       sayi: async (hedef) => {
         const { data, error } = await sb.rpc('uye_duyurusu_sayi', { p_hedef: hedef });
         if (error) throw new Error(error.message);

@@ -1960,11 +1960,20 @@ a{color:#111111}a:hover{color:#000000}
               <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Metin
                 <textarea class="fc-input" rows="8" maxlength="5000" value="{{ udMetin }}" onChange="{{ udMetinYaz }}" style="resize: vertical"></textarea>
               </label>
+              <sc-if value="{{ udOnizVar }}" hint-placeholder-val="{{ false }}">
+                <div class="fc-ud-oniz" aria-label="Mail önizlemesi" style="border: 2px dashed #111111; border-radius: 10px; background: #FAFAF7; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+                  <span style="font-size: 12px; font-weight: 700; color: #5E5E5E; letter-spacing: .04em">ÜYELERİN GÖRECEĞİ MAİL (ad örnek)</span>
+                  <span style="font-size: 14px"><b>Konu:</b> {{ udOnizKonu }}</span>
+                  <div style="white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; line-height: 1.55; background: #FFFFFF; border-radius: 8px; padding: 12px 14px; border: 1px solid #DDDDDD">{{ udOnizMetin }}</div>
+                </div>
+              </sc-if>
               <sc-if value="{{ udMesajVar }}" hint-placeholder-val="{{ false }}">
                 <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px">{{ udMesaj }}</p>
               </sc-if>
               <div style="display: flex; gap: 10px; flex-wrap: wrap">
                 <sc-if value="{{ udOnayYok }}" hint-placeholder-val="{{ true }}">
+                  <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ udOnizle }}">Önizle</button>
+                  <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ udDeneme }}">Bana deneme gönder</button>
                   <button type="button" class="fc-btn" onClick="{{ udHazirla }}">Gönder…</button>
                 </sc-if>
                 <sc-if value="{{ udOnayVar }}" hint-placeholder-val="{{ false }}">
@@ -2589,7 +2598,13 @@ class Component extends DCLogic {
     const s = this.state;
     const hedef = s.udHedef || 'aktif';
     const AD = { aktif: 'Aktif üyeler', pasif: 'Süresi dolmuş üyeler', hepsi: 'Hepsi' };
-    const yaz = (alan) => (e) => this.setState({ [alan]: e.target.value, udOnay: null, udMesaj: '' });
+    const yaz = (alan) => (e) => this.setState({ [alan]: e.target.value, udOnay: null, udMesaj: '', udOniz: null });
+    const kontrol = () => {
+      if ((s.udKonu || '').trim().length < 3) { this.setState({ udMesaj: 'Konuyu yaz.' }); return false; }
+      if ((s.udMetin || '').trim().length < 10) { this.setState({ udMesaj: 'Metni yaz.' }); return false; }
+      return true;
+    };
+    const etkNo = s.udEtkinlik ? Number(s.udEtkinlik) : null;
     // Kayıtlı etkinlikler: yaklaşanlar önce (yakından uzağa), sonra geçmişler (yeniden eskiye)
     const tYaz = (t) => t.split('-').reverse().join('.');
     const etk = (s.etkinlikler || []).filter((e) => e.id);
@@ -2599,7 +2614,21 @@ class Component extends DCLogic {
     return {
       udEtkinlikler: [...yak.map((e) => ({ id: String(e.id), ad: `${tYaz(e.tarih)} · ${e.ad}` })), ...gec.map((e) => ({ id: String(e.id), ad: `${tYaz(e.tarih)} · ${e.ad} (geçti)` }))],
       udEtkinlik: s.udEtkinlik || '',
-      udEtkinlikSec: (e) => this.setState({ udEtkinlik: e.target.value, udOnay: null, udMesaj: '' }),
+      udEtkinlikSec: (e) => this.setState({ udEtkinlik: e.target.value, udOnay: null, udMesaj: '', udOniz: null }),
+      udOnizVar: !!s.udOniz, udOnizKonu: s.udOniz ? s.udOniz.konu : '', udOnizMetin: s.udOniz ? s.udOniz.metin : '',
+      udOnizle: () => {
+        if (!kontrol()) return;
+        if (!window.FCUyeDuyurusu) return this.setState({ udMesaj: '', udOniz: { konu: s.udKonu.trim(), metin: `Merhaba Ayşe,\n\n${s.udMetin.trim()}\n\nForest Club Urla` } });
+        this.setState({ udMesaj: 'Önizleme hazırlanıyor…' });
+        window.FCUyeDuyurusu.onizle(s.udKonu.trim(), s.udMetin.trim(), etkNo).then((r) => this.setState({ udMesaj: '', udOniz: r }), (h) => this.setState({ udMesaj: h.message }));
+      },
+      udDeneme: () => {
+        if (!kontrol()) return;
+        if (!window.FCUyeDuyurusu) return this.setState({ udMesaj: 'Önizleme: deneme maili sana gönderildi ✓' });
+        this.setState({ udMesaj: 'Deneme gönderiliyor…' });
+        window.FCUyeDuyurusu.deneme(s.udKonu.trim(), s.udMetin.trim(), etkNo)
+          .then((ep) => this.setState({ udMesaj: `Deneme maili yalnız ${ep} adresine gönderildi ✓ Birkaç dakika içinde gelir; üyelere bir şey gitmedi.` }), (h) => this.setState({ udMesaj: h.message }));
+      },
       udEtkinlikNot: !secili ? 'Seçersen mailin sonuna etkinliğin bilgileri sistemden eklenir.'
         : secili.tarih >= this.BUGUN ? 'Mailin sonuna tarih, saat, üye fiyatı ve "Yerini ayır" bağlantısı eklenir.'
         : 'Geçmiş etkinlik: mailin sonuna yalnız adı ve tarihi eklenir (ör. teşekkür maili).',
@@ -2622,7 +2651,7 @@ class Component extends DCLogic {
         if (!window.FCUyeDuyurusu) return this.setState({ udOnay: null, udMesaj: 'Önizleme: gönderildi ✓', udKonu: '', udMetin: '' });
         this.setState({ udMesaj: 'Gönderiliyor…' });
         window.FCUyeDuyurusu.gonder(hedef, s.udKonu.trim(), s.udMetin.trim(), s.udEtkinlik ? Number(s.udEtkinlik) : null)
-          .then((r) => this.setState({ udOnay: null, udKonu: '', udMetin: '', udEtkinlik: '', udMesaj: `${r.alici} kişiye kuyruğa eklendi ✓ Mailler birkaç dakika içinde gider.` }),
+          .then((r) => this.setState({ udOnay: null, udOniz: null, udKonu: '', udMetin: '', udEtkinlik: '', udMesaj: `${r.alici} kişiye kuyruğa eklendi ✓ Mailler birkaç dakika içinde gider.` }),
             (h) => this.setState({ udOnay: null, udMesaj: h.message }));
       },
     };

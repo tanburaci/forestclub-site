@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(11);
+select plan(14);
 
 insert into auth.users (id, email) values ('00000000-0000-4000-8000-0000000000f9', 'dy-yon@test.invalid'), ('00000000-0000-4000-8000-0000000000fa', 'dy-uye@test.invalid');
 insert into yoneticiler (user_id, ad) values ('00000000-0000-4000-8000-0000000000f9', 'DY Yönetici');
@@ -40,6 +40,14 @@ select ok(uye_duyurusu_etkinlik_metni((select id from etkinlikler where ad = 'DY
 select is(uye_duyurusu_etkinlik_metni(null), '', 'etkinlik seçilmezse ek yok');
 select ok((select metin like '%{metin}%' and konu = '{konu}' from eposta_sablonlari where id = 'uye_duyuru')
   and (select metin like '%{tarih}%' from eposta_sablonlari where id = 'duyuru'), 'üye duyurusu kendi şablonunu kullanır; etkinlik duyurusu şablonu bozulmadı');
+
+-- Önizleme gerçek şablonla; deneme maili yalnız yöneticinin kendi adresine
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', '00000000-0000-4000-8000-0000000000f9', 'role', 'authenticated', 'aal', 'aal2')::text, true);
+select is(uye_duyurusu_onizle('Konu A', 'Metin burada.', null, 'Ayşe') ->> 'metin', E'Merhaba Ayşe,\n\nMetin burada.\n\nForest Club Urla', 'önizleme gerçek şablonla dolduruldu');
+select is(uye_duyurusu_deneme('Konu A', 'Bir deneme metni.'), 'dy-yon@test.invalid', 'deneme maili yöneticinin kendi adresine');
+reset role;
+select ok((select count(*) = 1 from eposta_kuyrugu where sablon = 'uye_duyuru' and veri ->> 'konu' = '[DENEME] Konu A'), 'kuyrukta tek deneme maili, başka alıcı yok');
 
 select * from finish();
 rollback;

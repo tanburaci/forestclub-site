@@ -36,7 +36,7 @@ select is_empty($$
   select p.oid::regprocedure::text from pg_proc p
   where p.pronamespace = 'public'::regnamespace and p.prokind = 'f' and has_function_privilege('authenticated', p.oid, 'execute')
     and not exists (select 1 from pg_depend d where d.objid = p.oid and d.deptype = 'e')
-    and p.proname not in ('demo_adres_mi', 'etkinlik_doluluk', 'istanbul_bugun', 'sayac_artir', 'tanisma_etkinlikleri', 'tr_tarih', 'yonetici_mi', 'indirim_kodu_bak', 'bilet_istek_durum', 'giris_kontrol', 'uyelik_odeme_durum', 'destek_durum', 'uye_duyurusu_sayi', 'uye_duyurusu_gonder',
+    and p.proname not in ('demo_adres_mi', 'etkinlik_doluluk', 'istanbul_bugun', 'sayac_artir', 'tanisma_etkinlikleri', 'tr_tarih', 'yonetici_mi', 'indirim_kodu_bak', 'bilet_istek_durum', 'giris_kontrol', 'uyelik_odeme_durum', 'destek_durum', 'uye_duyurusu_sayi', 'uye_duyurusu_gonder', 'uye_duyurusu_onizle', 'uye_duyurusu_deneme',
       'anket_gonder', 'dekont_karar', 'dondurma_bitir', 'elden_odeme', 'eposta_deneme', 'eposta_yeniden_dene',
       'bilet_karar', 'dekont_bekliyor', 'uye_biletlerim', 'ozel_form', 'dugun_davet_bilgi', 'dugun_fiyatlari', 'dugun_gider_ekle', 'dugun_maliyet_kaydet', 'etkinlik_durum_degistir', 'etkinlik_kaydi', 'form_yanitla', 'giris_kaydet', 'kontenjan_degistir', 'profil_kaydet', 'saglik_ozeti',
       'uye_anonimlestir', 'uye_bagla', 'uyelik_dondur', 'veri_kopyasi', 'veri_talebi_ac', 'yoklama_isaretle') $$,
