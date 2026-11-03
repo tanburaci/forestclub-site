@@ -792,7 +792,7 @@ class Component extends DCLogic {
     // Seçili etkinlik paneli: yoklama (karekod) / iptal-erteleme
     const secilenEtkinlik = (() => {
       const p = this.state.etkPanel;
-      const bos = { epAcik: false, epYoklama: false, epIptal: false, ep: {}, iptalTurler: [], iptalErtele: false, iptal: this.state.iptal, iptalMetin: '', iptalAlan: {} };
+      const bos = { epAcik: false, epYoklama: false, epIptal: false, ep: {}, iptalTurler: [], iptalErtele: false, iptal: this.state.iptal, iptalMetin: '', iptalAlan: {}, epIptalEdildi: false, iptalGeriAl: () => {} };
       if (!p) return bos;
       const k = this.state.kayitlar[p.key] || { kontenjan: 0, kayitli: [], bekleme: [], gelen: [] };
       const [t, ad] = p.key.split('|');
@@ -803,6 +803,14 @@ class Component extends DCLogic {
       const varsayilan = ip.tur === 'iptal'
         ? `${tYaz(t)} tarihli ${ad}, ${ip.neden.toLowerCase()} nedeniyle iptal edildi. Anlayışın için teşekkürler.`
         : `${tYaz(t)} tarihli ${ad}, ${ip.neden.toLowerCase()} nedeniyle ${ip.tarih ? `${tYaz(ip.tarih)} tarihine` : 'ileri bir tarihe'} ertelendi. Kaydın yeni tarihe taşındı.`;
+      // Etkinliğin başlangıcı + 3 saat (İstanbul, UTC+3): {bitis: gün, bitisAt: ISO}. Saat yazılmamışsa gün sonu.
+      const duyuruBitis = () => {
+        const etk = this.state.etkinlikler.find((x) => `${x.tarih}|${x.ad}` === p.key) || {};
+        const m = /(\d{1,2})[.:](\d{2})/.exec(etk.saat || '');
+        const bas = new Date(`${t}T${m ? `${m[1].padStart(2, '0')}:${m[2]}` : '21:00'}:00+03:00`);
+        const son = new Date(bas.getTime() + 3 * 3600000);
+        return { bitis: son.toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' }), bitisAt: son.toISOString() };
+      };
       const iptalAlan = {};
       ['neden', 'tarih', 'mesaj'].forEach((a) => {
         iptalAlan[a] = (e) => { const v = e.target.value; this.setState((s) => ({ iptal: { ...s.iptal, [a]: v }, iptalMesaj: '' })); };
@@ -909,6 +917,23 @@ class Component extends DCLogic {
           sec: () => this.setState((s) => ({ iptal: { ...s.iptal, tur: x.id }, iptalMesaj: '' })),
         })),
         iptalErtele: ip.tur === 'ertele', iptal: ip, iptalAlan,
+        epIptalEdildi: this.state.etkDurum[p.key] === 'İptal edildi',
+        iptalGeriAl: () => {
+          if (!window.confirm(`${ad} (${tYaz(t)}) yeniden yayına alınsın mı? Kayıtlar yerinde duruyor; kimseye otomatik mail gitmez.`)) return;
+          const bitir = () => this.setState((s) => {
+            const d = { ...s.etkDurum }; delete d[p.key];
+            return { etkDurum: d, iptalMesaj: 'İptal geri alındı: etkinlik sitede yeniden görünüyor. Kayıtlılara “etkinlik yapılıyor” diye haber vermeyi unutmayın.' };
+          });
+          if (!window.FCEtkinlikDurum) return bitir();
+          this.setState({ iptalMesaj: 'Kaydediliyor…' });
+          window.FCEtkinlikDurum(p.key, 'yayinda').then(() => {
+            // Sitenin üstünde bu etkinliğin iptal duyurusu duruyorsa kaldırılır
+            if (window.FCAyarKaydet && this.state.siteDuyurusu && this.state.siteDuyurusu.includes(ad)) {
+              window.FCAyarKaydet('site_duyurusu', '').then(() => this.setState({ siteDuyurusu: '' }), () => {});
+            }
+            bitir();
+          }).catch((h) => this.setState({ iptalMesaj: h.message }));
+        },
         iptalMetin: ip.mesaj || varsayilan, iptalMesaj: this.state.iptalMesaj,
         iptalDuyur: () => {
           if (ip.tur === 'ertele' && !ip.tarih) return this.setState({ iptalMesaj: 'Yeni tarihi seçin.' });
@@ -921,7 +946,8 @@ class Component extends DCLogic {
             .then((r) => {
               // Ekrandaki söz: duyuru "sitenin üstünde ve maille"
               // İptal / erteleme duyurusu etkinliğin (eski) günü bitince sitede kaybolur
-              if (window.FCAyarKaydet) window.FCAyarKaydet('site_duyurusu', { metin: (ip.mesaj || varsayilan).slice(0, 300), bitis: t < this.BUGUN ? this.BUGUN : t }).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
+              // Duyuru iptal / erteleme anından etkinliğin (eski) başlangıç saatinden 3 saat sonrasına kadar görünür
+              if (window.FCAyarKaydet) window.FCAyarKaydet('site_duyurusu', { metin: (ip.mesaj || varsayilan).slice(0, 300), ...duyuruBitis() }).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
               return r;
             })
             .then((r) => this.setState((s) => ({

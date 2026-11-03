@@ -1033,7 +1033,7 @@ class Component extends DCLogic {
     // Duyuru: metin ya da {metin, bitis}; bitis günü geçtiyse görünmez (Türkiye saatiyle)
     const dy = canli ? window.FCU.duyuru : '';
     const dyBugun = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
-    const duyuruMetni = (dy && typeof dy === 'object' ? (dy.bitis && dy.bitis < dyBugun ? '' : String(dy.metin || '')) : String(dy || '')).trim();
+    const duyuruMetni = (dy && typeof dy === 'object' ? ((dy.bitis && dy.bitis < dyBugun) || (dy.bitisAt && Date.now() > Date.parse(dy.bitisAt)) ? '' : String(dy.metin || '')) : String(dy || '')).trim();
     return {
       duyuru: duyuruMetni,
       duyuruVar: !!duyuruMetni && !this.state.duyuruKapali && (() => { try { return localStorage.getItem('fc_duyuru_kapali') !== duyuruMetni; } catch (e) { return true; } })(),
