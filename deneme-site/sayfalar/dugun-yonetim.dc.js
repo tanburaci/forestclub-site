@@ -20,12 +20,7 @@ class Component extends DCLogic {
   }
   // Maliyet: satır düzenlemesi (malDuz) kaydedilmemiş değişikliktir; müşteri fiyatı burada da sunucudaki formülle hesaplanır
   maliyetVals(st, Y, FD) {
-    const sayi = (v) => {
-      const t = String(v == null ? '' : v).trim().replace(/\s|TL/gi, '');
-      if (!t) return null;
-      const n = Number(/,/.test(t) ? t.replace(/\./g, '').replace(',', '.') : t);
-      return Number.isFinite(n) ? n : NaN;
-    };
+    const sayi = (v) => window.FCSayi(v);
     const yazi = (v) => (v == null ? '' : String(Number(v)).replace('.', ','));
     const BIRIM = { adet: 'adet', kisi: 'kişi', masa: 'masa', metre: 'metre', sabit: '' };
     const tl = (n) => `${Math.round(n).toLocaleString('tr-TR')} TL`;
@@ -124,7 +119,7 @@ class Component extends DCLogic {
   // Düğün envanteri (etkinlik envanterinden ayrı): özet, gider / ödemesiz giriş / düşüm formları, gruplu liste ve geçmiş
   envanterVals(st, Y, bilgi, tYaz, pill, FD) {
     const env = st.envanter;
-    const sayi = (x) => Number(String(x == null ? '' : x).trim().replace(/\./g, '').replace(',', '.'));
+    const sayi = (x) => { const n = window.FCSayi(x); return n === null ? 0 : n; };
     const NEDEN = { satin: 'satın alındı', hediye: 'hediye / bağış', diger: 'eldeki / diğer', hasarli: 'hasarlı', kullanilamaz: 'kullanılamaz', kayip: 'kayıp' };
     const yenile = (mesaj) => {
       const bitir = (v) => this.setState({ ...v, form: null, dF: null, gHata: '', g: { ...this.GBOS }, o: { ...this.OBOS }, mesaj });
@@ -154,6 +149,7 @@ class Component extends DCLogic {
       g, gAlan: alanlar('g', this.GBOS), gYeniKalem: !g.kalem,
       gEnvDegis: (e) => { const v = !!e.target.checked; this.setState((s) => ({ g: { ...s.g, envantere: v }, gHata: '' })); },
       gKaydet: () => {
+        if (this.state.gHata === 'Kaydediliyor…') return;  // çift tıklama: ikinci kayıt gitmesin
         const tutar = sayi(g.tutar);
         if (!(tutar > 0)) return this.setState({ gHata: 'Tutarı yazın (örn. 12.000).' });
         if (!g.aciklama.trim()) return this.setState({ gHata: 'Kısa bir açıklama yazın.' });
@@ -168,6 +164,7 @@ class Component extends DCLogic {
       },
       o, oAlan: alanlar('o', this.OBOS), oYeniKalem: !o.kalem,
       oKaydet: () => {
+        if (this.state.gHata === 'Kaydediliyor…') return;  // çift tıklama: ikinci kayıt gitmesin
         const adet = Number(o.adet);
         if (!o.kalem && !o.ad.trim()) return this.setState({ gHata: 'Kalem adını yazın ya da listeden seçin.' });
         if (!(adet > 0)) return this.setState({ gHata: 'Miktarı yazın.' });

@@ -19,7 +19,7 @@ import { odemeUrunuAc, shopierHazir } from '../_ortak/shopier.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
 const SINIR: Record<string, number> = {
-  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, uyelik_kart: 10, ozel_form: 10, dugun: 5, hepsi: 30,
+  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, uyelik_kart: 10, ozel_form: 40, dugun: 5, hepsi: 60,
 };
 // yol zaten Turnstile'lı "dekont_adres" / "bilet_adres" adımında verildi
 const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet', 'bilet_kaydet']);
@@ -161,16 +161,17 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
         .map((k: Record<string, unknown>) => ({ etkinlik: Number(k?.etkinlik) || 0, adet: Number(k?.adet) || 0 }));
       const rastgele = crypto.getRandomValues(new Uint8Array(8));
       const yol = `yeni/${Date.now()}-${Array.from(rastgele, (b) => b.toString(16).padStart(2, '0')).join('')}`;
-      // Ödeme yolu: havale (dekont, varsayılan eski davranış), nakit (girişte), kart (Shopier; yönetimde açıksa)
-      const odemeYolu = ['havale', 'nakit', 'kart'].includes(String(v.yol)) ? String(v.yol) : 'havale';
+      // Ödeme yolu: havale (dekont, varsayılan) ya da kart (Shopier; yönetimde açıksa). Nakit (girişte ödeme) ziyaretçiye
+      // kapalı: istekle yer bloke edilemesin
+      if (String(v.yol) === 'nakit') throw new KullaniciHatasi('Bu ödeme yolu kapalı; havale ya da kartla ödeyebilirsin.', 400);
+      const odemeYolu = String(v.yol) === 'kart' ? 'kart' : 'havale';
       if (odemeYolu === 'kart' && !(shopierHazir() && await kartAcikMi())) {
-        throw new KullaniciHatasi('Kartla ödeme çok yakında açılıyor; şimdilik havale ya da nakit seçebilirsin.', 400);
+        throw new KullaniciHatasi('Kartla ödeme çok yakında açılıyor; şimdilik havale ile ödeyebilirsin.', 400);
       }
       const istek = await rpc('bilet_istegi_ac_yol', {
         p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60), p_kalemler: kalemler, p_user: kullanici, p_dosya: yol,
         p_yol: odemeYolu, p_kod: metin(v.kod, 40).trim() || null,
       }) as { id: number; tutar: number };
-      if (odemeYolu === 'nakit') return { id: istek.id, tutar: istek.tutar, yol: 'nakit' };
       if (odemeYolu === 'kart') {
         const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
         // Ürün adı sepetteki bütün etkinlikleri sayar (kişi kaç etkinliğe bilet aldığını Shopier'de de görsün);
@@ -257,7 +258,16 @@ Deno.serve(async (istek) => {
     if (!tumu || !bu) throw new KullaniciHatasi('Çok fazla deneme yapıldı; bir saat sonra tekrar dene.', 429);
 
     if (!TURNSTILE_GEREKMEZ.has(tur)) await turnstileDogrula(govde.jeton, ip);
-    return json(200, { sonuc: await isle(tur, veri, ip) });
+    try {
+      return json(200, { sonuc: await isle(tur, veri, ip) });
+    } catch (h) {
+      // Doğrulamayı geçmiş ama formda eksik / hatalı alan olan deneme sayaçtan düşer: düzeltip yeniden gönderen kişi
+      // (ya da aynı Wi-Fi'daki başkası) bir saat kilitlenmesin. Turnstile'ı geçemeyen istekler sayılmaya devam eder.
+      if (h instanceof KullaniciHatasi) {
+        await Promise.all([rpc('istek_iade', { p_anahtar: anahtar, p_tur: 'hepsi' }), rpc('istek_iade', { p_anahtar: anahtar, p_tur: tur })]).catch(() => {});
+      }
+      throw h;
+    }
   } catch (h) {
     if (h instanceof KullaniciHatasi) return json(h.durum, { hata: h.message });
     if (h instanceof SyntaxError) return json(400, { hata: 'Geçersiz istek.' });

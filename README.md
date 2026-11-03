@@ -15,13 +15,25 @@ Yayında değil. Tasarım demosundaki (claude.ai Design) sayfaların gerçek ver
 - `supabase/seed_demo.sql` yalnız deneme projesine yüklenen ÖRNEK veri (gerçek kişi yok)
 - `supabase/functions/` Edge Function'lar: `form-gonder` (anonim formlar: Turnstile + IP başına sınır, dekont için imzalı
   yükleme adresi), `eposta-gonder` (e-posta kuyruğunu Resend ile gönderir), `dekont-temizle` (kayda bağlanmamış dosyalar),
-  `odeme-baslat` / `odeme-donus` (iyzico ile kartla aidat; `ayarlar.kart_odeme` açıkken)
+  `odeme-baslat` / `odeme-donus` (eski iyzico akışı), `shopier-bildirim` (Shopier ödeme bildirimi: kartla bilet, aidat ve
+  destek; `ayarlar.kart_odeme` açıkken)
 - `supabase/aktarim/` Google Sheets → veritabanı aktarımı: `csv_sql.mjs` (CSV → SQL), `02_aktar.sql`, `03_dogrula.sql`
 - `supabase/tests/` veritabanı güvenlik testleri (pgTAP): `supabase test db`
 - `araclar/dc_derle.mjs` tasarım sayfalarının betiğini `sayfalar/*.dc.js` dosyalarına çıkarır. **Bir `.dc.html` değişince
   `node araclar/dc_derle.mjs` çalıştırılıp çıkan `.dc.js` de eklenir** (CI denetler; CSP'de `unsafe-eval` yok)
 - `testler/` tarayıcı testleri (Playwright; Supabase sahte, CSP uygulanmış): `cd testler && npm ci && npm run tarayici`
 - `.github/workflows/ci.yml` her PR'da: sözdizimi, sayfa betikleri, Edge Function tür denetimi, göçler + pgTAP, tarayıcı testleri
+
+## Yayın sırası
+
+1. PR birleştirilir (site hemen değişmez).
+2. Göç varsa: Actions › "Supabase'e uygula" › **goc**; Edge Function değiştiyse ardından **fonksiyon** (önce goc, sonra
+   fonksiyon: yeni fonksiyonlar yeni veritabanı işlevlerini bekler).
+3. Site her gece 03.00'te (İstanbul) yalnız `deneme-site/` değiştiyse ve son commit'in CI denetimleri yeşilse Netlify'a
+   yayınlanır (her yayın Netlify kredisi harcar; aynı gün birden çok PR birleştirmek tek yayın demektir). Acil durumda
+   Actions › "Netlify'a yayınla" › Run workflow hemen yayınlar.
+4. Göç dosyası adları sıralıdır ve en sondakinden büyük olmalı (şu an `20261206000000_…`; sonraki `20261207000000_…`).
+   `supabase migration new` bugünün tarihini verir ve listede öne düşer; kullanmayın.
 
 Yönetim paneli iki adımlı girişle açılır (şifre / e-posta bağlantısı + doğrulama uygulaması kodu). Yönetici eklemek ya da
 çıkarmak yalnız Supabase SQL Editor'dan: `insert into yoneticiler (user_id, ad) values ('<auth kullanıcı id>', 'Ad');`.
@@ -30,7 +42,7 @@ Telefonu kaybeden yönetici: Supabase › Authentication › Users › kullanıc
 Aidattan muaf üye (yönetim ekibi): Yönetim › Üyeler › Profil › "Aidattan muaf". Üyeliği süresiz aktif kalır (bitiş 31.12.2099),
 yenileme hatırlatması gitmez; işaret kaldırılınca bugünden 30 gün verilir.
 
-Ödeme: IBAN + dekont; iyzico (kartla aidat) yönetim panelinden açılınca kart da. Gerçek veri (Google Sheets) yayın günü boş veritabanına aktarılacak.
+Ödeme: IBAN + dekont; yönetim panelinden kartla ödeme açılınca Shopier ile kart da (bilet, aidat, destek). Gerçek veri (Google Sheets) yayın günü boş veritabanına aktarılacak.
 
 ## Eski Vercel adresi
 

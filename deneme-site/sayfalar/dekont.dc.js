@@ -13,6 +13,7 @@ class Component extends DCLogic {
       epostaYaz: (e) => this.setState({ eposta: e.target.value, hata: '' }),
       dosyaSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ dosya: f || null, hata: '' }); },
       gonder: () => {
+        if (/…$/.test(this.state.hata || '')) return;  // yükleme sürüyor: çift tıklama ikinci dekont göndermesin
         this.setState({ hata: 'Yükleniyor…' });
         window.FCSDekont(this.state.eposta, this.state.dosya)
           .then(() => this.setState({ gitti: true, hata: '' }))

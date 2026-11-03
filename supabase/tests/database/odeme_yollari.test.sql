@@ -46,7 +46,9 @@ select is((select kasa::text || '/' || odeme::text from muhasebe_hareketleri whe
   'nakit bilet: muhasebe nakit kasa / elden');
 
 -- Kart ödendi (Shopier bildirimi): tutar eşleşmeli, biletler kendiliğinden kesinleşir, ikinci bildirim işlemez
-select throws_ok(format($$ select bilet_kart_odendi(%s, 'SIP-1', 999) $$, (select r ->> 'id' from t_k)), 'P0001', 'Ödenen tutar istekle eşleşmiyor.', 'eksik tutar reddedilir');
+create temp table t_k2 as select bilet_istegi_ac_yol('Eksik Kişi', 'eksik@test.invalid', '05320000003',
+  jsonb_build_array(jsonb_build_object('etkinlik', (select yoga from t_e), 'adet', 1)), null, 'yeni/1730000000000-kart00002', 'kart') as r;
+select is(bilet_kart_odendi((select (r ->> 'id')::bigint from t_k2), 'SIP-0', 999) ->> 'durum', 'iade', 'eksik tutar: bilet verilmez, iade');
 select is((bilet_kart_odendi((select (r ->> 'id')::bigint from t_k), 'SIP-1', 1000) ->> 'adet')::int, 1, 'kart ödendi: bilet kesinleşti');
 select is((bilet_kart_odendi((select (r ->> 'id')::bigint from t_k), 'SIP-1', 1000) ->> 'zaten')::boolean, true, 'aynı bildirim ikinci kez işlemez');
 select is((select kasa::text || '/' || odeme::text from muhasebe_hareketleri where belge = 'bilet:' || (select r ->> 'id' from t_k)), 'banka/kart',

@@ -104,7 +104,8 @@
       const t = new Date();
       const dk = t.getUTCHours() * 60 + t.getUTCMinutes();
       const { dogus, batis } = gunesSaatleri(t);
-      evre = dk < dogus - 30 || dk > batis + 30 ? 'gece' : Math.abs(dk - dogus) <= 40 || Math.abs(dk - batis) <= 40 ? 'safak' : 'gunduz';
+      // Gece: gün batımından ~12 dk sonra (müşteri isteği: hava kararınca, yarım saat beklemeden)
+      evre = dk < dogus - 30 || dk > batis + 12 ? 'gece' : Math.abs(dk - dogus) <= 40 || Math.abs(dk - batis) <= 40 ? 'safak' : 'gunduz';
     }
     const h = ['acik', 'bulutlu', 'yagmur', 'kar'].find((x) => test.includes(x)) || hava;
     const k = document.documentElement.classList;

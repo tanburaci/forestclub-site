@@ -180,7 +180,8 @@
   // İndirim kodu: geçerliyse {kod, tur: 'yuzde' | 'tl', deger}; tutar sunucuda yeniden hesaplanır
   window.FCSIndirimBak = async (kod) => {
     const { data, error } = await sb.rpc('indirim_kodu_bak', { p_kod: String(kod || '').trim() });
-    if (error) throw new Error(/geçerli değil/.test(error.message) ? 'Bu indirim kodu geçerli değil.' : 'Kod şu an denetlenemedi; biraz sonra tekrar dene.');
+    if (error) throw new Error(/geçerli değil|Çok fazla/.test(error.message) ? error.message : 'Kod şu an denetlenemedi; biraz sonra tekrar dene.');
+    if (!data || data.gecerli === false) throw new Error('Bu indirim kodu geçerli değil.');
     return data;
   };
   window.FCSBiletDekont = async (hak, eposta, dosya) => {

@@ -30,8 +30,8 @@ select is((select count(*) from uye_notlari where metin = 'Gizli not')::int, 1, 
 reset role;
 
 -- Kontenjan: incelemedeki bilet de yer tutar
-insert into etkinlikler (tarih, saat, tur, ad, kontenjan, bilet_fiyati, durum) values
-  (istanbul_bugun() + 5, '10.00', 'bulusma', 'Kontenjan Test YO', 1, 500, 'yayinda');
+insert into etkinlikler (tarih, saat, tur, ad, kontenjan, bilet_fiyati, uyelere, durum) values
+  (istanbul_bugun() + 5, '10.00', 'bulusma', 'Kontenjan Test YO', 1, 500, 'ucretsiz', 'yayinda');
 insert into bilet_istekleri (ad, eposta, kalemler, tutar, dosya, yuklendi)
   values ('Misafir', 'misafir-yo@test.invalid',
           jsonb_build_array(jsonb_build_object('etkinlik_id', (select id from etkinlikler where ad = 'Kontenjan Test YO'), 'adet', 1, 'tutar', 500)),

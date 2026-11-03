@@ -6,6 +6,21 @@
   const A = window.FC_AYAR;
   const { sb, formGonder } = window.FC_ORTAK;
 
+  // Yönetici soruları / seçenekleri değiştirdiyse eski cevabın artık olmayan kısımları atılır (yoksa form kaydedilemez)
+  function guncelCevaplar(form, eski) {
+    const yeni = {};
+    (form.sorular || []).forEach((s) => {
+      const c = eski[s.id];
+      if (c == null) return;
+      const secenekli = Array.isArray(s.secenekler) && s.secenekler.length && (s.tur === 'tek' || s.tur === 'coklu');
+      if (s.tur === 'coklu') {
+        const l = (Array.isArray(c) ? c : [c]).filter((x) => !secenekli || s.secenekler.includes(x));
+        if (l.length) yeni[s.id] = l;
+      } else if (!secenekli || s.secenekler.includes(c)) yeni[s.id] = c;
+    });
+    return yeni;
+  }
+
   async function basla() {
     const kok = document.getElementById('kok');
     const q = new URLSearchParams(location.search);
@@ -23,8 +38,12 @@
         const { data: form } = await sb.from('formlar').select('id, baslik, aciklama, sorular').eq('id', id).maybeSingle();
         if (!form) F = { durum: 'kapali' };
         else {
-          const { data: yanit } = await sb.from('form_yanitlari').select('cevaplar').eq('form_id', id).maybeSingle();
-          F = { durum: 'form', form, cevaplar: (yanit && yanit.cevaplar) || {}, dahaOnce: !!yanit };
+          // Yalnız kendi cevabı (yöneticinin oturumu herkesin cevabını görebilir; başkasınınki forma dolmasın)
+          const { data: ben } = await sb.from('uyeler').select('id').eq('user_id', session.user.id).maybeSingle();
+          const { data: yanit } = ben
+            ? await sb.from('form_yanitlari').select('cevaplar').eq('form_id', id).eq('uye_id', ben.id).maybeSingle()
+            : { data: null };
+          F = { durum: 'form', form, cevaplar: guncelCevaplar(form, (yanit && yanit.cevaplar) || {}), dahaOnce: !!yanit };
           window.FCFGonder = async (cevaplar) => {
             const { error } = await sb.rpc('form_yanitla', { p_form: id, p_cevaplar: cevaplar });
             if (error) throw new Error(error.message);

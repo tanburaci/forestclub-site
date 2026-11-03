@@ -197,7 +197,7 @@ class Component extends DCLogic {
         kaydir();
       },
       sss: [
-        { s: 'Sitede neden fiyat yok?', c: 'Her düğün farklı: misafir sayısı, akış ve seçimler fiyatı belirler. Tasarımınızı aldıktan sonra sizi arayıp size özel teklif hazırlıyoruz.' },
+        { s: 'Sitedeki fiyatlar kesin mi?', c: 'Gördüğünüz fiyatlar kalem başına başlangıç fiyatıdır; fiyatı yazmayan kalemler teklifle belirlenir. Her düğün farklı: misafir sayısı, akış ve seçimler toplamı belirler. Tasarımınızı aldıktan sonra sizi arayıp size özel teklif hazırlıyoruz.' },
         { s: 'Yemeği kim veriyor?', c: 'Yemek mekanın mutfağından gelir. Menü tercihinizi bize iletirseniz mekanla birlikte netleştiririz.' },
         { s: 'Tarihimiz kesin değil, yine de yazabilir miyiz?', c: 'Elbette. "Tarih henüz belli değil" seçeneğiyle gönderin; uygun tarihleri birlikte konuşalım.' },
         { s: 'Alanı görebilir miyiz?', c: 'Evet. Görüşmemizde uygun bir gün belirleyip alanı birlikte gezebiliriz.' },
