@@ -622,8 +622,8 @@
         if (error) throw new Error(error.message);
         return data;
       },
-      gonder: async (hedef, konu, metin) => {
-        const { data, error } = await sb.rpc('uye_duyurusu_gonder', { p_hedef: hedef, p_konu: konu, p_metin: metin });
+      gonder: async (hedef, konu, metin, etkinlik) => {
+        const { data, error } = await sb.rpc('uye_duyurusu_gonder', { p_hedef: hedef, p_konu: konu, p_metin: metin, p_etkinlik: etkinlik || null });
         if (error) throw new Error(error.message);
         return data;
       },
