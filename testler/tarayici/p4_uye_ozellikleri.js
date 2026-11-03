@@ -247,7 +247,8 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
 
     // İletişim
     await sekme(y.page, 'İletişim');
-    dogru(await y.page.locator('input[type=tel]').count() === 0, 'iletişim ayarlarında WhatsApp numarası alanı yok');
+    dogru(await y.page.getByText(/WhatsApp numara/i).count() === 0 && await y.page.locator('input[type=tel]').count() === 1
+      && await y.page.getByText('Kurumsal telefon (isteğe bağlı)').count() === 1, 'iletişim ayarlarında WhatsApp numarası alanı yok (yalnız kurumsal telefon)');
     await y.page.locator('input[type=url]').fill('http://kotu');
     await y.page.getByRole('button', { name: 'Kaydet' }).click();
     await y.page.getByText('WhatsApp topluluğu bağlantısı https:// ile başlamalı.').waitFor({ timeout: 3000 });

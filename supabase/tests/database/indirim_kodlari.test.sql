@@ -17,8 +17,8 @@ insert into indirim_kodlari (kod, tur, deger, son_tarih, sinir) values
 select ok(not has_table_privilege('anon', 'public.indirim_kodlari', 'select'), 'ziyaretçi kod listesini okuyamaz');
 select ok(has_function_privilege('anon', 'public.indirim_kodu_bak(text)', 'execute'), 'ziyaretçi tek kodu deneyebilir');
 select is(indirim_kodu_bak(' yuzde20 ') ->> 'tur', 'yuzde', 'kod büyük/küçük harf ve boşluk duyarsız');
-select throws_ok($$ select indirim_kodu_bak('ESKI') $$, 'P0001', 'Bu indirim kodu geçerli değil.', 'süresi geçmiş kod reddedilir');
-select throws_ok($$ select indirim_kodu_bak('YOKBOYLE') $$, 'P0001', 'Bu indirim kodu geçerli değil.', 'olmayan kod aynı hatayı verir');
+select is(indirim_kodu_bak('ESKI') ->> 'gecerli', 'false', 'süresi geçmiş kod reddedilir');
+select is(indirim_kodu_bak('YOKBOYLE')::text, '{"gecerli": false}', 'olmayan kod aynı yanıtı verir');
 
 -- %20: 1×1000 + 1×3000 = 4000 → 800 indirim, kalemlere 200 / 600
 create temp table t_y as select bilet_istegi_ac_yol('Kod Kişi', 'kod@test.invalid', '05320000003',
@@ -43,7 +43,7 @@ select throws_ok($$ select bilet_istegi_ac_yol('Kod Kişi', 'kod2@test.invalid',
   jsonb_build_array(jsonb_build_object('etkinlik', (select yoga from t_e), 'adet', 1)), null, 'yeni/1730000000000-kod000002', 'havale', 'KOCAMAN') $$,
   'P0001', 'Bu indirim kodu bu sepette kullanılamaz.', 'toplamı aşan TL kodu reddedilir');
 update indirim_kodlari set kullanilan = 1 where kod = 'TL500';
-select throws_ok($$ select indirim_kodu_bak('TL500') $$, 'P0001', 'Bu indirim kodu geçerli değil.', 'sınırı dolan kod reddedilir');
+select is(indirim_kodu_bak('TL500') ->> 'gecerli', 'false', 'sınırı dolan kod reddedilir');
 
 select * from finish();
 rollback;

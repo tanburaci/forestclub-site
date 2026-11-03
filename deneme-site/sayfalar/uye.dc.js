@@ -47,7 +47,7 @@ class Component extends DCLogic {
   // Seçilen hesabın verisiyle paneli açar (her girişte temiz başlar)
   hesapAc(eposta) {
     const h = this.HESAPLAR[eposta];
-    const benKayitli = h.bitis > this.BUGUN;
+    const benKayitli = h.bitis >= this.BUGUN;
     this.setState({
       girildi: true, girisHata: '', sifre: '', hesap: eposta, sekme: 'ana',
       bitis: h.bitis, odemeler: h.odemeler.map((o) => ({ ...o })), odeme: 'yok', profil: { ...h.profil, ozel: [...h.profil.ozel] }, katildi: h.katildi,
@@ -109,7 +109,7 @@ class Component extends DCLogic {
 
     // Üyelik durumu: aktif / süresi dolmuş / hiç ödememiş
     const muaf = !!h.muaf;  // aidattan muaf (yönetim ekibi): süresiz aktif, ödeme ve dondurma yok
-    const aktif = muaf || (!!bitis && bitis > BUGUN);
+    const aktif = muaf || (!!bitis && bitis >= BUGUN);
     const durumTur = aktif ? 'aktif' : bitis ? 'doldu' : 'basvuru';
     const kalan = aktif && bitis ? gunFark(bitis, BUGUN) : 0;
     const dond = this.state.dondurma;
@@ -317,6 +317,7 @@ class Component extends DCLogic {
       sifreFormu: !!this.state.sifreFormu,
       sifreDegistir: () => this.setState((s) => ({ sifreFormu: !s.sifreFormu, yeni1: '', yeni2: '', profilMesaj: '' })),
       panelSifreKaydet: () => {
+        if (/…$/.test(this.state.profilMesaj || '')) return;  // istek sürüyor: çift tıklama
         const { yeni1, yeni2 } = this.state;
         if (yeni1.length < 8 || !/\d/.test(yeni1)) return this.setState({ profilMesaj: 'Şifre en az 8 karakter olmalı ve bir rakam içermeli.' });
         if (yeni1 !== yeni2) return this.setState({ profilMesaj: 'İki şifre aynı değil.' });
@@ -339,6 +340,7 @@ class Component extends DCLogic {
       girisBilgi: this.state.girisBilgi,
       // Şifresiz giriş: e-postaya tek kullanımlık bağlantı; bağlantıyla dönünce başvuru hesaba bağlanır (uye_bagla)
       baglantiGonder: () => {
+        if (/…$/.test(this.state.girisBilgi || '')) return;  // istek sürüyor: çift tıklama
         const ep = this.state.eposta.trim().toLowerCase();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ep)) return this.setState({ girisHata: 'Başvuruda yazdığın e-postayı yaz.', girisBilgi: '' });
         if (!window.FCGirisBaglantisi) return this.setState({ girisHata: 'Önizlemede bağlantı gönderilmez.', girisBilgi: '' });
@@ -451,6 +453,7 @@ class Component extends DCLogic {
       sepetOnay: !!this.state.sepetOnay, sepetOnayDegis: () => this.setState((st) => ({ sepetOnay: !st.sepetOnay, sepetHata: '' })),
       // Gerçek sitede iyzico; başarılı ödemede biletler kesinleşir, üye bileti alınan etkinlikte yerin ayrılır
       sepetOde: () => {
+        if (/…$/.test(this.state.sepetHata || '')) return;  // istek sürüyor: çift tıklama
         // Canlıda: 1) sunucu isteği açar ve tutarı söyler, 2) dekont yüklenir; yönetici onaylayınca biletler e-postayla
         if (canli && this.state.sepetAdim === 'dekont') {
           this.setState({ sepetHata: 'Yükleniyor…' });

@@ -59,6 +59,7 @@ class Component extends DCLogic {
       cagriKvkk: this.state.cagriKvkk, cagriHata: this.state.cagriHata,
       cagriKvkkDegis: () => this.setState((st) => ({ cagriKvkk: !st.cagriKvkk, cagriHata: '' })),
       cagriGonder: () => {
+        if (this.state.cagriHata === 'Gönderiliyor…') return;  // çift tıklama: ikinci kayıt gitmesin
         if (!window.FCSCagri) return this.setState({ cagriGitti: true });
         // Zorunlu alanlar (sunucu da aynı kuralla denetler): eksik olan adıyla söylenir
         const bos = (x) => !String(x || '').trim();
@@ -69,8 +70,11 @@ class Component extends DCLogic {
                 : String(cv.baslik || '').trim().length < 2 ? 'Atölyenin ya da buluşmanın adını yaz.'
                   : String(cv.anlat || '').trim().length < 3 ? '"Bize biraz anlatır mısın?" alanını doldur.' : '';
         if (eksik) return this.setState({ cagriHata: eksik });
-        if (secim.uye === 'Hayır' && secim.uyeOl === 'Evet, üye olmak istiyorum' && (bos(cv.uyeEposta) || bos(cv.uyeTelefon))) {
-          return this.setState({ cagriHata: 'Üyelik için e-posta adresini ve telefon numaranı yaz.' });
+        if (secim.uye === 'Hayır' && secim.uyeOl === 'Evet, üye olmak istiyorum') {
+          // Üyelik başvurusunun kuralları (basvuru_yap): geçerli e-posta, en az 10 haneli telefon
+          if (bos(cv.uyeEposta) || bos(cv.uyeTelefon)) return this.setState({ cagriHata: 'Üyelik için e-posta adresini ve telefon numaranı yaz.' });
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(cv.uyeEposta).trim())) return this.setState({ cagriHata: 'Üyelik için geçerli bir e-posta adresi yaz.' });
+          if (String(cv.uyeTelefon).replace(/\D/g, '').length < 10) return this.setState({ cagriHata: 'Üyelik için telefon numaranı eksiksiz yaz (örn. 05xx xxx xx xx).' });
         }
         if (!this.state.cagriKvkk) return this.setState({ cagriHata: 'Göndermek için KVKK metnini onayla.' });
         const uyeOl = secim.uye === 'Hayır' && secim.uyeOl === 'Evet, üye olmak istiyorum';

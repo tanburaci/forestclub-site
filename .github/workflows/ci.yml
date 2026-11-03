@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0  # canlıya uygulayan iş (supabase.yml) ile aynı sürüm
       - name: Yerel Supabase (bütün göçler + örnek veri)
         run: supabase start -x realtime,studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit
       - name: pgTAP testleri

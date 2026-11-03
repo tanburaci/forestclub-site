@@ -71,7 +71,7 @@
     const kisiler = uyeler.map((u, i) => {
       idSira.set(u.id, i);
       const ods = (odemeGrup.get(u.id) || []).sort((a, b) => (a.tarih < b.tarih ? -1 : a.tarih > b.tarih ? 1 : 0));
-      const durum = u.bitis ? (u.bitis > B ? 'aktif' : 'doldu') : 'basvuru';
+      const durum = u.bitis ? (u.bitis >= B ? 'aktif' : 'doldu') : 'basvuru';
       return {
         i, id: u.id, ad: u.ad, eposta: u.eposta, tel: u.tel || '', kod: u.kod, durum, bas: u.baslangic, bitis: u.bitis,
         basvuru: u.basvuru_tarihi, yol: ods.length ? ods[ods.length - 1].yol : 'kart',
@@ -273,7 +273,7 @@
     const b = window.FC && window.FC.basvurular;
     if (!b) return { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' };
     const B = window.FC.bugun;
-    const uyelikYazi = (u) => (!u ? '—' : u.bitis && u.bitis > B ? `aktif, bitiş ${trTarih(u.bitis)}` : u.bitis ? `süresi doldu (${trTarih(u.bitis)})` : 'hiç ödememiş');
+    const uyelikYazi = (u) => (!u ? '—' : u.bitis && u.bitis >= B ? `aktif, bitiş ${trTarih(u.bitis)}` : u.bitis ? `süresi doldu (${trTarih(u.bitis)})` : 'hiç ödememiş');
     const sirali = [...b.dekontlar].sort((x, y) => y.created_at.localeCompare(x.created_at));
     const bekleyen = sirali.filter((d) => d.durum === 'bekliyor').map((d) => ({
       ad: d.ad, eposta: d.eposta, tarih: zaman(d.created_at), tutar: tl(d.tutar), uyelik: uyelikYazi(b.uyeler.get(d.uye_id)),
@@ -675,6 +675,8 @@
             sb.from('muhasebe_hareketleri').insert(hareketSatiri(h)).select('id').single().then(({ data, error }) => {
               const bekleyen = yazilanH.get(h.id);
               yazilanH.delete(h.id);
+              // Geçici numara listeden çıkınca silme isteği gitmesin (yerini gerçek numara alır ya da satır kaldırılır)
+              bilinenH.delete(h.id);
               if (error) {
                 panel.setState((s) => ({ hareketler: s.hareketler.filter((x) => x.id !== h.id) }));
                 return bildir(`Kaydedilemedi (satır listeden kaldırıldı): ${error.message}`, true);
@@ -708,6 +710,7 @@
             sb.from('envanter').insert(envanterSatiri(e)).select('id').single().then(({ data, error }) => {
               const bekleyen = yazilanE.get(e.id);
               yazilanE.delete(e.id);
+              bilinenE.delete(e.id);
               if (error) {
                 panel.setState((s) => ({ envanter: s.envanter.filter((x) => x.id !== e.id) }));
                 return bildir(`Kaydedilemedi (kalem listeden kaldırıldı): ${error.message}`, true);

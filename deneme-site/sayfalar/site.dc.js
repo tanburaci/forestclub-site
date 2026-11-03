@@ -5,7 +5,16 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     // Tam ekran afiş Esc ile kapanır
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.state.afisTam) this.setState({ afisTam: '' }); });
+    document.addEventListener('keydown', (e) => {
+      // Etkinlik kartı klavyeyle de açılır (Tab ile gelinip Enter)
+      if (e.key === 'Enter' && e.target && e.target.classList && e.target.classList.contains('fs-kart-ac')) { e.preventDefault(); e.target.click(); return; }
+      if (e.key !== 'Escape') return;
+      if (this.state.afisTam) return this.setState({ afisTam: '' });
+      // Açık pencere (sepet, etkinlik kartı, formlar): Escape en üstteki pencerenin kapat düğmesine basar
+      const pencereler = [...document.querySelectorAll('.fs-modal[role="dialog"]')].filter((m) => m.getClientRects().length);
+      const kapat = pencereler.length && pencereler[pencereler.length - 1].querySelector('.fs-modal-kapat');
+      if (kapat) kapat.click();
+    });
     this.state = { uyeGirisli: false, gecmisTumu: false, sepet: {}, sepetAcik: false, sAdim: 'sepet', sAd: '', sEposta: '', sTel: '', sOnay: false, sHata: '', hak: null, sDosya: null, satilan: {}, biletler: [], tEtk: '', bAd: '', bTel: '', bEposta: '', bKosul: false, bDogal: false, bKvkk: false, bFoto: false, bHata: '', dDosya: null, dHata: '', dekontGitti: false, duyuruKapali: false, tanisma: '', tAd: '', tEposta: '', tOnay: false, tHata: '', uyeAdim: 'form', tur: 'tumu', asagi: false, kapali: false, cagriAcik: false, cagriAdim: 'afis', destek: '', dsTutar: 1000, dsElle: false, dsTutarYazi: '', dsHata: '', dsKopya: '', waSecAcik: false };
     this.bekle = null;
     this.kaydir = () => {
@@ -175,6 +184,10 @@ class Component extends DCLogic {
       toplulukLink: /^https:\/\//.test(IL.topluluk || '') ? IL.topluluk : '#', toplulukYazi: /^https:\/\//.test(IL.topluluk || '') ? 'WhatsApp topluluğu' : '[WhatsApp topluluğu]',
     };
     ilt.epostaLink = `mailto:${ilt.eposta}`;
+    // Kulübün kurumsal telefonu (yönetim › Ayarlar › Kulüp bilgileri); girilmediyse hiç görünmez
+    ilt.tel = /^[+0-9 ()-]{10,20}$/.test(String(IL.tel || '').trim()) ? String(IL.tel).trim() : '';
+    ilt.telVar = !!ilt.tel;
+    ilt.telLink = `tel:${ilt.tel.replace(/[^+0-9]/g, '')}`;
     // Tanışma bileti: önizlemede örnek listeler; gerçekte üyeler ve verilmiş biletler veritabanından bakılır
     const UYE_EPOSTA = ['deniz@ornek.com', 'ece@ornek.com', 'selin@ornek.com', 'can@ornek.com'];
     const BILETLI = ['misafir@ornek.com'];
@@ -191,7 +204,9 @@ class Component extends DCLogic {
     // SEPET: etkinlik biletleri. Gerçek sitede ödeme iyzico'da; başarılı ödeme biletleri kesinleştirir, muhasebeye "Etkinlik katılım ücreti" geliri yazar
     const TL = (n) => (n ? `${n.toLocaleString('tr-TR')} TL` : 'Ücretsiz');
     // Destek ol: kart yalnız canlıda ve kart_odeme açıkken; kopyalama panoya, olmazsa metin seçilir
-    const odemeBilgi = (window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' };
+    // Tutar yönetimdeki aidat ayarından (ayarlar.aidat); IBAN ve alıcı ayar.js'ten
+    const odemeBilgi = { ...((window.FC_AYAR && window.FC_AYAR.odeme) || { tutar: '3.000 TL', alici: '', iban: '' }),
+      ...(Number(AYAR.aidat) > 0 ? { tutar: `${Number(AYAR.aidat).toLocaleString('tr-TR')} TL` } : {}) };
     const kartAcik = !canli || AYAR.kart_odeme === true;
     // Destek ol: kartla destek henüz iyzico'da (çalışmıyor); Shopier'e taşınana kadar yalnız IBAN
     const destekKartAcik = kartAcik;
@@ -296,6 +311,7 @@ class Component extends DCLogic {
       odemeAlici: odemeBilgi.alici, odemeIban: odemeBilgi.iban,
       sDekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ sDosya: f || null, sHata: '' }); },
       sDekontGonder: () => {
+        if (/…$/.test(this.state.sHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci istek açmasın
         // Seçilen dosya kutudan da okunur (seçip hemen gönderince durum henüz güncellenmemiş olabilir)
         const kutu = document.querySelector('.fs-modal input[type="file"]');
         const dosya = this.state.sDosya || (kutu && kutu.files && kutu.files[0]) || null;
@@ -360,6 +376,7 @@ class Component extends DCLogic {
       bilgiyeGec: () => (sepetToplamAdet ? this.setState({ sAdim: 'bilgi', sHata: '' }) : this.setState({ sHata: 'Sepetin boş.' })),
       sepeteDon: () => this.setState({ sAdim: 'sepet', sHata: '' }),
       odemeyeGec: () => {
+        if (/…$/.test(this.state.sHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci istek açmasın
         const { sAd, sEposta, sTel, sOnay } = this.state;
         if (!sAd.trim()) return this.setState({ sHata: 'Adını yaz.' });
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sEposta.trim())) return this.setState({ sHata: 'Geçerli bir e-posta yaz.' });
@@ -462,6 +479,7 @@ class Component extends DCLogic {
         if (hedef) hedef.scrollIntoView({ behavior: 'smooth' });
       },
       tanismaGonder: (e) => {
+        if (/…$/.test(this.state.tHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci istek açmasın
         if (e && e.preventDefault) e.preventDefault();
         const ep = this.state.tEposta.trim().toLowerCase();
         if (String(this.state.tRef || '').trim().length < 3) return this.setState({ tHata: 'Bileti veren kişinin adını ve soyadını yaz.' });
@@ -548,6 +566,7 @@ class Component extends DCLogic {
       dHata: this.state.dHata,
       dekontSec: (e) => { const f = e.target.files && e.target.files[0]; this.setState({ dDosya: f || null, dHata: '' }); },
       dekontGonder: () => {
+        if (/…$/.test(this.state.dHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci istek açmasın
         if (!this.state.dDosya) return this.setState({ dHata: 'Dekont dosyasını seç.' });
         this.setState({ dHata: 'Yükleniyor…' });
         window.FCSDekont(this.state.bEposta, this.state.dDosya)
@@ -561,6 +580,7 @@ class Component extends DCLogic {
       uOdemeSayfa: this.state.uOdemeSayfa || '#', uPencereYazi: this.state.uPencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
       uyeKartVazgec: () => { clearInterval(this.uyeTakip); this.setState({ uyeAdim: 'odeme', uKartHata: '' }); },
       uyeKartla: () => {
+        if (/…$/.test(this.state.uKartHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci istek açmasın
         const eposta = (this.state.bEposta || '').trim();
         if (!eposta) return this.setState({ uKartHata: 'Önce başvuru formunu doldur.' });
         let pencere = null;
@@ -588,6 +608,7 @@ class Component extends DCLogic {
       bDogalDegis: () => this.setState((s) => ({ bDogal: !s.bDogal, bHata: '' })),
       bKvkkDegis: () => this.setState((s) => ({ bKvkk: !s.bKvkk, bHata: '' })),
       uyeOdemeye: (e) => {
+        if (/…$/.test(this.state.bHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci istek açmasın
         if (e && e.preventDefault) e.preventDefault();
         if (yakinda) return this.setState({ bHata: YAKINDA_MESAJ });
         if (!window.FCSBasvuru) return this.setState({ uyeAdim: 'odeme' });
@@ -660,9 +681,11 @@ class Component extends DCLogic {
               stil: `font:600 14px Figtree,sans-serif;border:2px solid #111111;border-radius:999px;padding:8px 14px;min-height:40px;cursor:pointer;${on ? 'background:#111111;color:#FFFFFF' : 'background:#FFFFFF;color:#111111'}` };
           }),
           gnGonder: () => {
+            if (/…$/.test(this.state.gnHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci istek açmasın
             if (String(gn.ad).trim().length < 3) return this.setState({ gnHata: 'Adını ve soyadını yaz.' });
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(gn.eposta).trim())) return this.setState({ gnHata: 'Geçerli bir e-posta yaz.' });
             if (!gn.kvkk) return this.setState({ gnHata: 'Devam etmek için KVKK metnini onayla.' });
+            if (yakinda) return this.setState({ gnHata: 'Gönüllü başvuruları açılışla birlikte başlıyor. Instagram\'dan takipte kal!' });
             if (!window.FCSGonullu) return this.setState({ gnGitti: true });
             this.setState({ gnHata: 'Gönderiliyor…' });
             window.FCSGonullu({ ad: gn.ad.trim(), eposta: gn.eposta.trim(), tel: gn.tel.trim(), not: gn.not.trim(), alanlar: gn.alanlar, kvkk: true })

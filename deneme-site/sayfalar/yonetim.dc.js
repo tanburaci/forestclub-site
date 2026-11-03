@@ -86,11 +86,13 @@ class Component extends DCLogic {
     this.DEMO = window.FC ? window.FC.DEMO : this.demoUret(ETKINLIKLER);  // deneme sitesinde Supabase verisi
     // Karekod numarası = sıra (0 → FC-U-0001 Deniz Yılmaz)
     this.KISILER = this.DEMO.kisiler.map((k) => k.ad);
+    // Aidat tutarı ayarlardan (ayarlar.aidat); elden ödeme formu ve muhasebe özeti bunu kullanır
+    this.AIDAT_YAZI = (Number(window.FC && window.FC.ayarlar && window.FC.ayarlar.aidat) || 3000).toLocaleString('tr-TR');
     this.EBOS = { giris: 'satin', ad: '', kategori: 'Yoga / hareket', adet: '1', birim: 'adet', tarih: this.BUGUN, konum: '', tutar: '', kasa: 'banka', muhasebe: true, firma: '', karsilik: '', kaynak: '', not: '' };
     this.state = {
       adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
       girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
-      elden: { acik: false, ad: '', tutar: '3.000', tarih: this.BUGUN, hata: '' },
+      elden: { acik: false, ad: '', tutar: this.AIDAT_YAZI, tarih: this.BUGUN, hata: '' },
       // İndirim kodları (bilet sepeti); önizlemede örnek kod
       kodlar: window.FC ? null : [{ kod: 'FOREST20', tur: 'yuzde', deger: 20, son_tarih: null, sinir: 50, kullanilan: 7, aktif: true, aciklama: 'Instagram' }],
       kodForm: { kod: '', tur: 'yuzde', deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: '',
@@ -107,7 +109,7 @@ class Component extends DCLogic {
       // Ayarlar (deneme sitesinde ayarlar tablosundan)
       tanismaSunuluyor: window.FC ? window.FC.ayarlar.tanisma_acik !== false : true,
       kartOdeme: window.FC ? window.FC.ayarlar.kart_odeme === true : false,
-      ilt: { eposta: 'forestcluburla@gmail.com', alan: 'Pinya, Urla', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}), whatsapp: undefined },
+      ilt: { eposta: 'forestcluburla@gmail.com', tel: '', alan: 'Pinya, Urla', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}), whatsapp: undefined },
       iltMesaj: '', kameraAcik: false,
       yakinda: window.FC ? window.FC.ayarlar.yakinda === true : false,
       siteDuyurusu: window.FC ? String((window.FC.ayarlar.site_duyurusu && window.FC.ayarlar.site_duyurusu.metin) || (typeof window.FC.ayarlar.site_duyurusu === 'string' ? window.FC.ayarlar.site_duyurusu : '')) : '', duyuruMesaj: '',
@@ -156,7 +158,7 @@ class Component extends DCLogic {
       const min = Math.floor(Number(f.min)) > 0 ? Math.floor(Number(f.min)) : null;
       if (min && min > kontenjan) return this.setState({ formHata: 'Minimum kişi kontenjandan büyük olamaz.' });
       this.setState((s) => ({
-        etkinlikler: [...s.etkinlikler, { ...f, ad: f.ad.trim(), kontenjan, min, satis: Number(String(f.fiyat).replace(/\./g, '')) > 0 ? { fiyat: Number(String(f.fiyat).replace(/\./g, '')), uye: f.uye, satilan: 0 } : null }],
+        etkinlikler: [...s.etkinlikler, { ...f, ad: f.ad.trim(), kontenjan, min, satis: Math.round(window.FCSayi(f.fiyat)) > 0 ? { fiyat: Math.round(window.FCSayi(f.fiyat)), uye: f.uye, satilan: 0 } : null }],
         kayitlar: { ...s.kayitlar, [`${f.tarih}|${f.ad.trim()}`]: { kontenjan, kayitli: [], bekleme: [], gelen: [] } },
         form: { ...this.BOS }, formAcik: false, formHata: '',
         eklendiMesaj: window.FC ? `“${f.ad.trim()}” eklendi; sitede ve üye panelinde görünür.` : `“${f.ad.trim()}” eklendi. Duyurusu hazır olunca üyelere gönderilecek.`,
@@ -170,7 +172,7 @@ class Component extends DCLogic {
       const kontenjan = Math.max(1, Number(f.kontenjan) || 30);
       const min = Math.floor(Number(f.min)) > 0 ? Math.floor(Number(f.min)) : null;
       if (min && min > kontenjan) return this.setState({ formHata: 'Minimum kişi kontenjandan büyük olamaz.' });
-      const fiyat = Number(String(f.fiyat).replace(/\./g, ''));
+      const fiyat = Math.round(window.FCSayi(f.fiyat) ?? 0);
       const eski = this.state.etkinlikler.find((x) => `${x.tarih}|${x.ad}` === key);
       const yeni = { ...eski, saat: f.saat.trim(), tur: f.tur, kim: f.kim.trim(), metin: f.metin.trim(), link: f.link.trim(), kontenjan, min, afis: f.afis || '',
         satis: fiyat > 0 ? { fiyat, uye: f.uye, satilan: eski.satis ? eski.satis.satilan : 0 } : null };
@@ -214,7 +216,7 @@ class Component extends DCLogic {
         const v = Object.fromEntries(basliklar.map((b, j) => [b, (r[j] || '').trim()]));
         const tm = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(v.tarih) || /^(\d{4})-(\d{2})-(\d{2})$/.exec(v.tarih);
         const tarih = !tm ? '' : v.tarih.includes('-') ? v.tarih : `${tm[3]}-${tm[2].padStart(2, '0')}-${tm[1].padStart(2, '0')}`;
-        const sayi = (x) => Number(String(x || '').replace(/\./g, '').replace(',', '.'));
+        const sayi = (x) => window.FCSayi(x) ?? 0;
         const kontenjan = Math.floor(sayi(v.kontenjan));
         const fiyat = v.bilet_fiyati ? sayi(v.bilet_fiyati) : 0;
         const min = v.min_kisi ? Math.floor(sayi(v.min_kisi)) : null;
@@ -384,7 +386,7 @@ class Component extends DCLogic {
     this.mKaydet = (e) => {
       if (e && e.preventDefault) e.preventDefault();
       const f = this.state.mForm;
-      const tutar = Number(String(f.tutar).trim().replace(/\./g, '').replace(',', '.'));
+      const tutar = window.FCSayi(f.tutar) ?? NaN;
       if (!f.tarih) return this.setState({ mHata: 'Tarih seçin.' });
       if (!(tutar > 0)) return this.setState({ mHata: 'Tutarı yazın (örn. 1.250).' });
       if (f.tur === 'aktarim' && f.kasa === f.hedef) return this.setState({ mHata: 'Nereden ve nereye aynı kasa olamaz.' });
@@ -420,7 +422,7 @@ class Component extends DCLogic {
       if (e && e.preventDefault) e.preventDefault();
       const f = this.state.eForm;
       const adet = Number(f.adet);
-      const tutar = Number(String(f.tutar).trim().replace(/\./g, '').replace(',', '.')) || 0;
+      const tutar = window.FCSayi(f.tutar) || 0;
       if (!f.ad.trim()) return this.setState({ eHata: 'Ne olduğunu yazın.' });
       if (!(adet >= 0) || String(f.adet).trim() === '') return this.setState({ eHata: 'Miktarı yazın.' });
       if (f.giris === 'satin' && f.muhasebe && !(tutar > 0)) return this.setState({ eHata: 'Muhasebeye yazmak için ödenen tutarı girin.' });
@@ -482,7 +484,7 @@ class Component extends DCLogic {
       }),
       kodEkle: () => {
         const kod = f.kod.trim().toUpperCase();
-        const deger = Number(String(f.deger).replace(',', '.'));
+        const deger = window.FCSayi(f.deger) ?? NaN;
         if (!/^[A-Z0-9-]{3,30}$/.test(kod)) return this.setState({ kodMesaj2: 'Kod 3–30 karakter olmalı: harf (Türkçe karakter yok), rakam ya da tire.' });
         if (!(deger > 0) || (f.tur === 'yuzde' && deger >= 100)) return this.setState({ kodMesaj2: f.tur === 'yuzde' ? 'Yüzde 1 ile 99 arasında olmalı.' : 'İndirim tutarını yazın.' });
         const yeni = { kod, tur: f.tur, deger, son_tarih: f.son_tarih || null, sinir: f.sinir ? Math.max(1, parseInt(f.sinir, 10)) : null, aciklama: f.aciklama.trim() || null };
@@ -1000,7 +1002,7 @@ class Component extends DCLogic {
     const tarihYaz = (t) => t.split('-').reverse().join('.');
     const topla = (xs) => xs.reduce((t, h) => t + h.tutar, 0);
     // Kart (iyzico) komisyonu: oran girildiyse her ayın kart ödemelerinden tek satır gider türetilir (saklanmaz)
-    const oran = Number(String(this.state.komisyonOran).replace(',', '.')) || 0;
+    const oran = window.FCSayi(this.state.komisyonOran) || 0;
     const kartH = this.state.hareketler.filter((h) => h.odeme === 'kart');
     const komisyonlar = [];
     if (oran > 0) {
@@ -1145,7 +1147,7 @@ class Component extends DCLogic {
     const etkNet = etkMaliyet.reduce((t, e) => t + e.net, 0);
     const uye = aidatH.length;
     const etkOzetMetin = `Bu ay ${etkMaliyet.length} etkinliğin kulübe toplam maliyeti ${TL(etkNet)}.`
-      + (uye ? ` ${uye} aidat ödemesine bölününce üye başına ${TL(etkNet / uye)}; genel giderlerle birlikte ${TL((etkNet + genelGider) / uye)} (aidat 3.000 TL).` : '');
+      + (uye ? ` ${uye} aidat ödemesine bölününce üye başına ${TL(etkNet / uye)}; genel giderlerle birlikte ${TL((etkNet + genelGider) / uye)} (aidat ${this.AIDAT_YAZI} TL).` : '');
 
     const dagilim = (xs) => {
       const m = {};
@@ -1285,7 +1287,7 @@ class Component extends DCLogic {
       anaMesaj: this.state.anaMesaj,
       elden, eldenAlan, eldenAcik: elden.acik,
       eldenAc: () => this.setState((s) => ({ elden: { ...s.elden, acik: true, hata: '' }, anaMesaj: '' })),
-      eldenKapat: () => this.setState({ elden: { acik: false, ad: '', tutar: '3.000', tarih: BUGUN, hata: '' } }),
+      eldenKapat: () => this.setState({ elden: { acik: false, ad: '', tutar: this.AIDAT_YAZI, tarih: BUGUN, hata: '' } }),
       // Üye listeden seçilir ("Ad Soyad · FC-U-0001"); kod yoksa ad tek bir üyeye denk gelmeli
       uyeSecenekleri: elden.acik ? (() => {
         const q = elden.ad.trim().toLocaleLowerCase('tr');
@@ -1296,7 +1298,7 @@ class Component extends DCLogic {
         if (e && e.preventDefault) e.preventDefault();
         if (this.eldenYaziliyor) return;
         const hata = (metin) => this.setState((s) => ({ elden: { ...s.elden, hata: metin } }));
-        const tutar = Number(String(elden.tutar).trim().replace(/\./g, '').replace(',', '.'));
+        const tutar = window.FCSayi(elden.tutar) ?? NaN;
         const yazi = elden.ad.trim();
         if (!yazi) return hata('Üyeyi listeden seçin.');
         const kodu = /FC-U-\d+/i.exec(yazi);
@@ -1305,7 +1307,7 @@ class Component extends DCLogic {
         if (!uye) return hata(adlar.length > 1 ? 'Bu adla birden çok üye var; listeden kodlu olanı seçin.' : 'Üye bulunamadı; listeden seçin.');
         if (!(tutar > 0)) return hata('Tutarı yazın.');
         const tarih = elden.tarih || BUGUN;
-        const kapali = { acik: false, ad: '', tutar: '3.000', tarih: BUGUN, hata: '' };
+        const kapali = { acik: false, ad: '', tutar: this.AIDAT_YAZI, tarih: BUGUN, hata: '' };
         if (window.FCEldenOdeme) {
           this.eldenYaziliyor = true;
           hata('Kaydediliyor…');
@@ -1675,7 +1677,7 @@ class Component extends DCLogic {
       siteDuyurusuYaz: (e) => this.setState({ siteDuyurusu: e.target.value, duyuruMesaj: '' }),
       siteDuyurusuKaydet: () => this.duyuruYaz(this.state.siteDuyurusu.trim()),
       siteDuyurusuKaldir: () => this.duyuruYaz(''),
-      iltAlan: Object.fromEntries(['eposta', 'alan', 'topluluk', 'instagram'].map((a) => [a, (e) => {
+      iltAlan: Object.fromEntries(['eposta', 'tel', 'alan', 'topluluk', 'instagram'].map((a) => [a, (e) => {
         const v = e.target.value;
         this.setState((s) => ({ ilt: { ...s.ilt, [a]: v }, iltMesaj: '' }));
       }])),
@@ -1684,6 +1686,7 @@ class Component extends DCLogic {
         const ilt = Object.fromEntries(Object.entries(this.state.ilt).filter(([a]) => a !== 'whatsapp').map(([a, v]) => [a, String(v || '').trim()]));
         if (ilt.topluluk && !/^https:\/\//.test(ilt.topluluk)) return this.setState({ iltMesaj: 'WhatsApp topluluğu bağlantısı https:// ile başlamalı.' });
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ilt.eposta)) return this.setState({ iltMesaj: 'Geçerli bir e-posta yazın.' });
+        if (ilt.tel && !/^[+0-9 ()-]{10,20}$/.test(ilt.tel)) return this.setState({ iltMesaj: 'Telefonu yalnız rakamla yazın (örn. 0232 123 45 67) ya da boş bırakın.' });
         if (!window.FCAyarKaydet) return this.setState({ ilt, iltMesaj: 'Önizleme: kaydedildi (sitede görünür).' });
         this.setState({ iltMesaj: 'Kaydediliyor…' });
         window.FCAyarKaydet('iletisim', ilt).then(() => this.setState({ ilt, iltMesaj: 'Kaydedildi ✓ Sitede bir sonraki açılışta görünür.' }),

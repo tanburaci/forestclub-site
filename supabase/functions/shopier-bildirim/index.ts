@@ -22,14 +22,24 @@ Deno.serve(async (istek) => {
     const s = await siparisOku(siparis);
     if (!s.odendi || s.iade) return yanit(200, 'ödenmemiş ya da iade; işlem yok');
     const sb = servisIstemcisi();
+    // Okuma hatası "ürün yok" sayılmaz (ödeme kaybolmasın): 500 → Shopier yeniden dener
+    const oku = async (tablo: string, sutun: string, urun: string) => {
+      const { data, error } = await sb.from(tablo).select('id').eq(sutun, urun).maybeSingle();
+      if (error) throw error;
+      return data as { id: number | string } | null;
+    };
+    // Tutar okunamazsa null gider: bilet verilmez, iade uyarısı (tutar denetimi atlanmaz)
+    const tutar = Number.isFinite(s.tutar) ? s.tutar : null;
     for (const urun of s.urunler) {
-      const { data: b } = await sb.from('bilet_istekleri').select('id, tutar').eq('shopier_urun', urun).maybeSingle();
+      const b = await oku('bilet_istekleri', 'shopier_urun', urun);
       if (b) {
-        const { error } = await sb.rpc('bilet_kart_odendi', { p_id: b.id, p_siparis: siparis, p_tutar: s.tutar });
+        // Yer kalmadıysa / etkinlik iptalse / tutar tutmuyorsa işlev hata vermez, isteği iade için işaretler (200)
+        const { data, error } = await sb.rpc('bilet_kart_odendi', { p_id: b.id, p_siparis: siparis, p_tutar: tutar });
         if (error) { console.error('bilet_kart_odendi', error); return yanit(500, 'bilet işlenemedi'); }
-        return yanit(200, 'bilet tamam');
+        return yanit(200, data?.durum === 'iade' ? `bilet verilemedi (${data.neden}); iade gerekli` : 'bilet tamam');
       }
-      const { data: o } = await sb.from('odeme_istekleri').select('id').eq('token', urun).maybeSingle();
+      if (tutar === null) { console.error('shopier-bildirim: tutar okunamadı', siparis); return yanit(500, 'tutar okunamadı'); }
+      const o = await oku('odeme_istekleri', 'token', urun);
       if (o) {
         const { error } = await sb.rpc('odeme_tamamla', { p_token: urun, p_odeme_no: siparis, p_odenen: s.tutar, p_komisyon: 0 });
         if (error) { console.error('odeme_tamamla', error); return yanit(500, 'üyelik işlenemedi'); }
@@ -37,7 +47,7 @@ Deno.serve(async (istek) => {
       }
     }
     for (const urun of s.urunler) {
-      const { data: d } = await servisIstemcisi().from('destekler').select('id').eq('token', urun).maybeSingle();
+      const d = await oku('destekler', 'token', urun);
       if (d) {
         const { error } = await servisIstemcisi().rpc('destek_tamamla', { p_token: urun, p_odeme_no: siparis, p_odenen: s.tutar, p_komisyon: 0 });
         if (error) { console.error('destek_tamamla', error); return yanit(500, 'destek işlenemedi'); }

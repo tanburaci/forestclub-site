@@ -42,22 +42,22 @@ async function sayfaAc(tarayici, veri, oturumJson) {
   page.on('pageerror', (e) => konsol.push(`pageerror: ${e.message}`));
   await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/**', (r) => {
     const ad = r.request().url().split('/').pop();
-    r.fulfill({ status: 200, contentType: 'application/javascript', headers: { 'access-control-allow-origin': '*' }, body: fs.readFileSync(path.join(NPM, ad)) });
+    r.fulfill({ status: 200, contentType: 'application/javascript', headers: { 'access-control-allow-origin': '*' }, body: fs.readFileSync(path.join(NPM, ad)) }).catch(() => {});
   });
-  await page.route('https://fonts.googleapis.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+  await page.route('https://fonts.googleapis.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/css', body: '' }).catch(() => {}));
   await page.route(`${SITE}/**`, async (r) => {
     const yanit = await r.fetch().catch(() => null);
     if (!yanit) return r.abort().catch(() => {});
     const tur = yanit.headers()['content-type'] || '';
-    r.fulfill({ response: yanit, headers: { ...yanit.headers(), ...(tur.includes('text/html') ? BASLIK : {}) } });
+    r.fulfill({ response: yanit, headers: { ...yanit.headers(), ...(tur.includes('text/html') ? BASLIK : {}) } }).catch(() => {});
   });
   await page.route(`${SB}/**`, async (r) => {
     const q = r.request();
     const u = new URL(q.url());
     const govde = q.postData() ? JSON.parse(q.postData()) : null;
     istekler.push({ yontem: q.method(), yol: u.pathname, ara: u.search, govde });
-    const json = (status, body, basliklar = {}) => r.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range', ...basliklar }, body: JSON.stringify(body) });
-    if (q.method() === 'OPTIONS') return r.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } });
+    const json = (status, body, basliklar = {}) => r.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range', ...basliklar }, body: JSON.stringify(body) }).catch(() => {});
+    if (q.method() === 'OPTIONS') return r.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } }).catch(() => {});
     if (u.pathname.startsWith('/auth/v1/')) return json(200, {});
     if (u.pathname.startsWith('/rest/v1/rpc/')) {
       const fn = u.pathname.split('/').pop();

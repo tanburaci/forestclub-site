@@ -48,6 +48,7 @@ class Component extends DCLogic {
       dahaOnce: !!F.dahaOnce, sorular, hata: this.state.hata, gonderYazi: F.dahaOnce ? 'Cevaplarımı güncelle' : 'Gönder',
       duzelt: () => this.setState({ gitti: false }),
       gonder: () => {
+        if (this.state.hata === 'Gönderiliyor…') return;  // çift tıklama
         const k = this.state.kimlik;
         if (F.ozel && k.ad.trim().length < 3) return this.setState({ hata: 'Adını ve soyadını yaz.' });
         if (F.ozel && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(k.eposta.trim())) return this.setState({ hata: 'Geçerli bir e-posta yaz.' });

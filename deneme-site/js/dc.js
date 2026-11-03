@@ -269,5 +269,18 @@
     return bilesen;
   }
 
+  // Türkçe sayı: nokta binlik, virgül ondalık ("1.250" → 1250, "1.250,50" → 1250.5, "12,5" → 12.5). Yalnız noktalı
+  // yazımda 1–2 haneli kesir ondalık sayılır ("12.5", "1250.50"); belirsiz ya da hatalı yazım NaN, boş null
+  window.FCSayi = (x) => {
+    const t = String(x == null ? '' : x).replace(/\s|TL|₺/gi, '');
+    if (!t) return null;
+    let n = NaN;
+    if (/^\d+$/.test(t)) n = Number(t);
+    else if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) n = Number(t.replace(/\./g, '').replace(',', '.'));
+    else if (/^\d+,\d+$/.test(t)) n = Number(t.replace(',', '.'));
+    else if (/^\d+\.\d{1,2}$/.test(t)) n = Number(t);
+    return Number.isFinite(n) ? n : NaN;
+  };
+
   window.DC = { bagla, sinif, DCLogic, durumDegisti: null };
 })();
