@@ -866,14 +866,6 @@ class Component extends DCLogic {
       const varsayilan = ip.tur === 'iptal'
         ? `${tYaz(t)} tarihli ${ad}, ${ip.neden.toLowerCase()} nedeniyle iptal edildi. Anlayışın için teşekkürler.`
         : `${tYaz(t)} tarihli ${ad}, ${ip.neden.toLowerCase()} nedeniyle ${ip.tarih ? `${tYaz(ip.tarih)} tarihine` : 'ileri bir tarihe'} ertelendi. Kaydın yeni tarihe taşındı.`;
-      // Etkinliğin başlangıcı + 3 saat (İstanbul, UTC+3): {bitis: gün, bitisAt: ISO}. Saat yazılmamışsa gün sonu.
-      const duyuruBitis = () => {
-        const etk = this.state.etkinlikler.find((x) => `${x.tarih}|${x.ad}` === p.key) || {};
-        const m = /(\d{1,2})[.:](\d{2})/.exec(etk.saat || '');
-        const bas = new Date(`${t}T${m ? `${m[1].padStart(2, '0')}:${m[2]}` : '21:00'}:00+03:00`);
-        const son = new Date(bas.getTime() + 3 * 3600000);
-        return { bitis: son.toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' }), bitisAt: son.toISOString() };
-      };
       const iptalAlan = {};
       ['neden', 'tarih', 'mesaj'].forEach((a) => {
         iptalAlan[a] = (e) => { const v = e.target.value; this.setState((s) => ({ iptal: { ...s.iptal, [a]: v }, iptalMesaj: '' })); };
@@ -1007,16 +999,12 @@ class Component extends DCLogic {
           this.setState({ iptalMesaj: 'Kaydediliyor…' });
           window.FCEtkinlikDurum(p.key, ip.tur, ip.tarih, ip.neden, ip.mesaj || varsayilan)
             .then((r) => {
-              // Ekrandaki söz: duyuru maille; ertelemede sitenin en üstünde de
-              // İptal / erteleme duyurusu etkinliğin (eski) günü bitince sitede kaybolur
-              // Duyuru iptal / erteleme anından etkinliğin (eski) başlangıç saatinden 3 saat sonrasına kadar görünür
-              // İptalde sitenin en üstüne duyuru yazılmaz (09.11.2026): metin etkinlik kartında İPTAL kurdelesiyle görünür
-              if (window.FCAyarKaydet && ip.tur !== 'iptal') window.FCAyarKaydet('site_duyurusu', { metin: (ip.mesaj || varsayilan).slice(0, 300), ...duyuruBitis() }).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
+              // Sitenin en üstüne duyuru yazılmaz (09.11.2026): metin etkinlik kartında kurdeleyle görünür (iptal kırmızı, erteleme sarı)
               return r;
             })
             .then((r) => this.setState((s) => ({
               etkDurum: { ...s.etkDurum, [p.key]: etiket },
-              iptalMesaj: `${ip.tur === 'iptal' ? `İptal edildi: etkinlik sitede tarihi geçene kadar “İPTAL” kurdelesi ve duyuru yazısıyla görünüyor; ${r.mail} kişiye maille gidiyor.` : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) görünüyor, kayıtlar taşındı; bu listede sayfa yenilenince güncellenir. Duyuru sitenin en üstünde yayında (İletişim › Site durumu’ndan kaldırılır) ve ${r.mail} kişiye maille gidiyor.`}`,
+              iptalMesaj: `${ip.tur === 'iptal' ? `İptal edildi: etkinlik sitede tarihi geçene kadar “İPTAL” kurdelesi ve duyuru yazısıyla görünüyor; ${r.mail} kişiye maille gidiyor.` : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) “ERTELENDİ” kurdelesi ve duyuru yazısıyla görünüyor, kayıtlar taşındı; ${r.mail} kişiye maille gidiyor. Bu listede sayfa yenilenince güncellenir.`}`,
             })))
             .catch((h) => this.setState({ iptalMesaj: h.message }));
         },

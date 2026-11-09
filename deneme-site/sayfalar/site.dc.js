@@ -157,7 +157,7 @@ class Component extends DCLogic {
           } else kopyala();
         },
         // "Yakında" yalnız 15 gün içindeki etkinliklerde; daha uzaktakilerde etiket yok
-        kartSinif: b.iptal ? 'fs-urun fs-kart-ac fs-iptal' : 'fs-urun fs-kart-ac',
+        kartSinif: b.iptal ? 'fs-urun fs-kart-ac fs-iptal' : b.ertelendi ? 'fs-urun fs-kart-ac fs-ertelendi' : 'fs-urun fs-kart-ac',
         etiket: b.iptal ? '' : gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : yakinda15 ? 'Yakında' : '',
         rozet: b.iptal ? 'display:none' : gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : yakinda15 ? pill('#111111', '#FFFFFF') : 'display:none',
         kart: `background:#FFFFFF;border-radius:20px;border:2.5px solid #111111;box-shadow:${bugun ? '7px 7px 0 #111111' : '4px 4px 0 #111111'};padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;${gecti ? 'opacity:.78' : ''}`,
@@ -284,7 +284,7 @@ class Component extends DCLogic {
       tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
       tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
       tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekLinkVar: !!(tek && tek.linkVar),
-      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekIptal: !!(tek && tek.iptal), tekAfisSinif: tek && tek.iptal ? 'fe-afis fe-iptal-afis' : 'fe-afis',
+      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekIptal: !!(tek && tek.iptal), tekErtelendi: !!(tek && tek.ertelendi), tekAfisSinif: tek && tek.iptal ? 'fe-afis fe-iptal-afis' : 'fe-afis',
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın
