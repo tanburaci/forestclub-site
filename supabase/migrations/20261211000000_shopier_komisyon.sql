@@ -54,3 +54,6 @@ begin
 end $$;
 revoke execute on function public.shopier_komisyon_yaz(text, numeric, text) from public, anon, authenticated;
 grant execute on function public.shopier_komisyon_yaz(text, numeric, text) to service_role;
+
+revoke execute on function public.shopier_oran(numeric) from public, anon, authenticated;
+grant execute on function public.shopier_oran(numeric) to service_role;
