@@ -25,7 +25,7 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     const genel = /^\/\*\n([\s\S]*?)\n\n/m.exec(toml)[1];
     dogru(!/X-Robots-Tag/.test(genel) && !/name="robots"/.test(ana), 'ana sayfa arama motorlarına açık');
     const kurulus = JSON.parse(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(ana)[1]);
-    dogru(kurulus['@type'] === 'Organization' && kurulus.address.addressLocality === 'Urla' && /Urla, İzmir/.test(/<title>([^<]*)/.exec(ana)[1])
+    dogru([].concat(kurulus['@type']).includes('LocalBusiness') && kurulus.address.addressLocality === 'Urla' && kurulus.address.postalCode === '35430' && kurulus.telephone && /Urla, İzmir/.test(/<title>([^<]*)/.exec(ana)[1])
       && /Urla, İzmir/.test(/<meta name="description" content="([^"]*)"/.exec(ana)[1]), 'ana sayfa: başlıkta/açıklamada Urla, İzmir; Google kuruluş şeması');
     dogru(['/uye', '/uye/*', '/yonetim', '/yonetim/*', '/dekont', '/dekont/*', '/sayfalar/*'].every((y) => toml.includes(`\n${y}\n  X-Robots-Tag: noindex, nofollow\n`)),
       'paneller, dekont ve sayfalar/ noindex');

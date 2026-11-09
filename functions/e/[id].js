@@ -49,7 +49,7 @@ export function olaySemasi(kok, id, e) {
   const o = {
     '@context': 'https://schema.org', '@type': 'Event', name: e.ad, startDate: bas,
     eventStatus: `https://schema.org/${durum}`, eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    location: { '@type': 'Place', name: 'Forest Club Urla', address: { '@type': 'PostalAddress', streetAddress: 'Pinya', addressLocality: 'Urla', addressRegion: 'İzmir', addressCountry: 'TR' } },
+    location: { '@type': 'Place', name: 'Forest Club Urla', address: { '@type': 'PostalAddress', streetAddress: 'Yenice, Ahmet Besim Uysal Caddesi No 255', postalCode: '35430', addressLocality: 'Urla', addressRegion: 'İzmir', addressCountry: 'TR' } },
     image: [resim], description: kisalt(e.aciklama || e.kim || `${e.ad} · Forest Club Urla, ${YER}`, 300), url: adres,
     organizer: { '@type': 'Organization', name: 'Forest Club Urla', url: `${kok}/` },
   };
