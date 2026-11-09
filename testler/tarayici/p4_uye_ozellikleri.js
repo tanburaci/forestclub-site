@@ -173,7 +173,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
     await tForm.getByLabel('E-posta *').fill('misafir@posta.test');
     await tForm.locator('input[type=checkbox]').check();
     await s2.page.getByRole('button', { name: 'Rezervasyonu oluştur' }).click();
-    await s2.page.getByText('Rezervasyonun hazır!').waitFor({ timeout: 6000 }).catch(async (h) => {
+    await s2.page.getByText('Talebin alındı!').waitFor({ timeout: 6000 }).catch(async (h) => {
       console.log('tanışma ekranı:', (await s2.page.locator('[role=alert]').allTextContents()).join(' | '));
       throw h;
     });
@@ -239,7 +239,7 @@ const kullanici = (page, id, email) => page.route(`${SB}/auth/v1/user`, (r) => r
 
     // Muhasebe: kartla ödeme anahtarı, komisyon notu
     await sekme(y.page, 'Muhasebe');
-    dogru(await y.page.getByText(/iyzico komisyonu her kart ödemesinde muhasebeye kendiliğinden/).count() === 1, 'komisyon notu: iyzico kendiliğinden');
+    dogru(await y.page.getByText(/her kart satışında muhasebeye "Kart komisyonu" gideri olarak kendiliğinden/).count() === 1, 'komisyon notu: Shopier kendiliğinden');
     await y.page.locator('label').filter({ hasText: 'Kartla ödeme açık (Shopier)' }).locator('input').click();
     await y.page.waitForTimeout(500);
     const ay2 = y.istekler.filter((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/ayarlar').pop();

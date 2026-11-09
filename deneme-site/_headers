@@ -35,3 +35,8 @@
 
 /sayfalar/*
   X-Robots-Tag: noindex, nofollow
+
+# Resimler ve videolar (/_blob/): tarayıcı 7 gün saklar (çoğu dosyanın adı içeriğin özeti; birkaç sabit adlı dosya
+# değişirse en geç bir haftada yenilenir)
+/_blob/*
+  Cache-Control: public, max-age=604800

@@ -41,7 +41,8 @@
     const [ods, kys, etks, dol, ank, don, ayr] = await Promise.all([
       sb.from('odemeler').select('*').eq('uye_id', u.id).order('tarih', { ascending: false }),
       sb.from('etkinlik_kayitlari').select('*').eq('uye_id', u.id),
-      sb.from('etkinlikler').select('*').order('tarih'),
+      // En yeni 1000 etkinlik (PostgREST 1000 satırda keser; eskiden yeniye çekilse gelecek etkinlikler düşerdi)
+      sb.from('etkinlikler').select('*').order('tarih', { ascending: false }).limit(1000),
       doluluk(),
       sb.from('anket_yanitlari').select('etkinlik_id, puan, yorum').eq('uye_id', u.id),
       sb.from('uyelik_dondurmalari').select('bas, gun').eq('uye_id', u.id).is('bitti', null).order('id', { ascending: false }).limit(1),
@@ -61,6 +62,7 @@
     const biletlerim = await sb.rpc('uye_biletlerim').then((r) => r.data || [], () => []);
     const formlar = (frm.data || []).filter((f) => f.acik && !f.ozel).map((f) => ({ id: f.id, baslik: f.baslik, doldu: doldurulan.has(f.id) }));
     [ods, kys, etks, ank, don, ayr].forEach((r) => { if (r.error) throw r.error; });
+    etks.data.reverse();  // eskiden yeniye
     const ayar = Object.fromEntries(ayr.data.map((a) => [a.anahtar, a.deger]));
     const yanit = new Map(ank.data.map((a) => [a.etkinlik_id, a]));
     const benim = new Map(kys.data.map((k) => [k.etkinlik_id, k]));

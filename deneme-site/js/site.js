@@ -12,7 +12,8 @@
   async function veriYukle() {
     const B = window.FC_ORTAK.bugun();
     const [etk, dol, oturum, ayr, tan] = await Promise.all([
-      sb.from('etkinlikler').select('*').eq('durum', 'yayinda').order('tarih').order('saat'),
+      // En yeni 1000 etkinlik (PostgREST 1000 satırda keser); sıra aşağıda tarih + saate göre kurulur
+      sb.from('etkinlikler').select('*').eq('durum', 'yayinda').order('tarih', { ascending: false }).limit(1000),
       sb.rpc('etkinlik_doluluk'),
       sb.auth.getSession(),
       sb.from('ayarlar').select('anahtar, deger'),  // yalnız herkese açık ayarlar gelir

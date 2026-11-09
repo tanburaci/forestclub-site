@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(9);
+select plan(13);
 
 -- Yarın, şu andan birkaç saat sonra başlayan (24 saatten az kala) ve uzak tarihli etkinlik
 insert into etkinlikler (tarih, saat, tur, ad, kontenjan, bilet_fiyati, durum, tanisma_kontenjan) values
@@ -17,7 +17,16 @@ select ok(not exists (select 1 from tanisma_etkinlikleri() t join etkinlikler e 
 select is(tanisma_rezervasyon('Misafir Kişi', 'misafir-tr@test.invalid', '05320000000', 'Pelin Küçükali', 'FC-0042', (select id from etkinlikler where ad = 'TR Yakın')), 'verildi', 'rezervasyon verildi');
 select is((select referans || ' · ' || bilet_no from tanisma_biletleri where eposta = 'misafir-tr@test.invalid'), 'Pelin Küçükali · FC-0042', 'referans ve bilet numarası yazıldı');
 select is((select count(*) from eposta_kuyrugu where alici = 'misafir-tr@test.invalid' and sablon = 'tanisma')::int, 1, 'rezervasyon kodu maille');
-select is(tanisma_rezervasyon('Başka Kişi', 'baska-tr@test.invalid', '05320000001', 'Ezgi Pehlivan', 'fc-0042', (select id from etkinlikler where ad = 'TR Yakın')), 'kullanilmis', 'aynı bilet numarası ikinci kez kullanılamaz');
+-- Tek tip yanıt: ekranda herkese 'verildi'; kullanılmış numara bilet açmaz, nedeni yalnız o adrese mail
+select is(tanisma_rezervasyon('Başka Kişi', 'baska-tr@test.invalid', '05320000001', 'Ezgi Pehlivan', 'fc-0042', (select id from etkinlikler where ad = 'TR Yakın')), 'verildi', 'kullanılmış numarada da yanıt aynı');
+select ok(not exists (select 1 from tanisma_biletleri where eposta = 'baska-tr@test.invalid')
+  and (select count(*) from eposta_kuyrugu where alici = 'baska-tr@test.invalid' and sablon = 'tanisma_olmadi') = 1, 'aynı bilet numarası ikinci kez kullanılamaz; neden e-postayla');
+-- Kart listesi yüklenince yalnız listedeki, kullanılmamış numara geçer
+insert into tanisma_kartlari (no) values ('FC-0500');
+select throws_ok($$ select tanisma_rezervasyon('Misafir Beş', 'bes-tr@test.invalid', '05320000005', 'Pelin Küçükali', 'FC-0777', (select id from etkinlikler where ad = 'TR Yakın')) $$,
+  'P0001', 'Bu tanışma bileti numarası geçerli değil; kartındaki numarayı kontrol et.', 'listede olmayan numara reddedilir');
+select is(tanisma_rezervasyon('Misafir Altı', 'alti-tr@test.invalid', '05320000006', 'Pelin Küçükali', 'fc-0500', (select id from etkinlikler where ad = 'TR Yakın')), 'verildi', 'listedeki numara geçer');
+select ok((select kullanildi_at is not null from tanisma_kartlari where no = 'FC-0500'), 'kart kullanıldı olarak işaretlendi');
 select throws_ok($$ select tanisma_rezervasyon('Misafir Üç', 'uc-tr@test.invalid', '05320000002', 'Pelin Küçükali', 'FC-0099', (select id from etkinlikler where ad = 'TR Uzak')) $$,
   'P0001', null, 'uzak etkinliğe rezervasyon yapılamaz');
 select throws_ok($$ select tanisma_rezervasyon('Misafir Dört', 'dort-tr@test.invalid', '05320000003', 'https://kotu.example', 'FC-0100', (select id from etkinlikler where ad = 'TR Yakın')) $$,

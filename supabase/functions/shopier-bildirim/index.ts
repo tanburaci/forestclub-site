@@ -42,14 +42,18 @@ Deno.serve(async (istek) => {
         // Yer kalmadıysa / etkinlik iptalse / tutar tutmuyorsa işlev hata vermez, isteği iade için işaretler (200)
         const { data, error } = await sb.rpc('bilet_kart_odendi', { p_id: b.id, p_siparis: siparis, p_tutar: tutar });
         if (error) { console.error('bilet_kart_odendi', error); return yanit(500, 'bilet işlenemedi'); }
-        if (data?.durum !== 'iade' && tutar !== null) await komisyon('bilet');
+        // Komisyon yalnız bilet bu bildirimle kesinleştiyse (tekrar gelen bildirimde durum 'reddedildi' / 'onaylandi'
+        // + zaten döner; iade edilecek siparişe gider yazılmaz). Aynı sipariş için ikinci kez yazılmaz (sunucuda tekil).
+        if (data?.durum === 'onaylandi' && tutar !== null) await komisyon('bilet');
         return yanit(200, data?.durum === 'iade' ? `bilet verilemedi (${data.neden}); iade gerekli` : 'bilet tamam');
       }
       if (tutar === null) { console.error('shopier-bildirim: tutar okunamadı', siparis); return yanit(500, 'tutar okunamadı'); }
       const o = await oku('odeme_istekleri', 'token', urun);
       if (o) {
-        const { error } = await sb.rpc('odeme_tamamla', { p_token: urun, p_odeme_no: siparis, p_odenen: s.tutar, p_komisyon: 0 });
+        const { data, error } = await sb.rpc('odeme_tamamla', { p_token: urun, p_odeme_no: siparis, p_odenen: s.tutar, p_komisyon: 0 });
         if (error) { console.error('odeme_tamamla', error); return yanit(500, 'üyelik işlenemedi'); }
+        // Eksik tutar: üyelik uzamaz, yöneticiye iade uyarısı gider (sunucuda); komisyon yazılmaz, Shopier yeniden denemez
+        if (data?.durum === 'eksik') return yanit(200, 'üyelik tutarı eksik; iade gerekli');
         await komisyon('üyelik');
         return yanit(200, 'üyelik tamam');
       }
@@ -57,8 +61,9 @@ Deno.serve(async (istek) => {
     for (const urun of s.urunler) {
       const d = await oku('destekler', 'token', urun);
       if (d) {
-        const { error } = await servisIstemcisi().rpc('destek_tamamla', { p_token: urun, p_odeme_no: siparis, p_odenen: s.tutar, p_komisyon: 0 });
+        const { data, error } = await servisIstemcisi().rpc('destek_tamamla', { p_token: urun, p_odeme_no: siparis, p_odenen: s.tutar, p_komisyon: 0 });
         if (error) { console.error('destek_tamamla', error); return yanit(500, 'destek işlenemedi'); }
+        if (data?.durum === 'eksik') return yanit(200, 'destek tutarı eksik; iade gerekli');
         await komisyon('destek');
         return yanit(200, 'destek tamam');
       }

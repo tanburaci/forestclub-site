@@ -186,7 +186,7 @@ function yonetimVerisi() {
       dogru(not && not.govde.uye_id === 2 && not.govde.metin === 'yeni not', `D3: not uye_id ile ayrı tabloya yazıldı (${JSON.stringify(not && not.govde)})`);
       dogru(!istekler.some((x) => x.yontem === 'PATCH' && x.yol.endsWith('/uyeler') && 'yonetici_notu' in (x.govde || {})), 'D3: not üyenin satırına yazılmıyor');
       await page.locator('nav button, button').filter({ hasText: /^Muhasebe$/ }).first().click();
-      dogru(await page.locator('input[placeholder="örn. 2,99"]').isDisabled(), 'D5: komisyon oranı kutusu kapalı');
+      dogru(await page.locator('input[placeholder="örn. 2,99"]').count() === 0 && /Shopier'in aylık satış dilimine göre/.test(await page.locator('.fc-komisyon-not').innerText()), 'D5: eski oran kutusu yok, Shopier komisyon notu var');
       dogru(!konsol.some((x) => /pageerror/.test(x)), `sayfa hatası yok ${konsol.filter((x) => /pageerror/.test(x)).join(' | ')}`);
     }
     // ---------- Eksik satır uyarısı ----------

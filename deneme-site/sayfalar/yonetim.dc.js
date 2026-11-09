@@ -108,6 +108,7 @@ class Component extends DCLogic {
       muaflar: window.FC ? window.FC.muaflar : {},  // aidattan muaf üyeler (anahtar: üye numarası)
       // Ayarlar (deneme sitesinde ayarlar tablosundan)
       tanismaSunuluyor: window.FC ? window.FC.ayarlar.tanisma_acik !== false : true,
+      tKart: window.FC ? window.FC.tanismaKart : { toplam: 0, bos: 0 }, tKartMetin: '', tKartMesaj: '',
       kartOdeme: window.FC ? window.FC.ayarlar.kart_odeme === true : false,
       ilt: { eposta: 'forestcluburla@gmail.com', tel: '', alan: 'Pinya, Urla', topluluk: '', instagram: '', ...((window.FC && window.FC.ayarlar.iletisim) || {}), whatsapp: undefined },
       iltMesaj: '', kameraAcik: false,
@@ -115,7 +116,6 @@ class Component extends DCLogic {
       siteDuyurusu: window.FC ? String((window.FC.ayarlar.site_duyurusu && window.FC.ayarlar.site_duyurusu.metin) || (typeof window.FC.ayarlar.site_duyurusu === 'string' ? window.FC.ayarlar.site_duyurusu : '')) : '', duyuruMesaj: '',
       aylik: window.FC_AYLIK ? window.FC_AYLIK.oku(window.FC && window.FC.ayarlar.aylik_duyuru) : {}, aylikMesaj: '', aylikYukleniyor: false,
       biletler: this.DEMO.biletler,
-      komisyonOran: '',
       anaMesaj: '',
       // Muhasebe
       hareketler: window.FC ? window.FC.hareketler : this.ornekHareketler(this.DEMO.aidat),
@@ -1090,20 +1090,9 @@ class Component extends DCLogic {
     const TL = (n) => `${n < 0 ? '−' : ''}${Math.round(Math.abs(n)).toLocaleString('tr-TR')} TL`;
     const tarihYaz = (t) => t.split('-').reverse().join('.');
     const topla = (xs) => xs.reduce((t, h) => t + h.tutar, 0);
-    // Kart (iyzico) komisyonu: oran girildiyse her ayın kart ödemelerinden tek satır gider türetilir (saklanmaz)
-    const oran = window.FCSayi(this.state.komisyonOran) || 0;
+    // Kart komisyonu sunucuda her Shopier satışında gider olarak yazılır (shopier_komisyon_yaz); burada türetilmez
     const kartH = this.state.hareketler.filter((h) => h.odeme === 'kart');
-    const komisyonlar = [];
-    if (oran > 0) {
-      [...new Set(kartH.map((h) => h.tarih.slice(0, 7)))].forEach((ay) => {
-        const xs = kartH.filter((h) => h.tarih.startsWith(ay));
-        komisyonlar.push({
-          id: 0, tarih: xs.map((h) => h.tarih).sort().pop(), tur: 'gider', kasa: 'banka', hedef: '', etk: '', kategori: 'Kart komisyonu',
-          tutar: Math.round(topla(xs) * oran) / 100, aciklama: `iyzico komisyonu (%${String(oran).replace('.', ',')} · ${xs.length} kart ödemesi)`, otomatik: true, belge: '',
-        });
-      });
-    }
-    const hareketler = [...this.state.hareketler, ...komisyonlar];
+    const hareketler = this.state.hareketler;
 
     // Ana sayfa: son üyelik ödemeleri (kart = otomatik, elden = yönetici girdi)
     const sonOdemeler = this.state.hareketler.filter((h) => h.tur === 'gelir' && h.kategori === 'Aidat')
@@ -1111,7 +1100,7 @@ class Component extends DCLogic {
       .map((h) => ({
         ad: h.aciklama.replace('Aidat · ', ''), tutar: TL(h.tutar),
         detay: h.odeme === 'elden' ? `${tarihYaz(h.tarih)} · nakit kasaya yazıldı` : `${tarihYaz(h.tarih)} · üyelik uzadı, bankaya yazıldı`,
-        yol: { kart: 'Kart · iyzico', havale: 'Havale · dekont', elden: 'Elden' }[h.odeme] || 'Elden', rozet: h.odeme === 'elden' ? TASLAK : AKTIF,
+        yol: { kart: 'Kart · Shopier', havale: 'Havale · dekont', elden: 'Elden' }[h.odeme] || 'Elden', rozet: h.odeme === 'elden' ? TASLAK : AKTIF,
       }));
     const buAyKart = kartH.filter((h) => h.kategori === 'Aidat' && h.tarih.startsWith(BUGUN.slice(0, 7)));
     const bvr = window.FCBasvuruGorunum ? window.FCBasvuruGorunum(this) : { bekleyen: [], kararlar: [], cagri: [], biletler: [], biletKararlar: [], bekleyenYok: true, cagriYok: true, biletYok: true, bekleyenSayi: '0', cagriSayi: '0', biletSayi: '0' };
@@ -1419,8 +1408,6 @@ class Component extends DCLogic {
           anaMesaj: `${uye.ad} için ${tutar.toLocaleString('tr-TR')} TL elden ödeme nakit kasaya yazıldı; üyelik 30 gün uzadı.`,
         }));
       },
-      komisyonOran: this.state.komisyonOran,
-      komisyonYaz: (e) => this.setState({ komisyonOran: e.target.value }),
       muhasebeSekme: sekme === 'muhasebe',
       kasalar, aylar, ayOzet, hareketSatirlari, hareketGruplari, etkMaliyet, etkOzetMetin, kasaTablo,
       hareketYok: !hareketSatirlari.length,
@@ -1745,11 +1732,21 @@ class Component extends DCLogic {
       profilMuafDegis: (e) => { const v = e.target.checked; this.setState((s) => ({ muaflar: { ...s.muaflar, [s.profilSecili]: v } })); },
       ozelGunler,
       tanismaSunuluyor: this.state.tanismaSunuluyor,
-      // Deneme sitesinde kart komisyonu iyzico'nun bildirdiği tutarla her ödemede gider olarak yazılır (oran girilmez)
-      yakindaKapali: !!window.FC, yakindaIpucu: window.FC ? 'iyzico komisyonu her kart ödemesinde kendiliğinden gider olarak yazılır' : '',
-      komisyonNot: window.FC ? 'Gerek yok: iyzico komisyonu her kart ödemesinde muhasebeye kendiliğinden gider olarak yazılır.'
-        : 'Sözleşmedeki oranı yazın; her ayın kart ödemelerinden kendiliğinden gider olarak düşülür. Boşsa hesaplanmaz.',
       tanismaDegis: () => this.ayarDegis('tanismaSunuluyor', 'tanisma_acik', 'Tanışma bileti sitede'),
+      // Tanışma kartları: liste boşsa numara denetlenmez (yalnız biçim); doluysa yalnız listedeki, kullanılmamış numara geçer
+      tKartDurum: !this.state.tKart ? 'Kart listesi okunamadı.'
+        : this.state.tKart.toplam ? `${this.state.tKart.toplam} kart yüklü, ${this.state.tKart.bos} tanesi henüz kullanılmadı. Yalnız bu numaralar kabul edilir.`
+        : 'Kart listesi boş: şu an numara denetlenmiyor (yalnız biçimi). Basılı kartların numaralarını eklerseniz yalnız onlar geçer.',
+      tKartMetin: this.state.tKartMetin, tKartMesaj: this.state.tKartMesaj,
+      tKartYaz: (e) => this.setState({ tKartMetin: e.target.value, tKartMesaj: '' }),
+      tKartEkle: () => {
+        const metin = this.state.tKartMetin.trim();
+        if (!metin) return this.setState({ tKartMesaj: 'Numaraları yazın.' });
+        if (!window.FCTanismaKartEkle) return this.setState({ tKartMesaj: 'Önizleme: numaralar kaydedilmez.' });
+        this.setState({ tKartMesaj: 'Kaydediliyor…' });
+        window.FCTanismaKartEkle(metin).then((r) => this.setState({ tKart: { toplam: r.toplam, bos: r.bos }, tKartMetin: '', tKartMesaj: `${r.eklenen} yeni numara eklendi ✓` }),
+          (h) => this.setState({ tKartMesaj: h.message }));
+      },
       kartOdeme: this.state.kartOdeme,
       kartOdemeDegis: () => this.ayarDegis('kartOdeme', 'kart_odeme', 'Kartla ödeme'),
       ilt: this.state.ilt, iltMesaj: this.state.iltMesaj,
