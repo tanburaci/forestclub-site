@@ -1,4 +1,4 @@
-// Deneme sitesinin tarayıcı testi: Supabase yerine sahte bir sunucu (Playwright route), Netlify başlıkları (CSP dahil)
+// Deneme sitesinin tarayıcı testi: Supabase yerine sahte bir sunucu (Playwright route), Cloudflare başlıkları (_headers, CSP dahil)
 // yerel sunucunun yanıtlarına eklenir, supabase-js npm paketinden SRI ile yüklenir.
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -7,9 +7,9 @@ const DENEME = path.join(__dirname, '../../deneme-site');  // statik site klasö
 const SITE = 'http://127.0.0.1:8088';
 const SB = 'https://gflabqnazkstsyafzdmn.supabase.co';
 const NPM = path.join(path.dirname(require.resolve('@supabase/supabase-js/package.json')), 'dist/umd');
-const toml = fs.readFileSync(path.join(DENEME, 'netlify.toml'), 'utf8');
+const toml = fs.readFileSync(path.join(DENEME, '_headers'), 'utf8');
 const BASLIK = {};
-toml.split('\n').forEach((l) => { const m = /^\s+([A-Za-z-]+) = "(.*)"$/.exec(l); if (m) BASLIK[m[1]] = m[2]; });
+/^\/\*\n([\s\S]*?)\n\n/m.exec(toml)[1].split('\n').forEach((l) => { const m = /^\s+([A-Za-z-]+): (.*)$/.exec(l); if (m) BASLIK[m[1]] = m[2]; });
 
 const { gun } = require('./yardim.js');
 let hatalar = 0;

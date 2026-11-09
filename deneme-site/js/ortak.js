@@ -1,5 +1,47 @@
 // Forest Club Urla · deneme sitesi: panellerin ortak Supabase bağlantısı, giriş / çıkış, küçük bildirim ve anonim
 // formların spam korumalı gönderimi (Turnstile + form-gonder).
+// Kelimenin diline göre büyük harf (09.11.2026): sayfalar lang="tr"; büyük harfe çevrilen ya da el yazısı (Amatic SC)
+// başlıklarda İngilizce kelimedeki i Türkçe kurala göre "İ" olur (MORNİNG). data-dil-oto taşıyan öğelerde metin
+// İngilizceyse öğeye lang="en" yazılır ve büyük harfe çevrilir (i→I); Türkçe metin lang="tr" kalır (i→İ).
+(function () {
+  'use strict';
+  const EN = new Set(('morning good listen gatherings nature carefully trees music each other breakfast club sunset table ' +
+    'common gathering vinyasa yin yoga hatha tai chi rhythm lab body sculpt clay create sound healing live set forest pizza ' +
+    'scratch workshop with and of for kids mindfulness picnic cinema film night dinner wine edition coffee break brunch ' +
+    'around under see you at people food brighter weekly event open call hello welcome jungle slow walk talk circle drum ' +
+    'session meditation retreat market vintage art mini home sweet sunrise silent disco dance flow restorative ashtanga ' +
+    'kundalini pilates fitness hiking ride cooking class tasting gin tonic party festival the to in on we is it').split(' '));
+  const TR_HARF = /[çğıöşüÇĞİÖŞÜ]/;
+  const enKelime = (w) => {
+    const k = w.toLocaleLowerCase('en').replace(/['’].*$/, '');
+    if (!k || TR_HARF.test(k)) return false;
+    return EN.has(k) || /(th|sh|ee|oo|ght|ing$|tion$|ness$|w|x|q)/.test(k);
+  };
+  // Metnin dili: harf içeren kelimelerin çoğu İngilizceyse 'en', yoksa 'tr'
+  window.FCDil = (metin) => {
+    const kel = String(metin || '').match(/[A-Za-zÇĞİÖŞÜçğıöşü'’]+/g) || [];
+    if (!kel.length || kel.some((w) => TR_HARF.test(w))) return 'tr';
+    return kel.filter(enKelime).length * 2 >= kel.length ? 'en' : 'tr';
+  };
+  const st = document.createElement('style');
+  st.textContent = '.fc-en,[data-dil-oto][lang="en"]{text-transform:uppercase}';
+  (document.head || document.documentElement).appendChild(st);
+  let bekliyor = false;
+  const uygula = () => {
+    bekliyor = false;
+    document.querySelectorAll('[data-dil-oto]').forEach((el) => {
+      const dil = window.FCDil(el.textContent);
+      if (el.getAttribute('lang') !== dil) el.setAttribute('lang', dil);
+    });
+  };
+  const izle = () => {
+    uygula();
+    new MutationObserver(() => { if (!bekliyor) { bekliyor = true; requestAnimationFrame(uygula); } })
+      .observe(document.body, { childList: true, subtree: true, characterData: true });
+  };
+  if (document.body) izle(); else document.addEventListener('DOMContentLoaded', izle);
+})();
+
 (function () {
   'use strict';
   const A = window.FC_AYAR;

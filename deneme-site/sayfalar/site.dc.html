@@ -591,7 +591,7 @@ html.gok-gece .fs-parti{opacity:1}
         <!-- Kartla ödeme: Shopier ayrı pencerede; bu ekran ödemenin gelmesini bekler (bilet_istek_durum) -->
         <sc-if value="{{ sKartBekle }}" hint-placeholder-val="{{ false }}">
           <div class="fs-kart-bekle" role="status" aria-live="polite" style="display: flex; flex-direction: column; gap: 12px">
-            <span class="fs-baslik" style="font-size: 44px">Ödeme Shopier'de 💳</span>
+            <span class="fs-baslik" style="font-size: 44px">Ödeme <span class="fc-en" lang="en">Shopier</span>'de 💳</span>
             <p style="margin: 0; font-size: 15px; line-height: 1.5"><strong>{{ hakTutarYazi }}</strong> ödemeni açılan Shopier penceresinde tamamla. Bu sayfayı kapatma; ödeme gelince burası kendiliğinden değişir, biletlerin <strong>{{ sEposta }}</strong> adresine gelir.</p>
             <p style="margin: 0; display: flex; align-items: center; gap: 10px; background: #F0F0EE; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600"><span class="fs-bekle-nokta" aria-hidden="true"></span>Ödemen bekleniyor…</p>
             <sc-if value="{{ sPencereYok }}" hint-placeholder-val="{{ false }}">
@@ -974,7 +974,7 @@ Buluşmalar ✓</p>
     <section id="ust" style="position: relative; max-width: 1200px; margin: 0 auto; padding: 8px 20px 36vh; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 40px; width: 100%; box-sizing: border-box; flex: 1 1 0; min-height: 0">
       <!-- Martıların taşıdığı karakterin yanındaki nota kaldırıldı (müşteri isteği 03.11.2026) -->
       <div class="fs-hero-yazi" style="position: relative; z-index: 1; flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 22px">
-        <span style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #5E5E5E">Gatherings in Nature</span>
+        <span lang="en" style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #5E5E5E">Gatherings in Nature</span>
         <h1 class="fs-baslik" style="font-size: clamp(44px, min(7vw, 9vh), 100px)">Ağaçların altında buluşan bir topluluk</h1>
         <p style="margin: 0; font-size: 19px; line-height: 1.6; color: #3A3A3A; max-width: 540px">Doğada bir araya geliyor, birlikte deneyimliyor, üretiyor ve birbirimizi dinliyoruz. Kahvaltılar, gün batımları, atölyeler ve müzikle.</p>
         <div style="display: flex; flex-wrap: wrap; gap: 12px">
@@ -987,7 +987,7 @@ Buluşmalar ✓</p>
         <sc-if value="{{ aylikGoster }}" hint-placeholder-val="{{ true }}">
           <button type="button" class="fs-cagri-rozet" onClick="{{ aylikTikla }}" aria-haspopup="dialog" style="{{ aylikRozetStil }}">
             <span class="fs-cagri-rozet-ust">{{ aylikUst }}</span>
-            <span class="fs-cagri-rozet-ana">{{ aylikAna }}</span>
+            <span class="fs-cagri-rozet-ana" data-dil-oto>{{ aylikAna }}</span>
             <span class="fs-cagri-rozet-alt">{{ aylikAltYazi }}</span>
           </button>
         </sc-if>
@@ -1007,14 +1007,14 @@ Buluşmalar ✓</p>
     <!-- Telefonda kapak yazısı ormanın altında ayrı bölüm (ilk ekranda renkli TV + orman görünsün) -->
     <section class="fs-sadece-tel" aria-label="Forest Club Urla" style="background: #DCE9C8; border-top: 3px solid #111111; padding: 36px 20px 40px">
       <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px">
-        <span style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #5E5E5E">Gatherings in Nature</span>
+        <span lang="en" style="font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #5E5E5E">Gatherings in Nature</span>
         <h2 class="fs-baslik" style="font-size: clamp(44px, min(7vw, 9vh), 100px)">Ağaçların altında buluşan bir topluluk</h2>
         <p style="margin: 0; font-size: 19px; line-height: 1.6; color: #3A3A3A; max-width: 540px">Doğada bir araya geliyor, birlikte deneyimliyor, üretiyor ve birbirimizi dinliyoruz. Kahvaltılar, gün batımları, atölyeler ve müzikle.</p>
         <div style="display: flex; flex-wrap: wrap; gap: 12px">
           <a class="fs-btn" href="#basvuru">Üye ol</a>
           <a class="fs-btn fs-btn-acik" href="#bulusmalar" style="background: #FFFFFF; color: #111111">Etkinlikleri gör</a>
         </div>
-        <p class="fs-slogan">We listen carefully.<span>To the trees. To the music. To each other.</span></p>
+        <p class="fs-slogan fc-en" lang="en">We listen carefully.<span>To the trees. To the music. To each other.</span></p>
       </div>
     </section>
 
@@ -1043,7 +1043,7 @@ Buluşmalar ✓</p>
       </sc-if>
       <sc-if value="{{ aylikGoster }}" hint-placeholder-val="{{ true }}">
         <button type="button" onClick="{{ aylikTikla }}" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; text-align: left; font: inherit; color: #111111; background: #F6C945; border: 2.5px solid #111111; box-shadow: 4px 4px 0 #111111; border-radius: 14px; padding: 14px 18px; cursor: pointer; {{ aylikRozetStil }}">
-          <span style="font-family: 'Amatic SC', cursive; font-size: 30px; font-weight: 700; line-height: 1">{{ aylikAna }}</span>
+          <span style="font-family: 'Amatic SC', cursive; font-size: 30px; font-weight: 700; line-height: 1" data-dil-oto>{{ aylikAna }}</span>
           <span style="font-weight: 700">{{ aylikUst }}</span>
           <span style="font-size: 14px; font-weight: 600">{{ aylikAltYazi }}</span>
         </button>
@@ -1439,7 +1439,7 @@ Buluşmalar ✓</p>
           </sc-if>
           <div class="fe-bilgi">
             <span style="{{ tek.rozet }}">{{ tek.etiket }}</span>
-            <h1 class="fs-baslik fe-baslik">{{ tek.ad }}</h1>
+            <h1 class="fs-baslik fe-baslik" data-dil-oto>{{ tek.ad }}</h1>
             <sc-if value="{{ tekKimVar }}" hint-placeholder-val="{{ false }}"><p class="fe-kim">{{ tekKim }}</p></sc-if>
             <div class="fe-kutular">
               <span>📅 {{ tekZaman }}</span>

@@ -396,7 +396,7 @@
             </div>
           </sc-if>
           <sc-for list="{{ g.altlar }}" as="a" hint-placeholder-count="1">
-            <sc-if value="{{ a.baslik }}" hint-placeholder-val="{{ false }}"><h4 style="margin: 16px 0 0; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: #5E5E5E">{{ a.baslik }}</h4></sc-if>
+            <sc-if value="{{ a.baslik }}" hint-placeholder-val="{{ false }}"><h4 style="margin: 16px 0 0; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: #5E5E5E" data-dil-oto>{{ a.baslik }}</h4></sc-if>
             <sc-for list="{{ a.kalemler }}" as="k" hint-placeholder-count="2">
               <div class="dy-satir" style="{{ k.soluk }}">
                 <sc-if value="{{ k.seritVar }}" hint-placeholder-val="{{ false }}"><span style="display: flex; width: 64px; height: 44px; border-radius: 8px; overflow: hidden; border: 1px solid #DADAD8"><sc-for list="{{ k.serit }}" as="r" hint-placeholder-count="5"><span style="{{ r }}"></span></sc-for></span></sc-if>

@@ -1,5 +1,5 @@
 // Üyelik sayfası (/uyelik/): ana sayfadaki başvuru bölümünün ikizi; etkinlik sayfasındaki "Üye ol, dahil olsun" buraya gider,
-// ana sayfadaki başvuru bölümü de yerinde kalır. Yerelde Netlify yönlendirmesi yerine ana sayfa HTML'i sunulur.
+// ana sayfadaki başvuru bölümü de yerinde kalır. Yerelde Cloudflare yönlendirmesi yerine ana sayfa HTML'i sunulur.
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
@@ -17,8 +17,8 @@ const veri = () => ({ tablolar: { etkinlikler: [etk], ayarlar: [{ anahtar: 'yaki
   const tarayici = await chromium.launch();
   const ana = fs.readFileSync(path.join(DENEME, 'index.html'), 'utf8');
   try {
-    const toml = fs.readFileSync(path.join(DENEME, 'netlify.toml'), 'utf8');
-    dogru(/from = "\/uyelik\/"\s+to = "\/index.html"\s+status = 200/.test(toml), 'Netlify: /uyelik/ ana sayfa HTML\'ini sunar');
+    const toml = fs.readFileSync(path.join(DENEME, '_redirects'), 'utf8');
+    dogru(/^\/uyelik\/ \/ 200$/m.test(toml) && /^\/uyelik \/ 200$/m.test(toml), 'Cloudflare: /uyelik/ ana sayfa HTML\'ini sunar');
     for (const [ad, boy] of [['bilgisayar', { width: 1280, height: 860 }], ['telefon', { width: 390, height: 844 }]]) {
       const s = await sayfaAc(tarayici, veri());
       await s.page.setViewportSize(boy);

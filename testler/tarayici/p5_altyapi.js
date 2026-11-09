@@ -46,8 +46,8 @@ async function authTaklit(page, durum) {
   await new Promise((r) => setTimeout(r, 800));
   const tarayici = await chromium.launch();
   try {
-    const toml = fs.readFileSync(path.join(DENEME, 'netlify.toml'), 'utf8');
-    dogru(/Content-Security-Policy = "[^"]*script-src 'self' https/.test(toml) && !/unsafe-eval/.test(toml), "CSP: script-src'te 'unsafe-eval' yok");
+    const toml = fs.readFileSync(path.join(DENEME, '_headers'), 'utf8');
+    dogru(/Content-Security-Policy: [^\n]*script-src 'self' https/.test(toml) && !/unsafe-eval/.test(toml), "CSP: script-src'te 'unsafe-eval' yok");
 
     // ---------- İlk giriş: iki adımlı giriş kurulur ----------
     const v = yonetimVerisi();

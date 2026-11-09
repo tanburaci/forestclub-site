@@ -15,7 +15,7 @@ const gorunur = (page, sec) => page.evaluate((s) => { const e = document.querySe
   await new Promise((r) => setTimeout(r, 800));
   const tarayici = await chromium.launch();
   try {
-    dogru(/connect-src[^;]*https:\/\/api\.open-meteo\.com/.test(fs.readFileSync(path.join(DENEME, 'netlify.toml'), 'utf8')), 'CSP: hava durumu servisi izinli');
+    dogru(/connect-src[^;]*https:\/\/api\.open-meteo\.com/.test(fs.readFileSync(path.join(DENEME, '_headers'), 'utf8')), 'CSP: hava durumu servisi izinli');
     const ac = async (durum) => {
       const s = await sayfaAc(tarayici, veri, null);
       await s.page.setViewportSize({ width: 1440, height: 900 });

@@ -1,5 +1,5 @@
 // Tek etkinliği paylaşma: kartta "Paylaş" (bilgisayarda bağlantı panoya kopyalanır), /#etkinlik-<id> bağlantısı açılınca
-// kart açık gelir ve ekrana kaydırılır (geçmiş etkinlikte de); /e/<id> sunucu sayfası (Netlify Edge Function) önizlemede
+// kart açık gelir ve ekrana kaydırılır (geçmiş etkinlikte de); /e/<id> sunucu sayfası (Cloudflare Pages Function) önizlemede
 // etkinliğin adını, tarihini ve afişini verir, ziyaretçiyi karta yönlendirir.
 const { sayfaAc, gun, SITE } = require('./yardim.js');
 const path = require('path');
@@ -18,7 +18,7 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
   const tarayici = await chromium.launch();
   try {
     // /e/<id> önizleme sayfası (Edge Function; fetch sahte)
-    const kaynak = require('fs').readFileSync(path.join(DENEME, 'netlify/edge-functions/etkinlik.js'), 'utf8');
+    const kaynak = require('fs').readFileSync(path.join(DENEME, '../functions/e/[id].js'), 'utf8');
     const ef = await import(`data:text/javascript,${encodeURIComponent(kaynak)}`);
     const eskiFetch = global.fetch;
     let sorgu = '';
@@ -28,28 +28,52 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
     global.fetch = async (u, o) => {
       if (o && o.method === 'HEAD') return new Response(null, { status: kucukVar && /\/afisler\/paylas\/a\.jpg$/.test(String(u)) ? 200 : 404 });
       if (/\/index\.html$/.test(String(u))) return new Response(anaHtml ? ANA_HTML : 'yok', { status: anaHtml ? 200 : 404 });
-      sorgu = String(u); return new Response(JSON.stringify(/id=eq\.12&/.test(sorgu) ? [{ ad: 'Sunset <Club>', tarih: '2026-11-14', saat: '18.00', aciklama: 'Gün batımında müzik.', afis: 'https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/a.jpg' }] : []), { status: 200 }); };
-    const yanit = await ef.default(new Request('https://www.forestcluburla.com/e/12'));
+      sorgu = String(u); return new Response(JSON.stringify(/id=eq\.12&/.test(sorgu) ? [{ ad: 'Sunset <Club>', tarih: '2026-11-14', saat: '18.00', aciklama: 'Gün batımında müzik.', bilet_fiyati: '250.00', kontenjan: 30, satilan_bilet: 30, durum: 'yayinda', afis: 'https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/a.jpg' }] : []), { status: 200 }); };
+    const yanit = await ef.yanitla(new Request('https://www.forestcluburla.com/e/12'), (u) => fetch(new URL('/index.html', u.origin)));
     const html = await yanit.text();
     dogru(yanit.headers.get('content-type').startsWith('text/html') && html.includes('<meta property="og:image" content="https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/a.jpg">'),
       'önizleme: og:image etkinliğin afişi');
-    dogru(html.includes('og:title" content="Sunset &lt;Club&gt; · Forest Club Urla"') && html.includes('14 Kasım Cumartesi · 18.00 · Pinya, Urla · Gün batımında müzik.'), 'önizleme: başlık (kaçışlı) ve tarih');
+    dogru(html.includes('og:title" content="Sunset &lt;Club&gt; · Forest Club Urla"') && html.includes('14 Kasım Cumartesi · 18.00 · Pinya, Urla, İzmir · Gün batımında müzik.'), 'önizleme: başlık (kaçışlı) ve tarih');
     dogru(html.includes('http-equiv="refresh" content="0; url=/#etkinlik-12"') && /durum=neq\.taslak/.test(sorgu), 'önizleme: karta yönlendirir, taslak gösterilmez');
     kucukVar = true;
-    const kucukHtml = await (await ef.default(new Request('https://www.forestcluburla.com/e/12'))).text();
+    const kucukHtml = await (await ef.yanitla(new Request('https://www.forestcluburla.com/e/12'), (u) => fetch(new URL('/index.html', u.origin)))).text();
     dogru(kucukHtml.includes('og:image" content="https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/paylas/a.jpg"'),
       'önizleme: küçük paylaşım kopyası varsa o kullanılır (WhatsApp büyük resmi göstermiyor)');
     kucukVar = false;
     anaHtml = true;
-    const tam = await (await ef.default(new Request('https://www.forestcluburla.com/e/12'))).text();
+    const tam = await (await ef.yanitla(new Request('https://www.forestcluburla.com/e/12'), (u) => fetch(new URL('/index.html', u.origin)))).text();
     dogru(tam.includes('site.js') && tam.includes('<title>Sunset &lt;Club&gt; · Forest Club Urla</title>') && tam.includes('og:url" content="https://www.forestcluburla.com/e/12"')
       && tam.includes('og:image" content="https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/a.jpg"') && !tam.includes('http-equiv="refresh"'),
       'etkinlik sayfası: ana sayfa bu adreste, başlık ve önizleme etiketleri etkinliğin');
+    // Google etkinlik kartı: schema.org Event (ana sayfanın kuruluş şeması yerine)
+    const ld = [...tam.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+    const olay = ld[0] || {};
+    dogru(ld.length === 1 && olay['@type'] === 'Event' && olay.name === 'Sunset <Club>' && olay.startDate === '2026-11-14T18:00:00+03:00'
+      && olay.location.address.addressLocality === 'Urla' && olay.location.address.addressRegion === 'İzmir' && olay.url === 'https://www.forestcluburla.com/e/12'
+      && olay.offers.price === '250' && olay.offers.priceCurrency === 'TRY' && /SoldOut$/.test(olay.offers.availability) && /EventScheduled$/.test(olay.eventStatus)
+      && !/<\/?Club>/.test(tam.split('ld+json')[1]), `etkinlik sayfası: Google etkinlik şeması (tarih, Urla/İzmir, fiyat, tükendi; < kaçışlı) ${JSON.stringify(olay).slice(0, 120)}`);
+    dogru(ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01', saat: null, durum: 'iptal', bilet_fiyati: null }).includes('"startDate":"2026-12-01"')
+      && ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01', durum: 'iptal' }).includes('EventCancelled')
+      && !ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01' }).includes('offers'), 'etkinlik şeması: saatsiz tarih, iptal, ücretsizse teklif yok');
+    // Site haritası: sabit sayfalar + yayınlanmış etkinlik sayfaları
+    const sm = await import(`data:text/javascript,${encodeURIComponent(require('fs').readFileSync(path.join(DENEME, '../functions/sitemap.xml.js'), 'utf8'))}`);
+    let smSorgu = '';
+    global.fetch = async (u) => { smSorgu = String(u); return new Response(JSON.stringify([{ id: 12, created_at: '2026-11-01T10:00:00Z' }, { id: 'x' }]), { status: 200 }); };
+    const smXml = await (await sm.yanitla(new Response(require('fs').readFileSync(path.join(DENEME, 'sitemap.xml'), 'utf8')))).text();
+    dogru(smXml.includes('<loc>https://www.forestcluburla.com/</loc>') && smXml.includes('<url><loc>https://www.forestcluburla.com/e/12</loc><lastmod>2026-11-01</lastmod></url>')
+      && !smXml.includes('/e/x') && /durum=in\.\(yayinda,ertelendi\)/.test(smSorgu) && typeof sm.onRequestGet === 'function', 'site haritası: etkinlik sayfaları eklenir, taslak/iptal yok');
+    global.fetch = async () => { throw new Error('ağ yok'); };
+    const smYedek = await (await sm.yanitla(new Response(require('fs').readFileSync(path.join(DENEME, 'sitemap.xml'), 'utf8')))).text();
+    dogru(smYedek.includes('/hakkimizda/') && !smYedek.includes('/e/'), 'site haritası: veri okunamazsa sabit liste');
     anaHtml = false;
-    const yok = await (await ef.default(new Request('https://www.forestcluburla.com/e/99'))).text();
+    const yok = await (await ef.yanitla(new Request('https://www.forestcluburla.com/e/99'), (u) => fetch(new URL('/index.html', u.origin)))).text();
     dogru(yok.includes('/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png') && yok.includes('url=/#etkinlikler'), 'önizleme: etkinlik yoksa logo ve etkinlikler bölümü');
     global.fetch = eskiFetch;
-    dogru(ef.config && ef.config.path === '/e/*', 'önizleme: /e/* yolunda çalışır');
+    dogru(typeof ef.onRequestGet === 'function', 'önizleme: Cloudflare /e/<id> işleyicisi var');
+    // Functions yanıtına _headers uygulanmaz: güvenlik başlıkları işlevde de aynı olmalı
+    const genel = {};
+    /^\/\*\n([\s\S]*?)\n\n/m.exec(require('fs').readFileSync(path.join(DENEME, '_headers'), 'utf8'))[1].split('\n').forEach((l) => { const m = /^\s+([A-Za-z-]+): (.*)$/.exec(l); if (m) genel[m[1]] = m[2]; });
+    dogru(JSON.stringify(genel) === JSON.stringify(ef.GUVENLIK), 'önizleme: güvenlik başlıkları (CSP) _headers ile aynı');
 
     // Bağlantıyla gelen: eski /#etkinlik-<id> bağlantısı etkinliğin kendi sayfasına gider
     const s = await sayfaAc(tarayici, veri, null);

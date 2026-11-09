@@ -1,12 +1,12 @@
 # Forest Club Urla · deneme sitesi
 
-Adres: https://www.forestcluburla.com (forestcluburla.com ve forestclub-deneme.netlify.app oraya yönlenir).
+Adres: https://www.forestcluburla.com (forestcluburla.com oraya yönlenir; site Cloudflare Pages'te, proje forestcluburla).
 Açılışa kadar "Yakında" modu açık: sitede şerit var, üyelik başvurusu / tanışma bileti / bilet satışı kapalı.
 Açılış günü Yönetim › İletişim › Site durumu'ndan tek tıkla kapatılır. Ana sayfa arama motorlarına açık; paneller kapalı.
 
 Yayında değil. Tasarım demosundaki (claude.ai Design) sayfaların gerçek veriye bağlanmış hali.
 
-- `deneme-site/` statik site (Netlify): `index.html` site, `/uye` üye paneli, `/yonetim` yönetici paneli, `/dekont` dekont yükleme.
+- `deneme-site/` statik site (Cloudflare Pages; `_headers` güvenlik başlıkları, `_redirects`, `functions/` kökte: /e/<id> etkinlik sayfası ve /sitemap.xml): `index.html` site, `/uye` üye paneli, `/yonetim` yönetici paneli, `/dekont` dekont yükleme.
   - `js/dc.js` tasarım sayfalarını (`sayfalar/*.dc.html`) çalıştıran küçük motor
   - `js/ortak.js` Supabase bağlantısı, giriş/çıkış, dekont yükleme
   - `js/yonetim.js`, `js/uye.js`, `js/site.js`, `js/dekont.js` sayfaların veri katmanı
@@ -29,9 +29,8 @@ Yayında değil. Tasarım demosundaki (claude.ai Design) sayfaların gerçek ver
 1. PR birleştirilir (site hemen değişmez).
 2. Göç varsa: Actions › "Supabase'e uygula" › **goc**; Edge Function değiştiyse ardından **fonksiyon** (önce goc, sonra
    fonksiyon: yeni fonksiyonlar yeni veritabanı işlevlerini bekler).
-3. Site her gece 03.00'te (İstanbul) yalnız `deneme-site/` değiştiyse ve son commit'in CI denetimleri yeşilse Netlify'a
-   yayınlanır (her yayın Netlify kredisi harcar; aynı gün birden çok PR birleştirmek tek yayın demektir). Acil durumda
-   Actions › "Netlify'a yayınla" › Run workflow hemen yayınlar.
+3. main'de CI yeşil bitince site Cloudflare Pages'e kendiliğinden yayınlanır (ücretsiz, ayda 500 yayın). Acil durumda
+   Actions › "Cloudflare'e yayınla" › Run workflow.
 4. Göç dosyası adları sıralıdır ve en sondakinden büyük olmalı (şu an `20261206000000_…`; sonraki `20261207000000_…`).
    `supabase migration new` bugünün tarihini verir ve listede öne düşer; kullanmayın.
 
@@ -46,4 +45,4 @@ yenileme hatırlatması gitmez; işaret kaldırılınca bugünden 30 gün verili
 
 ## Eski Vercel adresi
 
-forestcluburla.vercel.app kökteki `vercel.json` ile https://www.forestcluburla.com/#basvuru adresine yönlenir (Netlify bu dosyayı kullanmaz).
+forestcluburla.vercel.app kökteki `vercel.json` ile https://www.forestcluburla.com/#basvuru adresine yönlenir (Cloudflare bu dosyayı kullanmaz).
