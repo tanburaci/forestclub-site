@@ -1,0 +1,50 @@
+# Forest Club Urla · siteyi (deneme-site/ + functions/) Cloudflare Pages'e yayınlar (Netlify'ın yerine, 09.11.2026).
+# main'de CI yeşil bitince kendiliğinden yayınlar; acil durumda Actions › Cloudflare'e yayınla › Run workflow.
+# Cloudflare Pages ücretsiz: ayda 500 yayın, statik trafik sınırsız; Functions (/e/<id>, /sitemap.xml) günde 100.000 istek.
+# Yalnız deneme-site/ yayınlanır; functions/ deponun kökünden okunur (site dosyası olarak sunulmaz).
+# Secrets: CLOUDFLARE_API_TOKEN (Profil › API Tokens; izin: Account › Cloudflare Pages › Edit), CLOUDFLARE_ACCOUNT_ID
+name: Cloudflare'e yayınla
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-yayin
+  cancel-in-progress: false
+
+env:
+  PROJE: forestcluburla
+
+jobs:
+  yayinla:
+    # Yalnız main; CI'dan geldiyse yalnız yeşilse (elle çalıştırma her zaman yayınlar)
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Yayınla
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then echo "CLOUDFLARE_API_TOKEN ve CLOUDFLARE_ACCOUNT_ID gerekli"; exit 1; fi
+          test -f deneme-site/index.html || { echo "deneme-site/index.html yok; yanlış klasör"; exit 1; }
+          W="npx --yes wrangler@3.114.0"
+          # İlk yayında proje yoksa açılır (canlı dal main)
+          $W pages project list | grep -q "\b$PROJE\b" || $W pages project create "$PROJE" --production-branch main
+          sha=$(git rev-parse HEAD)
+          $W pages deploy deneme-site --project-name "$PROJE" --branch main --commit-hash "$sha" --commit-message "main@${sha::7}" --commit-dirty=true

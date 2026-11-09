@@ -27,7 +27,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: JS sözdizimi (node --check)
-        run: for f in deneme-site/js/*.js deneme-site/sayfalar/*.dc.js araclar/*.mjs testler/tarayici/*.js; do node --check "$f"; done
+        run: for f in deneme-site/js/*.js deneme-site/sayfalar/*.dc.js araclar/*.mjs testler/tarayici/*.js functions/*.js functions/e/*.js; do node --check "$f"; done
       - name: Sayfa betikleri .dc.html ile aynı mı
         run: node araclar/dc_derle.mjs --denetle
       - name: Edge Function tür denetimi

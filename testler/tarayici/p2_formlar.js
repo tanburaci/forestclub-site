@@ -1,5 +1,5 @@
 // Tarayıcı: spam korumalı formlar. Turnstile betiği taklit (her zaman jeton verir), form-gonder ve Storage sahte;
-// sayfalar Netlify başlıklarıyla (CSP) sunulur.
+// sayfalar Cloudflare başlıklarıyla (CSP) sunulur.
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -8,7 +8,7 @@ const SITE = 'http://127.0.0.1:8089';
 const SB = 'https://gflabqnazkstsyafzdmn.supabase.co';
 const NPM = path.join(path.dirname(require.resolve('@supabase/supabase-js/package.json')), 'dist/umd');
 const BASLIK = {};
-fs.readFileSync(path.join(DENEME, 'netlify.toml'), 'utf8').split('\n').forEach((l) => { const m = /^\s+([A-Za-z-]+) = "(.*)"$/.exec(l); if (m) BASLIK[m[1]] = m[2]; });
+/^\/\*\n([\s\S]*?)\n\n/m.exec(fs.readFileSync(path.join(DENEME, '_headers'), 'utf8'))[1].split('\n').forEach((l) => { const m = /^\s+([A-Za-z-]+): (.*)$/.exec(l); if (m) BASLIK[m[1]] = m[2]; });
 let kalan = 0;
 const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if (!k) kalan++; };
 

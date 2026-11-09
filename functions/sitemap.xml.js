@@ -1,4 +1,4 @@
-// Forest Club Urla · site haritası (/sitemap.xml): sabit sayfalar deneme-site/sitemap.xml'den gelir, sonuna her
+// Forest Club Urla · site haritası (/sitemap.xml, Cloudflare Pages Function): sabit sayfalar deneme-site/sitemap.xml'den gelir, sonuna her
 // yayınlanmış etkinliğin kendi sayfası (/e/<id>) eklenir; Google etkinlik sayfalarını bu listeden bulur.
 // Taslak ve iptal etkinlikler girmez. Veri okunamazsa yalnız sabit liste sunulur.
 const SB = 'https://gflabqnazkstsyafzdmn.supabase.co';
@@ -13,9 +13,9 @@ export function etkinlikleriEkle(xml, etkinlikler) {
   return xml.replace('</urlset>', `${satirlar.join('\n')}\n</urlset>`);
 }
 
-export default async (istek, context) => {
-  const sabit = await context.next();
-  const xml = await sabit.text();
+// sabit: deneme-site/sitemap.xml yanıtı ya da sözü (Cloudflare'de env.ASSETS; testte sahte)
+export async function yanitla(sabit) {
+  const xml = await (await sabit).text();
   let etkinlikler = [];
   try {
     const r = await fetch(`${SB}/rest/v1/etkinlikler?durum=in.(yayinda,ertelendi)&select=id,created_at&order=tarih.desc&limit=1000`, {
@@ -26,6 +26,9 @@ export default async (istek, context) => {
   return new Response(etkinlikleriEkle(xml, etkinlikler), {
     headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' },
   });
-};
+}
 
-export const config = { path: '/sitemap.xml' };
+// Statik dosya aynı adreste: env.ASSETS Functions'ı atlayıp doğrudan dosyayı verir
+export const onRequestGet = ({ request, env }) => yanitla(env.ASSETS.fetch(request.url));
+// HEAD istekleri (bağlantı denetleyicileri) de aynı yanıtı alır
+export const onRequestHead = onRequestGet;

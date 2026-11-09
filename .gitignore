@@ -8,12 +8,14 @@
 !/testler/
 !/.github/
 !/vercel.json
+!/functions/
 testler/node_modules/
 
 # Gizli / yerel dosyalar (asla depoya girmez)
 .env*
 .vercel/
 .netlify/
+.wrangler/
 supabase/.temp/
 .supabase_*
 .deneme_*
