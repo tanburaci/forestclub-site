@@ -161,13 +161,12 @@ function yonetimVerisi() {
       await page.getByRole('button', { name: 'İptal / ertele' }).first().click();
       await page.getByRole('button', { name: 'İptal et' }).click();
       await page.getByRole('button', { name: 'Duyur', exact: true }).click();
-      await page.getByText(/İptal edildi: etkinlik sitedeki listeden kalktı\. Duyuru sitenin en üstünde yayında .* ve 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
+      await page.getByText(/İptal edildi: etkinlik sitede tarihi geçene kadar “İPTAL” kurdelesi .* 2 kişiye maille gidiyor/).waitFor({ timeout: 5000 });
       const d = v.rpcler.find((x) => x[0] === 'etkinlik_durum_degistir');
       dogru(d && d[1].p_id === 10 && d[1].p_durum === 'iptal', `D5: etkinlik_durum_degistir (${JSON.stringify(d && d[1])})`);
       await page.waitForTimeout(500);
       const dy = istekler.filter((x) => x.yontem === 'PATCH' && x.yol.endsWith('/ayarlar') && /site_duyurusu/.test(x.ara)).pop();
-      dogru(dy && dy.govde.deger && dy.govde.deger.bitisAt === new Date(`${gun(10)}T13:00:00+03:00`).toISOString(),
-        `D5: iptal duyurusu etkinlik başlangıcından 3 saat sonra kalkar (${JSON.stringify(dy && dy.govde.deger && dy.govde.deger.bitisAt)})`);
+      dogru(!dy, `D5: iptalde sitenin en üstüne duyuru yazılmaz (kurdele etkinlikte) (${JSON.stringify(dy && dy.govde)})`);
       page.once('dialog', (dg) => dg.accept());
       await page.getByRole('button', { name: 'İptali geri al' }).click();
       await page.getByText(/İptal geri alındı/).waitFor({ timeout: 5000 });

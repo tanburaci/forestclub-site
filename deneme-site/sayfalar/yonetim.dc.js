@@ -985,7 +985,7 @@ class Component extends DCLogic {
           if (!window.confirm(`${ad} (${tYaz(t)}) yeniden yayına alınsın mı? Kayıtlar yerinde duruyor; kimseye otomatik mail gitmez.`)) return;
           const bitir = () => this.setState((s) => {
             const d = { ...s.etkDurum }; delete d[p.key];
-            return { etkDurum: d, iptalMesaj: 'İptal geri alındı: etkinlik sitede yeniden görünüyor. Kayıtlılara “etkinlik yapılıyor” diye haber vermeyi unutmayın.' };
+            return { etkDurum: d, iptalMesaj: 'İptal geri alındı: etkinlik sitede kurdelesiz, yeniden satışta. Kayıtlılara “etkinlik yapılıyor” diye haber vermeyi unutmayın.' };
           });
           if (!window.FCEtkinlikDurum) return bitir();
           this.setState({ iptalMesaj: 'Kaydediliyor…' });
@@ -1007,15 +1007,16 @@ class Component extends DCLogic {
           this.setState({ iptalMesaj: 'Kaydediliyor…' });
           window.FCEtkinlikDurum(p.key, ip.tur, ip.tarih, ip.neden, ip.mesaj || varsayilan)
             .then((r) => {
-              // Ekrandaki söz: duyuru "sitenin üstünde ve maille"
+              // Ekrandaki söz: duyuru maille; ertelemede sitenin en üstünde de
               // İptal / erteleme duyurusu etkinliğin (eski) günü bitince sitede kaybolur
               // Duyuru iptal / erteleme anından etkinliğin (eski) başlangıç saatinden 3 saat sonrasına kadar görünür
-              if (window.FCAyarKaydet) window.FCAyarKaydet('site_duyurusu', { metin: (ip.mesaj || varsayilan).slice(0, 300), ...duyuruBitis() }).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
+              // İptalde sitenin en üstüne duyuru yazılmaz (09.11.2026): metin etkinlik kartında İPTAL kurdelesiyle görünür
+              if (window.FCAyarKaydet && ip.tur !== 'iptal') window.FCAyarKaydet('site_duyurusu', { metin: (ip.mesaj || varsayilan).slice(0, 300), ...duyuruBitis() }).then(() => this.setState({ siteDuyurusu: (ip.mesaj || varsayilan).slice(0, 300) }), () => {});
               return r;
             })
             .then((r) => this.setState((s) => ({
               etkDurum: { ...s.etkDurum, [p.key]: etiket },
-              iptalMesaj: `${ip.tur === 'iptal' ? 'İptal edildi: etkinlik sitedeki listeden kalktı.' : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) görünüyor, kayıtlar taşındı; bu listede sayfa yenilenince güncellenir.`} Duyuru sitenin en üstünde yayında (İletişim › Site durumu’ndan kaldırılır) ve ${r.mail} kişiye maille gidiyor.`,
+              iptalMesaj: `${ip.tur === 'iptal' ? `İptal edildi: etkinlik sitede tarihi geçene kadar “İPTAL” kurdelesi ve duyuru yazısıyla görünüyor; ${r.mail} kişiye maille gidiyor.` : `Ertelendi: sitede yeni tarihiyle (${tYaz(ip.tarih)}) görünüyor, kayıtlar taşındı; bu listede sayfa yenilenince güncellenir. Duyuru sitenin en üstünde yayında (İletişim › Site durumu’ndan kaldırılır) ve ${r.mail} kişiye maille gidiyor.`}`,
             })))
             .catch((h) => this.setState({ iptalMesaj: h.message }));
         },

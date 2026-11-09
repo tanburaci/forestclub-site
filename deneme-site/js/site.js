@@ -13,7 +13,8 @@
     const B = window.FC_ORTAK.bugun();
     const [etk, dol, oturum, ayr, tan] = await Promise.all([
       // En yeni 1000 etkinlik (PostgREST 1000 satırda keser); sıra aşağıda tarih + saate göre kurulur
-      sb.from('etkinlikler').select('*').eq('durum', 'yayinda').order('tarih', { ascending: false }).limit(1000),
+      // İptal edilenler de gelir: tarihi geçene kadar "İPTAL" kurdelesiyle görünür (geçince listeden düşer)
+      sb.from('etkinlikler').select('*').in('durum', ['yayinda', 'iptal']).order('tarih', { ascending: false }).limit(1000),
       sb.rpc('etkinlik_doluluk'),
       sb.auth.getSession(),
       sb.from('ayarlar').select('anahtar, deger'),  // yalnız herkese açık ayarlar gelir
@@ -25,10 +26,11 @@
     const anahtar = {};
     // Tarih ve saat sırası (9.30, 10.00'dan önce gelsin; veritabanı saati metin olarak sıralar)
     const sira = (e) => `${e.tarih} ${String(e.saat || '').replace(/^(\d)[.:]/, '0$1.')}`;
-    const etkinlikler = [...etk.data].sort((a, b) => sira(a).localeCompare(sira(b))).map((e) => {
+    const etkinlikler = [...etk.data].filter((e) => e.durum !== 'iptal' || e.tarih >= B).sort((a, b) => sira(a).localeCompare(sira(b))).map((e) => {
       const [, m, g] = e.tarih.split('-');
       anahtar[`${e.tarih}|${e.ad}`] = e.id;
-      const satis = e.bilet_fiyati && e.tarih >= B ? {
+      const iptal = e.durum === 'iptal';
+      const satis = !iptal && e.bilet_fiyati && e.tarih >= B ? {
         fiyat: Number(e.bilet_fiyati), uye: e.uyelere || 'tam', kontenjan: e.kontenjan,
         kayitli: ((d.get(e.id) || {}).kayitli || 0) + e.satilan_bilet,
       } : null;
@@ -36,11 +38,12 @@
         id: e.id, tarih: e.tarih, gun: g, ay: AYLAR[Number(m) - 1], haftaGunu: GUNLER[new Date(`${e.tarih}T12:00:00`).getDay()],
         ad: e.ad, saat: e.saat || '', tur: e.tur, metin: e.aciklama || e.kim || '', link: e.link || '#', afis: e.afis || '',
         ...(satis ? { satis } : {}),
+        ...(iptal ? { iptal: true, iptalYazi: e.durum_duyuru || 'Bu etkinlik iptal edildi.', fiyatEski: e.bilet_fiyati ? Number(e.bilet_fiyati) : null } : {}),
       };
     });
     const ayar = Object.fromEntries((ayr.data || []).map((a) => [a.anahtar, a.deger]));
     const tanismaAcik = new Set((tan || []).map((x) => x.etkinlik_id));
-    etkinlikler.forEach((e) => { e.tanisma = tanismaAcik.has(anahtar[`${e.tarih}|${e.ad}`]); });
+    etkinlikler.forEach((e) => { e.tanisma = !e.iptal && tanismaAcik.has(anahtar[`${e.tarih}|${e.ad}`]); });
     // Etkinliğin kendi sayfası: /e/<id> (Edge Function ana sayfayı bu adreste sunar; bileşen yalnız o etkinliği çizer)
     const tek = (/^\/e\/(\d{1,12})\/?$/.exec(location.pathname) || [])[1] || null;
     return { bugun: B, etkinlikler, anahtar, ayar, tek: tek ? Number(tek) : null, oturum: !!(oturum.data && oturum.data.session) };

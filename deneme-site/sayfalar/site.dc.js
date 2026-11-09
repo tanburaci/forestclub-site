@@ -157,8 +157,9 @@ class Component extends DCLogic {
           } else kopyala();
         },
         // "Yakında" yalnız 15 gün içindeki etkinliklerde; daha uzaktakilerde etiket yok
-        etiket: gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : yakinda15 ? 'Yakında' : '',
-        rozet: gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : yakinda15 ? pill('#111111', '#FFFFFF') : 'display:none',
+        kartSinif: b.iptal ? 'fs-urun fs-kart-ac fs-iptal' : 'fs-urun fs-kart-ac',
+        etiket: b.iptal ? '' : gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : yakinda15 ? 'Yakında' : '',
+        rozet: b.iptal ? 'display:none' : gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : yakinda15 ? pill('#111111', '#FFFFFF') : 'display:none',
         kart: `background:#FFFFFF;border-radius:20px;border:2.5px solid #111111;box-shadow:${bugun ? '7px 7px 0 #111111' : '4px 4px 0 #111111'};padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;${gecti ? 'opacity:.78' : ''}`,
       };
     });
@@ -246,6 +247,8 @@ class Component extends DCLogic {
     const sepetToplamAdet = Object.values(sepet).reduce((t, n) => t + n, 0);
     // Etkinlik satış alanları (liste ve etkinlik sayfası aynı hesabı kullanır)
     const urunYap = (b) => {
+        // İptal edilen etkinlik: satış kapalı, fiyat üstü çizili (CSS), düğme "İptal edildi"
+        if (b.iptal) return { ...b, fiyatYazi: b.fiyatEski ? TL(b.fiyatEski) : '', uyeYazi: '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'İptal edildi', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
         // Bilet satılmayan etkinlik üyelere ücretsiz (üye panelinden "Geliyorum")
         if (!b.satis) return { ...b, fiyatYazi: canli ? 'Üyelere ücretsiz' : '', uyeYazi: canli ? 'Üye panelinden yerini ayırt' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: canli ? 'Yalnız üyeler' : 'Yakında satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
         if (yakinda) return { ...b, fiyatYazi: TL(b.satis.fiyat), uyeYazi: b.satis.uye === 'ucretsiz' ? 'Üyelere ücretsiz' : '', kalanYazi: '', kalanStil: '', dolu: true, dugme: 'Açılışta satışta', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} };
@@ -271,7 +274,7 @@ class Component extends DCLogic {
     const tekHam = tekId ? tumu.find((b) => String(b.id) === String(tekId)) : null;
     const tek = tekHam ? (tekHam.tarih >= BUGUN ? urunYap(tekHam) : { ...tekHam, fiyatYazi: '', uyeYazi: '', kalanYazi: '', dolu: true, dugme: 'Gerçekleşti', dugmeStil: 'opacity:.5;cursor:default', sepeteEkle: () => {} }) : null;
     const tekUyeYazi = tek && tek.satis ? (tek.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : tek.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : (tek ? 'Üyeliğe dahil' : '');
-    const digerler = tumu.filter((b) => b.tarih >= BUGUN && b.id && String(b.id) !== String(tekId)).slice(0, 3).map((b) => ({
+    const digerler = tumu.filter((b) => b.tarih >= BUGUN && !b.iptal && b.id && String(b.id) !== String(tekId)).slice(0, 3).map((b) => ({
       ...b, sayfa: `/e/${b.id}`, zaman: `${b.gun} ${b.ay.charAt(0)}${b.ay.slice(1).toLocaleLowerCase('tr-TR')} ${b.haftaGunu}${b.saat ? ` · ${b.saat}` : ''}`,
       uyeKisa: b.satis ? (b.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : b.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : 'Üyeliğe dahil', afisVar: !!b.afis,
     }));
@@ -280,8 +283,8 @@ class Component extends DCLogic {
       anaSayfa: !tekId && !uyelikSayfa, tekSayfa: !!tekId, uyelikSayfa, basvuruGoster: !tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
       tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
       tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
-      tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN), tekLinkVar: !!(tek && tek.linkVar),
-      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN),
+      tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekLinkVar: !!(tek && tek.linkVar),
+      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekIptal: !!(tek && tek.iptal), tekAfisSinif: tek && tek.iptal ? 'fe-afis fe-iptal-afis' : 'fe-afis',
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın
