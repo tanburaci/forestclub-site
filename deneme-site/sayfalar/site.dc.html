@@ -419,6 +419,11 @@ html.gok-gece .fs-parti{opacity:1}
 .fe-iptal{position:relative;overflow:hidden;margin:6px 0 4px}
 .fe-iptal .fs-iptal-not{margin:0;padding:14px 64px 14px 14px;font-size:15px}
 .fe-iptal-afis img{filter:grayscale(1);opacity:.6}
+/* Ertelenen etkinlik: sarı ERTELENDİ kurdelesi + sarı not; kart soluklaşmaz, satış açık */
+.fs-ertelendi{position:relative;overflow:hidden}
+.fs-ertele-kurdele{background:#F6C945;color:#111111;top:22px;right:-38px;padding:4px 40px;font-size:11px;letter-spacing:.08em}
+.fs-ertele-not{background:#FDF3D0;color:#5A4500;border-color:#B8901A;margin-right:72px}
+.fe-iptal .fs-ertele-not{padding-right:84px}
 .fe-metin{white-space:pre-line;color:#333333;line-height:1.6;margin-bottom:16px}
 @keyframes fs-bekle{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
 .fs-bekle-nokta{width:12px;height:12px;border-radius:50%;background:#111111;flex:none;animation:fs-bekle 1.2s ease-in-out infinite}
@@ -1069,6 +1074,10 @@ Buluşmalar ✓</p>
               <div class="fs-iptal-not">İptal edildi: {{ b.iptalYazi }}</div>
               <span class="fs-iptal-kurdele" aria-hidden="true">İPTAL</span>
             </sc-if>
+            <sc-if value="{{ b.ertelendi }}" hint-placeholder-val="{{ false }}">
+              <div class="fs-iptal-not fs-ertele-not">Ertelendi: {{ b.ertelemeYazi }}</div>
+              <span class="fs-iptal-kurdele fs-ertele-kurdele" aria-hidden="true">ERTELENDİ</span>
+            </sc-if>
             <div style="width: 76px; flex: none; text-align: center; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 0">
               <div style="font-size: 28px; font-weight: 700; line-height: 1">{{ b.gun }}</div>
               <div style="font-size: 12px; font-weight: 700; letter-spacing: .06em">{{ b.ay }}</div>
@@ -1457,6 +1466,9 @@ Buluşmalar ✓</p>
             <sc-if value="{{ tekIptal }}" hint-placeholder-val="{{ false }}">
               <div class="fe-iptal"><div class="fs-iptal-not">İptal edildi: {{ tek.iptalYazi }}</div><span class="fs-iptal-kurdele" aria-hidden="true">İPTAL</span></div>
             </sc-if>
+            <sc-if value="{{ tekErtelendi }}" hint-placeholder-val="{{ false }}">
+              <div class="fe-iptal"><div class="fs-iptal-not fs-ertele-not">Ertelendi: {{ tek.ertelemeYazi }}</div><span class="fs-iptal-kurdele fs-ertele-kurdele" aria-hidden="true">ERTELENDİ</span></div>
+            </sc-if>
             <div class="fe-kutular">
               <span>📅 {{ tekZaman }}</span>
               <sc-if value="{{ tekSaatVar }}" hint-placeholder-val="{{ true }}"><span>🕙 {{ tek.saat }}</span></sc-if>
@@ -1787,7 +1799,7 @@ class Component extends DCLogic {
           } else kopyala();
         },
         // "Yakında" yalnız 15 gün içindeki etkinliklerde; daha uzaktakilerde etiket yok
-        kartSinif: b.iptal ? 'fs-urun fs-kart-ac fs-iptal' : 'fs-urun fs-kart-ac',
+        kartSinif: b.iptal ? 'fs-urun fs-kart-ac fs-iptal' : b.ertelendi ? 'fs-urun fs-kart-ac fs-ertelendi' : 'fs-urun fs-kart-ac',
         etiket: b.iptal ? '' : gecti ? 'Gerçekleşti' : bugun ? 'Bugün' : yakinda15 ? 'Yakında' : '',
         rozet: b.iptal ? 'display:none' : gecti ? pill('#F0F0EE', '#3A3A3A') : bugun ? pill('#E4E4E2', '#111111') : yakinda15 ? pill('#111111', '#FFFFFF') : 'display:none',
         kart: `background:#FFFFFF;border-radius:20px;border:2.5px solid #111111;box-shadow:${bugun ? '7px 7px 0 #111111' : '4px 4px 0 #111111'};padding:18px;display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;${gecti ? 'opacity:.78' : ''}`,
@@ -1914,7 +1926,7 @@ class Component extends DCLogic {
       tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
       tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
       tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekLinkVar: !!(tek && tek.linkVar),
-      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekIptal: !!(tek && tek.iptal), tekAfisSinif: tek && tek.iptal ? 'fe-afis fe-iptal-afis' : 'fe-afis',
+      tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekIptal: !!(tek && tek.iptal), tekErtelendi: !!(tek && tek.ertelendi), tekAfisSinif: tek && tek.iptal ? 'fe-afis fe-iptal-afis' : 'fe-afis',
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın

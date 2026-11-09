@@ -39,6 +39,8 @@
         ad: e.ad, saat: e.saat || '', tur: e.tur, metin: e.aciklama || e.kim || '', link: e.link || '#', afis: e.afis || '',
         ...(satis ? { satis } : {}),
         ...(iptal ? { iptal: true, iptalYazi: e.durum_duyuru || 'Bu etkinlik iptal edildi.', fiyatEski: e.bilet_fiyati ? Number(e.bilet_fiyati) : null } : {}),
+        // Ertelenen etkinlik yeni tarihinde yayında; duyuru yazısı varsa sarı ERTELENDİ kurdelesi (tarihi geçene kadar)
+        ...(!iptal && e.eski_tarih && e.durum_duyuru && e.tarih >= B ? { ertelendi: true, ertelemeYazi: e.durum_duyuru } : {}),
       };
     });
     const ayar = Object.fromEntries((ayr.data || []).map((a) => [a.anahtar, a.deger]));
