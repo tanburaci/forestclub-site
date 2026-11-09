@@ -16,6 +16,7 @@ testler/node_modules/
 .vercel/
 .netlify/
 .wrangler/
+.DS_Store
 supabase/.temp/
 .supabase_*
 .deneme_*

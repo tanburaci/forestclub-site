@@ -6,7 +6,7 @@ window.FC_AYAR = {
   // Üyelik ödemesi (iyzico gelene kadar havale / EFT; Sheets'teki AYAR.ODEME_BILGISI ile aynı)
   // true: üye girişinde demo hesap düğmeleri görünür (yalnız tasarım denemesi için; yayında false)
   deneme: false,
-  // Cloudflare Turnstile site anahtarı (herkese açık; widget "Forest Club site": forestcluburla.com, www, netlify.app).
+  // Cloudflare Turnstile site anahtarı (herkese açık; widget "Forest Club site": forestcluburla.com, www).
   // Eşi olan gizli anahtar yalnız Supabase secret TURNSTILE_SECRET'ta durur.
   turnstile: '0x4AAAAAAFpdoJpz9qwNv9_6',
   odeme: { tutar: '3.000 TL', alici: 'Pelin Küçükali', iban: 'TR59 0015 7000 0000 0205 1344 62' },

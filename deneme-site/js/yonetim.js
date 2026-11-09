@@ -46,7 +46,7 @@
     const dus = await sb.from('envanter_dusumleri').select('envanter_id, adet').limit(5000).then((r) => r.data || [], () => []);
     dus.forEach((d) => { dusulen[d.envanter_id] = (dusulen[d.envanter_id] || 0) + Number(d.adet); });
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
-    const [kuyruk, saglik, ayarlar, veriTalepleri, uyeNotlari, gonulluler] = await Promise.all([
+    const [kuyruk, saglik, ayarlar, veriTalepleri, uyeNotlari, gonulluler, tanismaKart] = await Promise.all([
       sb.from('eposta_kuyrugu').select('id, sablon, alici, durum, deneme, son_hata, created_at, gonderim_at')
         .order('id', { ascending: false }).limit(200).then((r) => r.data || [], () => []),
       sb.rpc('saglik_ozeti').then((r) => r.data || null, () => null),
@@ -56,6 +56,8 @@
       sb.from('uye_notlari').select('uye_id, metin').then((r) => (r.error ? null : r.data), () => null),
       // Gönüllü başvuruları (ana sayfadaki "Gönüllü ol"); göç uygulanmadıysa boş
       sb.from('gonulluler').select('*').order('id', { ascending: false }).limit(300).then((r) => r.data || [], () => []),
+      // Tanışma kartı numaraları (yüklendiyse yalnız onlar geçer); göç yoksa null
+      sb.rpc('tanisma_kart_ozeti').then((r) => r.data || null, () => null),
     ]);
     const B = bugun();
     setTimeout(() => paylasKopyalariniTamamla(etkinlikler), 3000);  // paylaşım önizlemesi için eksik küçük afişler
@@ -149,7 +151,7 @@
         }),
       })),
       etkDurum,
-      kuyruk, saglik, ayarlar, veriTalepleri, gonulluler,
+      kuyruk, saglik, ayarlar, veriTalepleri, gonulluler, tanismaKart,
       eksik: eksikler,
       _keyEtk: keyEtk,
       basvurular: { dekontlar, cagri, biletIstekleri, etkinlikAd: new Map(etkinlikler.map((e) => [e.id, `${e.ad} (${trTarih(e.tarih)})`])), uyeler: new Map(uyeler.map((u) => [u.id, u])) },
@@ -364,6 +366,12 @@
     const { error } = await sb.from('envanter_dusumleri').insert(d);
     if (error) throw new Error(error.message);
   };
+  // Basılı tanışma kartlarının numaraları: satır / virgül / boşlukla ayrılmış; var olanlar atlanır
+  window.FCTanismaKartEkle = async (metin) => {
+    const { data, error } = await sb.rpc('tanisma_kartlari_ekle', { p_metin: String(metin || '') });
+    if (error) throw new Error(error.message);
+    return data;
+  };
   window.FCGonulluDurum = async (id, durum) => {
     const { error } = await sb.from('gonulluler').update({ durum }).eq('id', id);
     if (error) throw new Error(error.message);
@@ -536,7 +544,21 @@
   // --- Paneldeki değişiklikler → veritabanı ------------------------------------------------------------------
   const esit = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const bekleyenler = {};
-  function ertele(ad, f, ms = 700) { clearTimeout(bekleyenler[ad]); bekleyenler[ad] = setTimeout(f, ms); }
+  // Gecikmeli kayıt (yazarken her tuşta değil): bekleyen iş varken sayfa kapanırsa hemen gönderilir ve tarayıcı uyarır
+  const gecikenler = {};
+  function ertele(ad, f, ms = 700) {
+    clearTimeout(bekleyenler[ad]);
+    gecikenler[ad] = f;
+    bekleyenler[ad] = setTimeout(() => { delete gecikenler[ad]; f(); }, ms);
+  }
+  const hemenGonder = () => Object.keys(gecikenler).forEach((ad) => { clearTimeout(bekleyenler[ad]); const f = gecikenler[ad]; delete gecikenler[ad]; f(); });
+  addEventListener('beforeunload', (e) => {
+    if (!Object.keys(gecikenler).length) return;
+    hemenGonder();
+    e.preventDefault();
+    e.returnValue = '';  // "Değişiklikler kaydedilmemiş olabilir" uyarısı
+  });
+  addEventListener('pagehide', hemenGonder);
   async function yaz(is, metin) {
     try {
       const { data, error } = await is;

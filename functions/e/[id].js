@@ -69,7 +69,8 @@ export function etiketle(html, kok, id, e) {
   const aciklama = kisalt([tarihYaz(e.tarih, e.saat), YER, e.aciklama || e.kim].filter(Boolean).join(' · '), 200);
   const resim = /^https:\/\//.test(e.paylasResim || e.afis || '') ? (e.paylasResim || e.afis) : `${kok}${LOGO}`;
   const adres = `${kok}/e/${id}`;
-  const deg = (h, re, yeni) => (re.test(h) ? h.replace(re, yeni) : h);
+  // Değiştirme işlevle: etkinlik adındaki $&, $` gibi desenler özel anlam kazanmasın
+  const deg = (h, re, yeni) => (re.test(h) ? h.replace(re, () => yeni) : h);
   let h = html;
   h = deg(h, /<title>[^<]*<\/title>/, `<title>${kacir(baslik)}</title>`);
   h = deg(h, /<meta name="description" content="[^"]*">/, `<meta name="description" content="${kacir(aciklama)}">`);
@@ -80,7 +81,7 @@ export function etiketle(html, kok, id, e) {
   h = deg(h, /<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${kacir(resim)}">\n<meta property="og:image:alt" content="${kacir(`${e.ad} afişi`)}">\n<meta name="twitter:card" content="summary_large_image">`);
   // Ana sayfanın kuruluş şeması etkinlik sayfasında yerine etkinlik şeması
   h = h.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>\n?/g, '');
-  h = h.replace('</head>', `${olaySemasi(kok, id, e)}\n</head>`);
+  h = h.replace('</head>', () => `${olaySemasi(kok, id, e)}\n</head>`);
   return h;
 }
 
@@ -122,12 +123,13 @@ export async function yanitla(istek, anaSayfa) {
   const url = new URL(istek.url);
   const id = (/^\/e\/(\d{1,12})\/?$/.exec(url.pathname) || [])[1] || null;
   let e = null;
+  let yok = !id;  // etkinlik kesin yok (veri okundu, boş): 404; okunamadıysa geçici, 200
   if (id) {
     try {
       const r = await fetch(`${SB}/rest/v1/etkinlikler?id=eq.${id}&durum=neq.taslak&select=ad,tarih,saat,aciklama,kim,afis,bilet_fiyati,kontenjan,satilan_bilet,durum`, {
         headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
       });
-      if (r.ok) e = (await r.json())[0] || null;
+      if (r.ok) { e = (await r.json())[0] || null; yok = !e; }
       const kucuk = e && paylasAdresi(e.afis);
       if (kucuk && (await fetch(kucuk, { method: 'HEAD' })).ok) e.paylasResim = kucuk;
     } catch (h) { /* veri okunamazsa genel önizleme */ }
@@ -145,6 +147,7 @@ export async function yanitla(istek, anaSayfa) {
     } catch (h) { /* ana sayfa alınamadı: kısa önizleme sayfası */ }
   }
   return new Response(sayfa(url.origin, id, e), {
+    status: yok ? 404 : 200,
     headers: { ...GUVENLIK, 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300', 'x-robots-tag': 'noindex' },
   });
 }

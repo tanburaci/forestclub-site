@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(11);
+select plan(13);
 
 select ok(not has_function_privilege('anon', 'public.destek_istegi_ac(numeric)', 'execute')
   and not has_function_privilege('authenticated', 'public.destek_istegi_ac(numeric)', 'execute')
@@ -22,14 +22,17 @@ create temp table t_istek as select destek_istegi_ac(2500) as r;
 select is((select (r ->> 'tutar')::numeric from t_istek), 2500::numeric, 'istek açıldı, tutar 2500');
 select destek_istegi_token((select (r ->> 'id')::uuid from t_istek), 'tok-destek-1');
 
-select throws_ok($$ select destek_tamamla('tok-destek-1', 'p1', 2000, 0) $$, 'P0001', 'Ödenen tutar eksik.', 'eksik ödeme tamamlanmaz');
+-- Eksik ödeme: hata değil, kayıt + yöneticiye uyarı (Shopier yeniden denemesin); muhasebeye yazılmaz
+select is((select destek_tamamla('tok-destek-1', 'p0', 2000, 0) ->> 'durum'), 'eksik', 'eksik ödeme tamamlanmaz, eksik döner');
+select is((select durum || ' · ' || odeme_no from destekler where token = 'tok-destek-1'), 'basarisiz · p0', 'eksik ödeme kaydı kaldı');
+select is((select count(*) from muhasebe_hareketleri where belge = 'shopier:p0')::int, 0, 'eksik ödeme muhasebeye yazılmaz');
 select lives_ok($$ select destek_tamamla('tok-destek-1', 'p1', 2500, 87.5) $$, 'destek tamamlandı');
-select is((select count(*) from muhasebe_hareketleri where belge = 'iyzico:p1' and tur = 'gelir' and kategori = 'Destek' and tutar = 2500)::int, 1,
-  'muhasebeye Destek geliri yazıldı');
-select is((select count(*) from muhasebe_hareketleri where belge = 'iyzico:p1' and tur = 'gider' and tutar = 87.5)::int, 1,
-  'komisyon gideri yazıldı');
+select is((select count(*) from muhasebe_hareketleri where belge = 'shopier:p1' and tur = 'gelir' and kategori = 'Destek' and tutar = 2500)::int, 1,
+  'muhasebeye Destek geliri shopier belgesiyle yazıldı');
+select is((select count(*) from muhasebe_hareketleri where belge = 'shopier:p1' and tur = 'gider')::int, 0,
+  'komisyon burada yazılmaz (shopier_komisyon_yaz yazar)');
 select is((select destek_tamamla('tok-destek-1', 'p1', 2500, 87.5) ->> 'tekrar'), 'true', 'ikinci dönüş tekrar sayılır');
-select is((select count(*) from muhasebe_hareketleri where belge = 'iyzico:p1')::int, 2, 'ikinci dönüşte muhasebe çift yazılmaz');
+select is((select count(*) from muhasebe_hareketleri where belge = 'shopier:p1')::int, 1, 'ikinci dönüşte muhasebe çift yazılmaz');
 
 select * from finish();
 rollback;

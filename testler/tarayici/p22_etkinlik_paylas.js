@@ -57,17 +57,24 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
       && !ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01' }).includes('offers'), 'etkinlik şeması: saatsiz tarih, iptal, ücretsizse teklif yok');
     // Site haritası: sabit sayfalar + yayınlanmış etkinlik sayfaları
     const sm = await import(`data:text/javascript,${encodeURIComponent(require('fs').readFileSync(path.join(DENEME, '../functions/sitemap.xml.js'), 'utf8'))}`);
+    const efFetch = global.fetch;  // site haritası denemesinden sonra etkinlik sayfası taklidine dönülür
     let smSorgu = '';
     global.fetch = async (u) => { smSorgu = String(u); return new Response(JSON.stringify([{ id: 12, created_at: '2026-11-01T10:00:00Z' }, { id: 'x' }]), { status: 200 }); };
     const smXml = await (await sm.yanitla(new Response(require('fs').readFileSync(path.join(DENEME, 'sitemap.xml'), 'utf8')))).text();
     dogru(smXml.includes('<loc>https://www.forestcluburla.com/</loc>') && smXml.includes('<url><loc>https://www.forestcluburla.com/e/12</loc><lastmod>2026-11-01</lastmod></url>')
-      && !smXml.includes('/e/x') && /durum=in\.\(yayinda,ertelendi\)/.test(smSorgu) && typeof sm.onRequestGet === 'function', 'site haritası: etkinlik sayfaları eklenir, taslak/iptal yok');
+      && !smXml.includes('/e/x') && /durum=eq\.yayinda/.test(smSorgu) && typeof sm.onRequestGet === 'function', 'site haritası: etkinlik sayfaları eklenir, taslak/iptal yok');
     global.fetch = async () => { throw new Error('ağ yok'); };
     const smYedek = await (await sm.yanitla(new Response(require('fs').readFileSync(path.join(DENEME, 'sitemap.xml'), 'utf8')))).text();
     dogru(smYedek.includes('/hakkimizda/') && !smYedek.includes('/e/'), 'site haritası: veri okunamazsa sabit liste');
+    global.fetch = efFetch;
     anaHtml = false;
-    const yok = await (await ef.yanitla(new Request('https://www.forestcluburla.com/e/99'), (u) => fetch(new URL('/index.html', u.origin)))).text();
-    dogru(yok.includes('/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png') && yok.includes('url=/#etkinlikler'), 'önizleme: etkinlik yoksa logo ve etkinlikler bölümü');
+    const yokYanit = await ef.yanitla(new Request('https://www.forestcluburla.com/e/99'), (u) => fetch(new URL('/index.html', u.origin)));
+    const yok = await yokYanit.text();
+    dogru(yok.includes('/_blob/1446f01d4f1e77e517c2b5c1ed9e8882.png') && yok.includes('url=/#etkinlikler') && yokYanit.status === 404, 'önizleme: etkinlik yoksa logo, etkinlikler bölümü, 404');
+    dogru(yanit.status === 200, 'önizleme: etkinlik varsa 200');
+    // Etkinlik adında $& / $` desenleri sayfayı bozmaz
+    const dolar = ef.etiketle('<html><head><title>x</title><meta property="og:title" content="x"></head><body>site.js</body></html>', 'https://x', 5, { ad: 'Fiyat $& indirim $`', tarih: '2026-12-01' });
+    dogru(dolar.includes('<title>Fiyat $&amp; indirim $` · Forest Club Urla</title>') && dolar.includes('"name":"Fiyat $& indirim $`"'), 'etkinlik adındaki $ desenleri olduğu gibi yazılır');
     global.fetch = eskiFetch;
     dogru(typeof ef.onRequestGet === 'function', 'önizleme: Cloudflare /e/<id> işleyicisi var');
     // Functions yanıtına _headers uygulanmaz: güvenlik başlıkları işlevde de aynı olmalı

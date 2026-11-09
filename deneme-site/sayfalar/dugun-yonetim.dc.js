@@ -11,7 +11,7 @@ class Component extends DCLogic {
         notlar: 'Gün batımında nikah istiyoruz.', yonetici_notu: null, created_at: '2026-11-02T10:00:00Z' }],
       katalog: [{ id: 1, tur: 'konsept', ad: 'Kır sofrası', aciklama: 'Keten, kır çiçekleri.', resim: '/dugun/cizim/konsept-kir.svg', grup: null, mekan_id: null, yemek_mekandan: true, sira: 1, acik: true }],
     };
-    this.GBOS = { tarih: new Date().toISOString().slice(0, 10), tutar: '', kasa: 'banka', talep: '', aciklama: '', envantere: true, kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1' };
+    this.GBOS = { tarih: (window.FC_ORTAK ? window.FC_ORTAK.bugun() : new Date().toISOString().slice(0, 10)), tutar: '', kasa: 'banka', talep: '', aciklama: '', envantere: true, kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1' };
     this.OBOS = { kalem: '', ad: '', grup: '', birim: 'adet', konum: '', adet: '1', neden: 'diger', not: '' };
     this.state = { envanter: V.envanter || [], hareketler: V.hareketler || [], form: null, g: { ...this.GBOS }, o: { ...this.OBOS }, dF: null, gHata: '', gecmis: null,
       davetler: V.davetler || [], davetForm: false, davetYeni: { ad: '', notlar: '' }, kopya: null,
@@ -128,7 +128,7 @@ class Component extends DCLogic {
     };
     const hataGoster = (h) => this.setState({ gHata: h.message || String(h) });
     const alanlar = (anahtar, BOS) => Object.fromEntries(Object.keys(BOS).map((k) => [k, (e) => { const v = e.target.value; this.setState((s) => ({ [anahtar]: { ...s[anahtar], [k]: v }, gHata: '' })); }]));
-    const ayBas = new Date().toISOString().slice(0, 7);
+    const ayBas = (window.FC_ORTAK ? window.FC_ORTAK.bugun() : new Date().toISOString()).slice(0, 7);  // İstanbul günü (UTC gece 00–03 kayardı)
     const buAyDusen = st.hareketler.filter((h) => h.tur === 'dusum' && String(h.tarih).slice(0, 7) === ayBas).reduce((t, h) => t + Number(h.adet), 0);
     const g = st.g; const o = st.o; const dF = st.dF;
     const dKalem = dF ? env.find((x) => x.id === dF.id) : null;

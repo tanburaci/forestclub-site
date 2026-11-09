@@ -460,7 +460,9 @@ class Component extends DCLogic {
       ilt, yakindaVar: yakinda, tanismaSunuluyor: !yakinda && AYAR.tanisma_acik !== false,
       // Gerçek kod yalnız e-postayla gider (e-posta adresi böylece doğrulanmış olur)
       tKod: window.FCSTanisma ? 'E-POSTANDA' : 'FC-T-4821',
-      tVerildiYazi: window.FCSTanisma ? 'Yerin ayrıldı; bilet kodunu e-postana gönderdik. Girişte kodunu göstermen yeterli. Mail gelmezse gereksiz klasörüne de bak.'
+      // Canlıda ekran herkese aynı: sonuç (kod ya da neden) yalnız e-postayla gider, üyelik durumu ekranda belli olmaz
+      tVerildiBaslik: window.FCSTanisma ? 'Talebin alındı!' : 'Rezervasyonun hazır!',
+      tVerildiYazi: window.FCSTanisma ? 'Sonucu e-postana gönderdik: yerin ayrıldıysa bilet kodun o mailde. Girişte kodunu göstermen yeterli. Mail gelmezse gereksiz klasörüne de bak.'
         : 'Yerin ayrıldı ve biletini e-postana da gönderdik. Girişte kodunu göstermen yeterli.',
       tanismaAcik: !!t, tForm: t === 'form', tVerildi: t === 'verildi', tUye: t === 'uye', tKullanilmis: t === 'kullanilmis',
       tAd: this.state.tAd, tEposta: this.state.tEposta, tOnay: this.state.tOnay, tHata: this.state.tHata,
@@ -616,9 +618,8 @@ class Component extends DCLogic {
         this.setState({ bHata: 'Gönderiliyor…' });
         // Deneme sitesi: başvuru veritabanına yazılır (yönetici panelinde "Hiç ödemedi" olarak görünür)
         window.FCSBasvuru(bAd, bEposta, bTel, bKosul, bDogal, bKvkk, this.state.bFoto)
-          .then((sonuc) => this.setState(sonuc === 'kayitli'
-            ? { bHata: 'Bu e-postayla zaten bir kaydın var. Üye girişinden gir ya da bize yaz.' }
-            : { uyeAdim: 'odeme', bHata: '' }))
+          // Sunucu herkese aynı yanıtı verir (e-posta kayıtlıysa o adrese mail gider); ekran üyelik durumunu belli etmez
+          .then(() => this.setState({ uyeAdim: 'odeme', bHata: '' }))
           .catch((h) => this.setState({ bHata: h.message }));
       },
       uyeGeri: () => this.setState({ uyeAdim: 'form' }),
