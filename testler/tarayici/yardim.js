@@ -75,6 +75,7 @@ async function sayfaAc(tarayici, veri, oturumJson) {
     for (const [k, v] of u.searchParams) {
       if (['select', 'order', 'offset', 'limit'].includes(k)) continue;
       if (v.startsWith('eq.')) satirlar = satirlar.filter((x) => String(x[k]) === v.slice(3));
+      if (v.startsWith('in.(')) { const izin = v.slice(4, -1).split(','); satirlar = satirlar.filter((x) => izin.includes(String(x[k]))); }
     }
     const bas = Number(u.searchParams.get('offset') || 0);
     const adet = Math.min(Number(u.searchParams.get('limit') || 1000), 1000);  // max_rows = 1000
