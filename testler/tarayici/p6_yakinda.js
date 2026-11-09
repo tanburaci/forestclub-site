@@ -24,6 +24,9 @@ const siteVerisi = (ayarlar) => ({ tablolar: { etkinlikler: [etk], ayarlar }, rp
     const robots = fs.readFileSync(path.join(DENEME, 'robots.txt'), 'utf8');
     const genel = /for = "\/\*"\n  \[headers\.values\]\n([\s\S]*?)\n\n/.exec(toml)[1];
     dogru(!/X-Robots-Tag/.test(genel) && !/name="robots"/.test(ana), 'ana sayfa arama motorlarına açık');
+    const kurulus = JSON.parse(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(ana)[1]);
+    dogru(kurulus['@type'] === 'Organization' && kurulus.address.addressLocality === 'Urla' && /Urla, İzmir/.test(/<title>([^<]*)/.exec(ana)[1])
+      && /Urla, İzmir/.test(/<meta name="description" content="([^"]*)"/.exec(ana)[1]), 'ana sayfa: başlıkta/açıklamada Urla, İzmir; Google kuruluş şeması');
     dogru(['/uye', '/uye/*', '/yonetim', '/yonetim/*', '/dekont', '/dekont/*', '/sayfalar/*'].every((y) => toml.includes(`for = "${y}"\n  [headers.values]\n    X-Robots-Tag = "noindex, nofollow"`)),
       'paneller, dekont ve sayfalar/ noindex');
     dogru(['uye', 'yonetim', 'dekont'].every((d) => fs.readFileSync(path.join(DENEME, d, 'index.html'), 'utf8').includes('<meta name="robots" content="noindex, nofollow">')), 'panel sayfalarında noindex etiketi');

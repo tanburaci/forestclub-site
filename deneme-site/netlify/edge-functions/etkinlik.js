@@ -26,10 +26,38 @@ export function paylasAdresi(afis) {
   return m ? `${m[1]}paylas/${m[2]}.jpg` : null;
 }
 
+const YER = 'Pinya, Urla, İzmir';
+
+// Google'ın etkinlik kartı için schema.org Event (JSON-LD). Saat "18.00" / "18:00" biçiminde; yoksa yalnız tarih.
+// Türkiye saati sabit +03:00. Bilet fiyatı varsa teklif (TRY), kontenjan dolduysa "tükendi".
+export function olaySemasi(kok, id, e) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(e.tarih || '')) return '';
+  const s = /^(\d{1,2})[.:](\d{2})/.exec(e.saat || '');
+  const bas = s ? `${e.tarih}T${s[1].padStart(2, '0')}:${s[2]}:00+03:00` : e.tarih;
+  const adres = `${kok}/e/${id}`;
+  const resim = /^https:\/\//.test(e.afis || '') ? e.afis : `${kok}${LOGO}`;
+  const durum = { iptal: 'EventCancelled', ertelendi: 'EventPostponed' }[e.durum] || 'EventScheduled';
+  const o = {
+    '@context': 'https://schema.org', '@type': 'Event', name: e.ad, startDate: bas,
+    eventStatus: `https://schema.org/${durum}`, eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: { '@type': 'Place', name: 'Forest Club Urla', address: { '@type': 'PostalAddress', streetAddress: 'Pinya', addressLocality: 'Urla', addressRegion: 'İzmir', addressCountry: 'TR' } },
+    image: [resim], description: kisalt(e.aciklama || e.kim || `${e.ad} · Forest Club Urla, ${YER}`, 300), url: adres,
+    organizer: { '@type': 'Organization', name: 'Forest Club Urla', url: `${kok}/` },
+  };
+  if (e.kim) o.performer = { '@type': 'PerformingGroup', name: kisalt(e.kim, 120) };
+  if (e.bilet_fiyati != null && Number(e.bilet_fiyati) >= 0) {
+    const dolu = e.kontenjan && e.satilan_bilet >= e.kontenjan;
+    o.offers = { '@type': 'Offer', price: String(Number(e.bilet_fiyati)), priceCurrency: 'TRY', url: adres,
+      availability: `https://schema.org/${dolu ? 'SoldOut' : 'InStock'}` };
+  }
+  // </script> kaçışı: JSON içindeki < karakteri \u003c yazılır
+  return `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, '\\u003c')}</script>`;
+}
+
 // Ana sayfa HTML'ine etkinliğin başlık ve önizleme etiketlerini yazar
 export function etiketle(html, kok, id, e) {
   const baslik = `${e.ad} · Forest Club Urla`;
-  const aciklama = kisalt([tarihYaz(e.tarih, e.saat), 'Pinya, Urla', e.aciklama || e.kim].filter(Boolean).join(' · '), 200);
+  const aciklama = kisalt([tarihYaz(e.tarih, e.saat), YER, e.aciklama || e.kim].filter(Boolean).join(' · '), 200);
   const resim = /^https:\/\//.test(e.paylasResim || e.afis || '') ? (e.paylasResim || e.afis) : `${kok}${LOGO}`;
   const adres = `${kok}/e/${id}`;
   const deg = (h, re, yeni) => (re.test(h) ? h.replace(re, yeni) : h);
@@ -41,14 +69,17 @@ export function etiketle(html, kok, id, e) {
   h = deg(h, /<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${kacir(aciklama)}">`);
   h = deg(h, /<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${kacir(adres)}">`);
   h = deg(h, /<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${kacir(resim)}">\n<meta property="og:image:alt" content="${kacir(`${e.ad} afişi`)}">\n<meta name="twitter:card" content="summary_large_image">`);
+  // Ana sayfanın kuruluş şeması etkinlik sayfasında yerine etkinlik şeması
+  h = h.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>\n?/g, '');
+  h = h.replace('</head>', `${olaySemasi(kok, id, e)}\n</head>`);
   return h;
 }
 
 export function sayfa(kok, id, e) {
   const hedef = id && e ? `/#etkinlik-${id}` : '/#etkinlikler';
   const baslik = e ? `${e.ad} · Forest Club Urla` : 'Forest Club Urla · Gatherings in Nature';
-  const aciklama = e ? kisalt([tarihYaz(e.tarih, e.saat), 'Pinya, Urla', e.aciklama || e.kim].filter(Boolean).join(' · '), 200)
-    : "Urla'da ağaçların altında buluşmalar: kahvaltı, gün batımı, yoga, atölyeler, müzik.";
+  const aciklama = e ? kisalt([tarihYaz(e.tarih, e.saat), YER, e.aciklama || e.kim].filter(Boolean).join(' · '), 200)
+    : "Urla, İzmir'de ağaçların altında buluşmalar: kahvaltı, gün batımı, yoga, atölyeler, müzik.";
   const resim = e && /^https:\/\//.test(e.paylasResim || e.afis || '') ? (e.paylasResim || e.afis) : `${kok}${LOGO}`;
   return `<!doctype html>
 <html lang="tr">
@@ -83,7 +114,7 @@ export default async (istek) => {
   let e = null;
   if (id) {
     try {
-      const r = await fetch(`${SB}/rest/v1/etkinlikler?id=eq.${id}&durum=neq.taslak&select=ad,tarih,saat,aciklama,kim,afis`, {
+      const r = await fetch(`${SB}/rest/v1/etkinlikler?id=eq.${id}&durum=neq.taslak&select=ad,tarih,saat,aciklama,kim,afis,bilet_fiyati,kontenjan,satilan_bilet,durum`, {
         headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
       });
       if (r.ok) e = (await r.json())[0] || null;
