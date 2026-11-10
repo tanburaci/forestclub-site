@@ -650,6 +650,8 @@ class Component extends DCLogic {
       afisKapat: () => this.setState({ afisTam: '' }),
       yuzenGizli: acik ? 'false' : 'true',
       basaDon: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+      // Logo: sayfanın en üstüne (eskiden #ust'e gidiyordu; o bölüm başlığın altında, sayfa biraz aşağıda duruyordu)
+      logoTikla: (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); if (location.hash) history.replaceState(null, '', location.pathname + location.search); },
       yuzenUyelik: !!this.state.uyelikTv && !this.state.uyeGirisli && !yakinda, yuzenVideo: !(this.state.uyelikTv && !this.state.uyeGirisli && !yakinda),
       yuzenUyeOl: () => { const b = document.getElementById('basvuru'); if (b) b.scrollIntoView({ behavior: 'smooth' }); else location.href = '/#basvuru'; },
       yuzenKapat: () => this.setState({ kapali: true }),
