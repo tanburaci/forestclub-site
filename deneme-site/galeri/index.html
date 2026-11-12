@@ -29,11 +29,12 @@ a{color:#111111}
 .serit span{background:#FFFFFF;padding:2px 10px;border-radius:999px;font-weight:700;font-size:13px;letter-spacing:.12em}
 .kart p{margin:0 0 18px;color:#3A3A3A}
 .kare{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 20px}
-.kare div{aspect-ratio:1;border:2px dashed #111111;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:26px;background:#F4F4F2}
+.kare div{aspect-ratio:1;border:2px dashed #111111;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#F4F4F2}
+.kare svg{width:44%;height:auto}
 .dugme{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:10px 22px;border:2.5px solid #111111;border-radius:999px;background:#111111;color:#FFFFFF;text-decoration:none;font-weight:700}
 .dugme:hover{background:#FFFFFF;color:#111111}
 .geri{display:inline-block;margin-top:28px;padding:10px 4px}
-@media (max-width:480px){.kart h1{font-size:46px}}
+@media (max-width:480px){.kart h1{font-size:46px}.kart{max-width:calc(100% - 14px)}}
 </style>
 </head>
 <body>
@@ -42,8 +43,8 @@ a{color:#111111}
 <section class="kart" aria-labelledby="baslik">
   <div class="serit"><span>YAPIM AŞAMASINDA</span></div>
   <h1 id="baslik">Fotoğraf Galerisi</h1>
-  <p>Buluşmalarımızdan kareleri burada toplayacağız: ağaçların altında kahvaltılar, gün batımları, yoga ve atölyeler. Çok yakında! 📷</p>
-  <div class="kare" aria-hidden="true"><div>🌲</div><div>☀️</div><div>🧘</div><div>🎶</div><div>🍃</div><div>🌅</div></div>
+  <p>Buluşmalarımızdan kareleri burada toplayacağız: ağaçların altında kahvaltılar, gün batımları, yoga ve atölyeler. Çok yakında!</p>
+  <div class="kare" aria-hidden="true"><div><svg viewBox="0 0 48 48"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6 L36 28 H12 Z" fill="#C7DBA0"/><path d="M24 16 L39 38 H9 Z" fill="#C7DBA0"/><path d="M24 38 V44" fill="none"/></g></svg></div><div><svg viewBox="0 0 48 48"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="9" fill="#F6C945"/><path d="M24 5v5M24 38v5M5 24h5M38 24h5M10.6 10.6l3.5 3.5M33.9 33.9l3.5 3.5M10.6 37.4l3.5-3.5M33.9 14.1l3.5-3.5" fill="none"/></g></svg></div><div><svg viewBox="0 0 48 48"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 36 C4 36 4 26 12 25 C12 16 24 13 28 20 C34 15 44 20 40 28 C46 30 44 36 38 36 Z" fill="#FFFFFF"/></g></svg></div><div><svg viewBox="0 0 48 48"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 38 C10 18 22 8 40 8 C40 28 30 38 10 38 Z" fill="#C9E33A"/><path d="M10 38 L30 18" fill="none"/></g></svg></div><div><svg viewBox="0 0 48 48"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M30 8 A16 16 0 1 0 40 32 A13 13 0 0 1 30 8 Z" fill="#F6C945"/></g></svg></div><div><svg viewBox="0 0 48 48"><g stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 32 A14 14 0 0 1 38 32 Z" fill="#EE6B2F"/><path d="M4 32 H44 M12 39 H36" fill="none"/></g></svg></div></div>
   <p>O zamana kadar fotoğraflarımız Instagram'da.</p>
   <a class="dugme" href="https://www.instagram.com/forestcluburla/" target="_blank" rel="noopener">@forestcluburla</a>
 </section>

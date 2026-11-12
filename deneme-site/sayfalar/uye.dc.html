@@ -147,6 +147,17 @@ a{color:#111111}a:hover{color:#000000}
 @media (max-width: 640px){.fu-yuzen{width:64vw;right:4px}.fu-yuzen .fu-tv{font-size:calc(64vw / 43)}.fu-tv-kol{display:none}.fu-yuzen-kapat{top:6px;right:-6px;width:30px;height:30px;font-size:16px}}
 /* Üyelik TV'si "hareketi azalt" açık olsa da oynar (yumuşak geçişli kısa animasyon; müşteri isteği 03.11.2026) */
 @media (prefers-reduced-motion: reduce){.fu-yuzen{transition:none}}
+/* Görsel düzeltmeler (13.11.2026) */
+footer nav[aria-label="Sözleşmeler"] a{display:inline-flex;align-items:center;min-height:44px}
+label:has(> input[type="checkbox"]){min-height:44px;cursor:pointer}
+@media (prefers-reduced-motion: reduce){
+  /* Üyelik TV'si oynamaya devam eder (müşteri isteği 03.11.2026) ama yalnız sahne geçişiyle: zıplama, sallanma, kayma yok */
+  .fu-tv [class*="fu-tv-"]:not(.fu-tv-s),.fu-tv-ciz::after{animation:none !important}
+  .fu-tv-balon,.fu-tv-d,.fu-tv-ust,.fu-tv-s2 .fu-tv-k,.fu-tv-uc{opacity:1}
+  .fu-tv-alti{opacity:0}
+  .fu-tv-ciz::after{transform:none}
+  .fu-tv-fiyat{background:#C9E33A;border-color:#111111}
+}
 </style>
 </helmet>
 
