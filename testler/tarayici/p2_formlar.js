@@ -80,7 +80,7 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
     dogru(await page.evaluate(() => ((k) => k.length > 0 && k.every((e) => e.style.display === 'none'))([...document.body.children].filter((e) => e.style.position === 'fixed' && e.style.bottom === '16px'))), 'doğrulama bitince Turnstile kutusu ekrandan kalkıyor');
     dogru(formlar[0].tur === 'basvuru' && formlar[0].jeton === 'jeton-1' && formlar[0].veri.eposta === 'gercek@posta.test' && formlar[0].veri.kvkk === true,
       `başvuru gövdesi ve Turnstile jetonu (${JSON.stringify(formlar[0])})`);
-    dogru(formlar[1].tur === 'tanisma' && formlar[1].veri.etkinlik === 7 && formlar[1].veri.referans === 'Pelin Küçükali' && formlar[1].veri.biletNo === 'FC-0042' && formlar[1].jeton === 'jeton-2', 'tanışma: rezervasyon (referans, bilet no, etkinlik) ve yeni jeton');
+    dogru(formlar[1].tur === 'tanisma' && formlar[1].veri.etkinlik === 7 && formlar[1].veri.referans === 'Pelin Küçükali' && formlar[1].veri.biletNo === 'FC-0042' && formlar[1].veri.kvkk === true && formlar[1].jeton === 'jeton-2', 'tanışma: rezervasyon (referans, bilet no, etkinlik, KVKK onayı) ve yeni jeton');
     dogru(formlar[2].tur === 'cagri' && formlar[2].veri.ad === 'Deniz', 'Açık Çağrı form-gonder ile');
     dogru(/Çok fazla deneme/.test(hata), `sunucu hatası kullanıcıya iletilir (${hata})`);
     dogru(turnstileYuklendi === 1, 'Turnstile betiği bir kez yüklendi');

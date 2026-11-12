@@ -32,8 +32,6 @@ jobs:
         run: node araclar/dc_derle.mjs --denetle
       - name: Edge Function tür denetimi
         run: deno check supabase/functions/*/index.ts
-      - name: iyzico imzası (resmi SDK ile karşılaştırma)
-        run: deno test -A supabase/functions/_ortak/
 
   veritabani:
     name: Veritabanı (göçler + pgTAP)

@@ -31,7 +31,7 @@
       const { data } = await sb.rpc('ozel_form', { p_anahtar: anahtar });
       const form = (data && data[0]) || null;
       F = form ? { durum: 'form', ozel: true, form, cevaplar: {} } : { durum: 'kapali', ozel: true };
-      window.FCFGonder = (cevaplar, kimlik) => formGonder('ozel_form', { anahtar, ad: kimlik.ad, eposta: kimlik.eposta, cevaplar });
+      window.FCFGonder = (cevaplar, kimlik) => formGonder('ozel_form', { anahtar, ad: kimlik.ad, eposta: kimlik.eposta, kvkk: kimlik.kvkk === true, cevaplar });
     } else {
       const { data: { session } } = await sb.auth.getSession();
       if (session) {

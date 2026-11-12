@@ -61,7 +61,6 @@
   };
   window.FCSCagri = (alanlar) => formGonder('cagri', alanlar);
   window.FCSGonullu = (veri) => formGonder('gonullu', veri);
-  // Destek ol (kartla): sunucu iyzico ödeme sayfasının adresini döndürür
   // Kartla destek: {sayfa, id} (Shopier ayrı pencerede); durum: 'basladi' | 'odendi' | 'basarisiz'
   window.FCSDestek = async (tutar) => formGonder('destek', { tutar });
   window.FCSDestekDurum = async (id) => {

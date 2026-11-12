@@ -47,7 +47,12 @@ Deno.serve(async (istek) => {
         if (data?.durum === 'onaylandi' && tutar !== null) await komisyon('bilet');
         return yanit(200, data?.durum === 'iade' ? `bilet verilemedi (${data.neden}); iade gerekli` : 'bilet tamam');
       }
-      if (tutar === null) { console.error('shopier-bildirim: tutar okunamadı', siparis); return yanit(500, 'tutar okunamadı'); }
+      if (tutar === null) {
+        // Shopier yeniden dener; yönetici de haberdar olsun (sipariş başına bir kez)
+        console.error('shopier-bildirim: tutar okunamadı', siparis);
+        await sb.rpc('shopier_tanimsiz_odeme', { p_siparis: siparis, p_tutar: null }).then(() => {}, () => {});
+        return yanit(500, 'tutar okunamadı');
+      }
       const o = await oku('odeme_istekleri', 'token', urun);
       if (o) {
         const { data, error } = await sb.rpc('odeme_tamamla', { p_token: urun, p_odeme_no: siparis, p_odenen: s.tutar, p_komisyon: 0 });
@@ -68,7 +73,10 @@ Deno.serve(async (istek) => {
         return yanit(200, 'destek tamam');
       }
     }
-    return yanit(200, 'bu siparişte bizim ödeme ürünümüz yok');
+    // Ödenmiş ama hiçbir isteğimizle eşleşmeyen sipariş: para kaybolmasın, yöneticiye uyarı (sipariş başına bir kez)
+    const { error: uyariHata } = await sb.rpc('shopier_tanimsiz_odeme', { p_siparis: siparis, p_tutar: tutar });
+    if (uyariHata) { console.error('shopier_tanimsiz_odeme', uyariHata); return yanit(500, 'uyarı yazılamadı'); }
+    return yanit(200, 'bu siparişte bizim ödeme ürünümüz yok; yöneticiye bildirildi');
   } catch (h) {
     console.error('shopier-bildirim', h);
     return yanit(500, 'geçici hata');

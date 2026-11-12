@@ -119,10 +119,13 @@ const kullanici = (page) => page.route(`${SB}/auth/v1/user`, (r) => r.fulfill({ 
     await o.page.getByLabel('Adın ve soyadın').fill('Ayşe Kaya');
     await o.page.getByLabel('E-posta').fill('Ayse@Posta.test');
     await o.page.getByRole('button', { name: 'Gönder' }).click();
+    dogru(await o.page.getByText('Devam etmek için KVKK aydınlatma metnini onayla.').count() === 1 && oy.length === 0, 'özel form: KVKK onayı olmadan gitmez');
+    await o.page.getByLabel(/KVKK aydınlatma metnini/).check();
+    await o.page.getByRole('button', { name: 'Gönder' }).click();
     await o.page.getByText('Teşekkürler! 🌲').waitFor({ timeout: 5000 });
     const og = oy[0] || {};
     dogru(oy.length === 1 && og.tur === 'ozel_form' && og.jeton && og.veri.anahtar === OZEL.anahtar && og.veri.ad === 'Ayşe Kaya'
-      && og.veri.eposta === 'ayse@posta.test' && og.veri.cevaplar.s1 === 'Evet', `özel form: form-gonder'e anahtar, ad, e-posta ile gitti (${JSON.stringify(og)})`);
+      && og.veri.eposta === 'ayse@posta.test' && og.veri.kvkk === true && og.veri.cevaplar.s1 === 'Evet', `özel form: form-gonder'e anahtar, ad, e-posta, KVKK onayıyla gitti (${JSON.stringify(og)})`);
     dogru(await o.page.getByRole('link', { name: 'Ana sayfaya dön' }).count() === 1, 'özel form: dönüş ana sayfaya');
     dogru(!o.konsol.some((x) => /pageerror|Content Security Policy/.test(x)), 'özel form: sayfa / CSP hatası yok');
     await o.page.goto(`${SITE}/form/?k=yanlis`);
