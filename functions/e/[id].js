@@ -45,7 +45,7 @@ export function olaySemasi(kok, id, e) {
   const bas = s ? `${e.tarih}T${s[1].padStart(2, '0')}:${s[2]}:00+03:00` : e.tarih;
   const adres = `${kok}/e/${id}`;
   const resim = /^https:\/\//.test(e.afis || '') ? e.afis : `${kok}${LOGO}`;
-  const durum = { iptal: 'EventCancelled', ertelendi: 'EventPostponed' }[e.durum] || 'EventScheduled';
+  const durum = 'EventScheduled';  // iptal edilen etkinliğin sayfası yok (404); ertelenen yeni tarihinde yayında
   const o = {
     '@context': 'https://schema.org', '@type': 'Event', name: e.ad, startDate: bas,
     eventStatus: `https://schema.org/${durum}`, eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
@@ -126,7 +126,7 @@ export async function yanitla(istek, anaSayfa) {
   let yok = !id;  // etkinlik kesin yok (veri okundu, boş): 404; okunamadıysa geçici, 200
   if (id) {
     try {
-      const r = await fetch(`${SB}/rest/v1/etkinlikler?id=eq.${id}&durum=neq.taslak&select=ad,tarih,saat,aciklama,kim,afis,bilet_fiyati,kontenjan,satilan_bilet,durum`, {
+      const r = await fetch(`${SB}/rest/v1/etkinlikler?id=eq.${id}&durum=eq.yayinda&select=ad,tarih,saat,aciklama,kim,afis,bilet_fiyati,kontenjan,satilan_bilet,durum`, {
         headers: { apikey: ANON, Authorization: `Bearer ${ANON}` },
       });
       if (r.ok) { e = (await r.json())[0] || null; yok = !e; }
