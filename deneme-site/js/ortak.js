@@ -159,7 +159,7 @@
 
   // Anonim formlar "form-gonder" Edge Function'a gider (Turnstile + IP başına saatlik sınır). Dönüş: sunucunun sonucu
   async function formGonder(tur, veri) {
-    const jeton = tur === 'dekont_kaydet' || tur === 'bilet_kaydet' ? null : await insanJetonu();
+    const jeton = tur === 'dekont_kaydet' || tur === 'bilet_kaydet' || tur === 'urun_kaydet' ? null : await insanJetonu();
     let yanit;
     try {
       yanit = await fetch(`${A.supabaseUrl}/functions/v1/form-gonder`, {
@@ -231,6 +231,22 @@
     const { error: yHata } = await sb.storage.from('dekontlar').uploadToSignedUrl(hak.yol, hak.jeton, dosya, { contentType: tur });
     if (yHata) throw new Error(`Dosya yüklenemedi: ${yHata.message}`);
     await formGonder('bilet_kaydet', { id: hak.id, eposta: String(eposta || '').trim().toLowerCase() });
+  };
+
+  // Etkinliğe özel ürün siparişi: {id, kod, tutar, yol} + kartta Shopier sayfası, havalede dekont yükleme adresi
+  window.FCSUrunSiparis = async ({ etkinlik, kalemler, ad, eposta, tel, yol, kvkk }) => formGonder('urun_siparis',
+    { etkinlik, kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, yol, kvkk: kvkk === true });
+  window.FCSUrunDekont = async (s, eposta, dosya) => {
+    const { tur } = dekontDosyasi(dosya);
+    const { error: yHata } = await sb.storage.from('dekontlar').uploadToSignedUrl(s.dosya, s.jeton, dosya, { contentType: tur });
+    if (yHata) throw new Error(`Dosya yüklenemedi: ${yHata.message}`);
+    await formGonder('urun_kaydet', { id: s.id, eposta: String(eposta || '').trim().toLowerCase() });
+  };
+  // Kartla ödeme Shopier penceresindeyken: 'bekliyor' | 'onaylandi' | 'reddedildi'
+  window.FCSUrunDurum = async (id, eposta) => {
+    const { data, error } = await sb.rpc('urun_siparis_durum', { p_id: Number(id) || 0, p_eposta: String(eposta || '').trim().toLowerCase() });
+    if (error) throw new Error(error.message);
+    return data;
   };
 
   window.FC_ORTAK = { sb, bugun, bildir, formGonder, kurtarma: /type=(recovery|invite)/.test(location.hash) };

@@ -59,6 +59,14 @@
       // Tanışma kartı numaraları (yüklendiyse yalnız onlar geçer); göç yoksa null
       sb.rpc('tanisma_kart_ozeti').then((r) => r.data || null, () => null),
     ]);
+    // Etkinliğe özel ürünler, etkinlik–ürün eşlemesi ve siparişler (son 1000); göç yoksa boş
+    const [urunler, etkUrunSatir, urunSiparisleri] = await Promise.all([
+      sb.from('urunler').select('*').order('id').then((r) => r.data || [], () => []),
+      sb.from('etkinlik_urunleri').select('etkinlik_id, urun_id').limit(5000).then((r) => r.data || [], () => []),
+      sb.from('urun_siparisleri').select('*').order('id', { ascending: false }).limit(1000).then((r) => r.data || [], () => []),
+    ]);
+    const etkUrun = {};
+    etkUrunSatir.forEach((x) => { (etkUrun[x.etkinlik_id] = etkUrun[x.etkinlik_id] || []).push(x.urun_id); });
     const B = bugun();
     setTimeout(() => paylasKopyalariniTamamla(etkinlikler), 3000);  // paylaşım önizlemesi için eksik küçük afişler
     const grupla = (xs, alan) => {
@@ -152,6 +160,7 @@
       })),
       etkDurum,
       kuyruk, saglik, ayarlar, veriTalepleri, gonulluler, tanismaKart,
+      urunler, etkUrun, urunSiparisleri, etkinlikAd: new Map(etkinlikler.map((e) => [e.id, { ad: e.ad, tarih: e.tarih }])),
       eksik: eksikler,
       _keyEtk: keyEtk,
       basvurular: { dekontlar, cagri, biletIstekleri, etkinlikAd: new Map(etkinlikler.map((e) => [e.id, `${e.ad} (${trTarih(e.tarih)})`])), uyeler: new Map(uyeler.map((u) => [u.id, u])) },
@@ -676,6 +685,34 @@
         const { error } = await sb.from('indirim_kodlari').update({ aktif }).eq('kod', kod).select('kod').single();
         if (error) throw new Error(error.message);
       },
+    };
+    // Etkinliğe özel ürünler: ürün ekle / güncelle, etkinliğin ürünleri, sipariş kararı (urun_karar)
+    window.FCUrun = {
+      kaydet: async (id, u) => {
+        const is = id ? sb.from('urunler').update(u).eq('id', id).select('*').single() : sb.from('urunler').insert(u).select('*').single();
+        const { data, error } = await is;
+        if (error) throw new Error(error.code === '23514' ? 'Ad 1–80 karakter, fiyat sıfırdan büyük olmalı.' : error.message);
+        return data;
+      },
+      etkinlikUrunleri: async (etkId, ids) => {
+        const { error: e1 } = await sb.from('etkinlik_urunleri').delete().eq('etkinlik_id', etkId);
+        if (e1) throw new Error(e1.message);
+        if (!ids.length) return;
+        const { error: e2 } = await sb.from('etkinlik_urunleri').insert(ids.map((u) => ({ etkinlik_id: etkId, urun_id: u })));
+        if (e2) throw new Error(e2.message);
+      },
+      karar: async (s, onay) => {
+        let not = null;
+        if (!onay) {
+          not = window.prompt(`${s.ad} (U-${s.id}) için red gerekçesi (alıcıya e-postayla gider):`, s.odeme_yolu === 'havale' ? 'Dekont ödemeyle eşleşmedi.' : 'Sipariş iptal edildi.');
+          if (not === null) return;
+        }
+        const { error } = await sb.rpc('urun_karar', { p_id: s.id, p_onay: onay, p_not: not });
+        if (error) return bildir(error.message, true);
+        bildir(onay ? `U-${s.id} ödendi ✓ Muhasebeye yazıldı, alıcıya e-posta gidiyor` : `U-${s.id} reddedildi`);
+        setTimeout(() => { location.hash = 'urunler'; location.reload(); }, 900);  // muhasebe de tazelensin
+      },
+      dekontAc,
     };
     // Kapıda iki aşamalı giriş: önce kim olduğu ve daha önce girip girmediği (hiçbir şey yazılmaz), sonra onay
     window.FCGirisKontrol = async (key, kod) => {

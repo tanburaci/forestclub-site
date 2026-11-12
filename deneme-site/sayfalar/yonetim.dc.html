@@ -625,6 +625,14 @@ label:has(> input[type="checkbox"]){min-height:44px;cursor:pointer}
                 <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Instagram bağlantısı (varsa)
                   <input class="fc-input" type="url" placeholder="https://www.instagram.com/p/…" value="{{ form.link }}" onChange="{{ alan.link }}">
                 </label>
+                <sc-if value="{{ etkUrunVar }}" hint-placeholder-val="{{ false }}">
+                  <fieldset style="border: 1.5px solid #DADAD8; border-radius: 12px; margin: 0; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 8px 18px">
+                    <legend style="font-weight: 600; font-size: 14px; padding: 0 4px">Etkinliğe özel ürünler (başlangıçtan 1 saat önce – 5 saat sonra etkinlik sayfasında satılır)</legend>
+                    <sc-for list="{{ etkUrunSecim }}" as="u" hint-placeholder-count="2">
+                      <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; min-height: 40px"><input type="checkbox" checked="{{ u.secili }}" onChange="{{ u.degis }}" style="width: 20px; height: 20px; margin: 0">{{ u.ad }}</label>
+                    </sc-for>
+                  </fieldset>
+                </sc-if>
                 <sc-if value="{{ formHata }}" hint-placeholder-val="{{ false }}">
                   <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ formHata }}</p>
                 </sc-if>
@@ -1022,6 +1030,7 @@ label:has(> input[type="checkbox"]){min-height:44px;cursor:pointer}
                     <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Kategori
                       <select class="fc-input" value="{{ mForm.kategori }}" onChange="{{ mAlan.kategori }}">
                         <option value="Etkinlik katılım ücreti">Etkinlik katılım ücreti</option>
+                        <option value="Ürün satışı">Ürün satışı</option>
                         <option value="Destek">Destek (IBAN'a gelen)</option>
                         <option value="Bağış">Bağış</option>
                         <option value="Sponsor">Sponsor</option>
@@ -1775,6 +1784,83 @@ label:has(> input[type="checkbox"]){min-height:44px;cursor:pointer}
           </div>
         </sc-if>
 
+        <!-- ÜRÜNLER: etkinliğe özel ürünler (etkinlik sayfasında başlangıçtan 1 saat önce – 5 saat sonra satılır) ve siparişler -->
+        <sc-if value="{{ urunlerSekme }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 20px">
+            <div>
+              <h2 style="margin: 0; font-family: 'Amatic SC', cursive; font-size: 56px; line-height: 1; color: #111111">Ürünler</h2>
+              <p style="margin: 6px 0 0; color: #5E5E5E">Etkinliğe özel ürünler (yelpaze vb.). Hangi etkinlikte satılacağını Etkinlikler › Düzenle'de seçin. Ürünler yalnız o etkinliğin sayfasında, başlangıçtan 1 saat önce ile 5 saat sonrası arasında görünür ve satılır.</p>
+            </div>
+            <section class="fc-urunler" style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+              <h3 style="margin: 0; font-size: 20px">{{ urunFormBaslik }}</h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: end">
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Ürün adı
+                  <input class="fc-input" type="text" maxlength="80" placeholder="Örn. Yelpaze 1" value="{{ urunForm.ad }}" onChange="{{ urunAlan.ad }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Fiyat (TL)
+                  <input class="fc-input" type="text" inputmode="decimal" placeholder="Örn. 1500" value="{{ urunForm.fiyat }}" onChange="{{ urunAlan.fiyat }}">
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px">Fotoğraf (isteğe bağlı; JPG, PNG, WEBP)
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange="{{ urunFotoSec }}" style="font: 400 15px Figtree, sans-serif">
+                </label>
+              </div>
+              <sc-if value="{{ urunFotoVar }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap">
+                  <img src="{{ urunForm.foto }}" alt="Ürün fotoğrafı" style="width: 96px; height: 96px; object-fit: cover; border: 2px solid #111111; border-radius: 10px">
+                  <button type="button" class="fc-sekme" onClick="{{ urunFotoKaldir }}" style="text-decoration: underline">Fotoğrafı kaldır</button>
+                </div>
+              </sc-if>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                <button type="button" class="fc-btn" onClick="{{ urunKaydet }}">{{ urunDugme }}</button>
+                <sc-if value="{{ urunDuzenlemede }}" hint-placeholder-val="{{ false }}"><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ urunVazgec }}">Vazgeç</button></sc-if>
+              </div>
+              <sc-if value="{{ urunMesaj }}" hint-placeholder-val="{{ false }}">
+                <p role="status" style="margin: 0; background: #111111; color: #FFFFFF; border-radius: 10px; padding: 10px 12px; font-weight: 600; font-size: 14px">{{ urunMesaj }}</p>
+              </sc-if>
+              <sc-if value="{{ urunYok }}" hint-placeholder-val="{{ false }}"><span style="color: #5E5E5E; font-size: 14px">Henüz ürün yok.</span></sc-if>
+              <div style="border: 1px solid #DADAD8; border-radius: 12px">
+                <sc-for list="{{ urunListe }}" as="u" hint-placeholder-count="2">
+                  <div class="fc-urun-satir" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #ECECEA; flex-wrap: wrap">
+                    <sc-if value="{{ u.fotoVar }}" hint-placeholder-val="{{ false }}"><img src="{{ u.foto }}" alt="" style="width: 44px; height: 44px; object-fit: cover; border-radius: 8px; border: 1.5px solid #111111"></sc-if>
+                    <strong style="font-size: 16px">{{ u.ad }}</strong>
+                    <span style="flex: 1 1 120px; color: #3A3A3A; font-size: 14px">{{ u.fiyatYazi }}</span>
+                    <span style="font-size: 13px; font-weight: 700">{{ u.durum }}</span>
+                    <button type="button" class="fc-sekme" onClick="{{ u.duzenle }}" style="text-decoration: underline">Düzenle</button>
+                    <button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ u.degis }}" style="padding: 6px 14px; min-height: 40px; font-size: 14px">{{ u.dugme }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </section>
+            <!-- Siparişler: nakit / POS standda ödenince "Ödendi", havale dekontla "Onayla"; kart kendiliğinden kesinleşir -->
+            <section class="fc-urun-siparis" style="background: #FFFFFF; border-radius: 14px; border: 2.5px solid #111111; box-shadow: 5px 5px 0 #111111; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+              <h3 style="margin: 0; font-size: 20px">Siparişler</h3>
+              <p style="margin: 0; color: #5E5E5E; font-size: 14px">Alıcı standda sipariş kodunu (U-…) gösterir. Ödeme alınınca “Ödendi”ye basın: muhasebeye “Ürün satışı” yazılır, alıcıya e-posta gider.</p>
+              <sc-if value="{{ urunSipYok }}" hint-placeholder-val="{{ false }}"><span style="color: #5E5E5E; font-size: 14px">Henüz sipariş yok.</span></sc-if>
+              <sc-for list="{{ urunSipGruplar }}" as="g" hint-placeholder-count="1">
+                <div style="display: flex; flex-direction: column; gap: 8px; border-top: 2px solid #111111; padding-top: 12px">
+                  <h4 style="margin: 0; font-size: 17px">{{ g.baslik }} <span style="font-weight: 400; color: #5E5E5E; font-size: 14px">{{ g.ozet }}</span></h4>
+                  <sc-for list="{{ g.satirlar }}" as="d" hint-placeholder-count="2">
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; border-top: 1px solid #ECECEA; padding-top: 8px">
+                      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+                        <span style="font-weight: 700">{{ d.kod }} · {{ d.ad }} <span style="font-weight: 400; color: #5E5E5E">{{ d.iletisim }}</span></span>
+                        <span style="font-size: 14px; color: #3A3A3A">{{ d.tarih }} · <strong>{{ d.tutar }}</strong> · {{ d.kalemler }}</span>
+                        <span style="font-size: 13px"><span style="{{ d.rozet }}">{{ d.durum }}</span> {{ d.yol }}</span>
+                      </div>
+                      <sc-if value="{{ d.bekliyor }}" hint-placeholder-val="{{ true }}">
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                          <sc-if value="{{ d.dekontVar }}" hint-placeholder-val="{{ false }}"><button type="button" class="fc-btn fc-btn-ikincil" onClick="{{ d.ac }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">Dekontu aç</button></sc-if>
+                          <button type="button" class="fc-btn" onClick="{{ d.onayla }}" style="padding: 8px 14px; min-height: 40px; font-size: 14px">{{ d.onayYazi }}</button>
+                          <button type="button" class="fc-sekme" onClick="{{ d.reddet }}" style="text-decoration: underline">Reddet</button>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </section>
+          </div>
+        </sc-if>
+
         <!-- FORMLAR: üyelere form (öneri, anket…); üye panelinde ve /form/?id=N bağlantısıyla doldurulur -->
         <sc-if value="{{ formlarSekme }}" hint-placeholder-val="{{ false }}">
           <div style="display: flex; flex-direction: column; gap: 20px">
@@ -2128,11 +2214,14 @@ class Component extends DCLogic {
     this.EBOS = { giris: 'satin', ad: '', kategori: 'Yoga / hareket', adet: '1', birim: 'adet', tarih: this.BUGUN, konum: '', tutar: '', kasa: 'banka', muhasebe: true, firma: '', karsilik: '', kaynak: '', not: '' };
     this.state = {
       adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
-      girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
+      girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun', '#urunler'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
       elden: { acik: false, ad: '', tutar: this.AIDAT_YAZI, tarih: this.BUGUN, hata: '' },
       // İndirim kodları (bilet sepeti); önizlemede örnek kod
       kodlar: window.FC ? null : [{ kod: 'FOREST20', tur: 'yuzde', deger: 20, son_tarih: null, sinir: 50, kullanilan: 7, aktif: true, aciklama: 'Instagram' }],
       kodForm: { kod: '', tur: 'yuzde', deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: '',
+      // Etkinliğe özel ürünler; önizlemede örnek ürünler
+      urunler: window.FC ? window.FC.urunler || [] : [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, aktif: true }],
+      urunForm: { ad: '', fiyat: '', foto: '' }, urunDuz: null, urunMesaj: '', etkUrun: [],
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
       etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: window.FC ? window.FC.etkDurum : {},
@@ -2220,7 +2309,13 @@ class Component extends DCLogic {
       }));
       if (!window.FCEtkinlikGuncelle || !eski.id) return bitir();
       this.setState({ formHata: 'Kaydediliyor…' });
-      window.FCEtkinlikGuncelle(eski.id, yeni).then(bitir, (h) => this.setState({ formHata: h.message }));
+      // Etkinliğin ürünleri yalnız seçim değiştiyse yazılır
+      const sira = (xs) => JSON.stringify([...xs].sort((a, b) => a - b));
+      const urunler = [...this.state.etkUrun].sort((a, b) => a - b);
+      const urunDegisti = window.FCUrun && sira(urunler) !== sira(window.FC.etkUrun[eski.id] || []);
+      window.FCEtkinlikGuncelle(eski.id, yeni)
+        .then(() => (urunDegisti ? window.FCUrun.etkinlikUrunleri(eski.id, urunler).then(() => { window.FC.etkUrun[eski.id] = urunler; }) : null))
+        .then(bitir, (h) => this.setState({ formHata: h.message }));
     };
     // Aylık dosya (CSV): GG.AA.YYYY;saat;tur;ad;kim;kontenjan;bilet_fiyati;uyelere;tanisma_kontenjan;aciklama;link[;min_kisi]
     this.csvCoz = (metin) => {
@@ -2530,6 +2625,89 @@ class Component extends DCLogic {
         this.setState({ kodMesaj2: 'Kaydediliyor…' });
         window.FCIndirim.ekle(yeni).then(bitir, (h) => this.setState({ kodMesaj2: h.message }));
       },
+    };
+  }
+  // Ürünler sekmesi: ürün ekle / düzenle / satışa aç-kapat, siparişler (etkinliğe göre); etkinlik formunda ürün seçimi
+  urunlerGorunum() {
+    const st = this.state;
+    const f = st.urunForm;
+    const tl = (n) => `${Math.round(Number(n)).toLocaleString('tr-TR')} TL`;
+    const alan = (a) => (e) => { const v = e.target.value; this.setState((s) => ({ urunForm: { ...s.urunForm, [a]: v }, urunMesaj: '' })); };
+    const yaz = (u) => this.setState((s) => ({ urunler: s.urunler.some((x) => x.id === u.id) ? s.urunler.map((x) => (x.id === u.id ? u : x)) : [...s.urunler, u] }));
+    const FC = window.FC;
+    const zaman = (t) => new Date(t).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const pill = (bg, fg) => `background:${bg};color:${fg};font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;display:inline-block`;
+    const YOL = { nakit: 'Standda nakit', pos: 'Standda POS', havale: 'Havale · dekont', kart: 'Kart · Shopier' };
+    // Yöneticinin göreceği siparişler: nakit / POS hemen, havale dekontla, kart ödemeyle (ödenmemiş kart, dekontsuz havale yok)
+    const siparisler = (FC ? FC.urunSiparisleri || [] : []).filter((x) => x.yuklendi || x.durum !== 'bekliyor');
+    const gruplar = new Map();
+    siparisler.forEach((x) => { if (!gruplar.has(x.etkinlik_id)) gruplar.set(x.etkinlik_id, []); gruplar.get(x.etkinlik_id).push(x); });
+    const etkBilgi = (id) => (FC && FC.etkinlikAd.get(id)) || { ad: 'Etkinlik', tarih: '' };
+    const urunSipGruplar = [...gruplar.entries()].sort((a, b) => etkBilgi(b[0]).tarih.localeCompare(etkBilgi(a[0]).tarih)).map(([id, xs]) => {
+      const e = etkBilgi(id);
+      const bekleyen = xs.filter((x) => x.durum === 'bekliyor').length;
+      const odenen = xs.filter((x) => x.durum === 'onaylandi').reduce((t, x) => t + Number(x.tutar), 0);
+      return {
+        baslik: `${e.ad}${e.tarih ? ` (${e.tarih.split('-').reverse().join('.')})` : ''}`,
+        ozet: `${bekleyen} bekliyor · ödenen ${tl(odenen)}`,
+        satirlar: [...xs].sort((a, b) => (b.durum === 'bekliyor') - (a.durum === 'bekliyor')).map((x) => ({
+          kod: `U-${x.id}`, ad: x.ad, iletisim: `${x.tel} · ${x.eposta}`, tarih: zaman(x.created_at), tutar: tl(x.tutar),
+          kalemler: (x.kalemler || []).map((k) => `${k.adet} × ${k.ad}`).join(', '), yol: YOL[x.odeme_yolu] || x.odeme_yolu,
+          durum: x.durum === 'onaylandi' ? 'Ödendi' : x.durum === 'reddedildi' ? 'Reddedildi' : 'Bekliyor',
+          rozet: x.durum === 'onaylandi' ? pill('#111111', '#FFFFFF') : x.durum === 'reddedildi' ? pill('#F3DCD5', '#82301F') : pill('#F6C945', '#111111'),
+          bekliyor: x.durum === 'bekliyor', dekontVar: x.odeme_yolu === 'havale' && !!x.dosya,
+          onayYazi: x.odeme_yolu === 'havale' ? 'Onayla' : 'Ödendi',
+          ac: () => window.FCUrun && window.FCUrun.dekontAc(x.dosya),
+          onayla: () => window.FCUrun && window.FCUrun.karar(x, true), reddet: () => window.FCUrun && window.FCUrun.karar(x, false),
+        })),
+      };
+    });
+    const secili = st.etkUrun || [];
+    return {
+      urunForm: f, urunMesaj: st.urunMesaj, urunAlan: { ad: alan('ad'), fiyat: alan('fiyat') },
+      urunFotoVar: !!f.foto, urunDuzenlemede: !!st.urunDuz,
+      urunFormBaslik: st.urunDuz ? 'Ürünü düzenle' : 'Yeni ürün', urunDugme: st.urunDuz ? 'Ürünü kaydet' : 'Ürünü ekle',
+      urunFotoSec: (ev) => {
+        const dosya = ev.target.files && ev.target.files[0];
+        if (!dosya) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(dosya.type)) return this.setState({ urunMesaj: 'Fotoğraf JPG, PNG ya da WEBP olmalı.' });
+        if (dosya.size > 5 * 1024 * 1024) return this.setState({ urunMesaj: 'Fotoğraf 5 MB\'tan büyük.' });
+        if (!window.FCAfisYukle) return this.setState((s) => ({ urunForm: { ...s.urunForm, foto: URL.createObjectURL(dosya) } }));
+        this.setState({ urunMesaj: 'Yükleniyor…' });
+        window.FCAfisYukle(dosya).then((url) => this.setState((s) => ({ urunForm: { ...s.urunForm, foto: url }, urunMesaj: 'Fotoğraf yüklendi ✓' })),
+          (h) => this.setState({ urunMesaj: `Yüklenemedi: ${h.message}` }));
+      },
+      urunFotoKaldir: () => this.setState((s) => ({ urunForm: { ...s.urunForm, foto: '' } })),
+      urunVazgec: () => this.setState({ urunDuz: null, urunForm: { ad: '', fiyat: '', foto: '' }, urunMesaj: '' }),
+      urunKaydet: () => {
+        const ad = f.ad.trim();
+        const fiyat = window.FCSayi(f.fiyat) ?? NaN;
+        if (!ad) return this.setState({ urunMesaj: 'Ürün adını yazın.' });
+        if (!(fiyat > 0)) return this.setState({ urunMesaj: 'Fiyatı yazın.' });
+        const satir = { ad, fiyat, foto: f.foto && /^https:\/\//.test(f.foto) ? f.foto : null };
+        const bitir = (u) => { yaz(u); this.setState({ urunDuz: null, urunForm: { ad: '', fiyat: '', foto: '' }, urunMesaj: `${ad} ${st.urunDuz ? 'kaydedildi' : 'eklendi'} ✓` }); };
+        if (!window.FCUrun) return bitir({ id: st.urunDuz || Date.now(), aktif: true, ...satir });
+        this.setState({ urunMesaj: 'Kaydediliyor…' });
+        window.FCUrun.kaydet(st.urunDuz, st.urunDuz ? satir : { ...satir, aktif: true }).then(bitir, (h) => this.setState({ urunMesaj: h.message }));
+      },
+      urunYok: !st.urunler.length,
+      urunListe: st.urunler.map((u) => ({
+        ad: u.ad, fiyatYazi: tl(u.fiyat), foto: u.foto || '', fotoVar: !!u.foto,
+        durum: u.aktif ? 'Satışta' : 'Kapalı', dugme: u.aktif ? 'Satışa kapat' : 'Satışa aç',
+        duzenle: () => this.setState({ urunDuz: u.id, urunForm: { ad: u.ad, fiyat: String(Number(u.fiyat)), foto: u.foto || '' }, urunMesaj: '' }),
+        degis: () => {
+          const yeni = { ...u, aktif: !u.aktif };
+          yaz(yeni);
+          if (window.FCUrun) window.FCUrun.kaydet(u.id, { aktif: yeni.aktif }).catch((h) => { yaz(u); this.setState({ urunMesaj: h.message }); });
+        },
+      })),
+      urunSipGruplar, urunSipYok: !urunSipGruplar.length,
+      // Etkinlik düzenleme: aktif ürünler ve bu etkinliğe zaten bağlı olanlar
+      etkUrunVar: !!st.duzKey && st.urunler.some((u) => u.aktif || secili.includes(u.id)),
+      etkUrunSecim: st.urunler.filter((u) => u.aktif || secili.includes(u.id)).map((u) => ({
+        ad: `${u.ad} · ${tl(u.fiyat)}${u.aktif ? '' : ' (satışa kapalı)'}`, secili: secili.includes(u.id),
+        degis: () => this.setState((s) => ({ etkUrun: s.etkUrun.includes(u.id) ? s.etkUrun.filter((x) => x !== u.id) : [...s.etkUrun, u.id] })),
+      })),
     };
   }
   // Açık / kapalı ayar: ekranda hemen değişir, kaydedilemezse geri alınır
@@ -2865,7 +3043,7 @@ class Component extends DCLogic {
     const TASLAK = pill('#F0F0EE', '#3A3A3A');
     const sekmeler = [
       { id: 'ana', ad: 'Ana sayfa' }, { id: 'uyeler', ad: 'Üyeler' },
-      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'formlar', ad: 'Formlar' }, { id: 'dugun', ad: 'Düğün' }, { id: 'iletisim', ad: 'İletişim' },
+      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'urunler', ad: 'Ürünler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'formlar', ad: 'Formlar' }, { id: 'dugun', ad: 'Düğün' }, { id: 'iletisim', ad: 'İletişim' },
     ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme',
       sec: () => this.setState({ sekme: s.id }, () => { if (s.id === 'dugun' && window.FCDugunAc) window.FCDugunAc(); }) }));
     const BUGUN_SABIT = this.BUGUN;
@@ -3642,7 +3820,7 @@ class Component extends DCLogic {
           duzenle: () => {
             const o = this.state.etkinlikler.find((z) => `${z.tarih}|${z.ad}` === key);
             if (!o) return;
-            this.setState({ formAcik: true, duzKey: key, formHata: '', eklendiMesaj: '', afisDurum: '', form: {
+            this.setState({ formAcik: true, duzKey: key, formHata: '', eklendiMesaj: '', afisDurum: '', etkUrun: (window.FC && o.id && window.FC.etkUrun[o.id]) || [], form: {
               ...this.BOS, tarih: o.tarih, saat: o.saat || '', tur: o.tur, ad: o.ad, kim: o.kim || '', metin: o.metin || '', link: o.link || '',
               kontenjan: String(o.kontenjan), min: o.min ? String(o.min) : '', fiyat: o.satis ? String(o.satis.fiyat) : '', uye: o.satis ? o.satis.uye : 'ucretsiz', afis: o.afis || '',
             } });
@@ -3662,6 +3840,8 @@ class Component extends DCLogic {
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
       ...this.indirimKodlari(),
+      ...this.urunlerGorunum(),
+      urunlerSekme: sekme === 'urunler',
       ...this.aylikGorunum(),
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',
