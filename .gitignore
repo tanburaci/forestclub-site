@@ -14,7 +14,6 @@ testler/node_modules/
 # Gizli / yerel dosyalar (asla depoya girmez)
 .env*
 .vercel/
-.netlify/
 .wrangler/
 .DS_Store
 supabase/.temp/

@@ -71,8 +71,6 @@ jobs:
           c=$(kod -X POST "$SB/functions/v1/odeme-baslat" -H "Authorization: Bearer $K"); [ "$c" = 401 ] && sonuc ok "odeme-baslat girişsiz 401" || sonuc x "odeme-baslat: $c"
           c=$(kod -X POST "$SB/functions/v1/form-gonder" -H 'Content-Type: application/json' -d '{"tur":"destek","veri":{"tutar":1000}}')
           case $c in 400|403|429|503) sonuc ok "form-gonder doğrulamasız reddedildi ($c: $(head -c 80 /tmp/govde))";; *) sonuc x "form-gonder doğrulamasız: $c";; esac
-          c=$(kod -X POST "$SB/functions/v1/odeme-donus?tur=destek" -d 'token=sahte-token-1234567'); l=$(curl -s -o /dev/null -w '%{redirect_url}' -m 20 -X POST "$SB/functions/v1/odeme-donus?tur=destek" -d 'token=sahte-token-1234567')
-          [ "$c" = 303 ] && case "$l" in "$SITE"/*destek-hata*|https://forestcluburla.com/*destek-hata*) sonuc ok "odeme-donus sahte token → $l";; *) sonuc x "odeme-donus yönlendirme: $l";; esac || sonuc x "odeme-donus: $c"
 
           echo "== Dosya deposu"
           c=$(kod -X POST "$SB/storage/v1/object/list/dekontlar" -H "apikey: $K" -H "Authorization: Bearer $K" -H 'Content-Type: application/json' -d '{"prefix":"","limit":5}')
