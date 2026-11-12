@@ -440,6 +440,21 @@ html.gok-gece .fs-parti{opacity:1}
 .fe-anaya{display:block;width:max-content;margin:0 auto 40px;font:700 16px Figtree,sans-serif;color:#111111;border:2.5px solid #111111;border-radius:999px;padding:11px 20px;text-decoration:none;background:#FFFFFF;box-shadow:3px 3px 0 #111111;position:relative;z-index:1}
 .fe-yok{max-width:640px;margin:40px auto;padding:0 20px;text-align:center}
 .fe-cubuk{display:none}
+/* Etkinliğe özel ürünler (13.11.2026): yalnız etkinlik saatinin çevresinde */
+.fe-urunler{max-width:1100px;margin:0 auto;padding:0 20px 34px;position:relative;z-index:1;scroll-margin-top:16px}
+.fe-urunler h2{font-size:48px;margin:0 0 6px}
+.fe-urun-not{margin:0 0 14px;color:#3A3A3A}
+.fe-urun-liste{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+.fe-urun{border:2.5px solid #111111;border-radius:14px;padding:12px 14px;box-shadow:4px 4px 0 #111111;background:#FFFFFF;display:flex;flex-direction:column;gap:6px}
+.fe-urun img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1.5px solid #111111}
+.fe-urun b{font-size:18px}.fe-urun-fiyat{font-weight:700;font-size:16px}
+.fe-adet{display:flex;align-items:center;gap:14px;margin-top:4px}.fe-adet span{min-width:20px;text-align:center;font-weight:700;font-size:18px}
+.fe-adet button{width:44px;height:44px;border:2px solid #111111;border-radius:50%;background:#FFFFFF;color:#111111;font:700 22px/1 Figtree,sans-serif;cursor:pointer}
+.fe-urun-form{max-width:520px;display:flex;flex-direction:column;gap:12px}
+.fe-urun-alan{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px}
+.fe-urun-alan input:not([type="file"]){font:400 16px Figtree,sans-serif;padding:12px 14px;border:2px solid #111111;border-radius:10px;min-height:46px;box-sizing:border-box}
+.fe-urun-alan input[type="file"]{font:400 15px Figtree,sans-serif}
+.fe-urun-kod{align-self:flex-start;font:700 48px/1 Figtree,sans-serif;letter-spacing:.06em;background:#C9E33A;border:3px dashed #111111;border-radius:14px;padding:14px 22px}
 /* Masaüstünde TV sağ altta yüzer; telefonda sayfa içinde tam boy */
 .fe-tv-yer h2{display:none}
 .fs-ana-tv{display:none;flex-direction:column;align-items:center;gap:6px;margin:8px 0 0}
@@ -456,6 +471,7 @@ html.gok-gece .fs-parti{opacity:1}
   .fe-kutular{flex-wrap:nowrap;overflow-x:auto;gap:6px}.fe-kutular span{font-size:13px;padding:6px 9px}
   .fe-satis{display:none}
   .fe-kartlar,.fe-liste{grid-template-columns:1fr}
+  .fe-urunler{padding:0 16px 28px}.fe-urunler h2{font-size:40px}
   .fe-tv-yer h2{display:block;text-align:center;font-size:44px;margin-bottom:6px}
   .fe-tv-yer .fe-tv{position:static;width:300px;max-width:100%;margin:0 auto}
   .fe-tv-yer .fe-tv .fu-tv{font-size:7px}
@@ -1530,9 +1546,87 @@ Buluşmalar ✓</p>
               <button type="button" class="fs-paylas" onClick="{{ tek.paylas }}" aria-label="{{ tek.paylasEtiket }}">{{ tek.paylasYazi }}</button>
               <sc-if value="{{ tekGelecek }}" hint-placeholder-val="{{ true }}"><a href="{{ tek.takvim }}" class="fe-takvim">Takvime ekle</a></sc-if>
               <sc-if value="{{ tekLinkVar }}" hint-placeholder-val="{{ true }}"><a href="{{ tek.link }}" class="fe-takvim">Instagram'da gör</a></sc-if>
+              <sc-if value="{{ urunVar }}" hint-placeholder-val="{{ false }}"><a href="#urunler" class="fe-takvim">Etkinliğe özel ürünler ↓</a></sc-if>
             </div>
           </div>
         </main>
+        <!-- Etkinliğe özel ürünler: liste sunucudan, yalnız etkinlik saatinin çevresinde (1 saat önce – 5 saat sonra) dolu -->
+        <sc-if value="{{ urunVar }}" hint-placeholder-val="{{ false }}">
+          <section class="fe-urunler" id="urunler" aria-labelledby="fe-urun-baslik">
+            <h2 class="fs-baslik" id="fe-urun-baslik">Etkinliğe özel ürünler</h2>
+            <sc-if value="{{ uSecimde }}" hint-placeholder-val="{{ true }}">
+              <p class="fe-urun-not">Yalnız bu etkinlikte. Seç, öde; ürününü standdan sipariş kodunla al.</p>
+              <div class="fe-urun-liste">
+                <sc-for list="{{ urunler }}" as="u" hint-placeholder-count="2">
+                  <div class="fe-urun">
+                    <sc-if value="{{ u.fotoVar }}" hint-placeholder-val="{{ false }}"><img src="{{ u.foto }}" alt="{{ u.ad }}" loading="lazy"></sc-if>
+                    <b>{{ u.ad }}</b>
+                    <span class="fe-urun-fiyat">{{ u.fiyatYazi }}</span>
+                    <div class="fe-adet">
+                      <button type="button" onClick="{{ u.azalt }}" aria-label="{{ u.azaltEtiket }}">−</button>
+                      <span aria-live="polite">{{ u.adet }}</span>
+                      <button type="button" onClick="{{ u.arttir }}" aria-label="{{ u.arttirEtiket }}">+</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div class="fe-urun-form">
+                <label class="fe-urun-alan">Ad Soyad *<input type="text" autocomplete="name" value="{{ uAd }}" onChange="{{ uAdYaz }}"></label>
+                <label class="fe-urun-alan">E-posta *<input type="email" autocomplete="email" value="{{ uEposta }}" onChange="{{ uEpostaYaz }}"></label>
+                <label class="fe-urun-alan">Telefon *<input type="tel" autocomplete="tel" value="{{ uTel }}" onChange="{{ uTelYaz }}"></label>
+                <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+                  <legend style="font-weight: 700; font-size: 15px; margin-bottom: 6px">Ödeme yöntemi</legend>
+                  <sc-for list="{{ uYollari }}" as="y" hint-placeholder-count="4">
+                    <button type="button" role="radio" aria-checked="{{ y.secili }}" aria-disabled="{{ y.kapaliYazi }}" onClick="{{ y.sec }}" style="{{ y.stil }}">
+                      <span aria-hidden="true" style="font-size: 18px; line-height: 1.2">{{ y.isaret }}</span>
+                      <span style="display: flex; flex-direction: column; gap: 2px"><strong>{{ y.ad }}</strong><span style="font-size: 13px; color: #3A3A3A">{{ y.alt }}</span></span>
+                    </button>
+                  </sc-for>
+                </fieldset>
+                <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ uKvkk }}" onChange="{{ uKvkkDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="/gizlilik/" target="_blank" rel="noopener">KVKK aydınlatma metnini</a> okudum, onaylıyorum. *</span></label>
+                <sc-if value="{{ uHata }}" hint-placeholder-val="{{ false }}">
+                  <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ uHata }}</p>
+                </sc-if>
+                <button type="button" class="fs-btn" onClick="{{ uGonder }}">{{ uDugme }}</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ uDekontta }}" hint-placeholder-val="{{ false }}">
+              <div class="fe-urun-form">
+                <p style="margin: 0; font-size: 16px">Sipariş <strong>{{ uKod }}</strong> · <strong>{{ uTutarYazi }}</strong></p>
+                <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3A3A3A">Tutarı aşağıdaki hesaba havale / EFT ile gönder ve dekontunu yükle.</p>
+                <div style="background: #F0F0EE; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; font-size: 15px">
+                  <span><strong>Alıcı:</strong> {{ odemeAlici }}</span>
+                  <span style="font-variant-numeric: tabular-nums"><strong>IBAN:</strong> {{ odemeIban }}</span>
+                  <span style="color: #5E5E5E; font-size: 13px">Açıklamaya sipariş kodunu ({{ uKod }}) yaz.</span>
+                </div>
+                <label class="fe-urun-alan">Dekont (PDF ya da fotoğraf, en fazla 10 MB)<input type="file" accept=".pdf,image/*" onChange="{{ uDekontSec }}"></label>
+                <sc-if value="{{ uHata }}" hint-placeholder-val="{{ false }}">
+                  <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ uHata }}</p>
+                </sc-if>
+                <button type="button" class="fs-btn" onClick="{{ uDekontGonder }}">Dekontu gönder</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ uKartBekle }}" hint-placeholder-val="{{ false }}">
+              <div class="fe-urun-form" role="status" aria-live="polite">
+                <p style="margin: 0; font-size: 15px; line-height: 1.5"><strong>{{ uTutarYazi }}</strong> ödemeni açılan Shopier penceresinde tamamla. Bu sayfayı kapatma; ödeme gelince burası kendiliğinden değişir.</p>
+                <p style="margin: 0; display: flex; align-items: center; gap: 10px; background: #F0F0EE; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600"><span class="fs-bekle-nokta" aria-hidden="true"></span>Ödemen bekleniyor…</p>
+                <sc-if value="{{ uHata }}" hint-placeholder-val="{{ false }}">
+                  <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ uHata }}</p>
+                </sc-if>
+                <a class="fs-btn" href="{{ uSayfa }}" target="shopier-odeme" rel="noopener">{{ uPencereYazi }}</a>
+              </div>
+            </sc-if>
+            <sc-if value="{{ uTamam }}" hint-placeholder-val="{{ false }}">
+              <div class="fe-urun-form" role="status">
+                <span class="fs-baslik" style="font-size: 44px">{{ uTamamBaslik }}</span>
+                <p style="margin: 0; font-size: 15px; line-height: 1.5">{{ uTamamYazi }}</p>
+                <div class="fe-urun-kod" aria-label="Sipariş kodu">{{ uKod }}</div>
+                <p style="margin: 0; font-size: 15px">Toplam <strong>{{ uTutarYazi }}</strong></p>
+                <button type="button" class="fs-btn fs-btn-acik" onClick="{{ uYeni }}">Yeni sipariş</button>
+              </div>
+            </sc-if>
+          </section>
+        </sc-if>
         <sc-if value="{{ tekTv }}" hint-placeholder-val="{{ true }}">
           <section class="fe-tv-yer">
             <h2 class="fs-baslik">Üye olunca hepsi dahil</h2>
@@ -1744,7 +1838,111 @@ class Component extends DCLogic {
       }, () => {});
     }, 4000);
   }
+  // Etkinliğe özel ürünler (/e/<id>): liste site.js'ten (FCS.urunler; sunucu yalnız etkinlik saatinin çevresinde verir),
+  // sipariş form-gonder "urun_siparis" ile; tutar sunucuda. Kart: Shopier ayrı pencerede, ödeme gelince kod görünür;
+  // havale: dekont; nakit / POS: kod hemen görünür, standda ödenir
+  urunGorunum(tek, kartAcik) {
+    const liste = (tek && window.FCS && window.FCS.urunler) || [];
+    const st = this.state;
+    const sec = st.uSec || {};
+    const TL = (n) => `${Math.round(Number(n)).toLocaleString('tr-TR')} TL`;
+    const toplam = liste.reduce((t, u) => t + (sec[u.id] || 0) * Number(u.fiyat), 0);
+    const adim = st.uAdim || 'secim';
+    const yol = st.uYol || (kartAcik ? 'kart' : '');
+    const sip = st.uSiparis || {};
+    const degis = (id, d) => this.setState((s) => {
+      const eski = (s.uSec || {})[id] || 0;
+      return { uSec: { ...(s.uSec || {}), [id]: Math.max(0, Math.min(20, eski + d)) }, uHata: '' };
+    });
+    const YOLLAR = [
+      { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında' : 'Şu an kapalı', kapali: !kartAcik },
+      { id: 'havale', ad: 'Havale / EFT', alt: 'IBAN\'a gönder, dekontunu yükle' },
+      { id: 'nakit', ad: 'Standda nakit', alt: 'Sipariş kodunu standda göster, nakit öde' },
+      { id: 'pos', ad: 'Standda kartla (POS)', alt: 'Sipariş kodunu standda göster, POS cihazıyla öde' },
+    ];
+    const TAMAM = {
+      nakit: ['Siparişin alındı! 🌿', 'Bu kodu standdaki ekibimize göster, nakit öde; ürününü hemen al.'],
+      pos: ['Siparişin alındı! 🌿', 'Bu kodu standdaki ekibimize göster, POS cihazıyla kartla öde; ürününü hemen al.'],
+      kart: ['Ödemen alındı! 🌿', 'Teşekkürler! Bu kodu standdaki ekibimize göster, ürününü al. Onay e-postana da gönderildi.'],
+      havale: ['Teşekkürler! 🌿', 'Dekontun bize ulaştı. Onaylanınca e-postana bilgi gelir; ürününü standdaki ekibimize bu kodu göstererek al.'],
+    };
+    const [tamamBaslik, tamamYazi] = TAMAM[sip.yol] || TAMAM.nakit;
+    return {
+      urunVar: liste.length > 0,
+      urunler: liste.map((u) => ({
+        ad: u.ad, foto: u.foto || '', fotoVar: !!u.foto, fiyatYazi: TL(u.fiyat), adet: String(sec[u.id] || 0),
+        azalt: () => degis(u.id, -1), arttir: () => degis(u.id, 1), azaltEtiket: `${u.ad} adedini azalt`, arttirEtiket: `${u.ad} adedini arttır`,
+      })),
+      uSecimde: adim === 'secim', uDekontta: adim === 'dekont', uKartBekle: adim === 'kart', uTamam: adim === 'tamam',
+      uAd: st.uAd || '', uEposta: st.uEposta || '', uTel: st.uTel || '', uKvkk: !!st.uKvkk, uHata: st.uHata || '',
+      uAdYaz: (e) => this.setState({ uAd: e.target.value, uHata: '' }),
+      uEpostaYaz: (e) => this.setState({ uEposta: e.target.value, uHata: '' }),
+      uTelYaz: (e) => this.setState({ uTel: e.target.value, uHata: '' }),
+      uKvkkDegis: () => this.setState((s) => ({ uKvkk: !s.uKvkk, uHata: '' })),
+      uYollari: YOLLAR.map((y) => ({
+        ...y, secili: yol === y.id ? 'true' : 'false', kapaliYazi: y.kapali ? 'true' : 'false', isaret: yol === y.id ? '●' : '○',
+        sec: () => { if (!y.kapali) this.setState({ uYol: y.id, uHata: '' }); },
+        stil: `display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:inherit;color:#111111;border:2.5px solid #111111;border-radius:12px;padding:12px 14px;cursor:${y.kapali ? 'not-allowed' : 'pointer'};${yol === y.id ? 'background:#C9E33A;box-shadow:3px 3px 0 #111111' : 'background:#FFFFFF'};${y.kapali ? 'opacity:.55' : ''}`,
+      })),
+      uDugme: toplam ? `Siparişi ver · ${TL(toplam)}` : 'Ürün seç',
+      uGonder: () => {
+        if (/…$/.test(st.uHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci sipariş açmasın
+        const kalemler = liste.filter((u) => sec[u.id] > 0).map((u) => ({ urun: u.id, adet: sec[u.id] }));
+        const ad = (st.uAd || '').trim();
+        const eposta = (st.uEposta || '').trim();
+        const tel = (st.uTel || '').trim();
+        if (!kalemler.length) return this.setState({ uHata: 'En az bir ürün seç.' });
+        if (!ad) return this.setState({ uHata: 'Adını yaz.' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eposta)) return this.setState({ uHata: 'Geçerli bir e-posta yaz.' });
+        if (tel.replace(/\D/g, '').length < 10) return this.setState({ uHata: 'Telefon numaranı yaz.' });
+        if (!yol) return this.setState({ uHata: 'Ödeme yöntemini seç.' });
+        if (!st.uKvkk) return this.setState({ uHata: 'Devam etmek için KVKK metnini onayla.' });
+        if (!window.FCSUrunSiparis) return this.setState({ uHata: 'Önizleme: gerçek sitede sipariş burada verilir.' });
+        // Kart: pencere tıklama anında açılır (sonra açılırsa tarayıcı engeller), adres sunucudan gelince yüklenir
+        let pencere = null;
+        if (yol === 'kart') {
+          try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
+        }
+        this.setState({ uHata: 'Gönderiliyor…' });
+        window.FCSUrunSiparis({ etkinlik: tek.id, kalemler, ad, eposta, tel, yol, kvkk: true }).then((s) => {
+          if (s.yol === 'kart' && /^https:\/\//.test(s.sayfa || '')) {
+            if (pencere && !pencere.closed) pencere.location.href = s.sayfa;
+            this.setState({ uAdim: 'kart', uSiparis: s, uSayfa: s.sayfa, uPencereYok: !pencere || pencere.closed, uHata: '', uSec: {} });
+            this.urunTakip(s.id, eposta);
+            return;
+          }
+          if (pencere && !pencere.closed) pencere.close();
+          this.setState({ uAdim: s.yol === 'havale' ? 'dekont' : 'tamam', uSiparis: s, uHata: '', uSec: {} });
+        }).catch((h) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ uHata: h.message }); });
+      },
+      uKod: sip.kod || '', uTutarYazi: sip.tutar ? TL(sip.tutar) : '', uTamamBaslik: tamamBaslik, uTamamYazi: tamamYazi,
+      uSayfa: st.uSayfa || '#', uPencereYazi: st.uPencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
+      uDekontSec: (e) => this.setState({ uDosya: (e.target.files && e.target.files[0]) || null, uHata: '' }),
+      uDekontGonder: () => {
+        if (/…$/.test(st.uHata || '')) return;
+        const kutu = document.querySelector('.fe-urunler input[type="file"]');
+        const dosya = st.uDosya || (kutu && kutu.files && kutu.files[0]) || null;
+        if (!dosya) return this.setState({ uHata: 'Dekontu seç.' });
+        this.setState({ uHata: 'Yükleniyor…' });
+        window.FCSUrunDekont(sip, st.uEposta, dosya).then(() => this.setState({ uAdim: 'tamam', uDosya: null, uHata: '' }), (h) => this.setState({ uHata: h.message }));
+      },
+      uYeni: () => { clearInterval(this.urunTakipNo); this.setState({ uAdim: 'secim', uSiparis: null, uSec: {}, uHata: '' }); },
+    };
+  }
+  // Shopier penceresindeki ürün ödemesini bekler: 4 sn'de bir sorulur, en çok 30 dk
+  urunTakip(id, eposta) {
+    clearInterval(this.urunTakipNo);
+    const bas = Date.now();
+    this.urunTakipNo = setInterval(() => {
+      if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSUrunDurum) { clearInterval(this.urunTakipNo); return; }
+      window.FCSUrunDurum(id, eposta).then((d) => {
+        if (d === 'onaylandi') { clearInterval(this.urunTakipNo); this.setState({ uAdim: 'tamam', uHata: '' }); }
+        if (d === 'reddedildi') { clearInterval(this.urunTakipNo); this.setState({ uHata: 'Ödemen siparişle eşleşmedi; ücretin iade edilecek. Ayrıntı e-postanda.' }); }
+      }, () => {});
+    }, 4000);
+  }
   componentWillUnmount() {
+    clearInterval(this.urunTakipNo);
     clearInterval(this.kartTakip);
     clearInterval(this.uyeTakip);
     clearInterval(this.destekTakip);
@@ -1954,6 +2152,7 @@ class Component extends DCLogic {
       uyeKisa: b.satis ? (b.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : b.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : 'Üyeliğe dahil', afisVar: !!b.afis,
     }));
     return {
+      ...this.urunGorunum(tek, kartAcik),
       // Ana sayfa ↔ etkinliğin kendi sayfası
       anaSayfa: !tekId && !uyelikSayfa, tekSayfa: !!tekId, uyelikSayfa, basvuruGoster: !tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
       tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',

@@ -91,11 +91,14 @@ class Component extends DCLogic {
     this.EBOS = { giris: 'satin', ad: '', kategori: 'Yoga / hareket', adet: '1', birim: 'adet', tarih: this.BUGUN, konum: '', tutar: '', kasa: 'banka', muhasebe: true, firma: '', karsilik: '', kaynak: '', not: '' };
     this.state = {
       adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
-      girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
+      girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun', '#urunler'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
       elden: { acik: false, ad: '', tutar: this.AIDAT_YAZI, tarih: this.BUGUN, hata: '' },
       // İndirim kodları (bilet sepeti); önizlemede örnek kod
       kodlar: window.FC ? null : [{ kod: 'FOREST20', tur: 'yuzde', deger: 20, son_tarih: null, sinir: 50, kullanilan: 7, aktif: true, aciklama: 'Instagram' }],
       kodForm: { kod: '', tur: 'yuzde', deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: '',
+      // Etkinliğe özel ürünler; önizlemede örnek ürünler
+      urunler: window.FC ? window.FC.urunler || [] : [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, aktif: true }],
+      urunForm: { ad: '', fiyat: '', foto: '' }, urunDuz: null, urunMesaj: '', etkUrun: [],
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
       etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: window.FC ? window.FC.etkDurum : {},
@@ -183,7 +186,13 @@ class Component extends DCLogic {
       }));
       if (!window.FCEtkinlikGuncelle || !eski.id) return bitir();
       this.setState({ formHata: 'Kaydediliyor…' });
-      window.FCEtkinlikGuncelle(eski.id, yeni).then(bitir, (h) => this.setState({ formHata: h.message }));
+      // Etkinliğin ürünleri yalnız seçim değiştiyse yazılır
+      const sira = (xs) => JSON.stringify([...xs].sort((a, b) => a - b));
+      const urunler = [...this.state.etkUrun].sort((a, b) => a - b);
+      const urunDegisti = window.FCUrun && sira(urunler) !== sira(window.FC.etkUrun[eski.id] || []);
+      window.FCEtkinlikGuncelle(eski.id, yeni)
+        .then(() => (urunDegisti ? window.FCUrun.etkinlikUrunleri(eski.id, urunler).then(() => { window.FC.etkUrun[eski.id] = urunler; }) : null))
+        .then(bitir, (h) => this.setState({ formHata: h.message }));
     };
     // Aylık dosya (CSV): GG.AA.YYYY;saat;tur;ad;kim;kontenjan;bilet_fiyati;uyelere;tanisma_kontenjan;aciklama;link[;min_kisi]
     this.csvCoz = (metin) => {
@@ -493,6 +502,89 @@ class Component extends DCLogic {
         this.setState({ kodMesaj2: 'Kaydediliyor…' });
         window.FCIndirim.ekle(yeni).then(bitir, (h) => this.setState({ kodMesaj2: h.message }));
       },
+    };
+  }
+  // Ürünler sekmesi: ürün ekle / düzenle / satışa aç-kapat, siparişler (etkinliğe göre); etkinlik formunda ürün seçimi
+  urunlerGorunum() {
+    const st = this.state;
+    const f = st.urunForm;
+    const tl = (n) => `${Math.round(Number(n)).toLocaleString('tr-TR')} TL`;
+    const alan = (a) => (e) => { const v = e.target.value; this.setState((s) => ({ urunForm: { ...s.urunForm, [a]: v }, urunMesaj: '' })); };
+    const yaz = (u) => this.setState((s) => ({ urunler: s.urunler.some((x) => x.id === u.id) ? s.urunler.map((x) => (x.id === u.id ? u : x)) : [...s.urunler, u] }));
+    const FC = window.FC;
+    const zaman = (t) => new Date(t).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    const pill = (bg, fg) => `background:${bg};color:${fg};font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;display:inline-block`;
+    const YOL = { nakit: 'Standda nakit', pos: 'Standda POS', havale: 'Havale · dekont', kart: 'Kart · Shopier' };
+    // Yöneticinin göreceği siparişler: nakit / POS hemen, havale dekontla, kart ödemeyle (ödenmemiş kart, dekontsuz havale yok)
+    const siparisler = (FC ? FC.urunSiparisleri || [] : []).filter((x) => x.yuklendi || x.durum !== 'bekliyor');
+    const gruplar = new Map();
+    siparisler.forEach((x) => { if (!gruplar.has(x.etkinlik_id)) gruplar.set(x.etkinlik_id, []); gruplar.get(x.etkinlik_id).push(x); });
+    const etkBilgi = (id) => (FC && FC.etkinlikAd.get(id)) || { ad: 'Etkinlik', tarih: '' };
+    const urunSipGruplar = [...gruplar.entries()].sort((a, b) => etkBilgi(b[0]).tarih.localeCompare(etkBilgi(a[0]).tarih)).map(([id, xs]) => {
+      const e = etkBilgi(id);
+      const bekleyen = xs.filter((x) => x.durum === 'bekliyor').length;
+      const odenen = xs.filter((x) => x.durum === 'onaylandi').reduce((t, x) => t + Number(x.tutar), 0);
+      return {
+        baslik: `${e.ad}${e.tarih ? ` (${e.tarih.split('-').reverse().join('.')})` : ''}`,
+        ozet: `${bekleyen} bekliyor · ödenen ${tl(odenen)}`,
+        satirlar: [...xs].sort((a, b) => (b.durum === 'bekliyor') - (a.durum === 'bekliyor')).map((x) => ({
+          kod: `U-${x.id}`, ad: x.ad, iletisim: `${x.tel} · ${x.eposta}`, tarih: zaman(x.created_at), tutar: tl(x.tutar),
+          kalemler: (x.kalemler || []).map((k) => `${k.adet} × ${k.ad}`).join(', '), yol: YOL[x.odeme_yolu] || x.odeme_yolu,
+          durum: x.durum === 'onaylandi' ? 'Ödendi' : x.durum === 'reddedildi' ? 'Reddedildi' : 'Bekliyor',
+          rozet: x.durum === 'onaylandi' ? pill('#111111', '#FFFFFF') : x.durum === 'reddedildi' ? pill('#F3DCD5', '#82301F') : pill('#F6C945', '#111111'),
+          bekliyor: x.durum === 'bekliyor', dekontVar: x.odeme_yolu === 'havale' && !!x.dosya,
+          onayYazi: x.odeme_yolu === 'havale' ? 'Onayla' : 'Ödendi',
+          ac: () => window.FCUrun && window.FCUrun.dekontAc(x.dosya),
+          onayla: () => window.FCUrun && window.FCUrun.karar(x, true), reddet: () => window.FCUrun && window.FCUrun.karar(x, false),
+        })),
+      };
+    });
+    const secili = st.etkUrun || [];
+    return {
+      urunForm: f, urunMesaj: st.urunMesaj, urunAlan: { ad: alan('ad'), fiyat: alan('fiyat') },
+      urunFotoVar: !!f.foto, urunDuzenlemede: !!st.urunDuz,
+      urunFormBaslik: st.urunDuz ? 'Ürünü düzenle' : 'Yeni ürün', urunDugme: st.urunDuz ? 'Ürünü kaydet' : 'Ürünü ekle',
+      urunFotoSec: (ev) => {
+        const dosya = ev.target.files && ev.target.files[0];
+        if (!dosya) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(dosya.type)) return this.setState({ urunMesaj: 'Fotoğraf JPG, PNG ya da WEBP olmalı.' });
+        if (dosya.size > 5 * 1024 * 1024) return this.setState({ urunMesaj: 'Fotoğraf 5 MB\'tan büyük.' });
+        if (!window.FCAfisYukle) return this.setState((s) => ({ urunForm: { ...s.urunForm, foto: URL.createObjectURL(dosya) } }));
+        this.setState({ urunMesaj: 'Yükleniyor…' });
+        window.FCAfisYukle(dosya).then((url) => this.setState((s) => ({ urunForm: { ...s.urunForm, foto: url }, urunMesaj: 'Fotoğraf yüklendi ✓' })),
+          (h) => this.setState({ urunMesaj: `Yüklenemedi: ${h.message}` }));
+      },
+      urunFotoKaldir: () => this.setState((s) => ({ urunForm: { ...s.urunForm, foto: '' } })),
+      urunVazgec: () => this.setState({ urunDuz: null, urunForm: { ad: '', fiyat: '', foto: '' }, urunMesaj: '' }),
+      urunKaydet: () => {
+        const ad = f.ad.trim();
+        const fiyat = window.FCSayi(f.fiyat) ?? NaN;
+        if (!ad) return this.setState({ urunMesaj: 'Ürün adını yazın.' });
+        if (!(fiyat > 0)) return this.setState({ urunMesaj: 'Fiyatı yazın.' });
+        const satir = { ad, fiyat, foto: f.foto && /^https:\/\//.test(f.foto) ? f.foto : null };
+        const bitir = (u) => { yaz(u); this.setState({ urunDuz: null, urunForm: { ad: '', fiyat: '', foto: '' }, urunMesaj: `${ad} ${st.urunDuz ? 'kaydedildi' : 'eklendi'} ✓` }); };
+        if (!window.FCUrun) return bitir({ id: st.urunDuz || Date.now(), aktif: true, ...satir });
+        this.setState({ urunMesaj: 'Kaydediliyor…' });
+        window.FCUrun.kaydet(st.urunDuz, st.urunDuz ? satir : { ...satir, aktif: true }).then(bitir, (h) => this.setState({ urunMesaj: h.message }));
+      },
+      urunYok: !st.urunler.length,
+      urunListe: st.urunler.map((u) => ({
+        ad: u.ad, fiyatYazi: tl(u.fiyat), foto: u.foto || '', fotoVar: !!u.foto,
+        durum: u.aktif ? 'Satışta' : 'Kapalı', dugme: u.aktif ? 'Satışa kapat' : 'Satışa aç',
+        duzenle: () => this.setState({ urunDuz: u.id, urunForm: { ad: u.ad, fiyat: String(Number(u.fiyat)), foto: u.foto || '' }, urunMesaj: '' }),
+        degis: () => {
+          const yeni = { ...u, aktif: !u.aktif };
+          yaz(yeni);
+          if (window.FCUrun) window.FCUrun.kaydet(u.id, { aktif: yeni.aktif }).catch((h) => { yaz(u); this.setState({ urunMesaj: h.message }); });
+        },
+      })),
+      urunSipGruplar, urunSipYok: !urunSipGruplar.length,
+      // Etkinlik düzenleme: aktif ürünler ve bu etkinliğe zaten bağlı olanlar
+      etkUrunVar: !!st.duzKey && st.urunler.some((u) => u.aktif || secili.includes(u.id)),
+      etkUrunSecim: st.urunler.filter((u) => u.aktif || secili.includes(u.id)).map((u) => ({
+        ad: `${u.ad} · ${tl(u.fiyat)}${u.aktif ? '' : ' (satışa kapalı)'}`, secili: secili.includes(u.id),
+        degis: () => this.setState((s) => ({ etkUrun: s.etkUrun.includes(u.id) ? s.etkUrun.filter((x) => x !== u.id) : [...s.etkUrun, u.id] })),
+      })),
     };
   }
   // Açık / kapalı ayar: ekranda hemen değişir, kaydedilemezse geri alınır
@@ -828,7 +920,7 @@ class Component extends DCLogic {
     const TASLAK = pill('#F0F0EE', '#3A3A3A');
     const sekmeler = [
       { id: 'ana', ad: 'Ana sayfa' }, { id: 'uyeler', ad: 'Üyeler' },
-      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'formlar', ad: 'Formlar' }, { id: 'dugun', ad: 'Düğün' }, { id: 'iletisim', ad: 'İletişim' },
+      { id: 'etkinlikler', ad: 'Etkinlikler' }, { id: 'urunler', ad: 'Ürünler' }, { id: 'muhasebe', ad: 'Muhasebe' }, { id: 'envanter', ad: 'Envanter' }, { id: 'eposta', ad: 'E-postalar' }, { id: 'basvurular', ad: 'Başvurular' }, { id: 'formlar', ad: 'Formlar' }, { id: 'dugun', ad: 'Düğün' }, { id: 'iletisim', ad: 'İletişim' },
     ].map((s) => ({ ...s, sinif: s.id === sekme ? 'fc-sekme fc-sekme-aktif' : 'fc-sekme',
       sec: () => this.setState({ sekme: s.id }, () => { if (s.id === 'dugun' && window.FCDugunAc) window.FCDugunAc(); }) }));
     const BUGUN_SABIT = this.BUGUN;
@@ -1605,7 +1697,7 @@ class Component extends DCLogic {
           duzenle: () => {
             const o = this.state.etkinlikler.find((z) => `${z.tarih}|${z.ad}` === key);
             if (!o) return;
-            this.setState({ formAcik: true, duzKey: key, formHata: '', eklendiMesaj: '', afisDurum: '', form: {
+            this.setState({ formAcik: true, duzKey: key, formHata: '', eklendiMesaj: '', afisDurum: '', etkUrun: (window.FC && o.id && window.FC.etkUrun[o.id]) || [], form: {
               ...this.BOS, tarih: o.tarih, saat: o.saat || '', tur: o.tur, ad: o.ad, kim: o.kim || '', metin: o.metin || '', link: o.link || '',
               kontenjan: String(o.kontenjan), min: o.min ? String(o.min) : '', fiyat: o.satis ? String(o.satis.fiyat) : '', uye: o.satis ? o.satis.uye : 'ucretsiz', afis: o.afis || '',
             } });
@@ -1625,6 +1717,8 @@ class Component extends DCLogic {
       uyelerSekme: sekme === 'uyeler',
       etkinliklerSekme: sekme === 'etkinlikler',
       ...this.indirimKodlari(),
+      ...this.urunlerGorunum(),
+      urunlerSekme: sekme === 'urunler',
       ...this.aylikGorunum(),
       iletisimSekme: sekme === 'iletisim',
       formlarSekme: sekme === 'formlar',

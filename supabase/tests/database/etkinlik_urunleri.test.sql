@@ -108,7 +108,7 @@ select is((select count(*) from muhasebe_hareketleri where belge = 'urun:' || (s
 create temp table t_k as select urun_siparisi_ac((select yakin from t_e), 'Kart Kişi', 'kart@test.invalid', '05320000004',
   pg_temp.kalem((select y1 from t_u), 1), 'kart', null) as r;
 select lives_ok(format($$ select urun_shopier_urun(%s, 'urun-shopier-1') $$, (select r ->> 'id' from t_k)), 'Shopier ürün numarası kaydedilir');
-grant select on t_k to authenticated;
+grant select on t_k to authenticated, anon;
 set local role authenticated;
 select pg_temp.ol('00000000-0000-4000-8000-0000000000f1');
 select throws_ok(format($$ select urun_karar(%s, true) $$, (select r ->> 'id' from t_k)), 'P0001', 'Sipariş bulunamadı.', 'ödenmemiş kart siparişi yöneticide görünmez');

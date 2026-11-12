@@ -46,7 +46,9 @@
     etkinlikler.forEach((e) => { e.tanisma = tanismaAcik.has(anahtar[`${e.tarih}|${e.ad}`]); });
     // Etkinliğin kendi sayfası: /e/<id> (Edge Function ana sayfayı bu adreste sunar; bileşen yalnız o etkinliği çizer)
     const tek = (/^\/e\/(\d{1,12})\/?$/.exec(location.pathname) || [])[1] || null;
-    return { bugun: B, etkinlikler, anahtar, ayar, tek: tek ? Number(tek) : null, oturum: !!(oturum.data && oturum.data.session) };
+    // Etkinliğe özel ürünler: sunucu yalnız etkinlik saatinin çevresinde (1 saat önce – 5 saat sonra) listeyi verir
+    const urunler = tek ? await sb.rpc('etkinlik_urun_listesi', { p_etkinlik: Number(tek) }).then((r) => r.data || [], () => []) : [];
+    return { bugun: B, etkinlikler, anahtar, ayar, tek: tek ? Number(tek) : null, urunler, oturum: !!(oturum.data && oturum.data.session) };
   }
 
   const sayac = (adim) => { sb.rpc('sayac_artir', { p_adim: adim }).then(() => {}, () => {}); };  // kişisel veri yok, yalnız günlük toplam

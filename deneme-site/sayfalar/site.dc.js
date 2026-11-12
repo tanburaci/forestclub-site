@@ -69,7 +69,111 @@ class Component extends DCLogic {
       }, () => {});
     }, 4000);
   }
+  // Etkinliğe özel ürünler (/e/<id>): liste site.js'ten (FCS.urunler; sunucu yalnız etkinlik saatinin çevresinde verir),
+  // sipariş form-gonder "urun_siparis" ile; tutar sunucuda. Kart: Shopier ayrı pencerede, ödeme gelince kod görünür;
+  // havale: dekont; nakit / POS: kod hemen görünür, standda ödenir
+  urunGorunum(tek, kartAcik) {
+    const liste = (tek && window.FCS && window.FCS.urunler) || [];
+    const st = this.state;
+    const sec = st.uSec || {};
+    const TL = (n) => `${Math.round(Number(n)).toLocaleString('tr-TR')} TL`;
+    const toplam = liste.reduce((t, u) => t + (sec[u.id] || 0) * Number(u.fiyat), 0);
+    const adim = st.uAdim || 'secim';
+    const yol = st.uYol || (kartAcik ? 'kart' : '');
+    const sip = st.uSiparis || {};
+    const degis = (id, d) => this.setState((s) => {
+      const eski = (s.uSec || {})[id] || 0;
+      return { uSec: { ...(s.uSec || {}), [id]: Math.max(0, Math.min(20, eski + d)) }, uHata: '' };
+    });
+    const YOLLAR = [
+      { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında' : 'Şu an kapalı', kapali: !kartAcik },
+      { id: 'havale', ad: 'Havale / EFT', alt: 'IBAN\'a gönder, dekontunu yükle' },
+      { id: 'nakit', ad: 'Standda nakit', alt: 'Sipariş kodunu standda göster, nakit öde' },
+      { id: 'pos', ad: 'Standda kartla (POS)', alt: 'Sipariş kodunu standda göster, POS cihazıyla öde' },
+    ];
+    const TAMAM = {
+      nakit: ['Siparişin alındı! 🌿', 'Bu kodu standdaki ekibimize göster, nakit öde; ürününü hemen al.'],
+      pos: ['Siparişin alındı! 🌿', 'Bu kodu standdaki ekibimize göster, POS cihazıyla kartla öde; ürününü hemen al.'],
+      kart: ['Ödemen alındı! 🌿', 'Teşekkürler! Bu kodu standdaki ekibimize göster, ürününü al. Onay e-postana da gönderildi.'],
+      havale: ['Teşekkürler! 🌿', 'Dekontun bize ulaştı. Onaylanınca e-postana bilgi gelir; ürününü standdaki ekibimize bu kodu göstererek al.'],
+    };
+    const [tamamBaslik, tamamYazi] = TAMAM[sip.yol] || TAMAM.nakit;
+    return {
+      urunVar: liste.length > 0,
+      urunler: liste.map((u) => ({
+        ad: u.ad, foto: u.foto || '', fotoVar: !!u.foto, fiyatYazi: TL(u.fiyat), adet: String(sec[u.id] || 0),
+        azalt: () => degis(u.id, -1), arttir: () => degis(u.id, 1), azaltEtiket: `${u.ad} adedini azalt`, arttirEtiket: `${u.ad} adedini arttır`,
+      })),
+      uSecimde: adim === 'secim', uDekontta: adim === 'dekont', uKartBekle: adim === 'kart', uTamam: adim === 'tamam',
+      uAd: st.uAd || '', uEposta: st.uEposta || '', uTel: st.uTel || '', uKvkk: !!st.uKvkk, uHata: st.uHata || '',
+      uAdYaz: (e) => this.setState({ uAd: e.target.value, uHata: '' }),
+      uEpostaYaz: (e) => this.setState({ uEposta: e.target.value, uHata: '' }),
+      uTelYaz: (e) => this.setState({ uTel: e.target.value, uHata: '' }),
+      uKvkkDegis: () => this.setState((s) => ({ uKvkk: !s.uKvkk, uHata: '' })),
+      uYollari: YOLLAR.map((y) => ({
+        ...y, secili: yol === y.id ? 'true' : 'false', kapaliYazi: y.kapali ? 'true' : 'false', isaret: yol === y.id ? '●' : '○',
+        sec: () => { if (!y.kapali) this.setState({ uYol: y.id, uHata: '' }); },
+        stil: `display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:inherit;color:#111111;border:2.5px solid #111111;border-radius:12px;padding:12px 14px;cursor:${y.kapali ? 'not-allowed' : 'pointer'};${yol === y.id ? 'background:#C9E33A;box-shadow:3px 3px 0 #111111' : 'background:#FFFFFF'};${y.kapali ? 'opacity:.55' : ''}`,
+      })),
+      uDugme: toplam ? `Siparişi ver · ${TL(toplam)}` : 'Ürün seç',
+      uGonder: () => {
+        if (/…$/.test(st.uHata || '')) return;  // gönderim sürüyor: çift tıklama ikinci sipariş açmasın
+        const kalemler = liste.filter((u) => sec[u.id] > 0).map((u) => ({ urun: u.id, adet: sec[u.id] }));
+        const ad = (st.uAd || '').trim();
+        const eposta = (st.uEposta || '').trim();
+        const tel = (st.uTel || '').trim();
+        if (!kalemler.length) return this.setState({ uHata: 'En az bir ürün seç.' });
+        if (!ad) return this.setState({ uHata: 'Adını yaz.' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eposta)) return this.setState({ uHata: 'Geçerli bir e-posta yaz.' });
+        if (tel.replace(/\D/g, '').length < 10) return this.setState({ uHata: 'Telefon numaranı yaz.' });
+        if (!yol) return this.setState({ uHata: 'Ödeme yöntemini seç.' });
+        if (!st.uKvkk) return this.setState({ uHata: 'Devam etmek için KVKK metnini onayla.' });
+        if (!window.FCSUrunSiparis) return this.setState({ uHata: 'Önizleme: gerçek sitede sipariş burada verilir.' });
+        // Kart: pencere tıklama anında açılır (sonra açılırsa tarayıcı engeller), adres sunucudan gelince yüklenir
+        let pencere = null;
+        if (yol === 'kart') {
+          try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
+        }
+        this.setState({ uHata: 'Gönderiliyor…' });
+        window.FCSUrunSiparis({ etkinlik: tek.id, kalemler, ad, eposta, tel, yol, kvkk: true }).then((s) => {
+          if (s.yol === 'kart' && /^https:\/\//.test(s.sayfa || '')) {
+            if (pencere && !pencere.closed) pencere.location.href = s.sayfa;
+            this.setState({ uAdim: 'kart', uSiparis: s, uSayfa: s.sayfa, uPencereYok: !pencere || pencere.closed, uHata: '', uSec: {} });
+            this.urunTakip(s.id, eposta);
+            return;
+          }
+          if (pencere && !pencere.closed) pencere.close();
+          this.setState({ uAdim: s.yol === 'havale' ? 'dekont' : 'tamam', uSiparis: s, uHata: '', uSec: {} });
+        }).catch((h) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ uHata: h.message }); });
+      },
+      uKod: sip.kod || '', uTutarYazi: sip.tutar ? TL(sip.tutar) : '', uTamamBaslik: tamamBaslik, uTamamYazi: tamamYazi,
+      uSayfa: st.uSayfa || '#', uPencereYazi: st.uPencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
+      uDekontSec: (e) => this.setState({ uDosya: (e.target.files && e.target.files[0]) || null, uHata: '' }),
+      uDekontGonder: () => {
+        if (/…$/.test(st.uHata || '')) return;
+        const kutu = document.querySelector('.fe-urunler input[type="file"]');
+        const dosya = st.uDosya || (kutu && kutu.files && kutu.files[0]) || null;
+        if (!dosya) return this.setState({ uHata: 'Dekontu seç.' });
+        this.setState({ uHata: 'Yükleniyor…' });
+        window.FCSUrunDekont(sip, st.uEposta, dosya).then(() => this.setState({ uAdim: 'tamam', uDosya: null, uHata: '' }), (h) => this.setState({ uHata: h.message }));
+      },
+      uYeni: () => { clearInterval(this.urunTakipNo); this.setState({ uAdim: 'secim', uSiparis: null, uSec: {}, uHata: '' }); },
+    };
+  }
+  // Shopier penceresindeki ürün ödemesini bekler: 4 sn'de bir sorulur, en çok 30 dk
+  urunTakip(id, eposta) {
+    clearInterval(this.urunTakipNo);
+    const bas = Date.now();
+    this.urunTakipNo = setInterval(() => {
+      if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSUrunDurum) { clearInterval(this.urunTakipNo); return; }
+      window.FCSUrunDurum(id, eposta).then((d) => {
+        if (d === 'onaylandi') { clearInterval(this.urunTakipNo); this.setState({ uAdim: 'tamam', uHata: '' }); }
+        if (d === 'reddedildi') { clearInterval(this.urunTakipNo); this.setState({ uHata: 'Ödemen siparişle eşleşmedi; ücretin iade edilecek. Ayrıntı e-postanda.' }); }
+      }, () => {});
+    }, 4000);
+  }
   componentWillUnmount() {
+    clearInterval(this.urunTakipNo);
     clearInterval(this.kartTakip);
     clearInterval(this.uyeTakip);
     clearInterval(this.destekTakip);
@@ -279,6 +383,7 @@ class Component extends DCLogic {
       uyeKisa: b.satis ? (b.satis.uye === 'ucretsiz' ? 'Üyeliğe dahil' : b.satis.uye === 'yuzde50' ? 'Üyelere %50' : '') : 'Üyeliğe dahil', afisVar: !!b.afis,
     }));
     return {
+      ...this.urunGorunum(tek, kartAcik),
       // Ana sayfa ↔ etkinliğin kendi sayfası
       anaSayfa: !tekId && !uyelikSayfa, tekSayfa: !!tekId, uyelikSayfa, basvuruGoster: !tekId, tekVar: !!tek, tekYok: !!tekId && !tek, tek: tek || {},
       tekUyeYazi, tekUyeVar: !!tekUyeYazi, tekKimVar: !!(tek && tek.kim), tekKim: tek && tek.kim ? `${tek.kim} ile` : '',
