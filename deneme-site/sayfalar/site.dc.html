@@ -465,6 +465,37 @@ html.gok-gece .fs-parti{opacity:1}
   .fe-cubuk .fs-btn{padding:12px 16px}
   .fe-anaya{margin-bottom:110px}
 }
+/* Görsel düzeltmeler (13.11.2026; 390/768/1280 incelemesi) */
+/* Küçük TV alt bilgiden kaçarken "bottom" değişiyordu: düzen kayması (CLS) sayılıyordu; aynı kaydırma transform ile */
+.fs-yuzen{bottom:0;translate:0 calc(-1 * var(--fs-yuzen-alt,0px))}
+.fs-yuzen-kapat{top:26px;right:-14px;width:44px;height:44px;font-size:20px}
+.fs-paylas{min-height:44px}
+label:has(> input[type="checkbox"]){min-height:44px;cursor:pointer}
+footer#iletisim a[href^="/"]{display:inline-flex;align-items:center;min-height:44px;margin:-4px 0;align-self:flex-start}
+@media (max-width: 640px){
+  /* Gece: beyaz yazı yarı saydam beyaz kutuda okunmuyordu (2.3:1); kutu koyulaşır */
+  html.gok-gece .fs-menu{background:rgba(17,17,17,.55)}
+  /* Ay "İletişim" kutusunun üstüne biniyordu: menünün altında, sağ kenarda */
+  .fs-ay{top:256px;right:4%;width:48px}
+  /* Açık çağrı rozeti: yazı daireden taşıyor, üstü menü kutularının altında kalıyordu */
+  .fs-cagri-rozet{width:126px;height:126px;padding:16px;top:12px}
+  .fs-cagri-rozet-ust,.fs-cagri-rozet-alt{font-size:10px}
+  .fs-cagri-rozet-ana{font-size:25px}
+}
+/* Destek ol düğmesi (sol alt) form sonundaki onay kutusunu ve gönder düğmesini örtmesin: telefon ve tablet */
+@media (max-width: 1024px){
+  #basvuru form,#gonullu form{padding-bottom:76px !important}
+  body:has(form:focus-within) .fs-destek{opacity:0;pointer-events:none}
+}
+@media (prefers-reduced-motion: reduce){
+  .fs-cagri-rozet,.fs-pervane,.fs-kanat,.fs-bayrak,.fs-yildiz,.fs-parti,.fs-konfeti,.fs-duduk{animation:none !important}
+  /* Üyelik TV'si oynamaya devam eder (müşteri isteği 03.11.2026) ama yalnız sahne geçişiyle: zıplama, sallanma, kayma yok */
+  .fu-tv [class*="fu-tv-"]:not(.fu-tv-s),.fu-tv-ciz::after{animation:none !important}
+  .fu-tv-balon,.fu-tv-d,.fu-tv-ust,.fu-tv-s2 .fu-tv-k,.fu-tv-uc{opacity:1}
+  .fu-tv-alti{opacity:0}
+  .fu-tv-ciz::after{transform:none}
+  .fu-tv-fiyat{background:#C9E33A;border-color:#111111}
+}
 </style>
 </helmet>
 
@@ -1252,7 +1283,7 @@ Buluşmalar ✓</p>
     <sc-if value="{{ uyelikSayfa }}" hint-placeholder-val="{{ false }}">
       <header class="fe-ust">
         <a class="fe-geri" href="/">← Ana sayfa</a>
-        <a class="fe-logo" href="/"><img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt=""><span>Forest Club Urla</span></a>
+        <a class="fe-logo" href="/" aria-label="Ana sayfa"><img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt=""><span>Forest Club Urla</span></a>
         <a class="fe-tumu" href="/#bulusmalar">Etkinlikler</a>
       </header>
     </sc-if>
@@ -1445,7 +1476,7 @@ Buluşmalar ✓</p>
     <sc-if value="{{ tekSayfa }}" hint-placeholder-val="{{ false }}">
       <header class="fe-ust">
         <a class="fe-geri" href="/">← Ana sayfa</a>
-        <a class="fe-logo" href="/"><img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt=""><span>Forest Club Urla</span></a>
+        <a class="fe-logo" href="/" aria-label="Ana sayfa"><img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt=""><span>Forest Club Urla</span></a>
         <a class="fe-tumu" href="/#bulusmalar">Tüm etkinlikler</a>
       </header>
       <sc-if value="{{ tekYok }}" hint-placeholder-val="{{ false }}">
@@ -1817,7 +1848,7 @@ class Component extends DCLogic {
     const acik = this.state.asagi && !this.state.kapali;
     // Aylık duyuru (rozet + etkinlik şeridi): yönetim › Etkinlikler'den; {ay} seçilen ayla değişir
     const AYLIK = window.FC_AYLIK ? window.FC_AYLIK.oku(window.FCS && window.FCS.ayar && window.FCS.ayar.aylik_duyuru)
-      : { goster: true, ay: 'Kasım', ust: 'Kasım programı için', ana: 'AÇIK ÇAĞRI!', alt: 'Fikrin mi var? Tıkla ✨', tur: 'cagri', formId: '', resim: '' };
+      : { goster: true, ay: 'Kasım', ust: 'Kasım programı için', ana: 'AÇIK ÇAĞRI!', alt: 'Fikrin mi var? Tıkla →', tur: 'cagri', formId: '', resim: '' };
     const ayDoldur = (m) => String(m || '').replace(/\{ay\}/g, AYLIK.ay);
     // Deneme sitesi: iletişim bilgileri yönetim panelindeki ayarlardan (ayarlar.iletisim)
     const IL = (window.FCS && window.FCS.ayar && window.FCS.ayar.iletisim) || {};

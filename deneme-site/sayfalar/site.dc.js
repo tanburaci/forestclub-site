@@ -173,7 +173,7 @@ class Component extends DCLogic {
     const acik = this.state.asagi && !this.state.kapali;
     // Aylık duyuru (rozet + etkinlik şeridi): yönetim › Etkinlikler'den; {ay} seçilen ayla değişir
     const AYLIK = window.FC_AYLIK ? window.FC_AYLIK.oku(window.FCS && window.FCS.ayar && window.FCS.ayar.aylik_duyuru)
-      : { goster: true, ay: 'Kasım', ust: 'Kasım programı için', ana: 'AÇIK ÇAĞRI!', alt: 'Fikrin mi var? Tıkla ✨', tur: 'cagri', formId: '', resim: '' };
+      : { goster: true, ay: 'Kasım', ust: 'Kasım programı için', ana: 'AÇIK ÇAĞRI!', alt: 'Fikrin mi var? Tıkla →', tur: 'cagri', formId: '', resim: '' };
     const ayDoldur = (m) => String(m || '').replace(/\{ay\}/g, AYLIK.ay);
     // Deneme sitesi: iletişim bilgileri yönetim panelindeki ayarlardan (ayarlar.iletisim)
     const IL = (window.FCS && window.FCS.ayar && window.FCS.ayar.iletisim) || {};
