@@ -1,5 +1,5 @@
-// "Destek ol": sol alttaki düğme, destek penceresi (hazır / elle tutar, kartla öde, IBAN kopyala), iyzico'ya
-// yönlendirme ve dönüş; "Biz Kimiz?" bölümünde WhatsApp'tan yaz (kişi seçimi). Kapak dururken düğme görünmez.
+// "Destek ol": sol alttaki düğme, destek penceresi (hazır / elle tutar, kartla öde, IBAN kopyala), Shopier ayrı
+// pencerede ve ödeme gelince teşekkür; "Biz Kimiz?" bölümünde WhatsApp'tan yaz (kişi seçimi). Kapak dururken düğme görünmez.
 const { sayfaAc, gun, SITE } = require('./yardim.js');
 const path = require('path');
 const DENEME = path.join(__dirname, '../../deneme-site');  // statik site klasörü
@@ -7,7 +7,6 @@ const { chromium } = require('playwright');
 let kalan = 0;
 const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if (!k) kalan++; };
 const SB = 'https://gflabqnazkstsyafzdmn.supabase.co';
-const IYZICO = 'https://sandbox-cpp.iyzipay.com/?token=destek-tok';
 const SHOPIER = 'https://shopier.test/destek/1';
 
 const veri = (ayarlar, kapak = false) => ({
@@ -17,7 +16,7 @@ const veri = (ayarlar, kapak = false) => ({
   rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null] },
 });
 
-// Turnstile taklidi ve form-gonder ("destek" → iyzico adresi); iyzico sayfası da taklit
+// Turnstile taklidi ve form-gonder ("destek" → Shopier ödeme sayfası adresi)
 async function sahteSunucu(page) {
   const formlar = [];
   await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript',
@@ -30,7 +29,6 @@ async function sahteSunucu(page) {
     r.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ sonuc: { sayfa: SHOPIER, id: 'd-1' } }) });
   });
   await page.context().route('https://shopier.test/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>Shopier ödeme</p>' }));
-  await page.route('https://sandbox-cpp.iyzipay.com/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>iyzico ödeme</p>' }));
   return formlar;
 }
 
@@ -98,14 +96,6 @@ async function sahteSunucu(page) {
       `destek: Shopier ayrı pencerede, 2500 TL, Turnstile'lı, site yerinde (${JSON.stringify(formlar2[0])})`);
     await s2.page.getByText('Desteğin bize ulaştı.').first().waitFor({ timeout: 15000 });
     dogru(sor >= 2, 'destek: ödeme gelince teşekkür penceresi');
-
-    // ---------- Dönüş ----------
-    for (const [hash, metin, ad] of [['#destek-tamam', 'Desteğin bize ulaştı.', 'başarılı'], ['#destek-hata', 'Ödeme tamamlanamadı', 'başarısız']]) {
-      const s3 = await sayfaAc(tarayici, veri([{ anahtar: 'yakinda', deger: false }, { anahtar: 'kart_odeme', deger: true }]), null);
-      await s3.page.goto(`${SITE}/${hash}`);
-      await s3.page.getByText(metin).first().waitFor({ timeout: 15000 });
-      dogru(!(await s3.page.evaluate(() => location.hash)), `dönüş (${ad}): pencere açıldı, adres temizlendi`);
-    }
 
     // ---------- Kapak dururken düğme yok ----------
     const s4 = await sayfaAc(tarayici, veri([{ anahtar: 'yakinda', deger: true }], true), null);

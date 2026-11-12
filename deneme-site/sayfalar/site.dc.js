@@ -34,17 +34,11 @@ class Component extends DCLogic {
     this.kaydir();
     // Üye panelinde "Beni hatırla" ile giriş yapılmışsa düğme "Panelim" olur
     if (window.FCS && window.FCS.oturum) this.setState({ uyeGirisli: true });  // deneme sitesi: Supabase oturumu
-    // iyzico'dan dönüş (odeme-donus?tur=destek): teşekkür ya da hata penceresi; adres temizlenir
     this.etkinligeGit();
     window.addEventListener('hashchange', () => this.etkinligeGit());
     // Shopier ödeme sayfasından dönüş: biletler bildirim gelince kesinleşir ve e-postayla gider
     if (location.hash === '#bilet-kart-tamam') {
       this.setState({ sepetAcik: true, sAdim: 'kartdonus' });
-      history.replaceState(null, '', location.pathname + location.search);
-    }
-    const donus = /^#destek-(tamam|hata)$/.exec(location.hash);
-    if (donus) {
-      this.setState({ destek: donus[1] });
       history.replaceState(null, '', location.pathname + location.search);
     }
   }
@@ -116,9 +110,15 @@ class Component extends DCLogic {
       const g = b.tarih.replace(/-/g, '');
       const s = /(\d{2})\.(\d{2})(?:\s*[–-]\s*(\d{2})\.(\d{2}))?/.exec(b.saat);
       let tarihler;
-      if (s) {
-        const bitSaat = s[3] ? `${s[3]}${s[4]}` : `${String(Number(s[1]) + 2).padStart(2, '0')}${s[2]}`;
-        tarihler = `${g}T${s[1]}${s[2]}00/${g}T${bitSaat}00`;
+      // Saatler takvimde İstanbul saati (ctz); bitiş başlangıçtan önceyse (gece yarısını geçen etkinlik) ertesi gün
+      const an = (sa, dk) => new Date(`${b.tarih}T${sa}:${dk}:00Z`);
+      const bas = s ? an(s[1], s[2]) : null;
+      if (bas && !isNaN(bas)) {
+        let bit = s[3] ? an(s[3], s[4]) : new Date(bas.getTime() + 2 * 3600e3);
+        if (isNaN(bit)) bit = new Date(bas.getTime() + 2 * 3600e3);
+        if (bit <= bas) bit = new Date(bit.getTime() + 24 * 3600e3);
+        const yaz = (d) => `${d.toISOString().slice(0, 16).replace(/[-:]/g, '')}00`;
+        tarihler = `${yaz(bas)}/${yaz(bit)}`;
       } else {
         const d = new Date(`${b.tarih}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1);
         tarihler = `${g}/${d.toISOString().slice(0, 10).replace(/-/g, '')}`;
@@ -401,7 +401,7 @@ class Component extends DCLogic {
             try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
             try { if (pencere) pencere.document.title = 'Shopier ödeme sayfası açılıyor…'; } catch (e) { /* başka kaynak */ }
           }
-          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol, kod: kodB ? kodB.kod : null })
+          window.FCSBiletAc({ kalemler, ad: sAd.trim(), eposta: sEposta.trim(), tel: sTel.trim(), yol: sYol, kod: kodB ? kodB.kod : null, kvkk: true })
             .then((h) => {
               if (h.yol === 'kart' && /^https:\/\//.test(h.sayfa || '')) {
                 if (pencere && !pencere.closed) pencere.location.href = h.sayfa;
@@ -496,7 +496,7 @@ class Component extends DCLogic {
         if (!this.state.tOnay) return this.setState({ tHata: 'Devam etmek için metinleri onayla.' });
         if (window.FCSTanisma) {  // deneme sitesi: kural sunucuda (üye mi, daha önce bilet aldı mı)
           this.setState({ tHata: 'Gönderiliyor…' });
-          return window.FCSTanisma({ ad: this.state.tAd.trim(), eposta: ep, tel: this.state.tTel.trim(), referans: this.state.tRef.trim(), biletNo: this.state.tNo.trim() }, this.state.tEtk)
+          return window.FCSTanisma({ ad: this.state.tAd.trim(), eposta: ep, tel: this.state.tTel.trim(), kvkk: true, referans: this.state.tRef.trim(), biletNo: this.state.tNo.trim() }, this.state.tEtk)
             .then((sonuc) => this.setState({ tanisma: sonuc, tHata: '' }))
             .catch((h) => this.setState({ tHata: h.message }));
         }
@@ -531,8 +531,7 @@ class Component extends DCLogic {
         try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
         this.setState({ dsHata: 'Ödeme sayfası açılıyor…' });
         window.FCSDestek(destekTutar).then((h) => {
-          const sayfa = typeof h === 'string' ? h : h.sayfa;
-          if (!h.id) { if (pencere && !pencere.closed) pencere.close(); location.href = sayfa; return; }  // eski (iyzico) yol
+          const sayfa = h.sayfa;
           if (pencere && !pencere.closed) pencere.location.href = sayfa;
           this.setState({ dsHata: '', dsBekle: true, dsSayfa: sayfa });
           clearInterval(this.destekTakip);
@@ -592,6 +591,8 @@ class Component extends DCLogic {
         try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
         this.setState({ uKartHata: 'Hazırlanıyor…' });
         window.FCSUyelikKart(eposta).then((h) => {
+          // Başvuru bulunamadı ya da üyelik aktif: herkese aynı yanıt, ayrıntı e-postada
+          if (h.eposta) { if (pencere && !pencere.closed) pencere.close(); return this.setState({ uKartHata: 'Kartla ödeme açılamadı; ayrıntıyı e-postana gönderdik.' }); }
           if (pencere && !pencere.closed) pencere.location.href = h.sayfa;
           this.setState({ uyeAdim: 'kartbekle', uOdemeSayfa: h.sayfa, uPencereYok: !pencere || pencere.closed, uKartHata: '' });
           clearInterval(this.uyeTakip);

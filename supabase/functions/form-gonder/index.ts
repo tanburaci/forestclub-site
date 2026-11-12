@@ -4,17 +4,18 @@
 // dosya tarayıcıdan doğrudan depoya yüklenir, "dekont_kaydet" kaydı açar (yalnız bu e-postaya verilmiş yol).
 //
 // "Yakında" modunda (ayarlar.yakinda) üyelik başvurusu ve tanışma bileti alınmaz; Açık Çağrı ve dekont açık.
-// "destek": kartla destek; iyzico ödeme sayfası açılır, dönüş odeme-donus?tur=destek (ayarlar.kart_odeme açıkken).
+// "destek": kartla destek; Shopier ödeme sayfası ayrı pencerede açılır, ödeme shopier-bildirim'e gelir (ayarlar.kart_odeme açıkken).
 // Etkinlik bileti: "bilet_adres" ödeme yolunu da alır (v.yol: havale | nakit | kart). Havale + dekontla: isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
 // imzalı yükleme adresi verir, dekont yüklenince "bilet_kaydet" isteği yöneticinin onayına düşürür.
 // "ozel_form": gizli bağlantılı özel form; girişsiz, ad + e-postayla (anahtar sunucuda denetlenir).
 // "dugun": /dugun/ sayfasındaki düğün tasarım talebi (seçimler kimlikle gelir, sunucuda adlarına çevrilir); özel davet
 // bağlantısından gelirse "davet" anahtarı talebi davete bağlar.
 //
-// Secrets: TURNSTILE_SECRET (zorunlu), IP_TUZU (isteğe bağlı; IP özetine katılır); destek için IYZICO_API_KEY,
-// IYZICO_SECRET_KEY, IYZICO_ADRES, isteğe bağlı IYZICO_TCKN
+// Ad alanlarında bağlantı / e-posta kabul edilmez: kulübün otomatik e-postalarında başkasına bağlantı gönderilemesin.
+// Tanışma, bilet ve özel formda KVKK onayı zorunlu; onay riza_kayitlari'na yazılır.
+//
+// Secrets: TURNSTILE_SECRET (zorunlu), IP_TUZU (isteğe bağlı; IP özetine katılır), SHOPIER_PAT (kart ödemeleri)
 import { CORS, json, servisIstemcisi } from '../_ortak/ortak.ts';
-import { fiyat, iyzico } from '../_ortak/iyzico.ts';
 import { odemeUrunuAc, shopierHazir } from '../_ortak/shopier.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
@@ -83,40 +84,42 @@ async function acildiMi(): Promise<void> {
   }
 }
 
-// Kartla destek: alıcı bilgisi istenmez (kart sahibinin adını iyzico sayfası alır); iyzico'nun zorunlu alıcı alanlarına
-// kulübün bilgileri yazılır
-async function destekBaslat(tutarHam: unknown, ip: string): Promise<{ sayfa: string; id?: string }> {
+// Kartla destek: Shopier ödeme sayfası (ayrı pencerede); ödeme gelince shopier-bildirim → destek_tamamla
+async function destekBaslat(tutarHam: unknown): Promise<{ sayfa: string; id: string }> {
+  if (!(shopierHazir() && await kartAcikMi())) throw new KullaniciHatasi('Kartla ödeme şu an kapalı; IBAN ile gönderebilirsin.', 400);
   const o = await rpc('destek_istegi_ac', { p_tutar: Number(tutarHam) }) as { id: string; tutar: number };
-  // 02.11.2026'dan beri kartla destek Shopier'den (ayrı pencerede); ödeme gelince shopier-bildirim → destek_tamamla
-  if (shopierHazir()) {
-    const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
-    const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla topluluk desteği', tutar: Number(o.tutar), ref: `FC-DESTEK-${o.id.slice(0, 8)}`,
-      aciklama: 'Forest Club Urla topluluğuna destek. Teşekkürler!', gorsel: `${site}/_blob/shopier/destek.jpg` });  // maskot (Be happy bro)
-    await rpc('destek_istegi_token', { p_id: o.id, p_token: urun });
-    return { sayfa, id: o.id };
-  }
-  const adres = { contactName: 'Forest Club Urla', city: 'Izmir', country: 'Turkey', address: 'Urla, İzmir' };
-  const tutar = fiyat(Number(o.tutar));
-  const sonuc = await iyzico('/payment/iyzipos/checkoutform/initialize/auth/ecom', {
-    locale: 'tr', conversationId: o.id, price: tutar, paidPrice: tutar, currency: 'TRY', basketId: o.id, paymentGroup: 'PRODUCT',
-    callbackUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/odeme-donus?tur=destek`, enabledInstallments: [1],
-    buyer: {
-      id: 'destek', name: 'Forest Club', surname: 'Destekçi', email: 'forestcluburla@gmail.com',
-      identityNumber: Deno.env.get('IYZICO_TCKN') || '11111111111', registrationAddress: adres.address,
-      ip: ip === 'bilinmiyor' ? '85.34.78.112' : ip, city: adres.city, country: adres.country,
-    },
-    billingAddress: adres,
-    basketItems: [{ id: 'destek', name: 'Forest Club Urla topluluk desteği', category1: 'Destek', itemType: 'VIRTUAL', price: tutar }],
-  });
-  if (sonuc.status !== 'success' || !sonuc.token || !sonuc.paymentPageUrl) {
-    console.error('iyzico initialize (destek)', sonuc.errorCode, sonuc.errorMessage);
-    throw new KullaniciHatasi('Ödeme sayfası açılamadı; biraz sonra tekrar dene ya da IBAN ile gönder.', 502);
-  }
-  await rpc('destek_istegi_token', { p_id: o.id, p_token: sonuc.token });
-  return { sayfa: sonuc.paymentPageUrl };
+  const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
+  const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla topluluk desteği', tutar: Number(o.tutar), ref: `FC-DESTEK-${o.id.slice(0, 8)}`,
+    aciklama: 'Forest Club Urla topluluğuna destek. Teşekkürler!', gorsel: `${site}/_blob/shopier/destek.jpg` });  // maskot (Be happy bro)
+  await rpc('destek_istegi_token', { p_id: o.id, p_token: urun });
+  return { sayfa, id: o.id };
 }
 
-async function isle(tur: string, v: Record<string, unknown>, ip: string): Promise<unknown> {
+// Ad alanı: harf, boşluk ve noktalama; bağlantı ya da e-posta değil (aynı süzgeç tanışmadaki "referans" alanında da var)
+const BAGLANTI = /(https?:|www\.|:\/\/|[@\/\\<>]|[\p{L}\p{N}-]+\.[\p{L}]{2,})/iu;
+function adDenetle(v: Record<string, unknown>): void {
+  for (const alan of ['ad', 'referans']) {
+    if (typeof v[alan] === 'string' && BAGLANTI.test(v[alan] as string)) {
+      throw new KullaniciHatasi(alan === 'ad' ? 'Ad alanına yalnız adını ve soyadını yaz.' : 'Bileti veren kişinin yalnız adını ve soyadını yaz.');
+    }
+  }
+}
+
+// KVKK onayı (tanışma, bilet, özel form): kutu işaretli olmalı; kayıt açılınca onay yazılır
+const KVKK_GEREKEN = new Set(['tanisma', 'bilet_adres', 'ozel_form']);
+async function rizaYaz(tur: string, eposta: unknown): Promise<void> {
+  const ep = metin(eposta, 200).trim().toLowerCase();
+  if (!ep) return;
+  const surum = await rpc('riza_metin_surumu', {}).catch(() => 'bilinmiyor');
+  const { error } = await servisIstemcisi().from('riza_kayitlari').insert({ eposta: ep, tur: 'kvkk', metin_surumu: String(surum), kaynak: tur });
+  if (error) console.error('riza_kayitlari', tur, error);
+}
+
+async function isle(tur: string, v: Record<string, unknown>): Promise<unknown> {
+  adDenetle(v);
+  // Giriş yapmış üye (bilet) KVKK'yı üyelikte onayladı; ziyaretçi kutuyu işaretlemeli
+  const uyeOturumu = tur === 'bilet_adres' && typeof v.oturum === 'string' && v.oturum.length > 0;
+  if (KVKK_GEREKEN.has(tur) && v.kvkk !== true && !uyeOturumu) throw new KullaniciHatasi('Devam etmek için KVKK aydınlatma metnini onayla.');
   if (tur === 'basvuru' || tur === 'tanisma' || tur === 'bilet_adres' || tur === 'gonullu') await acildiMi();
   switch (tur) {
     case 'basvuru':
@@ -203,7 +206,9 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
     case 'uyelik_kart': {
       // Yeni başvuranın kartla aidatı (girişsiz, Turnstile'lı): Shopier ödeme ürünü; ödeme gelince üyelik başlar
       if (!(shopierHazir() && await kartAcikMi())) throw new KullaniciHatasi('Kartla ödeme şu an kapalı; havale / EFT ile ödeyebilirsin.', 400);
-      const o = await rpc('uyelik_kart_ac', { p_eposta: metin(v.eposta, 200) }) as { id: string; tutar: number; kod: string };
+      const o = await rpc('uyelik_kart_ac', { p_eposta: metin(v.eposta, 200) }) as { id: string; tutar: number; kod: string; eposta?: boolean };
+      // Başvuru yok ya da üyelik aktif: ekranda herkese aynı "e-postana bilgi gönderdik", neden e-postada
+      if (o.eposta) return { eposta: true };
       const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
       const { urun, sayfa } = await odemeUrunuAc({ baslik: 'Forest Club Urla üyelik · 30 gün', tutar: Number(o.tutar), ref: `FC-UYELIK-${o.kod}`,
         donus: `${site}/#basvuru`, aciklama: 'Forest Club Urla üyeliği · 30 gün. Ödemen gelince üyeliğin başlar, e-postana haber gelir.',
@@ -214,7 +219,7 @@ async function isle(tur: string, v: Record<string, unknown>, ip: string): Promis
     case 'bilet_kaydet':
       return rpc('bilet_kaydet', { p_id: Number(v.id) || 0, p_eposta: metin(v.eposta, 200) });
     case 'destek':
-      return destekBaslat(v.tutar, ip);
+      return destekBaslat(v.tutar);
     case 'gonullu':
       return rpc('gonullu_kaydet', {
         p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60),
@@ -259,7 +264,9 @@ Deno.serve(async (istek) => {
 
     if (!TURNSTILE_GEREKMEZ.has(tur)) await turnstileDogrula(govde.jeton, ip);
     try {
-      return json(200, { sonuc: await isle(tur, veri, ip) });
+      const sonuc = await isle(tur, veri);
+      if (KVKK_GEREKEN.has(tur) && veri.kvkk === true) await rizaYaz(tur, veri.eposta);
+      return json(200, { sonuc });
     } catch (h) {
       // Doğrulamayı geçmiş ama formda eksik / hatalı alan olan deneme sayaçtan düşer: düzeltip yeniden gönderen kişi
       // (ya da aynı Wi-Fi'daki başkası) bir saat kilitlenmesin. Turnstile'ı geçemeyen istekler sayılmaya devam eder.

@@ -75,8 +75,8 @@ async function biletSahte(page, tutar) {
     await modal.getByRole('button', { name: 'Dekontu gönder' }).waitFor({ timeout: 5000 });
     dogru(await modal.locator('span', { hasText: /^2.000 TL$/ }).count() >= 1, 'site: sunucunun tutarı görünüyor');
     const ac = sf.formlar.find((f) => f.tur === 'bilet_adres');
-    dogru(ac && JSON.stringify(ac.veri.kalemler) === JSON.stringify([{ etkinlik: 7, adet: 2 }]) && ac.veri.oturum === null && ac.jeton,
-      `site: istek sunucuya (2 bilet, oturumsuz, Turnstile'lı) (${JSON.stringify(ac && ac.veri)})`);
+    dogru(ac && JSON.stringify(ac.veri.kalemler) === JSON.stringify([{ etkinlik: 7, adet: 2 }]) && ac.veri.oturum === null && ac.veri.kvkk === true && ac.jeton,
+      `site: istek sunucuya (2 bilet, oturumsuz, KVKK onaylı, Turnstile'lı) (${JSON.stringify(ac && ac.veri)})`);
     dogru(await modal.getByText('TR59 0015 7000 0000 0205 1344 62').count() === 1, 'site: IBAN görünüyor');
     dogru(await modal.getByText('Ödemenden sonra 5–60 dakika içinde biletin e-posta adresine gönderilecektir.').count() === 1, 'site: havalede 5–60 dk uyarısı');
     dogru(ac && ac.veri.yol === 'havale' && ac.veri.kod === 'FOREST20', 'site: istek havale yoluyla, indirim koduyla gitti');

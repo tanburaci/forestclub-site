@@ -15,7 +15,7 @@ Yayında değil. Tasarım demosundaki (claude.ai Design) sayfaların gerçek ver
 - `supabase/seed_demo.sql` yalnız deneme projesine yüklenen ÖRNEK veri (gerçek kişi yok)
 - `supabase/functions/` Edge Function'lar: `form-gonder` (anonim formlar: Turnstile + IP başına sınır, dekont için imzalı
   yükleme adresi), `eposta-gonder` (e-posta kuyruğunu Resend ile gönderir), `dekont-temizle` (kayda bağlanmamış dosyalar),
-  `odeme-baslat` / `odeme-donus` (eski iyzico akışı), `shopier-bildirim` (Shopier ödeme bildirimi: kartla bilet, aidat ve
+  `odeme-baslat` (üyenin kartla aidatı: Shopier ödeme ürünü), `shopier-bildirim` (Shopier ödeme bildirimi: kartla bilet, aidat ve
   destek; `ayarlar.kart_odeme` açıkken)
 - `supabase/aktarim/` Google Sheets → veritabanı aktarımı: `csv_sql.mjs` (CSV → SQL), `02_aktar.sql`, `03_dogrula.sql`
 - `supabase/tests/` veritabanı güvenlik testleri (pgTAP): `supabase test db`
@@ -31,7 +31,7 @@ Yayında değil. Tasarım demosundaki (claude.ai Design) sayfaların gerçek ver
    fonksiyon: yeni fonksiyonlar yeni veritabanı işlevlerini bekler).
 3. main'de CI yeşil bitince site Cloudflare Pages'e kendiliğinden yayınlanır (ücretsiz, ayda 500 yayın). Acil durumda
    Actions › "Cloudflare'e yayınla" › Run workflow.
-4. Göç dosyası adları sıralıdır ve en sondakinden büyük olmalı (şu an `20261206000000_…`; sonraki `20261207000000_…`).
+4. Göç dosyası adları sıralıdır ve en sondakinden büyük olmalı (şu an `20261216000000_…`; sonraki `20261217000000_…`).
    `supabase migration new` bugünün tarihini verir ve listede öne düşer; kullanmayın.
 
 Yönetim paneli iki adımlı girişle açılır (şifre / e-posta bağlantısı + doğrulama uygulaması kodu). Yönetici eklemek ya da
