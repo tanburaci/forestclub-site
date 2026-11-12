@@ -7,6 +7,8 @@
 // "destek": kartla destek; Shopier ödeme sayfası ayrı pencerede açılır, ödeme shopier-bildirim'e gelir (ayarlar.kart_odeme açıkken).
 // Etkinlik bileti: "bilet_adres" ödeme yolunu da alır (v.yol: havale | nakit | kart). Havale + dekontla: isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
 // imzalı yükleme adresi verir, dekont yüklenince "bilet_kaydet" isteği yöneticinin onayına düşürür.
+// Etkinliğe özel ürün: "urun_siparis" (v.yol: kart | havale | nakit | pos; yalnız etkinlik saatinin çevresinde, kural sunucuda).
+// Kart Shopier penceresi açar; havale imzalı dekont adresi verir, dekont yüklenince "urun_kaydet"; nakit / POS standda ödenir.
 // "ozel_form": gizli bağlantılı özel form; girişsiz, ad + e-postayla (anahtar sunucuda denetlenir).
 // "dugun": /dugun/ sayfasındaki düğün tasarım talebi (seçimler kimlikle gelir, sunucuda adlarına çevrilir); özel davet
 // bağlantısından gelirse "davet" anahtarı talebi davete bağlar.
@@ -20,10 +22,10 @@ import { odemeUrunuAc, shopierHazir } from '../_ortak/shopier.ts';
 
 // Saatlik sınırlar (IP başına); "hepsi" bütün türlerin toplamı
 const SINIR: Record<string, number> = {
-  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, uyelik_kart: 10, ozel_form: 40, dugun: 5, hepsi: 60,
+  basvuru: 5, tanisma: 5, cagri: 5, gonullu: 5, dekont_adres: 10, dekont_kaydet: 10, destek: 10, bilet_adres: 10, bilet_kaydet: 10, uyelik_kart: 10, urun_siparis: 10, urun_kaydet: 10, ozel_form: 40, dugun: 5, hepsi: 60,
 };
 // yol zaten Turnstile'lı "dekont_adres" / "bilet_adres" adımında verildi
-const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet', 'bilet_kaydet']);
+const TURNSTILE_GEREKMEZ = new Set(['dekont_kaydet', 'bilet_kaydet', 'urun_kaydet']);
 const UZANTI: Record<string, string> = {
   '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
   '.heic': 'image/heic', '.heif': 'image/heif', '.webp': 'image/webp',
@@ -95,6 +97,36 @@ async function destekBaslat(tutarHam: unknown): Promise<{ sayfa: string; id: str
   return { sayfa, id: o.id };
 }
 
+// Etkinliğe özel ürün siparişi: tutar ve satış saati sunucuda (urun_siparisi_ac). Dönüş: {id, kod, tutar, yol} +
+// kartta Shopier sayfası, havalede imzalı dekont yükleme adresi (dosya, jeton)
+async function urunSiparis(v: Record<string, unknown>): Promise<unknown> {
+  const yol = ['kart', 'havale', 'nakit', 'pos'].includes(String(v.yol)) ? String(v.yol) : '';
+  if (!yol) throw new KullaniciHatasi('Ödeme yöntemini seç.');
+  if (yol === 'kart' && !(shopierHazir() && await kartAcikMi())) throw new KullaniciHatasi('Kartla ödeme şu an kapalı; başka bir yöntem seç.');
+  const kalemler = (Array.isArray(v.kalemler) ? v.kalemler : []).slice(0, 10)
+    .map((k: Record<string, unknown>) => ({ urun: Math.trunc(Number(k?.urun)) || 0, adet: Math.trunc(Number(k?.adet)) || 0 }));
+  const rastgele = crypto.getRandomValues(new Uint8Array(8));
+  const dosya = yol === 'havale' ? `yeni/${Date.now()}-${Array.from(rastgele, (b) => b.toString(16).padStart(2, '0')).join('')}` : null;
+  const s = await rpc('urun_siparisi_ac', {
+    p_etkinlik: Math.trunc(Number(v.etkinlik)) || 0, p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60),
+    p_kalemler: kalemler, p_yol: yol, p_dosya: dosya,
+  }) as { id: number; kod: string; tutar: number; etkinlik: string; foto: string | null; kalemler: { ad: string; adet: number }[] };
+  const sonuc = { id: s.id, kod: s.kod, tutar: s.tutar, yol };
+  if (yol === 'kart') {
+    const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
+    const { urun, sayfa } = await odemeUrunuAc({ baslik: `Forest Club Urla · ${s.etkinlik} · ürünler`, tutar: Number(s.tutar), ref: `FC-URUN-${s.id}`,
+      aciklama: s.kalemler.map((k) => `• ${k.adet} × ${k.ad}`).join('\n'), donus: `${site}/e/${Math.trunc(Number(v.etkinlik))}`, gorsel: s.foto });
+    await rpc('urun_shopier_urun', { p_id: s.id, p_urun: urun });
+    return { ...sonuc, sayfa };
+  }
+  if (dosya) {
+    const { data, error } = await servisIstemcisi().storage.from('dekontlar').createSignedUploadUrl(dosya);
+    if (error || !data) throw error || new Error('İmzalı adres alınamadı');
+    return { ...sonuc, dosya, jeton: data.token };
+  }
+  return sonuc;
+}
+
 // Ad alanı: harf, boşluk ve noktalama; bağlantı ya da e-posta değil (aynı süzgeç tanışmadaki "referans" alanında da var)
 const BAGLANTI = /(https?:|www\.|:\/\/|[@\/\\<>]|[\p{L}\p{N}-]+\.[\p{L}]{2,})/iu;
 function adDenetle(v: Record<string, unknown>): void {
@@ -105,8 +137,8 @@ function adDenetle(v: Record<string, unknown>): void {
   }
 }
 
-// KVKK onayı (tanışma, bilet, özel form): kutu işaretli olmalı; kayıt açılınca onay yazılır
-const KVKK_GEREKEN = new Set(['tanisma', 'bilet_adres', 'ozel_form']);
+// KVKK onayı (tanışma, bilet, ürün siparişi, özel form): kutu işaretli olmalı; kayıt açılınca onay yazılır
+const KVKK_GEREKEN = new Set(['tanisma', 'bilet_adres', 'urun_siparis', 'ozel_form']);
 async function rizaYaz(tur: string, eposta: unknown): Promise<void> {
   const ep = metin(eposta, 200).trim().toLowerCase();
   if (!ep) return;
@@ -120,7 +152,7 @@ async function isle(tur: string, v: Record<string, unknown>): Promise<unknown> {
   // Giriş yapmış üye (bilet) KVKK'yı üyelikte onayladı; ziyaretçi kutuyu işaretlemeli
   const uyeOturumu = tur === 'bilet_adres' && typeof v.oturum === 'string' && v.oturum.length > 0;
   if (KVKK_GEREKEN.has(tur) && v.kvkk !== true && !uyeOturumu) throw new KullaniciHatasi('Devam etmek için KVKK aydınlatma metnini onayla.');
-  if (tur === 'basvuru' || tur === 'tanisma' || tur === 'bilet_adres' || tur === 'gonullu') await acildiMi();
+  if (tur === 'basvuru' || tur === 'tanisma' || tur === 'bilet_adres' || tur === 'urun_siparis' || tur === 'gonullu') await acildiMi();
   switch (tur) {
     case 'basvuru':
       return rpc('basvuru_yap', {
@@ -218,6 +250,10 @@ async function isle(tur: string, v: Record<string, unknown>): Promise<unknown> {
     }
     case 'bilet_kaydet':
       return rpc('bilet_kaydet', { p_id: Number(v.id) || 0, p_eposta: metin(v.eposta, 200) });
+    case 'urun_siparis':
+      return urunSiparis(v);
+    case 'urun_kaydet':
+      return rpc('urun_kaydet', { p_id: Number(v.id) || 0, p_eposta: metin(v.eposta, 200) });
     case 'destek':
       return destekBaslat(v.tutar);
     case 'gonullu':

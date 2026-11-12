@@ -1,6 +1,7 @@
 // Forest Club Urla · Shopier bildirimi (webhook, order.created). İmza (Shopier-Signature) doğrulanır, sipariş Shopier
 // API'sinden yeniden okunur; ödendiyse siparişteki ödeme ürününe göre:
 //   bilet isteği (bilet_istekleri.shopier_urun) → bilet_kart_odendi: biletler kesinleşir, e-postayla gider
+//   ürün siparişi (urun_siparisleri.shopier_urun) → urun_kart_odendi: sipariş kesinleşir, muhasebe + e-posta
 //   üyelik ödemesi (odeme_istekleri.token = ürün numarası) → odeme_tamamla: üyelik 30 gün uzar
 // Shopier yalnız 2xx'i başarılı sayar; işlenemeyen bildirimde 500 döner ki Shopier yeniden denesin.
 // Secrets: SHOPIER_PAT, SHOPIER_WEBHOOK_TOKEN
@@ -46,6 +47,14 @@ Deno.serve(async (istek) => {
         // + zaten döner; iade edilecek siparişe gider yazılmaz). Aynı sipariş için ikinci kez yazılmaz (sunucuda tekil).
         if (data?.durum === 'onaylandi' && tutar !== null) await komisyon('bilet');
         return yanit(200, data?.durum === 'iade' ? `bilet verilemedi (${data.neden}); iade gerekli` : 'bilet tamam');
+      }
+      // Etkinliğe özel ürün siparişi: tutar tutmazsa işlev iade için işaretler (200)
+      const u = await oku('urun_siparisleri', 'shopier_urun', urun);
+      if (u) {
+        const { data, error } = await sb.rpc('urun_kart_odendi', { p_id: u.id, p_siparis: siparis, p_tutar: tutar });
+        if (error) { console.error('urun_kart_odendi', error); return yanit(500, 'ürün siparişi işlenemedi'); }
+        if (data?.durum === 'onaylandi' && !data?.zaten && tutar !== null) await komisyon('ürün');
+        return yanit(200, data?.durum === 'iade' ? `ürün siparişi kesinleşmedi (${data.neden}); iade gerekli` : 'ürün siparişi tamam');
       }
       if (tutar === null) {
         // Shopier yeniden dener; yönetici de haberdar olsun (sipariş başına bir kez)

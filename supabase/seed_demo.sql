@@ -1080,4 +1080,6 @@ select setval(pg_get_serial_sequence('uyeler','id'), (select max(id) from uyeler
 select setval(pg_get_serial_sequence('etkinlikler','id'), (select max(id) from etkinlikler));
 -- Üye kodu sayacı örnek kodların arkasından devam etsin (20261028000000_uye_kodu_ve_bagla.sql; sayaç yoksa atlanır)
 select setval(to_regclass('public.uye_kod_seq'), (select max((substring(kod from '^FC-U-(\d+)$'))::bigint) from uyeler));
+-- Etkinliğe özel ürünler (örnek; yönetici Etkinlikler › Düzenle'de etkinliğe bağlar)
+insert into urunler (ad, fiyat) values ('Yelpaze 1', 1500), ('Yelpaze 2', 2000);
 commit;
