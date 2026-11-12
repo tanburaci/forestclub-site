@@ -34,7 +34,7 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
     dogru(yanit.headers.get('content-type').startsWith('text/html') && html.includes('<meta property="og:image" content="https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/a.jpg">'),
       'önizleme: og:image etkinliğin afişi');
     dogru(html.includes('og:title" content="Sunset &lt;Club&gt; · Forest Club Urla"') && html.includes('14 Kasım Cumartesi · 18.00 · Pinya, Urla, İzmir · Gün batımında müzik.'), 'önizleme: başlık (kaçışlı) ve tarih');
-    dogru(html.includes('http-equiv="refresh" content="0; url=/#etkinlik-12"') && /durum=neq\.taslak/.test(sorgu), 'önizleme: karta yönlendirir, taslak gösterilmez');
+    dogru(html.includes('http-equiv="refresh" content="0; url=/#etkinlik-12"') && /durum=eq\.yayinda/.test(sorgu), 'önizleme: karta yönlendirir, yalnız yayındaki etkinlik (taslak / iptal yok)');
     kucukVar = true;
     const kucukHtml = await (await ef.yanitla(new Request('https://www.forestcluburla.com/e/12'), (u) => fetch(new URL('/index.html', u.origin)))).text();
     dogru(kucukHtml.includes('og:image" content="https://gflabqnazkstsyafzdmn.supabase.co/storage/v1/object/public/afisler/paylas/a.jpg"'),
@@ -52,9 +52,8 @@ const veri = { tablolar: { etkinlikler: [e(7, 6, 'Breakfast Club'), e(8, 12, 'Su
       && olay.location.address.addressLocality === 'Urla' && olay.location.address.addressRegion === 'İzmir' && olay.url === 'https://www.forestcluburla.com/e/12'
       && olay.offers.price === '250' && olay.offers.priceCurrency === 'TRY' && /SoldOut$/.test(olay.offers.availability) && /EventScheduled$/.test(olay.eventStatus)
       && !/<\/?Club>/.test(tam.split('ld+json')[1]), `etkinlik sayfası: Google etkinlik şeması (tarih, Urla/İzmir, fiyat, tükendi; < kaçışlı) ${JSON.stringify(olay).slice(0, 120)}`);
-    dogru(ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01', saat: null, durum: 'iptal', bilet_fiyati: null }).includes('"startDate":"2026-12-01"')
-      && ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01', durum: 'iptal' }).includes('EventCancelled')
-      && !ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01' }).includes('offers'), 'etkinlik şeması: saatsiz tarih, iptal, ücretsizse teklif yok');
+    dogru(ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01', saat: null, bilet_fiyati: null }).includes('"startDate":"2026-12-01"')
+      && !ef.olaySemasi('https://x', 1, { ad: 'A', tarih: '2026-12-01' }).includes('offers'), 'etkinlik şeması: saatsiz tarih, ücretsizse teklif yok');
     // Site haritası: sabit sayfalar + yayınlanmış etkinlik sayfaları
     const sm = await import(`data:text/javascript,${encodeURIComponent(require('fs').readFileSync(path.join(DENEME, '../functions/sitemap.xml.js'), 'utf8'))}`);
     const efFetch = global.fetch;  // site haritası denemesinden sonra etkinlik sayfası taklidine dönülür
