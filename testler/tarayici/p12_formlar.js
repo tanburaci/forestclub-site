@@ -117,7 +117,7 @@ const kullanici = (page) => page.route(`${SB}/auth/v1/user`, (r) => r.fulfill({ 
     await o.page.getByRole('button', { name: 'Gönder' }).click();
     dogru(await o.page.getByText('Adını ve soyadını yaz.').count() === 1, 'özel form: ad yoksa uyarı');
     await o.page.getByLabel('Adın ve soyadın').fill('Ayşe Kaya');
-    await o.page.getByLabel('E-posta').fill('Ayse@Posta.test');
+    await o.page.getByLabel('E-posta', { exact: true }).fill('Ayse@Posta.test');
     await o.page.getByRole('button', { name: 'Gönder' }).click();
     dogru(await o.page.getByText('Devam etmek için KVKK aydınlatma metnini onayla.').count() === 1 && oy.length === 0, 'özel form: KVKK onayı olmadan gitmez');
     await o.page.getByLabel(/KVKK aydınlatma metnini/).check();

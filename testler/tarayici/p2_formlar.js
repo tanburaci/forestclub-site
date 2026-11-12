@@ -72,7 +72,7 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
     await page.getByText('Breakfast Club').first().waitFor({ timeout: 15000 });
     dogru(turnstileYuklendi === 0, 'Turnstile sayfa açılışında yüklenmiyor (yalnız gönderimde)');
     const b = await page.evaluate(() => window.FCSBasvuru('Gerçek Kişi', 'gercek@posta.test', '05321112233', true, true, true, false));
-    const t = await page.evaluate((k) => window.FCSTanisma({ ad: 'Misafir Kişi', eposta: 'misafir@posta.test', tel: '05320000000', referans: 'Pelin Küçükali', biletNo: 'FC-0042' }, k), Object.keys(await page.evaluate(() => window.FCS.anahtar))[0]);
+    const t = await page.evaluate((k) => window.FCSTanisma({ ad: 'Misafir Kişi', eposta: 'misafir@posta.test', tel: '05320000000', kvkk: true, referans: 'Pelin Küçükali', biletNo: 'FC-0042' }, k), Object.keys(await page.evaluate(() => window.FCS.anahtar))[0]);
     await page.evaluate(() => window.FCSCagri({ ad: 'Deniz', iletisim: '0532', uyeOl: false }));
     const hata = await page.evaluate(() => window.FCSBasvuru('Ç', 'cok@posta.test', '05321112233', true, true, true, false).then(() => '', (h) => h.message));
     dogru(b === 'tamam' && t === 'verildi', `başvuru ve tanışma form-gonder'den döndü (${b}, ${t})`);

@@ -27,7 +27,7 @@ select is((select count(*) from eposta_kuyrugu where sablon = 'kart_bilgi' and a
 select is(saat_oku('19:30'), time '19:30', '"19:30" okunur');
 select is(saat_oku('19.00–01.00'), time '19:00', 'aralıkta ilk saat okunur');
 select is(saat_oku('24.30'), null, 'geçersiz saat hata vermez, boş döner');
-insert into etkinlikler (tarih, saat, tur, ad, durum) values (current_date + 1, 'Öğleden sonra', 'bulusma', 'D13 Serbest Saat', 'yayinda');
+insert into etkinlikler (tarih, saat, tur, ad, durum) values (current_date + 1, '12–13 Eylül', 'bulusma', 'D13 Serbest Saat', 'yayinda');
 select throws_ok($$ insert into etkinlikler (tarih, saat, tur, ad, durum) values (current_date + 1, '24.30', 'bulusma', 'D13 Bozuk Saat', 'yayinda') $$,
   '23514', null, 'yeni etkinlikte geçersiz saat kaydedilmez');
 select lives_ok($$ select etkinlik_baslangic(e) from etkinlikler e $$, 'başlangıç hesabı hiçbir etkinlikte hata vermiyor');

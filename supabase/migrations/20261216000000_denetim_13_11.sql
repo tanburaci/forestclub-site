@@ -124,11 +124,11 @@ create or replace function public.etkinlik_baslangic(e etkinlikler) returns time
   $$;
 revoke execute on function public.etkinlik_baslangic(etkinlikler) from public, anon, authenticated;
 
--- Kayıtta: saat rakamla başlıyorsa geçerli olmalı (aralık "19.00–01.00" serbest; ilk saat denetlenir).
--- Eski kayıtlar bozmasın diye NOT VALID (yalnız yeni / değişen satırlar denetlenir).
+-- Kayıtta: saat "SS.DD" / "SS:DD" ile başlıyorsa geçerli bir saat olmalı (aralıkta ilk saat denetlenir; "12–13 Eylül",
+-- "Öğleden sonra" gibi serbest yazı olduğu gibi kalır). Eski kayıtlar bozmasın diye NOT VALID.
 alter table public.etkinlikler drop constraint if exists etkinlik_saat_gecerli;
 alter table public.etkinlikler add constraint etkinlik_saat_gecerli
-  check (saat is null or saat !~ '^\s*\d' or saat_oku(saat) is not null) not valid;
+  check (saat is null or saat !~ '^\s*\d{1,2}[.:]\d{2}' or saat_oku(saat) is not null) not valid;
 
 -- ---------- 3. İndirim kodu ----------
 -- Bekleyen istek sınırdan yer tutar: dekont yüklendiyse, havalede 24 saat, kartta 30 dakika (Shopier penceresi kapatılırsa
