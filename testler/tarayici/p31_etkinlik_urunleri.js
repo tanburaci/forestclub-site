@@ -1,5 +1,5 @@
 // Etkinliğe özel ürünler: etkinliğin kendi sayfasında (/e/<id>) "Etkinliğe özel ürünler" (liste sunucudan; yalnız etkinlik
-// saatinin çevresinde dolu gelir), girişsiz sipariş: nakit / POS (ekranda sipariş kodu), kart (Shopier ayrı pencerede),
+// saatinin çevresinde dolu gelir), girişsiz sipariş: standda nakit (ekranda sipariş kodu; standda POS yok), kart (Shopier ayrı pencerede),
 // havale (dekont). Yönetim: Ürünler sekmesi (ekle, aç/kapat), etkinlik düzenlemede ürün seçimi, siparişler (Ödendi / Reddet).
 const { sayfaAc, yonetimVerisi, oturum, gun, SITE } = require('./yardim.js');
 const fs = require('fs');

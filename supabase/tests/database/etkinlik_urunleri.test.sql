@@ -1,10 +1,10 @@
 -- Forest Club Urla · etkinliğe özel ürünler (pgTAP, 13.11.2026): ürünler yalnız etkinlik başlangıcından 1 saat önce ile
 -- 5 saat sonrası arasında listelenir ve sipariş alınır (sunucuda); toplam sunucuda hesaplanır; kart Shopier ödemesiyle,
--- havale / nakit / POS yönetici onayıyla kesinleşir; onayda muhasebeye "Ürün satışı" geliri ve alıcıya e-posta.
+-- havale / nakit yönetici onayıyla kesinleşir; onayda muhasebeye "Ürün satışı" geliri ve alıcıya e-posta.
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(33);
+select plan(34);
 
 insert into auth.users (id, email) values
   ('00000000-0000-4000-8000-0000000000f1', 'urun-yon@test.invalid'),
@@ -91,18 +91,21 @@ select is((select kasa::text || '/' || odeme::text || '/' || kategori || '/' || 
 select is((select etkinlik_id from muhasebe_hareketleri where belge = 'urun:' || (select r ->> 'id' from t_n)), (select yakin from t_e), 'gelir etkinliğe bağlı');
 select is((select count(*) from eposta_kuyrugu where sablon = 'urun_siparis' and alici = 'nakit@test.invalid')::int, 1, 'alıcıya onay e-postası kuyrukta');
 
--- POS: banka / kart; red: e-posta gider, muhasebeye yazılmaz
+-- Standda POS yok (13.11): pos reddedilir. Havale onayı: banka / havale; red: e-posta gider, muhasebeye yazılmaz
 create temp table t_p as select urun_siparisi_ac((select suruyor from t_e), 'Pos Kişi', 'pos@test.invalid', '05320000002',
-  pg_temp.kalem((select y2 from t_u), 1), 'pos', null) as r;
+  pg_temp.kalem((select y2 from t_u), 1), 'havale', 'yeni/pos-yerine-havale-01') as r;
+update urun_siparisleri set yuklendi = true where id = (select (r ->> 'id')::bigint from t_p);
 create temp table t_r as select urun_siparisi_ac((select suruyor from t_e), 'Red Kişi', 'red@test.invalid', '05320000003',
   pg_temp.kalem((select y1 from t_u), 1), 'nakit', null) as r;
 grant select on t_p, t_r to authenticated;
 set local role authenticated;
 select pg_temp.ol('00000000-0000-4000-8000-0000000000f1');
-select lives_ok(format($$ select urun_karar(%s, true) $$, (select r ->> 'id' from t_p)), 'POS siparişi onaylanır');
+select lives_ok(format($$ select urun_karar(%s, true) $$, (select r ->> 'id' from t_p)), 'havale siparişi onaylanır');
 select is(urun_karar((select (r ->> 'id')::bigint from t_r), false, 'Gelmedi') ->> 'durum', 'reddedildi', 'yönetici siparişi reddeder');
 reset role;
-select is((select kasa::text || '/' || odeme::text from muhasebe_hareketleri where belge = 'urun:' || (select r ->> 'id' from t_p)), 'banka/kart', 'POS: muhasebe banka / kart');
+select is((select kasa::text || '/' || odeme::text from muhasebe_hareketleri where belge = 'urun:' || (select r ->> 'id' from t_p)), 'banka/havale', 'havale: muhasebe banka / havale');
+select throws_ok(format($$ select urun_siparisi_ac(%s, 'Pos Kişi', 'pos@test.invalid', '05320000000', pg_temp.kalem(%s, 1), 'pos', null) $$,
+  (select suruyor from t_e), (select y1 from t_u)), 'P0001', 'Ödeme yolu geçersiz.', 'standda POS yok: pos reddedilir');
 select is((select count(*) from muhasebe_hareketleri where belge = 'urun:' || (select r ->> 'id' from t_r))::int, 0, 'reddedilen sipariş muhasebeye yazılmaz');
 
 -- ---------- Kart (Shopier) ----------
