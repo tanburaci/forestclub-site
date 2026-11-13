@@ -24,6 +24,7 @@ create temp table t_e as select pg_temp.etk('Ürün Yakın', interval '30 minute
   pg_temp.etk('Ürün Sürüyor', interval '-4 hours') as suruyor, pg_temp.etk('Ürün Bitti', interval '-6 hours') as bitti;
 insert into urunler (ad, fiyat) values ('Test Yelpaze 1', 1500), ('Test Yelpaze 2', 2000), ('Test Kapalı', 100);
 update urunler set aktif = false where ad = 'Test Kapalı';
+update envanter set adet = 100 where id in (select envanter_id from urunler where ad like 'Test %');  -- stok (urun_stok testleri ayrı)
 create temp table t_u as select (select id from urunler where ad = 'Test Yelpaze 1') as y1, (select id from urunler where ad = 'Test Yelpaze 2') as y2,
   (select id from urunler where ad = 'Test Kapalı') as kapali;
 insert into etkinlik_urunleri (etkinlik_id, urun_id)

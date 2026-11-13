@@ -42,9 +42,11 @@
       hepsi('dekontlar'), hepsi('acik_cagri'), hepsi('bilet_istekleri'), hepsi('formlar'), hepsi('form_yanitlari', ['form_id', 'uye_id', 'created_at']),
     ]);
     // Envanterden düşülenler (hasarlı / kullanılamaz / kayıp): kalem başına toplam; göç yoksa boş
+    // Satışlar ("satis", etkinlik ürünleri) ayrı sayılır
     const dusulen = {};
-    const dus = await sb.from('envanter_dusumleri').select('envanter_id, adet').limit(5000).then((r) => r.data || [], () => []);
-    dus.forEach((d) => { dusulen[d.envanter_id] = (dusulen[d.envanter_id] || 0) + Number(d.adet); });
+    const satilan = {};
+    const dus = await sb.from('envanter_dusumleri').select('envanter_id, adet, neden').limit(5000).then((r) => r.data || [], () => []);
+    dus.forEach((d) => { const m = d.neden === 'satis' ? satilan : dusulen; m[d.envanter_id] = (m[d.envanter_id] || 0) + Number(d.adet); });
     // Mail kuyruğu (son 200), sağlık özeti, ayarlar ve KVKK talepleri: göç uygulanmadıysa panel yine açılır
     const [kuyruk, saglik, ayarlar, veriTalepleri, uyeNotlari, gonulluler, tanismaKart] = await Promise.all([
       sb.from('eposta_kuyrugu').select('id, sablon, alici, durum, deneme, son_hata, created_at, gonderim_at')
@@ -134,7 +136,7 @@
         belge: h.belge || '', otomatik: h.otomatik, ...(h.odeme ? { odeme: h.odeme } : {}),
         fatura: h.fatura_durum || '', faturaNo: h.fatura_no || '', faturaTarih: h.fatura_tarih || '',
       })),
-      dusulen,
+      dusulen, satilan,
       envanter: envanter.map((e) => ({
         id: e.id, ad: e.ad, kategori: e.kategori, adet: Number(e.adet), birim: e.birim, giris: e.giris, tarih: e.tarih,
         tutar: Number(e.tutar || 0), kasa: e.kasa || 'banka', firma: e.firma || '', karsilik: e.karsilik || '',
@@ -600,6 +602,8 @@
     // Veritabanında olan (ya da yazılmakta olan) satırların numaraları: yeni numara verilen satır ikinci kez yazılmasın
     const bilinenH = new Set(FC.hareketler.map((h) => h.id));
     const bilinenE = new Set(FC.envanter.map((e) => e.id));
+    // Envanter adedi veritabanına fark olarak yazılır (envanter_adet_degis): arada satılan ürün açık panelce ezilmez
+    const senkronAdet = new Map(FC.envanter.map((e) => [e.id, e.adet]));
     // Yazılmakta olan satırlar (geçici numara → numara gelince yapılacak son düzenleme / silme)
     const yazilanH = new Map();
     const yazilanE = new Map();
@@ -701,6 +705,14 @@
         const { error: e2 } = await sb.from('etkinlik_urunleri').insert(ids.map((u) => ({ etkinlik_id: etkId, urun_id: u })));
         if (e2) throw new Error(e2.message);
       },
+      // Stok girişi: envanterdeki kalemine eklenir; sayfa tazelenir (Envanter sekmesi de yeni adedi görsün)
+      stokEkle: async (id, adet) => {
+        const { data, error } = await sb.rpc('urun_stok_ekle', { p_urun: id, p_adet: adet });
+        if (error) throw new Error(error.message);
+        bildir(`Stok eklendi ✓ Yeni stok: ${Number(data)}`);
+        setTimeout(() => { location.hash = 'urunler'; location.reload(); }, 900);
+        return Number(data);
+      },
       karar: async (s, onay) => {
         let not = null;
         if (!onay) {
@@ -798,13 +810,25 @@
                 return bildir(`Kaydedilemedi (kalem listeden kaldırıldı): ${error.message}`, true);
               }
               bilinenE.add(data.id);
+              senkronAdet.set(data.id, bekleyen.guncel ? bekleyen.guncel.adet : e.adet);
               panel.setState((s) => ({ envanter: yeniId(s.envanter, e.id, data.id) }));
               if (bekleyen.guncel) yaz(sb.from('envanter').update(bekleyen.guncel).eq('id', data.id).select('id'), 'Envanter güncellendi ✓');
               else bildir('Envantere kaydedildi ✓');
             });
           } else if (eski && !esit(envanterSatiri(eski), envanterSatiri(e))) {
             if (yazilanE.has(e.id)) yazilanE.get(e.id).guncel = envanterSatiri(e);
-            else ertele(`env${e.id}`, () => yaz(sb.from('envanter').update(envanterSatiri(e)).eq('id', e.id).select('id'), 'Envanter güncellendi ✓'), 400);
+            else {
+              const { adet: _a, ...digerleri } = envanterSatiri(e);
+              const { adet: _b, ...eskiDiger } = envanterSatiri(eski);
+              if (!esit(digerleri, eskiDiger)) ertele(`env${e.id}`, () => yaz(sb.from('envanter').update(digerleri).eq('id', e.id).select('id'), 'Envanter güncellendi ✓'), 400);
+              if (eski.adet !== e.adet) {
+                ertele(`envadet${e.id}`, () => {
+                  const fark = e.adet - (senkronAdet.has(e.id) ? senkronAdet.get(e.id) : eski.adet);
+                  senkronAdet.set(e.id, e.adet);
+                  if (fark) yaz(sb.rpc('envanter_adet_degis', { p_id: e.id, p_fark: fark }), 'Envanter güncellendi ✓');
+                }, 400);
+              }
+            }
           }
         });
       }

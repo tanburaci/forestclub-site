@@ -81,9 +81,11 @@ class Component extends DCLogic {
     const adim = st.uAdim || 'secim';
     const yol = st.uYol || (kartAcik ? 'kart' : '');
     const sip = st.uSiparis || {};
+    // Stok: liste "kalan"ı verir (null / yok = sınırsız); en çok 20 ve kalan kadar
+    const sinir = (id) => { const u = liste.find((x) => x.id === id); const k = u && u.kalan != null ? Math.floor(Number(u.kalan)) : 20; return Math.min(20, k); };
     const degis = (id, d) => this.setState((s) => {
       const eski = (s.uSec || {})[id] || 0;
-      return { uSec: { ...(s.uSec || {}), [id]: Math.max(0, Math.min(20, eski + d)) }, uHata: '' };
+      return { uSec: { ...(s.uSec || {}), [id]: Math.max(0, Math.min(sinir(id), eski + d)) }, uHata: '' };
     });
     const YOLLAR = [
       { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında' : 'Şu an kapalı', kapali: !kartAcik },
@@ -102,6 +104,8 @@ class Component extends DCLogic {
       urunVar: liste.length > 0,
       urunler: liste.map((u) => ({
         ad: u.ad, foto: u.foto || '', fotoVar: !!u.foto, fiyatYazi: TL(u.fiyat), adet: String(sec[u.id] || 0),
+        satilir: sinir(u.id) > 0, stokYazi: sinir(u.id) <= 0 ? 'Tükendi' : (u.kalan != null && Number(u.kalan) <= 5 ? `Son ${Math.floor(Number(u.kalan))} adet` : ''),
+        arttirKapali: (sec[u.id] || 0) >= sinir(u.id),
         azalt: () => degis(u.id, -1), arttir: () => degis(u.id, 1), azaltEtiket: `${u.ad} adedini azalt`, arttirEtiket: `${u.ad} adedini arttır`,
       })),
       uSecimde: adim === 'secim', uDekontta: adim === 'dekont', uKartBekle: adim === 'kart', uTamam: adim === 'tamam',

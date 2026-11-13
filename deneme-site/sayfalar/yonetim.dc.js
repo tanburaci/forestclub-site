@@ -98,7 +98,7 @@ class Component extends DCLogic {
       kodForm: { kod: '', tur: 'yuzde', deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: '',
       // Etkinliğe özel ürünler; önizlemede örnek ürünler
       urunler: window.FC ? window.FC.urunler || [] : [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, aktif: true }],
-      urunForm: { ad: '', fiyat: '', foto: '' }, urunDuz: null, urunMesaj: '', etkUrun: [],
+      urunForm: { ad: '', fiyat: '', foto: '' }, urunDuz: null, urunMesaj: '', etkUrun: [], urunStok: {},
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
       etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: window.FC ? window.FC.etkDurum : {},
@@ -568,7 +568,25 @@ class Component extends DCLogic {
         window.FCUrun.kaydet(st.urunDuz, st.urunDuz ? satir : { ...satir, aktif: true }).then(bitir, (h) => this.setState({ urunMesaj: h.message }));
       },
       urunYok: !st.urunler.length,
-      urunListe: st.urunler.map((u) => ({
+      urunListe: st.urunler.map((u) => {
+        // Stok = envanterdeki kalemin adedi; bekleyen = onay bekleyen siparişlerdeki adet (satılınca stoktan düşer)
+        const kalem = (st.envanter || []).find((x) => x.id === u.envanter_id);
+        const stok = kalem ? kalem.adet : 0;
+        const bekleyen = siparisler.filter((x) => x.durum === 'bekliyor')
+          .reduce((t, x) => t + (x.kalemler || []).filter((k) => k.urun_id === u.id).reduce((a, k) => a + Number(k.adet), 0), 0);
+        const girilen = (st.urunStok || {})[u.id] || '';
+        return {
+        stokYazi: `Stok: ${stok}${bekleyen ? ` · ${bekleyen} bekleyen siparişte` : ''}`, stokBitti: stok - bekleyen <= 0,
+        stokGirilen: girilen, stokEtiket: `${u.ad} için eklenecek stok`,
+        stokYaz: (e) => { const v = e.target.value; this.setState((s) => ({ urunStok: { ...(s.urunStok || {}), [u.id]: v }, urunMesaj: '' })); },
+        stokEkle: () => {
+          const n = Number(String(girilen).trim());
+          if (!(n > 0) || !Number.isInteger(n)) return this.setState({ urunMesaj: `${u.ad}: eklenecek adedi tam sayı olarak yazın.` });
+          if (!window.FCUrun) return this.setState({ urunMesaj: `${u.ad}: ${n} adet eklendi ✓` });
+          this.setState({ urunMesaj: 'Stok ekleniyor…' });
+          window.FCUrun.stokEkle(u.id, n).then(() => this.setState((s) => ({ urunStok: { ...(s.urunStok || {}), [u.id]: '' } })),
+            (h) => this.setState({ urunMesaj: h.message }));
+        },
         ad: u.ad, fiyatYazi: tl(u.fiyat), foto: u.foto || '', fotoVar: !!u.foto,
         durum: u.aktif ? 'Satışta' : 'Kapalı', dugme: u.aktif ? 'Satışa kapat' : 'Satışa aç',
         duzenle: () => this.setState({ urunDuz: u.id, urunForm: { ad: u.ad, fiyat: String(Number(u.fiyat)), foto: u.foto || '' }, urunMesaj: '' }),
@@ -577,7 +595,8 @@ class Component extends DCLogic {
           yaz(yeni);
           if (window.FCUrun) window.FCUrun.kaydet(u.id, { aktif: yeni.aktif }).catch((h) => { yaz(u); this.setState({ urunMesaj: h.message }); });
         },
-      })),
+        };
+      }),
       urunSipGruplar, urunSipYok: !urunSipGruplar.length,
       // Etkinlik düzenleme: aktif ürünler ve bu etkinliğe zaten bağlı olanlar
       etkUrunVar: !!st.duzKey && st.urunler.some((u) => u.aktif || secili.includes(u.id)),
@@ -1354,7 +1373,8 @@ class Component extends DCLogic {
       .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id)
       .map((x) => ({
         ad: x.ad, kategori: x.kategori, girisAd: GIRIS_AD[x.giris], rozet: GIRIS_ROZET[x.giris], tarihYazi: tarihYaz(x.tarih),
-        alt: [x.konum, x.not, this.state.eDusulen[x.id] ? `${this.state.eDusulen[x.id]} ${x.birim} düşüldü (hasarlı / kullanılamaz)` : ''].filter(Boolean).join(' · '),
+        alt: [x.konum, x.not, this.state.eDusulen[x.id] ? `${this.state.eDusulen[x.id]} ${x.birim} düşüldü (hasarlı / kullanılamaz)` : '',
+          window.FC && window.FC.satilan && window.FC.satilan[x.id] ? `${window.FC.satilan[x.id]} ${x.birim} satıldı (etkinlik ürünü)` : ''].filter(Boolean).join(' · '),
         kaynak: x.giris === 'satin' ? (x.tutar ? `${TL(x.tutar)} · ${KASA[x.kasa]}` : '—')
           : x.giris === 'firma' ? `${x.firma}${x.karsilik ? ` · karşılığı: ${x.karsilik}` : ''}` : x.kaynak,
         miktar: `${x.adet} ${x.birim}`, bitti: x.adet === 0,

@@ -448,6 +448,8 @@ html.gok-gece .fs-parti{opacity:1}
 .fe-urun{border:2.5px solid #111111;border-radius:14px;padding:12px 14px;box-shadow:4px 4px 0 #111111;background:#FFFFFF;display:flex;flex-direction:column;gap:6px}
 .fe-urun img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1.5px solid #111111}
 .fe-urun b{font-size:18px}.fe-urun-fiyat{font-weight:700;font-size:16px}
+.fe-urun-stok{align-self:flex-start;background:#F6C945;color:#111111;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px}
+.fe-adet button:disabled{opacity:.35;cursor:not-allowed}
 .fe-adet{display:flex;align-items:center;gap:14px;margin-top:4px}.fe-adet span{min-width:20px;text-align:center;font-weight:700;font-size:18px}
 .fe-adet button{width:44px;height:44px;border:2px solid #111111;border-radius:50%;background:#FFFFFF;color:#111111;font:700 22px/1 Figtree,sans-serif;cursor:pointer}
 .fe-urun-form{max-width:520px;display:flex;flex-direction:column;gap:12px}
@@ -1562,11 +1564,14 @@ Buluşmalar ✓</p>
                     <sc-if value="{{ u.fotoVar }}" hint-placeholder-val="{{ false }}"><img src="{{ u.foto }}" alt="{{ u.ad }}" loading="lazy"></sc-if>
                     <b>{{ u.ad }}</b>
                     <span class="fe-urun-fiyat">{{ u.fiyatYazi }}</span>
-                    <div class="fe-adet">
-                      <button type="button" onClick="{{ u.azalt }}" aria-label="{{ u.azaltEtiket }}">−</button>
-                      <span aria-live="polite">{{ u.adet }}</span>
-                      <button type="button" onClick="{{ u.arttir }}" aria-label="{{ u.arttirEtiket }}">+</button>
-                    </div>
+                    <sc-if value="{{ u.stokYazi }}" hint-placeholder-val="{{ false }}"><span class="fe-urun-stok">{{ u.stokYazi }}</span></sc-if>
+                    <sc-if value="{{ u.satilir }}" hint-placeholder-val="{{ true }}">
+                      <div class="fe-adet">
+                        <button type="button" onClick="{{ u.azalt }}" aria-label="{{ u.azaltEtiket }}">−</button>
+                        <span aria-live="polite">{{ u.adet }}</span>
+                        <button type="button" onClick="{{ u.arttir }}" aria-label="{{ u.arttirEtiket }}" disabled="{{ u.arttirKapali }}">+</button>
+                      </div>
+                    </sc-if>
                   </div>
                 </sc-for>
               </div>
@@ -1850,9 +1855,11 @@ class Component extends DCLogic {
     const adim = st.uAdim || 'secim';
     const yol = st.uYol || (kartAcik ? 'kart' : '');
     const sip = st.uSiparis || {};
+    // Stok: liste "kalan"ı verir (null / yok = sınırsız); en çok 20 ve kalan kadar
+    const sinir = (id) => { const u = liste.find((x) => x.id === id); const k = u && u.kalan != null ? Math.floor(Number(u.kalan)) : 20; return Math.min(20, k); };
     const degis = (id, d) => this.setState((s) => {
       const eski = (s.uSec || {})[id] || 0;
-      return { uSec: { ...(s.uSec || {}), [id]: Math.max(0, Math.min(20, eski + d)) }, uHata: '' };
+      return { uSec: { ...(s.uSec || {}), [id]: Math.max(0, Math.min(sinir(id), eski + d)) }, uHata: '' };
     });
     const YOLLAR = [
       { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında' : 'Şu an kapalı', kapali: !kartAcik },
@@ -1871,6 +1878,8 @@ class Component extends DCLogic {
       urunVar: liste.length > 0,
       urunler: liste.map((u) => ({
         ad: u.ad, foto: u.foto || '', fotoVar: !!u.foto, fiyatYazi: TL(u.fiyat), adet: String(sec[u.id] || 0),
+        satilir: sinir(u.id) > 0, stokYazi: sinir(u.id) <= 0 ? 'Tükendi' : (u.kalan != null && Number(u.kalan) <= 5 ? `Son ${Math.floor(Number(u.kalan))} adet` : ''),
+        arttirKapali: (sec[u.id] || 0) >= sinir(u.id),
         azalt: () => degis(u.id, -1), arttir: () => degis(u.id, 1), azaltEtiket: `${u.ad} adedini azalt`, arttirEtiket: `${u.ad} adedini arttır`,
       })),
       uSecimde: adim === 'secim', uDekontta: adim === 'dekont', uKartBekle: adim === 'kart', uTamam: adim === 'tamam',

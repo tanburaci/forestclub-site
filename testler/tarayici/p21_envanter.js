@@ -51,7 +51,9 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
     await p.waitForTimeout(800);
     const dk = y.istekler.find((x) => x.yontem === 'POST' && x.yol === '/rest/v1/envanter_dusumleri');
     dogru(dk && dk.govde.envanter_id === 7 && dk.govde.adet === 2 && dk.govde.neden === 'kullanilamaz', `düşüm: kayıt yazıldı (${JSON.stringify(dk && dk.govde)})`);
-    dogru(y.istekler.some((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/envanter' && x.govde.adet === 4), 'düşüm: adet 6 → 4');
+    // Adet fark olarak yazılır (envanter_adet_degis): açık panel arada satılan ürünü ezmez
+    dogru(y.istekler.some((x) => x.yontem === 'POST' && x.yol === '/rest/v1/rpc/envanter_adet_degis' && x.govde.p_id === 7 && x.govde.p_fark === -2)
+      && !y.istekler.some((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/envanter' && 'adet' in (x.govde || {})), 'düşüm: adet 6 → 4 (fark −2)');
     dogru((await p.locator('tr', { hasText: 'Yoga matı' }).innerText()).includes('2 adet düşüldü'), 'düşüm: satırda düşülen miktar görünür');
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'sayfa hatası yok');
   } catch (h) {

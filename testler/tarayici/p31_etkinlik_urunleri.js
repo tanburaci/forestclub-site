@@ -132,10 +132,27 @@ async function bilgileriDoldur(b, yolAdi) {
       'havale: dekont yüklendi, sipariş kaydedildi');
     await s4.ctx.close();
 
+    // ---------- Stok: tükenen ürün "Tükendi", az kalan en çok kalan kadar seçilir ----------
+    const s5 = await siteAc(tarayici, { urunler: [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, kalan: 0 }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, kalan: 2 }] });
+    await s5.page.goto(`${SITE}/e/7`);
+    const b5 = s5.page.locator('section.fe-urunler');
+    await b5.getByRole('heading', { name: 'Etkinliğe özel ürünler' }).waitFor({ timeout: 10000 });
+    const y1 = b5.locator('.fe-urun').filter({ hasText: 'Yelpaze 1' });
+    dogru((await y1.innerText()).includes('Tükendi') && !(await y1.getByRole('button').count()), 'stok 0: "Tükendi", adet seçilemez');
+    const art = b5.getByRole('button', { name: 'Yelpaze 2 adedini arttır' });
+    await art.click(); await art.click();
+    dogru((await b5.locator('.fe-urun').filter({ hasText: 'Yelpaze 2' }).innerText()).includes('Son 2 adet') && await art.isDisabled(),
+      'az kalan: "Son 2 adet", en çok kalan kadar seçilir');
+    await s5.ctx.close();
+
     // ---------- Yönetim: Ürünler sekmesi, etkinlikte ürün seçimi, siparişler ----------
     const v = yonetimVerisi();
     v.tablolar.uyeler = v.tablolar.uyeler.slice(0, 5);
-    v.tablolar.urunler = [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, aktif: true }];
+    v.tablolar.urunler = [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true, envanter_id: 901 }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, aktif: true, envanter_id: 902 }];
+    v.tablolar.envanter = [...(v.tablolar.envanter || []),
+      { id: 901, ad: 'Yelpaze 1', kategori: 'Satış ürünü', adet: 10, birim: 'adet', giris: 'satin', tarih: '2026-11-13', tutar: null, kasa: null },
+      { id: 902, ad: 'Yelpaze 2', kategori: 'Satış ürünü', adet: 0, birim: 'adet', giris: 'satin', tarih: '2026-11-13', tutar: null, kasa: null }];
+    v.rpc.urun_stok_ekle = (gv) => { v.rpcler.push(['urun_stok_ekle', gv]); return [200, 15]; };
     v.tablolar.etkinlik_urunleri = [{ etkinlik_id: 10, urun_id: 2 }];
     v.tablolar.urun_siparisleri = [
       { id: 41, etkinlik_id: 10, ad: 'Nakit Kişi', eposta: 'n@posta.test', tel: '05320000000', kalemler: [{ urun_id: 1, ad: 'Yelpaze 1', adet: 2, birim: 1500, tutar: 3000 }],
@@ -160,6 +177,10 @@ async function bilgileriDoldur(b, yolAdi) {
     await y.page.waitForTimeout(300);
     const kapa = y.istekler.find((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/urunler');
     dogru(kapa && kapa.govde.aktif === false && /id=eq\.1/.test(kapa.ara), 'ürün satışa kapatıldı');
+    // Stok: envanterdeki kalemden; bekleyen siparişler; stok ekle
+    const sat1u = ub.locator('.fc-urun-satir').filter({ hasText: 'Yelpaze 1' });
+    const sat2 = ub.locator('.fc-urun-satir').filter({ hasText: 'Yelpaze 2' });
+    dogru((await sat1u.innerText()).includes('Stok: 10 · 2 bekleyen siparişte') && (await sat2.innerText()).includes('Tükendi'), 'stok ve bekleyen siparişler görünür');
     // Siparişler: bekleyen nakit → Ödendi; kartla ödenmiş listede
     const sp = y.page.locator('section.fc-urun-siparis');
     dogru((await sp.innerText()).includes('U-41') && (await sp.innerText()).includes('Breakfast Club') && (await sp.innerText()).includes('U-40'), 'siparişler etkinliğe göre listelenir');
@@ -168,7 +189,20 @@ async function bilgileriDoldur(b, yolAdi) {
     const karar = v.rpcler.find((x) => x[0] === 'urun_karar');
     dogru(karar && karar[1].p_id === 41 && karar[1].p_onay === true, 'nakit sipariş "Ödendi" işaretlendi');
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
-    await y.ctx.close();
+    // Stok ekle (sayfa tazelenir: en sonda)
+    const y_ = y;
+    const y1s = await sayfaAc(tarayici, v, oturum('yon-1', 'yonetici@posta.test'));
+    await y1s.page.goto(`${SITE}/yonetim/`);
+    await y1s.page.getByText('Üyelik ödemeleri').waitFor({ timeout: 15000 });
+    await sekme(y1s.page, 'Ürünler');
+    const sat1 = y1s.page.locator('section.fc-urunler .fc-urun-satir').filter({ hasText: 'Yelpaze 1' });
+    await sat1.getByLabel('Yelpaze 1 için eklenecek stok').fill('5');
+    await sat1.getByRole('button', { name: 'Stok ekle' }).click();
+    await y1s.page.waitForTimeout(400);
+    const stk = v.rpcler.find((x) => x[0] === 'urun_stok_ekle');
+    dogru(stk && stk[1].p_urun === 1 && stk[1].p_adet === 5, 'stok eklendi (urun_stok_ekle)');
+    await y1s.ctx.close();
+    await y_.ctx.close();
 
     // Etkinlik düzenleme: ürün seçimi kaydedilir
     const v2 = yonetimVerisi();
