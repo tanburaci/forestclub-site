@@ -22,7 +22,7 @@ create function pg_temp.sip(ad text, ep text, yol text) returns bigint language 
   select (urun_siparisi_ac((select e from t), ad, ep, '05320000000', jsonb_build_array(jsonb_build_object('urun', (select u from t), 'adet', 1)), yol,
           case when yol = 'havale' then 'yeni/eks-' || md5(ep) end) ->> 'id')::bigint
 $$;
-create temp table s as select pg_temp.sip('Ödendi Kişi', 'odendi@test.invalid', 'nakit') as odendi, pg_temp.sip('Bekleyen Kişi', 'bekleyen@test.invalid', 'pos') as bekleyen,
+create temp table s as select pg_temp.sip('Ödendi Kişi', 'odendi@test.invalid', 'nakit') as odendi, pg_temp.sip('Bekleyen Kişi', 'bekleyen@test.invalid', 'nakit') as bekleyen,
   pg_temp.sip('Havale Kişi', 'havale@test.invalid', 'havale') as havale;
 update urun_siparisleri set yuklendi = true where id = (select havale from s);
 grant select on s to authenticated;

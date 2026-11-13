@@ -76,7 +76,7 @@ class Component extends DCLogic {
   }
   // Etkinliğe özel ürünler (/e/<id>): liste site.js'ten (FCS.urunler; sunucu yalnız etkinlik saatinin çevresinde verir),
   // sipariş form-gonder "urun_siparis" ile; tutar sunucuda. Kart: Shopier ayrı pencerede, ödeme gelince kod görünür;
-  // havale: dekont; nakit / POS: kod hemen görünür, standda ödenir
+  // havale: dekont; nakit: kod hemen görünür, standda ödenir (standda kart / POS yok)
   urunGorunum(tek, kartAcik) {
     const liste = (tek && window.FCS && window.FCS.urunler) || [];
     const st = this.state;
@@ -96,11 +96,9 @@ class Component extends DCLogic {
       { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında' : 'Şu an kapalı', kapali: !kartAcik },
       { id: 'havale', ad: 'Havale / EFT', alt: 'IBAN\'a gönder, dekontunu yükle' },
       { id: 'nakit', ad: 'Standda nakit', alt: 'Sipariş kodunu standda göster, nakit öde' },
-      { id: 'pos', ad: 'Standda kartla (POS)', alt: 'Sipariş kodunu standda göster, POS cihazıyla öde' },
     ];
     const TAMAM = {
       nakit: ['Siparişin alındı! 🌿', 'Bu kodu standdaki ekibimize göster, nakit öde; ürününü hemen al.'],
-      pos: ['Siparişin alındı! 🌿', 'Bu kodu standdaki ekibimize göster, POS cihazıyla kartla öde; ürününü hemen al.'],
       kart: ['Ödemen alındı! 🌿', 'Teşekkürler! Bu kodu standdaki ekibimize göster, ürününü al. Onay e-postana da gönderildi.'],
       havale: ['Teşekkürler! 🌿', 'Dekontun bize ulaştı. Onaylanınca e-postana bilgi gelir; ürününü standdaki ekibimize bu kodu göstererek al.'],
     };

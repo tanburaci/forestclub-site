@@ -8,7 +8,7 @@
 // Etkinlik bileti: "bilet_adres" ödeme yolunu da alır (v.yol: havale | nakit | kart). Havale + dekontla: isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
 // imzalı yükleme adresi verir, dekont yüklenince "bilet_kaydet" isteği yöneticinin onayına düşürür.
 // Etkinliğe özel ürün: "urun_siparis" (v.yol: kart | havale | nakit | pos; yalnız etkinlik saatinin çevresinde, kural sunucuda).
-// Kart Shopier penceresi açar; havale imzalı dekont adresi verir, dekont yüklenince "urun_kaydet"; nakit / POS standda ödenir.
+// Kart Shopier penceresi açar; havale imzalı dekont adresi verir, dekont yüklenince "urun_kaydet"; nakit standda ödenir (standda kart / POS yok).
 // "ozel_form": gizli bağlantılı özel form; girişsiz, ad + e-postayla (anahtar sunucuda denetlenir).
 // "dugun": /dugun/ sayfasındaki düğün tasarım talebi (seçimler kimlikle gelir, sunucuda adlarına çevrilir); özel davet
 // bağlantısından gelirse "davet" anahtarı talebi davete bağlar.
@@ -100,7 +100,7 @@ async function destekBaslat(tutarHam: unknown): Promise<{ sayfa: string; id: str
 // Etkinliğe özel ürün siparişi: tutar ve satış saati sunucuda (urun_siparisi_ac). Dönüş: {id, kod, tutar, yol} +
 // kartta Shopier sayfası, havalede imzalı dekont yükleme adresi (dosya, jeton)
 async function urunSiparis(v: Record<string, unknown>): Promise<unknown> {
-  const yol = ['kart', 'havale', 'nakit', 'pos'].includes(String(v.yol)) ? String(v.yol) : '';
+  const yol = ['kart', 'havale', 'nakit'].includes(String(v.yol)) ? String(v.yol) : '';
   if (!yol) throw new KullaniciHatasi('Ödeme yöntemini seç.');
   if (yol === 'kart' && !(shopierHazir() && await kartAcikMi())) throw new KullaniciHatasi('Kartla ödeme şu an kapalı; başka bir yöntem seç.');
   const kalemler = (Array.isArray(v.kalemler) ? v.kalemler : []).slice(0, 10)
