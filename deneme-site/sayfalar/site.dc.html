@@ -481,6 +481,7 @@ html.gok-gece .fs-parti{opacity:1}
   .fe-cubuk{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:#FFFFFF;border-top:2.5px solid #111111;padding:10px 14px calc(10px + env(safe-area-inset-bottom));align-items:center;justify-content:space-between;gap:10px;box-shadow:0 -4px 14px rgba(0,0,0,.12)}
   .fe-cubuk b{display:block;font-size:22px;line-height:1.1}.fe-cubuk .fe-uye{font-size:12px}
   .fe-cubuk .fs-btn{padding:12px 16px}
+  .fe-cubuk.fe-cubuk-gizli{display:none}
   .fe-anaya{margin-bottom:110px}
 }
 /* Görsel düzeltmeler (13.11.2026; 390/768/1280 incelemesi) */
@@ -1576,9 +1577,17 @@ Buluşmalar ✓</p>
                 </sc-for>
               </div>
               <div class="fe-urun-form">
+                <sc-if value="{{ uUyeOzet }}" hint-placeholder-val="{{ false }}">
+                  <div class="fe-urun-uye" style="background: #F0F0EE; border-radius: 12px; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 15px">
+                    <span><strong>Üye bilgilerinle:</strong> {{ uUyeYazi }}</span>
+                    <button type="button" onClick="{{ uUyeDegistir }}" style="background: none; border: 0; padding: 6px 0; font: 600 14px Figtree, sans-serif; text-decoration: underline; cursor: pointer; color: #111111">Değiştir</button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ uAlanlar }}" hint-placeholder-val="{{ true }}">
                 <label class="fe-urun-alan">Ad Soyad *<input type="text" autocomplete="name" value="{{ uAd }}" onChange="{{ uAdYaz }}"></label>
                 <label class="fe-urun-alan">E-posta *<input type="email" autocomplete="email" value="{{ uEposta }}" onChange="{{ uEpostaYaz }}"></label>
                 <label class="fe-urun-alan">Telefon *<input type="tel" autocomplete="tel" value="{{ uTel }}" onChange="{{ uTelYaz }}"></label>
+                </sc-if>
                 <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
                   <legend style="font-weight: 700; font-size: 15px; margin-bottom: 6px">Ödeme yöntemi</legend>
                   <sc-for list="{{ uYollari }}" as="y" hint-placeholder-count="4">
@@ -1588,7 +1597,9 @@ Buluşmalar ✓</p>
                     </button>
                   </sc-for>
                 </fieldset>
-                <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ uKvkk }}" onChange="{{ uKvkkDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="/gizlilik/" target="_blank" rel="noopener">KVKK aydınlatma metnini</a> okudum, onaylıyorum. *</span></label>
+<sc-if value="{{ uAlanlar }}" hint-placeholder-val="{{ true }}">
+                                <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ uKvkk }}" onChange="{{ uKvkkDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="/gizlilik/" target="_blank" rel="noopener">KVKK aydınlatma metnini</a> okudum, onaylıyorum. *</span></label>
+                </sc-if>
                 <sc-if value="{{ uHata }}" hint-placeholder-val="{{ false }}">
                   <p role="alert" style="margin: 0; background: #F3DCD5; color: #82301F; border-radius: 10px; padding: 10px 12px; font-size: 14px">{{ uHata }}</p>
                 </sc-if>
@@ -1709,7 +1720,7 @@ Buluşmalar ✓</p>
         </sc-if>
         <a class="fe-anaya" href="/">← Ana sayfaya dön</a>
         <sc-if value="{{ tekSatisVar }}" hint-placeholder-val="{{ true }}">
-          <div class="fe-cubuk">
+          <div class="{{ cubukSinif }}">
             <div><b>{{ tek.fiyatYazi }}</b><sc-if value="{{ tekUyeVar }}" hint-placeholder-val="{{ true }}"><span class="fe-uye">{{ tekUyeYazi }}</span></sc-if></div>
             <sc-if value="{{ tekUyeDegil }}" hint-placeholder-val="{{ true }}"><button type="button" class="fs-btn" onClick="{{ tekRandevu }}" disabled="{{ tek.dolu }}" style="{{ tek.dugmeStil }}">{{ tek.dugme }}</button></sc-if>
             <sc-if value="{{ tekUyeGirisli }}" hint-placeholder-val="{{ false }}"><a class="fs-btn" href="{{ tekUyePanel }}">Yerimi ayır</a></sc-if>
@@ -1798,7 +1809,10 @@ class Component extends DCLogic {
         const asagi = window.scrollY > 620;
         const b = document.getElementById('bulusmalar');
         const uyelikTv = !!b && b.getBoundingClientRect().top < innerHeight * 0.6;
-        if (asagi !== this.state.asagi || uyelikTv !== !!this.state.uyelikTv) this.setState({ asagi, uyelikTv });
+        // Etkinlik ürünleri ekrandayken telefondaki alt bilet çubuğu gizlenir (formu kapatmasın)
+        const ur = document.getElementById('urunler');
+        const urunEkranda = !!ur && ur.getBoundingClientRect().top < innerHeight - 90 && ur.getBoundingClientRect().bottom > 0;
+        if (asagi !== this.state.asagi || uyelikTv !== !!this.state.uyelikTv || urunEkranda !== !!this.state.urunEkranda) this.setState({ asagi, uyelikTv, urunEkranda });
       });
     };
   }
@@ -1808,6 +1822,8 @@ class Component extends DCLogic {
     this.kaydir();
     // Üye panelinde "Beni hatırla" ile giriş yapılmışsa düğme "Panelim" olur
     if (window.FCS && window.FCS.oturum) this.setState({ uyeGirisli: true });  // deneme sitesi: Supabase oturumu
+    const uyeK = window.FCS && window.FCS.uye;  // ürün siparişi: üyenin bilgileri hazır, KVKK üyelikte onaylı
+    if (uyeK && uyeK.ad && uyeK.eposta) this.setState({ uAd: uyeK.ad, uEposta: uyeK.eposta, uTel: uyeK.tel || '', uKvkk: true, uUye: true });
     this.etkinligeGit();
     window.addEventListener('hashchange', () => this.etkinligeGit());
     // Shopier ödeme sayfasından dönüş: biletler bildirim gelince kesinleşir ve e-postayla gider
@@ -1884,6 +1900,8 @@ class Component extends DCLogic {
       })),
       uSecimde: adim === 'secim', uDekontta: adim === 'dekont', uKartBekle: adim === 'kart', uTamam: adim === 'tamam',
       uAd: st.uAd || '', uEposta: st.uEposta || '', uTel: st.uTel || '', uKvkk: !!st.uKvkk, uHata: st.uHata || '',
+      uUyeOzet: !!st.uUye, uAlanlar: !st.uUye, uUyeYazi: [st.uAd, st.uEposta, st.uTel].filter(Boolean).join(' · '),
+      uUyeDegistir: () => this.setState({ uUye: false }),
       uAdYaz: (e) => this.setState({ uAd: e.target.value, uHata: '' }),
       uEpostaYaz: (e) => this.setState({ uEposta: e.target.value, uHata: '' }),
       uTelYaz: (e) => this.setState({ uTel: e.target.value, uHata: '' }),
@@ -2168,6 +2186,7 @@ class Component extends DCLogic {
       tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
       tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekLinkVar: !!(tek && tek.linkVar),
       tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekIptal: !!(tek && tek.iptal), tekErtelendi: !!(tek && tek.ertelendi), tekAfisSinif: tek && tek.iptal ? 'fe-afis fe-iptal-afis' : 'fe-afis',
+      cubukSinif: this.state.urunEkranda ? 'fe-cubuk fe-cubuk-gizli' : 'fe-cubuk',
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın

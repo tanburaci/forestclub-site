@@ -48,7 +48,11 @@
     const tek = (/^\/e\/(\d{1,12})\/?$/.exec(location.pathname) || [])[1] || null;
     // Etkinliğe özel ürünler: sunucu yalnız etkinlik saatinin çevresinde (1 saat önce – 5 saat sonra) listeyi verir
     const urunler = tek ? await sb.rpc('etkinlik_urun_listesi', { p_etkinlik: Number(tek) }).then((r) => r.data || [], () => []) : [];
-    return { bugun: B, etkinlikler, anahtar, ayar, tek: tek ? Number(tek) : null, urunler, oturum: !!(oturum.data && oturum.data.session) };
+    // Giriş yapmış üye: ürün siparişinde ad / e-posta / telefon kendi kaydından gelir (tekrar yazmaz)
+    const kullanici = oturum.data && oturum.data.session && oturum.data.session.user;
+    const uye = tek && urunler.length && kullanici
+      ? await sb.from('uyeler').select('ad, eposta, tel').eq('user_id', kullanici.id).maybeSingle().then((r) => r.data || null, () => null) : null;
+    return { bugun: B, etkinlikler, anahtar, ayar, tek: tek ? Number(tek) : null, urunler, uye, oturum: !!(oturum.data && oturum.data.session) };
   }
 
   const sayac = (adim) => { sb.rpc('sayac_artir', { p_adim: adim }).then(() => {}, () => {}); };  // kişisel veri yok, yalnız günlük toplam
