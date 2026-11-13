@@ -98,7 +98,7 @@ class Component extends DCLogic {
       kodForm: { kod: '', tur: 'yuzde', deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: '',
       // Etkinliğe özel ürünler; önizlemede örnek ürünler
       urunler: window.FC ? window.FC.urunler || [] : [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, aktif: true }],
-      urunForm: { ad: '', fiyat: '', foto: '' }, urunDuz: null, urunMesaj: '', etkUrun: [], urunStok: {},
+      urunForm: { ad: '', fiyat: '', foto: '' }, urunDuz: null, urunMesaj: '', etkUrun: [], urunStok: {}, urunMaliyet: {}, urunKasa: {},
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
       etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: window.FC ? window.FC.etkDurum : {},
@@ -575,16 +575,24 @@ class Component extends DCLogic {
         const bekleyen = siparisler.filter((x) => x.durum === 'bekliyor')
           .reduce((t, x) => t + (x.kalemler || []).filter((k) => k.urun_id === u.id).reduce((a, k) => a + Number(k.adet), 0), 0);
         const girilen = (st.urunStok || {})[u.id] || '';
+        const maliyet = (st.urunMaliyet || {})[u.id] || '';
+        const kasaSec = (st.urunKasa || {})[u.id] || 'banka';
         return {
         stokYazi: `Stok: ${stok}${bekleyen ? ` · ${bekleyen} bekleyen siparişte` : ''}`, stokBitti: stok - bekleyen <= 0,
         stokGirilen: girilen, stokEtiket: `${u.ad} için eklenecek stok`,
         stokYaz: (e) => { const v = e.target.value; this.setState((s) => ({ urunStok: { ...(s.urunStok || {}), [u.id]: v }, urunMesaj: '' })); },
+        maliyetGirilen: maliyet, maliyetEtiket: `${u.ad} stok maliyeti (TL)`, kasaEtiket: `${u.ad} maliyeti hangi kasadan`,
+        kasaNakit: kasaSec === 'nakit', kasaBanka: kasaSec === 'banka',
+        maliyetYaz: (e) => { const v = e.target.value; this.setState((s) => ({ urunMaliyet: { ...(s.urunMaliyet || {}), [u.id]: v }, urunMesaj: '' })); },
+        kasaYaz: (e) => { const v = e.target.value; this.setState((s) => ({ urunKasa: { ...(s.urunKasa || {}), [u.id]: v } })); },
         stokEkle: () => {
           const n = Number(String(girilen).trim());
           if (!(n > 0) || !Number.isInteger(n)) return this.setState({ urunMesaj: `${u.ad}: eklenecek adedi tam sayı olarak yazın.` });
+          const tutar = String(maliyet).trim() ? window.FCSayi(maliyet) : null;
+          if (String(maliyet).trim() && !(tutar >= 0)) return this.setState({ urunMesaj: `${u.ad}: maliyeti sayı olarak yazın (boş bırakılabilir).` });
           if (!window.FCUrun) return this.setState({ urunMesaj: `${u.ad}: ${n} adet eklendi ✓` });
           this.setState({ urunMesaj: 'Stok ekleniyor…' });
-          window.FCUrun.stokEkle(u.id, n).then(() => this.setState((s) => ({ urunStok: { ...(s.urunStok || {}), [u.id]: '' } })),
+          window.FCUrun.stokEkle(u.id, n, tutar || null, kasaSec).then(() => this.setState((s) => ({ urunStok: { ...(s.urunStok || {}), [u.id]: '' } })),
             (h) => this.setState({ urunMesaj: h.message }));
         },
         ad: u.ad, fiyatYazi: tl(u.fiyat), foto: u.foto || '', fotoVar: !!u.foto,

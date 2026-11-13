@@ -706,10 +706,10 @@
         if (e2) throw new Error(e2.message);
       },
       // Stok girişi: envanterdeki kalemine eklenir; sayfa tazelenir (Envanter sekmesi de yeni adedi görsün)
-      stokEkle: async (id, adet) => {
-        const { data, error } = await sb.rpc('urun_stok_ekle', { p_urun: id, p_adet: adet });
+      stokEkle: async (id, adet, tutar = null, kasa = null) => {
+        const { data, error } = await sb.rpc('urun_stok_ekle', { p_urun: id, p_adet: adet, p_tutar: tutar, p_kasa: tutar ? kasa : null });
         if (error) throw new Error(error.message);
-        bildir(`Stok eklendi ✓ Yeni stok: ${Number(data)}`);
+        bildir(`Stok eklendi ✓ Yeni stok: ${Number(data)}${tutar ? ' · maliyet muhasebeye gider olarak yazıldı' : ''}`);
         setTimeout(() => { location.hash = 'urunler'; location.reload(); }, 900);
         return Number(data);
       },

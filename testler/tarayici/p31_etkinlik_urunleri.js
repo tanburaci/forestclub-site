@@ -17,14 +17,15 @@ const etk = { id: 7, tarih: gun(0), saat: '18.00', tur: 'bulusma', ad: 'Sunset C
 const URUNLER = [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null }];
 const anaHtml = fs.readFileSync(path.join(DENEME, 'index.html'), 'utf8');
 
-async function siteAc(tarayici, { urunler = URUNLER, kart = false, boy = { width: 1280, height: 860 } } = {}) {
+async function siteAc(tarayici, { urunler = URUNLER, kart = false, boy = { width: 1280, height: 860 }, uye = null } = {}) {
   const istenen = [];
   let sor = 0;
-  const v = { tablolar: { etkinlikler: [etk], ayarlar: [{ anahtar: 'yakinda', deger: false }, { anahtar: 'kart_odeme', deger: kart }] },
+  const v = { tablolar: { etkinlikler: [etk], ayarlar: [{ anahtar: 'yakinda', deger: false }, { anahtar: 'kart_odeme', deger: kart }],
+    uyeler: uye ? [{ user_id: 'uye-1', ad: 'Deniz Yılmaz', eposta: 'deniz@posta.test', tel: '05321112233' }] : [] },
     rpc: { etkinlik_doluluk: () => [200, []], sayac_artir: () => [200, null],
       etkinlik_urun_listesi: (g) => { istenen.push(g); return [200, urunler]; },
       urun_siparis_durum: (g) => [200, (++sor >= 2 && g.p_id === 43 && g.p_eposta === 'misafir@posta.test') ? 'onaylandi' : 'bekliyor'] } };
-  const s = await sayfaAc(tarayici, v);
+  const s = await sayfaAc(tarayici, v, uye ? oturum('uye-1', 'deniz@posta.test') : undefined);
   await s.page.unroute('https://fonts.googleapis.com/**').catch(() => {});
   await s.page.setViewportSize(boy);
   const formlar = [];
@@ -145,6 +146,23 @@ async function bilgileriDoldur(b, yolAdi) {
       'az kalan: "Son 2 adet", en çok kalan kadar seçilir');
     await s5.ctx.close();
 
+    // ---------- Giriş yapmış üye: bilgileri hazır, tekrar yazmaz; telefonda alt çubuk formu kapatmaz ----------
+    const s6 = await siteAc(tarayici, { uye: true, boy: { width: 390, height: 844 } });
+    await s6.page.goto(`${SITE}/e/7`);
+    const b6 = s6.page.locator('section.fe-urunler');
+    await b6.getByRole('heading', { name: 'Etkinliğe özel ürünler' }).waitFor({ timeout: 10000 });
+    await s6.page.waitForTimeout(500);
+    dogru((await b6.innerText()).includes('Üye bilgilerinle: Deniz Yılmaz · deniz@posta.test · 05321112233') && !(await b6.getByLabel('Ad Soyad *').count())
+      && !(await b6.getByRole('checkbox', { name: /KVKK/ }).count()), 'üye: ad / e-posta / telefon hazır, form ve KVKK sorulmaz');
+    dogru(!(await s6.page.locator('.fe-cubuk').isVisible()), 'telefon: ürünler ekrandayken alt çubuk gizli');
+    await b6.getByRole('button', { name: 'Yelpaze 1 adedini arttır' }).click();
+    await b6.getByRole('radio', { name: /Standda nakit/ }).click();
+    await b6.getByRole('button', { name: /Siparişi ver/ }).click();
+    await b6.getByText('U-41').waitFor({ timeout: 8000 });
+    const f6 = s6.formlar.find((x) => x.tur === 'urun_siparis');
+    dogru(f6 && f6.veri.ad === 'Deniz Yılmaz' && f6.veri.eposta === 'deniz@posta.test' && f6.veri.tel === '05321112233' && f6.veri.kvkk === true, 'üye siparişi kendi bilgileriyle gitti');
+    await s6.ctx.close();
+
     // ---------- Yönetim: Ürünler sekmesi, etkinlikte ürün seçimi, siparişler ----------
     const v = yonetimVerisi();
     v.tablolar.uyeler = v.tablolar.uyeler.slice(0, 5);
@@ -197,10 +215,12 @@ async function bilgileriDoldur(b, yolAdi) {
     await sekme(y1s.page, 'Ürünler');
     const sat1 = y1s.page.locator('section.fc-urunler .fc-urun-satir').filter({ hasText: 'Yelpaze 1' });
     await sat1.getByLabel('Yelpaze 1 için eklenecek stok').fill('5');
+    await sat1.getByLabel('Yelpaze 1 stok maliyeti (TL)').fill('2000');
+    await sat1.getByLabel('Yelpaze 1 maliyeti hangi kasadan').selectOption('nakit');
     await sat1.getByRole('button', { name: 'Stok ekle' }).click();
     await y1s.page.waitForTimeout(400);
     const stk = v.rpcler.find((x) => x[0] === 'urun_stok_ekle');
-    dogru(stk && stk[1].p_urun === 1 && stk[1].p_adet === 5, 'stok eklendi (urun_stok_ekle)');
+    dogru(stk && stk[1].p_urun === 1 && stk[1].p_adet === 5 && stk[1].p_tutar === 2000 && stk[1].p_kasa === 'nakit', `stok + maliyet eklendi (${JSON.stringify(stk && stk[1])})`);
     await y1s.ctx.close();
     await y_.ctx.close();
 

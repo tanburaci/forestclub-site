@@ -24,7 +24,10 @@ class Component extends DCLogic {
         const asagi = window.scrollY > 620;
         const b = document.getElementById('bulusmalar');
         const uyelikTv = !!b && b.getBoundingClientRect().top < innerHeight * 0.6;
-        if (asagi !== this.state.asagi || uyelikTv !== !!this.state.uyelikTv) this.setState({ asagi, uyelikTv });
+        // Etkinlik ürünleri ekrandayken telefondaki alt bilet çubuğu gizlenir (formu kapatmasın)
+        const ur = document.getElementById('urunler');
+        const urunEkranda = !!ur && ur.getBoundingClientRect().top < innerHeight - 90 && ur.getBoundingClientRect().bottom > 0;
+        if (asagi !== this.state.asagi || uyelikTv !== !!this.state.uyelikTv || urunEkranda !== !!this.state.urunEkranda) this.setState({ asagi, uyelikTv, urunEkranda });
       });
     };
   }
@@ -34,6 +37,8 @@ class Component extends DCLogic {
     this.kaydir();
     // Üye panelinde "Beni hatırla" ile giriş yapılmışsa düğme "Panelim" olur
     if (window.FCS && window.FCS.oturum) this.setState({ uyeGirisli: true });  // deneme sitesi: Supabase oturumu
+    const uyeK = window.FCS && window.FCS.uye;  // ürün siparişi: üyenin bilgileri hazır, KVKK üyelikte onaylı
+    if (uyeK && uyeK.ad && uyeK.eposta) this.setState({ uAd: uyeK.ad, uEposta: uyeK.eposta, uTel: uyeK.tel || '', uKvkk: true, uUye: true });
     this.etkinligeGit();
     window.addEventListener('hashchange', () => this.etkinligeGit());
     // Shopier ödeme sayfasından dönüş: biletler bildirim gelince kesinleşir ve e-postayla gider
@@ -110,6 +115,8 @@ class Component extends DCLogic {
       })),
       uSecimde: adim === 'secim', uDekontta: adim === 'dekont', uKartBekle: adim === 'kart', uTamam: adim === 'tamam',
       uAd: st.uAd || '', uEposta: st.uEposta || '', uTel: st.uTel || '', uKvkk: !!st.uKvkk, uHata: st.uHata || '',
+      uUyeOzet: !!st.uUye, uAlanlar: !st.uUye, uUyeYazi: [st.uAd, st.uEposta, st.uTel].filter(Boolean).join(' · '),
+      uUyeDegistir: () => this.setState({ uUye: false }),
       uAdYaz: (e) => this.setState({ uAd: e.target.value, uHata: '' }),
       uEpostaYaz: (e) => this.setState({ uEposta: e.target.value, uHata: '' }),
       uTelYaz: (e) => this.setState({ uTel: e.target.value, uHata: '' }),
@@ -394,6 +401,8 @@ class Component extends DCLogic {
       tekZaman: tek ? `${tek.gun} ${tek.ay.charAt(0)}${tek.ay.slice(1).toLocaleLowerCase('tr-TR')} ${tek.haftaGunu}` : '',
       tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekLinkVar: !!(tek && tek.linkVar),
       tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekIptal: !!(tek && tek.iptal), tekErtelendi: !!(tek && tek.ertelendi), tekAfisSinif: tek && tek.iptal ? 'fe-afis fe-iptal-afis' : 'fe-afis',
+      cubukSinif: this.state.urunEkranda ? 'fe-cubuk fe-cubuk-gizli' : 'fe-cubuk',
+      destekSinif: this.state.urunEkranda ? 'fs-destek fs-destek-gizli' : 'fs-destek',
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın
