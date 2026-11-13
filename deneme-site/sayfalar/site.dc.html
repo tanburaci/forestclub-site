@@ -76,6 +76,7 @@ a{color:#111111}a:hover{color:#000000}
 .fs-yuzen-uyelik{position:relative}.fs-yuzen-uyelik .fs-yuzen-git{z-index:2}.fs-yuzen-uyelik .fs-yuzen-kapat{z-index:3}.fs-yuzen .fu-tv{font-size:7px}
 .fs-destek{position:fixed;left:20px;bottom:20px;z-index:41;display:inline-flex;align-items:center;gap:8px;background:#2F6B3F;color:#FFFFFF;border:2.5px solid #111111;box-shadow:3px 3px 0 #111111;border-radius:999px;padding:8px 16px 8px 10px;min-height:46px;box-sizing:border-box;font:700 15px Figtree,sans-serif;cursor:pointer;transition:transform .15s}
 .fs-destek:hover{background:#255732;transform:translateY(-2px)}
+.fs-destek.fs-destek-gizli{opacity:0;pointer-events:none}
 .fs-destek svg{flex:none;transform-origin:50% 90%;animation:fs-yaprak 3.2s ease-in-out infinite}
 @keyframes fs-yaprak{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg)}}
 @media (max-width: 640px){.fs-destek{left:12px;bottom:12px;padding:7px 13px 7px 8px;min-height:42px;font-size:14px}}
@@ -1778,7 +1779,7 @@ Buluşmalar ✓</p>
     </footer>
 
     <!-- Destek ol: sol altta (sağ alt mini TV'nin); WhatsApp "Biz Kimiz?" bölümünde -->
-    <button type="button" class="fs-destek" onClick="{{ destekAc }}" aria-haspopup="dialog">
+    <button type="button" class="{{ destekSinif }}" onClick="{{ destekAc }}" aria-haspopup="dialog">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20c0-8 5-14 15-15-1 10-7 15-15 15z" fill="#7FB77E"></path><path d="M5 20c3-4 6-7 10-10"></path></svg>
       <span>Destek ol</span>
     </button>
@@ -2187,6 +2188,7 @@ class Component extends DCLogic {
       tekSaatVar: !!(tek && tek.saat), tekGecti: !!(tek && tek.tarih < BUGUN), tekGelecek: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekLinkVar: !!(tek && tek.linkVar),
       tekAfisVar: !!(tek && tek.afis), tekSatisVar: !!(tek && tek.tarih >= BUGUN && !tek.iptal), tekIptal: !!(tek && tek.iptal), tekErtelendi: !!(tek && tek.ertelendi), tekAfisSinif: tek && tek.iptal ? 'fe-afis fe-iptal-afis' : 'fe-afis',
       cubukSinif: this.state.urunEkranda ? 'fe-cubuk fe-cubuk-gizli' : 'fe-cubuk',
+      destekSinif: this.state.urunEkranda ? 'fs-destek fs-destek-gizli' : 'fs-destek',
       tekUyeGirisli: !!this.state.uyeGirisli, tekUyeDegil: !this.state.uyeGirisli,
       tekUyePanel: tek ? `/uye/?etkinlik=${tek.id}` : '/uye/',
       tekTv: !!tek && !this.state.uyeGirisli && !this.state.tekTvKapali && !this.state.sepetAcik,  // sepet açıkken TV pencerenin arkasında kalmasın

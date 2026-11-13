@@ -1832,7 +1832,7 @@ label:has(> input[type="checkbox"]){min-height:44px;cursor:pointer}
                       <span style="font-size: 14px; font-weight: 700">{{ u.stokYazi }}</span>
                       <sc-if value="{{ u.stokBitti }}" hint-placeholder-val="{{ false }}"><span style="background: #F3DCD5; color: #82301F; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px">Sitede “Tükendi”</span></sc-if>
                       <input class="fc-input" type="text" inputmode="numeric" placeholder="Adet" aria-label="{{ u.stokEtiket }}" value="{{ u.stokGirilen }}" onChange="{{ u.stokYaz }}" style="width: 90px; min-height: 40px">
-                      <input class="fc-input" type="text" inputmode="decimal" placeholder="Maliyet TL (isteğe bağlı)" aria-label="{{ u.maliyetEtiket }}" value="{{ u.maliyetGirilen }}" onChange="{{ u.maliyetYaz }}" style="width: 190px; min-height: 40px">
+                      <input class="fc-input" type="text" inputmode="decimal" placeholder="Maliyet TL (boş olabilir)" aria-label="{{ u.maliyetEtiket }}" value="{{ u.maliyetGirilen }}" onChange="{{ u.maliyetYaz }}" style="width: 215px; min-height: 40px">
                       <select class="fc-input" aria-label="{{ u.kasaEtiket }}" onChange="{{ u.kasaYaz }}" style="min-height: 40px; width: auto">
                         <option value="banka" selected="{{ u.kasaBanka }}">Banka</option>
                         <option value="nakit" selected="{{ u.kasaNakit }}">Nakit</option>
