@@ -430,6 +430,7 @@ html.gok-gece .fs-parti{opacity:1}
 @keyframes fs-bekle{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
 .fs-bekle-nokta{width:12px;height:12px;border-radius:50%;background:#111111;flex:none;animation:fs-bekle 1.2s ease-in-out infinite}
 .fe-alt-dugmeler{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.fe-takvim{font-weight:600;font-size:14px}
+.fe-urun-git{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;margin:4px 0 2px;padding:12px 18px;border-radius:999px;background:#111111;color:#FFFFFF;font-weight:700;font-size:15px;text-decoration:none}.fe-urun-git:hover{opacity:.88}#urunler{scroll-margin-top:16px}html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 .fe-neden,.fe-diger,.fe-tv-yer{max-width:1100px;margin:0 auto;padding:0 20px 34px;position:relative;z-index:1}
 .fe-neden h2,.fe-diger h2,.fe-tv-yer h2{font-size:48px;margin:0 0 14px}
 .fe-kartlar{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
@@ -1526,6 +1527,7 @@ Buluşmalar ✓</p>
               <sc-if value="{{ tekSaatVar }}" hint-placeholder-val="{{ true }}"><span>🕙 {{ tek.saat }}</span></sc-if>
               <span>📍 Pinya, Urla</span>
             </div>
+            <sc-if value="{{ urunVar }}" hint-placeholder-val="{{ false }}"><a href="#urunler" class="fe-urun-git">🛍️ Etkinliğe özel ürünler ↓</a></sc-if>
             <sc-if value="{{ tekSatisVar }}" hint-placeholder-val="{{ true }}">
               <div class="fe-satis">
                 <div>
