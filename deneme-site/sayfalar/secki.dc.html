@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Forest Club Urla · Seçki</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&amp;family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#111111}a:hover{color:#000000}
+.sk{font-family:Figtree,sans-serif;color:#111111;background:#FFFFFF;min-height:100vh;box-sizing:border-box}
+.sk-ust{max-width:760px;margin:0 auto;padding:28px 20px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sk-logo{display:flex;align-items:center;gap:10px;text-decoration:none}.sk-logo img{width:44px}
+.sk-logo span{font-family:'Amatic SC',cursive;font-weight:700;font-size:30px;line-height:1;color:#111111}
+.sk-geri{font-size:14px;color:#3A3A3A;text-decoration:none;padding:10px 0;white-space:nowrap}.sk-geri:hover{text-decoration:underline}
+.sk-ana{max-width:760px;margin:0 auto;padding:40px 20px 64px;box-sizing:border-box}
+.sk-baslik{font-family:'Amatic SC',cursive;font-weight:700;font-size:64px;line-height:1;margin:0 0 14px}
+.sk-giris{margin:0;font-size:17px;line-height:1.65;color:#3A3A3A;max-width:520px}
+.sk-liste{display:flex;flex-direction:column;gap:56px;margin:48px 0 0}
+.sk-urun{display:flex;flex-direction:column;gap:14px}
+.sk-foto{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:4px;background:#F3F2EE;display:block}
+.sk-foto-yok{width:100%;aspect-ratio:4/3;border-radius:4px;background:#F3F2EE;display:flex;align-items:center;justify-content:center}
+.sk-foto-yok img{width:72px;opacity:.18}
+.sk-satir{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.sk-ad{font-size:22px;font-weight:600;margin:0;letter-spacing:.01em}
+.sk-fiyat{font-size:16px;color:#3A3A3A;font-variant-numeric:tabular-nums}
+.sk-aciklama{margin:0;font-size:16px;line-height:1.6;color:#3A3A3A;max-width:560px}
+.sk-not{font-size:14px;color:#5E5E5E}
+.sk-adet{display:inline-flex;align-items:center;gap:4px;border:1px solid #111111;border-radius:999px;align-self:flex-start}
+.sk-adet button{width:44px;height:44px;border:0;background:none;font:500 20px Figtree,sans-serif;cursor:pointer;color:#111111;border-radius:999px}
+.sk-adet button:disabled{opacity:.3;cursor:default}
+.sk-adet span{min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+.sk-ayrac{border:0;border-top:1px solid #E4E3DF;margin:56px 0 40px}
+.sk-form{display:flex;flex-direction:column;gap:14px;max-width:520px}
+.sk-form h2{font-size:20px;font-weight:600;margin:0}
+.sk-alan{display:flex;flex-direction:column;gap:6px;font-weight:500;font-size:14px}
+.sk-alan input:not([type="file"]){font:400 16px Figtree,sans-serif;padding:12px 14px;border:1px solid #111111;border-radius:6px;min-height:46px;box-sizing:border-box;background:#FFFFFF;color:#111111}
+.sk-alan input[type="file"]{font:400 15px Figtree,sans-serif}
+.sk-yol{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;font:inherit;color:#111111;border:1px solid #111111;border-radius:6px;padding:12px 14px;cursor:pointer;background:#FFFFFF}
+.sk-yol[aria-checked="true"]{background:#111111;color:#FFFFFF}
+.sk-yol[aria-checked="true"] .sk-yol-alt{color:#D6D5D0}
+.sk-yol[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.sk-yol-alt{font-size:13px;color:#5E5E5E}
+.sk-teslim{margin:0;font-size:15px;line-height:1.6;background:#F3F2EE;border-radius:6px;padding:12px 14px}
+.sk-btn{font:600 16px Figtree,sans-serif;border-radius:999px;padding:14px 26px;min-height:50px;cursor:pointer;border:1px solid #111111;background:#111111;color:#FFFFFF;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;align-self:flex-start}
+.sk-btn:hover{background:#000000;color:#FFFFFF}
+.sk-btn-acik{background:#FFFFFF;color:#111111}.sk-btn-acik:hover{background:#F3F2EE;color:#111111}
+.sk-hata{margin:0;background:#F3DCD5;color:#82301F;border-radius:6px;padding:10px 12px;font-size:14px}
+.sk-kod{align-self:flex-start;font:600 40px/1 Figtree,sans-serif;letter-spacing:.08em;border:1px solid #111111;border-radius:6px;padding:14px 22px}
+.sk-bekle{display:inline-block;width:10px;height:10px;border-radius:50%;background:#111111;animation:sk-nabiz 1.2s ease-in-out infinite}
+@keyframes sk-nabiz{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.sk-bekle{animation:none}}
+.sk-alt{max-width:760px;margin:0 auto;padding:16px 20px 32px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:13px;text-align:center}
+.sk-alt nav{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px}
+.sk-alt nav a{color:#3A3A3A;display:inline-flex;align-items:center;min-height:44px;padding:0 2px}
+@media (max-width:600px){.sk-ana{padding:28px 16px 48px}.sk-ust{padding:20px 16px 0}.sk-baslik{font-size:52px}.sk-logo span{font-size:26px;white-space:nowrap}.sk-logo img{width:36px}.sk-liste{gap:44px;margin-top:36px}.sk-kod{font-size:32px}}
+</style>
+</helmet>
+
+<!-- SEÇKİ (/secki): etkinlikten bağımsız satılan ürünler. Gizli test sürümü (menülerde bağlantı yok). Sade, sakin düzen:
+     ürünler alt alta, büyük görsel, fiyat "1.500 ₺"; az stok "Bu seriden 2 adet kaldı"; teslim bir sonraki buluşmada elden -->
+<div class="sk">
+  <header class="sk-ust">
+    <a class="sk-logo" href="/" aria-label="Ana sayfa"><img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt=""><span>Forest Club Urla</span></a>
+    <a class="sk-geri" href="/">← Ana sayfa</a>
+  </header>
+  <main class="sk-ana">
+    <h1 class="sk-baslik">Seçki</h1>
+    <p class="sk-giris">Buluşmalarımızda elimizde, sofrada, çantamızda olan birkaç nesne. Az sayıda, özenle seçildi.</p>
+
+    <sc-if value="{{ bos }}" hint-placeholder-val="{{ false }}">
+      <p class="sk-not" style="margin-top: 40px">Seçki şu an hazırlanıyor.</p>
+    </sc-if>
+
+    <sc-if value="{{ secimde }}" hint-placeholder-val="{{ true }}">
+      <div class="sk-liste">
+        <sc-for list="{{ urunler }}" as="u" hint-placeholder-count="2">
+          <article class="sk-urun">
+            <sc-if value="{{ u.fotoVar }}" hint-placeholder-val="{{ false }}"><img class="sk-foto" src="{{ u.foto }}" alt="{{ u.ad }}" loading="lazy"></sc-if>
+            <sc-if value="{{ u.fotoYok }}" hint-placeholder-val="{{ true }}"><div class="sk-foto-yok" aria-hidden="true"><img src="/_blob/1446f01d4f1e77e517c2b5c1ed9e8882" alt=""></div></sc-if>
+            <div class="sk-satir">
+              <h2 class="sk-ad">{{ u.ad }}</h2>
+              <span class="sk-fiyat">{{ u.fiyatYazi }}</span>
+            </div>
+            <sc-if value="{{ u.aciklamaVar }}" hint-placeholder-val="{{ true }}"><p class="sk-aciklama">{{ u.aciklama }}</p></sc-if>
+            <sc-if value="{{ u.stokYazi }}" hint-placeholder-val="{{ false }}"><span class="sk-not">{{ u.stokYazi }}</span></sc-if>
+            <sc-if value="{{ u.satilir }}" hint-placeholder-val="{{ true }}">
+              <div class="sk-adet">
+                <button type="button" onClick="{{ u.azalt }}" aria-label="{{ u.azaltEtiket }}" disabled="{{ u.azaltKapali }}">−</button>
+                <span aria-live="polite">{{ u.adet }}</span>
+                <button type="button" onClick="{{ u.arttir }}" aria-label="{{ u.arttirEtiket }}" disabled="{{ u.arttirKapali }}">+</button>
+              </div>
+            </sc-if>
+          </article>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ formVar }}" hint-placeholder-val="{{ true }}">
+        <hr class="sk-ayrac">
+        <section class="sk-form" aria-labelledby="sk-form-baslik">
+          <h2 id="sk-form-baslik">Siparişin</h2>
+          <p class="sk-teslim">Teslim: bir sonraki buluşmada, Pinya'da elden. Sipariş kodunu ekibimize göstermen yeterli.</p>
+          <sc-if value="{{ uyeOzet }}" hint-placeholder-val="{{ false }}">
+            <div style="background: #F3F2EE; border-radius: 6px; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 15px">
+              <span><strong>Üye bilgilerinle:</strong> {{ uyeYazi }}</span>
+              <button type="button" onClick="{{ uyeDegistir }}" style="background: none; border: 0; padding: 6px 0; font: 600 14px Figtree, sans-serif; text-decoration: underline; cursor: pointer; color: #111111">Değiştir</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ alanlar }}" hint-placeholder-val="{{ true }}">
+            <label class="sk-alan">Ad Soyad *<input type="text" autocomplete="name" value="{{ ad }}" onChange="{{ adYaz }}"></label>
+            <label class="sk-alan">E-posta *<input type="email" autocomplete="email" value="{{ eposta }}" onChange="{{ epostaYaz }}"></label>
+            <label class="sk-alan">Telefon *<input type="tel" autocomplete="tel" value="{{ tel }}" onChange="{{ telYaz }}"></label>
+          </sc-if>
+          <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+            <legend style="font-weight: 600; font-size: 15px; margin-bottom: 6px">Ödeme</legend>
+            <sc-for list="{{ yollar }}" as="y" hint-placeholder-count="2">
+              <button type="button" class="sk-yol" role="radio" aria-checked="{{ y.secili }}" aria-disabled="{{ y.kapaliYazi }}" onClick="{{ y.sec }}">
+                <span aria-hidden="true" style="font-size: 16px; line-height: 1.3">{{ y.isaret }}</span>
+                <span style="display: flex; flex-direction: column; gap: 2px"><strong>{{ y.ad }}</strong><span class="sk-yol-alt">{{ y.alt }}</span></span>
+              </button>
+            </sc-for>
+          </fieldset>
+          <sc-if value="{{ alanlar }}" hint-placeholder-val="{{ true }}">
+            <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px"><input type="checkbox" checked="{{ kvkk }}" onChange="{{ kvkkDegis }}" style="width: 20px; height: 20px; margin: 0; accent-color: #111111"> <span><a href="/gizlilik/" target="_blank" rel="noopener">KVKK aydınlatma metnini</a> okudum, onaylıyorum. *</span></label>
+          </sc-if>
+          <sc-if value="{{ hata }}" hint-placeholder-val="{{ false }}"><p role="alert" class="sk-hata">{{ hata }}</p></sc-if>
+          <button type="button" class="sk-btn" onClick="{{ gonder }}">{{ dugme }}</button>
+        </section>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ dekontta }}" hint-placeholder-val="{{ false }}">
+      <section class="sk-form" style="margin-top: 40px">
+        <p style="margin: 0; font-size: 16px">Sipariş <strong>{{ kod }}</strong> · <strong>{{ tutarYazi }}</strong></p>
+        <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #3A3A3A">Tutarı aşağıdaki hesaba havale / EFT ile gönder ve dekontunu yükle.</p>
+        <div style="background: #F3F2EE; border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; font-size: 15px">
+          <span><strong>Alıcı:</strong> {{ odemeAlici }}</span>
+          <span style="font-variant-numeric: tabular-nums"><strong>IBAN:</strong> {{ odemeIban }}</span>
+          <span style="color: #5E5E5E; font-size: 13px">Açıklamaya sipariş kodunu ({{ kod }}) yaz.</span>
+        </div>
+        <label class="sk-alan">Dekont (PDF ya da fotoğraf, en fazla 10 MB)<input type="file" accept=".pdf,image/*" onChange="{{ dekontSec }}"></label>
+        <sc-if value="{{ hata }}" hint-placeholder-val="{{ false }}"><p role="alert" class="sk-hata">{{ hata }}</p></sc-if>
+        <button type="button" class="sk-btn" onClick="{{ dekontGonder }}">Dekontu gönder</button>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ kartBekle }}" hint-placeholder-val="{{ false }}">
+      <section class="sk-form" role="status" aria-live="polite" style="margin-top: 40px">
+        <p style="margin: 0; font-size: 15px; line-height: 1.6"><strong>{{ tutarYazi }}</strong> ödemeni açılan Shopier penceresinde tamamla. Bu sayfayı kapatma; ödeme gelince burası kendiliğinden değişir.</p>
+        <p style="margin: 0; display: flex; align-items: center; gap: 10px; background: #F3F2EE; border-radius: 6px; padding: 10px 12px; font-size: 14px; font-weight: 600"><span class="sk-bekle" aria-hidden="true"></span>Ödemen bekleniyor…</p>
+        <sc-if value="{{ hata }}" hint-placeholder-val="{{ false }}"><p role="alert" class="sk-hata">{{ hata }}</p></sc-if>
+        <a class="sk-btn" href="{{ sayfa }}" target="shopier-odeme" rel="noopener">{{ pencereYazi }}</a>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ tamam }}" hint-placeholder-val="{{ false }}">
+      <section class="sk-form" role="status" style="margin-top: 40px">
+        <span class="sk-baslik" style="font-size: 48px; margin: 0">{{ tamamBaslik }}</span>
+        <p style="margin: 0; font-size: 16px; line-height: 1.6">{{ tamamYazi }}</p>
+        <div class="sk-kod" aria-label="Sipariş kodu">{{ kod }}</div>
+        <p style="margin: 0; font-size: 15px">Toplam <strong>{{ tutarYazi }}</strong></p>
+        <button type="button" class="sk-btn sk-btn-acik" onClick="{{ yeni }}">Seçki'ye dön</button>
+      </section>
+    </sc-if>
+  </main>
+  <!-- Sözleşmeler ve kart logoları: her sayfanın altında -->
+  <footer class="sk-alt">
+    <nav aria-label="Sözleşmeler">
+      <a href="/hakkimizda/">Hakkımızda</a>
+      <a href="/teslimat-iade/">Teslimat ve iade</a>
+      <a href="/gizlilik/">Gizlilik ve KVKK</a>
+      <a href="/mesafeli-satis/">Mesafeli satış sözleşmesi</a>
+    </nav>
+    <img src="/_blob/odeme/logo-kart.png" alt="Mastercard, Visa, American Express, Troy" width="300" height="32" style="height: 24px; width: auto; max-width: 100%">
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { adim: 'secim', sec: {}, yol: '', ad: '', eposta: '', tel: '', kvkk: false, uye: false, hata: '', siparis: null, dosya: null };
+  }
+  componentDidMount() {
+    const u = window.FCSecki && window.FCSecki.uye;
+    if (u && u.ad && u.eposta) this.setState({ ad: u.ad, eposta: u.eposta, tel: u.tel || '', kvkk: true, uye: true });
+  }
+  componentWillUnmount() { clearInterval(this.takipNo); }
+  // Shopier penceresindeki ödemeyi bekler: 4 sn'de bir sorulur, en çok 30 dk
+  takip(id, eposta) {
+    clearInterval(this.takipNo);
+    const bas = Date.now();
+    this.takipNo = setInterval(() => {
+      if (Date.now() - bas > 30 * 60 * 1000 || !window.FCSUrunDurum) { clearInterval(this.takipNo); return; }
+      window.FCSUrunDurum(id, eposta).then((d) => {
+        if (d === 'onaylandi') { clearInterval(this.takipNo); this.setState({ adim: 'tamam', hata: '' }); }
+        if (d === 'reddedildi') { clearInterval(this.takipNo); this.setState({ hata: 'Ödemen siparişle eşleşmedi; ücretin iade edilecek. Ayrıntı e-postanda.' }); }
+      }, () => {});
+    }, 4000);
+  }
+  renderVals() {
+    const V = window.FCSecki || { urunler: [{ id: 1, ad: 'Yelpaze', aciklama: 'Örnek açıklama.', fiyat: 1500, foto: null, kalan: 6 }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, kalan: 2 }], kartAcik: true };
+    const liste = V.urunler || [];
+    const kartAcik = !!V.kartAcik;
+    const st = this.state;
+    const sec = st.sec || {};
+    // Fiyat: binlik noktalı, kuruşsuz, "₺" (sade; ",99" ya da "1500.00 TL" yok)
+    const TL = (n) => `${Math.round(Number(n)).toLocaleString('tr-TR')} ₺`;
+    const toplam = liste.reduce((t, u) => t + (sec[u.id] || 0) * Number(u.fiyat), 0);
+    const yol = st.yol || (kartAcik ? 'kart' : '');
+    const sip = st.siparis || {};
+    // Stok: "kalan" (null = sınırsız); en çok 20 ve kalan kadar
+    const sinir = (id) => { const u = liste.find((x) => x.id === id); const k = u && u.kalan != null ? Math.floor(Number(u.kalan)) : 20; return Math.min(20, k); };
+    const degis = (id, d) => this.setState((s) => {
+      const eski = (s.sec || {})[id] || 0;
+      return { sec: { ...(s.sec || {}), [id]: Math.max(0, Math.min(sinir(id), eski + d)) }, hata: '' };
+    });
+    const YOLLAR = [
+      { id: 'kart', ad: 'Kredi / banka kartı', alt: kartAcik ? 'Shopier\'in güvenli ödeme sayfasında' : 'Şu an kapalı', kapali: !kartAcik },
+      { id: 'havale', ad: 'Havale / EFT', alt: 'IBAN\'a gönder, dekontunu yükle' },
+    ];
+    const TAMAM = {
+      kart: ['Teşekkürler', 'Ödemen alındı. Ürününü bir sonraki buluşmada, Pinya\'da bu kodla teslim alırsın. Onay e-postana da gönderildi.'],
+      havale: ['Teşekkürler', 'Dekontun bize ulaştı. Onaylanınca e-postana bilgi gelir; ürününü bir sonraki buluşmada, Pinya\'da bu kodla teslim alırsın.'],
+    };
+    const [tamamBaslik, tamamYazi] = TAMAM[sip.yol] || TAMAM.havale;
+    const satilabilir = liste.some((u) => sinir(u.id) > 0);
+    const odeme = (window.FC_AYAR && window.FC_AYAR.odeme) || { alici: '', iban: '' };
+    return {
+      bos: !liste.length && st.adim === 'secim',
+      secimde: st.adim === 'secim' && liste.length > 0, dekontta: st.adim === 'dekont', kartBekle: st.adim === 'kart', tamam: st.adim === 'tamam',
+      formVar: satilabilir,
+      urunler: liste.map((u) => {
+        const n = sinir(u.id);
+        const kalan = u.kalan != null ? Math.floor(Number(u.kalan)) : null;
+        return {
+          ad: u.ad, foto: u.foto || '', fotoVar: !!u.foto, fotoYok: !u.foto, aciklama: u.aciklama || '', aciklamaVar: !!u.aciklama,
+          fiyatYazi: TL(u.fiyat), adet: String(sec[u.id] || 0), satilir: n > 0,
+          stokYazi: n <= 0 ? 'Bu seri tamamlandı.' : (kalan != null && kalan <= 5 ? `Bu seriden ${kalan} adet kaldı.` : ''),
+          azaltKapali: !(sec[u.id] > 0), arttirKapali: (sec[u.id] || 0) >= n,
+          azalt: () => degis(u.id, -1), arttir: () => degis(u.id, 1), azaltEtiket: `${u.ad} adedini azalt`, arttirEtiket: `${u.ad} adedini arttır`,
+        };
+      }),
+      ad: st.ad, eposta: st.eposta, tel: st.tel, kvkk: !!st.kvkk, hata: st.hata,
+      uyeOzet: !!st.uye, alanlar: !st.uye, uyeYazi: [st.ad, st.eposta, st.tel].filter(Boolean).join(' · '),
+      uyeDegistir: () => this.setState({ uye: false }),
+      adYaz: (e) => this.setState({ ad: e.target.value, hata: '' }),
+      epostaYaz: (e) => this.setState({ eposta: e.target.value, hata: '' }),
+      telYaz: (e) => this.setState({ tel: e.target.value, hata: '' }),
+      kvkkDegis: () => this.setState((s) => ({ kvkk: !s.kvkk, hata: '' })),
+      yollar: YOLLAR.map((y) => ({
+        ...y, secili: yol === y.id ? 'true' : 'false', kapaliYazi: y.kapali ? 'true' : 'false', isaret: yol === y.id ? '●' : '○',
+        sec: () => { if (!y.kapali) this.setState({ yol: y.id, hata: '' }); },
+      })),
+      dugme: toplam ? `Siparişi ver · ${TL(toplam)}` : 'Ürün seç',
+      gonder: () => {
+        if (/…$/.test(st.hata || '')) return;  // gönderim sürüyor: çift tıklama ikinci sipariş açmasın
+        const kalemler = liste.filter((u) => sec[u.id] > 0).map((u) => ({ urun: u.id, adet: sec[u.id] }));
+        const ad = (st.ad || '').trim();
+        const eposta = (st.eposta || '').trim();
+        const tel = (st.tel || '').trim();
+        if (!kalemler.length) return this.setState({ hata: 'En az bir ürün seç.' });
+        if (!ad) return this.setState({ hata: 'Adını yaz.' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(eposta)) return this.setState({ hata: 'Geçerli bir e-posta yaz.' });
+        if (tel.replace(/\D/g, '').length < 10) return this.setState({ hata: 'Telefon numaranı yaz.' });
+        if (!yol) return this.setState({ hata: 'Ödeme yöntemini seç.' });
+        if (!st.kvkk) return this.setState({ hata: 'Devam etmek için KVKK metnini onayla.' });
+        if (!window.FCSUrunSiparis) return this.setState({ hata: 'Önizleme: gerçek sitede sipariş burada verilir.' });
+        // Kart: pencere tıklama anında açılır (sonra açılırsa tarayıcı engeller), adres sunucudan gelince yüklenir
+        let pencere = null;
+        if (yol === 'kart') {
+          try { pencere = window.open('', 'shopier-odeme', 'popup=yes,width=520,height=780'); } catch (e) { pencere = null; }
+        }
+        this.setState({ hata: 'Gönderiliyor…' });
+        window.FCSUrunSiparis({ secki: true, kalemler, ad, eposta, tel, yol, kvkk: true }).then((s) => {
+          if (s.yol === 'kart' && /^https:\/\//.test(s.sayfa || '')) {
+            if (pencere && !pencere.closed) pencere.location.href = s.sayfa;
+            this.setState({ adim: 'kart', siparis: s, sayfa: s.sayfa, pencereYok: !pencere || pencere.closed, hata: '', sec: {} });
+            this.takip(s.id, eposta);
+            return;
+          }
+          if (pencere && !pencere.closed) pencere.close();
+          this.setState({ adim: 'dekont', siparis: s, hata: '', sec: {} });
+        }).catch((h) => { if (pencere && !pencere.closed) pencere.close(); this.setState({ hata: h.message }); });
+      },
+      kod: sip.kod || '', tutarYazi: sip.tutar ? TL(sip.tutar) : '', tamamBaslik, tamamYazi,
+      sayfa: st.sayfa || '#', pencereYazi: st.pencereYok ? "Shopier'de öde" : 'Ödeme penceresini yeniden aç',
+      odemeAlici: odeme.alici, odemeIban: odeme.iban,
+      dekontSec: (e) => this.setState({ dosya: (e.target.files && e.target.files[0]) || null, hata: '' }),
+      dekontGonder: () => {
+        if (/…$/.test(st.hata || '')) return;
+        const kutu = document.querySelector('.sk-form input[type="file"]');
+        const dosya = st.dosya || (kutu && kutu.files && kutu.files[0]) || null;
+        if (!dosya) return this.setState({ hata: 'Dekontu seç.' });
+        this.setState({ hata: 'Yükleniyor…' });
+        window.FCSUrunDekont(sip, st.eposta, dosya).then(() => this.setState({ adim: 'tamam', dosya: null, hata: '' }), (h) => this.setState({ hata: h.message }));
+      },
+      // Bitince liste yeniden (kalan stok güncel olsun)
+      yeni: () => { clearInterval(this.takipNo); location.reload(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

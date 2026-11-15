@@ -7,7 +7,8 @@
 // "destek": kartla destek; Shopier ödeme sayfası ayrı pencerede açılır, ödeme shopier-bildirim'e gelir (ayarlar.kart_odeme açıkken).
 // Etkinlik bileti: "bilet_adres" ödeme yolunu da alır (v.yol: havale | nakit | kart). Havale + dekontla: isteği açar (tutar sunucuda; giriş yapmış aktif üyeye üye fiyatı) ve
 // imzalı yükleme adresi verir, dekont yüklenince "bilet_kaydet" isteği yöneticinin onayına düşürür.
-// Etkinliğe özel ürün: "urun_siparis" (v.yol: kart | havale | nakit | pos; yalnız etkinlik saatinin çevresinde, kural sunucuda).
+// Etkinliğe özel ürün: "urun_siparis" (v.yol: kart | havale | nakit; yalnız etkinlik saatinin çevresinde, kural sunucuda).
+// v.secki = true: Seçki (/secki) siparişi; etkinliksiz, her zaman açık, yalnız kart ya da havale, teslim buluşmada elden.
 // Kart Shopier penceresi açar; havale imzalı dekont adresi verir, dekont yüklenince "urun_kaydet"; nakit standda ödenir (standda kart / POS yok).
 // "ozel_form": gizli bağlantılı özel form; girişsiz, ad + e-postayla (anahtar sunucuda denetlenir).
 // "dugun": /dugun/ sayfasındaki düğün tasarım talebi (seçimler kimlikle gelir, sunucuda adlarına çevrilir); özel davet
@@ -100,7 +101,8 @@ async function destekBaslat(tutarHam: unknown): Promise<{ sayfa: string; id: str
 // Etkinliğe özel ürün siparişi: tutar ve satış saati sunucuda (urun_siparisi_ac). Dönüş: {id, kod, tutar, yol} +
 // kartta Shopier sayfası, havalede imzalı dekont yükleme adresi (dosya, jeton)
 async function urunSiparis(v: Record<string, unknown>): Promise<unknown> {
-  const yol = ['kart', 'havale', 'nakit'].includes(String(v.yol)) ? String(v.yol) : '';
+  const secki = v.secki === true;
+  const yol = (secki ? ['kart', 'havale'] : ['kart', 'havale', 'nakit']).includes(String(v.yol)) ? String(v.yol) : '';
   if (!yol) throw new KullaniciHatasi('Ödeme yöntemini seç.');
   if (yol === 'kart' && !(shopierHazir() && await kartAcikMi())) throw new KullaniciHatasi('Kartla ödeme şu an kapalı; başka bir yöntem seç.');
   const kalemler = (Array.isArray(v.kalemler) ? v.kalemler : []).slice(0, 10)
@@ -108,14 +110,15 @@ async function urunSiparis(v: Record<string, unknown>): Promise<unknown> {
   const rastgele = crypto.getRandomValues(new Uint8Array(8));
   const dosya = yol === 'havale' ? `yeni/${Date.now()}-${Array.from(rastgele, (b) => b.toString(16).padStart(2, '0')).join('')}` : null;
   const s = await rpc('urun_siparisi_ac', {
-    p_etkinlik: Math.trunc(Number(v.etkinlik)) || 0, p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60),
+    p_etkinlik: secki ? null : Math.trunc(Number(v.etkinlik)) || 0, p_ad: metin(v.ad, 200), p_eposta: metin(v.eposta, 200), p_tel: metin(v.tel, 60),
     p_kalemler: kalemler, p_yol: yol, p_dosya: dosya,
   }) as { id: number; kod: string; tutar: number; etkinlik: string; foto: string | null; kalemler: { ad: string; adet: number }[] };
   const sonuc = { id: s.id, kod: s.kod, tutar: s.tutar, yol };
   if (yol === 'kart') {
     const site = (Deno.env.get('SITE_ADRESI') || 'https://www.forestcluburla.com').replace(/\/$/, '');
-    const { urun, sayfa } = await odemeUrunuAc({ baslik: `Forest Club Urla · ${s.etkinlik} · ürünler`, tutar: Number(s.tutar), ref: `FC-URUN-${s.id}`,
-      aciklama: s.kalemler.map((k) => `• ${k.adet} × ${k.ad}`).join('\n'), donus: `${site}/e/${Math.trunc(Number(v.etkinlik))}`, gorsel: s.foto });
+    const { urun, sayfa } = await odemeUrunuAc({ baslik: secki ? 'Forest Club Urla · Seçki' : `Forest Club Urla · ${s.etkinlik} · ürünler`,
+      tutar: Number(s.tutar), ref: `FC-URUN-${s.id}`, aciklama: s.kalemler.map((k) => `• ${k.adet} × ${k.ad}`).join('\n'),
+      donus: secki ? `${site}/secki/` : `${site}/e/${Math.trunc(Number(v.etkinlik))}`, gorsel: s.foto });
     await rpc('urun_shopier_urun', { p_id: s.id, p_urun: urun });
     return { ...sonuc, sayfa };
   }
