@@ -40,8 +40,14 @@
 /form/*
   X-Robots-Tag: noindex, nofollow
 
+# Sayfa betikleri (/sayfalar/*.dc.js, /js/*.js) her açılışta güncel mi diye sorulur (değişmediyse 304, indirilmez).
+# Önceden 4 saat saklanıyordu: yayından sonra yeni HTML eski betikle çalışıyor, yeni düğmeler tepki vermiyordu (15.11.2026).
 /sayfalar/*
   X-Robots-Tag: noindex, nofollow
+  Cache-Control: public, max-age=0, must-revalidate
+
+/js/*
+  Cache-Control: public, max-age=0, must-revalidate
 
 # Resimler ve videolar (/_blob/): tarayıcı 7 gün saklar (çoğu dosyanın adı içeriğin özeti; birkaç sabit adlı dosya
 # değişirse en geç bir haftada yenilenir)
