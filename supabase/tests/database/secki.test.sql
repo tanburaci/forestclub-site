@@ -52,7 +52,7 @@ select throws_ok(format($$ select urun_siparisi_ac(%s, 'X Kişi', 'x@test.invali
 
 -- ---------- Kart: Seçki siparişi, ödeme gelince kesinleşir ----------
 create temp table t_k as select urun_siparisi_ac(null, 'Kart Kişi', 'kart-secki@test.invalid', '0532 000 00 02', pg_temp.kalem((select y from t_u), 2), 'kart', null) as r;
-select is((select (r ->> 'tutar')::numeric || '/' || (r ->> 'secki') || '/' || (r ->> 'etkinlik') from t_k), '3000/true/Seçki', 'kart: tutar sunucuda, Seçki siparişi');
+select is((select (r ->> 'tutar')::numeric::int || '/' || (r ->> 'secki') || '/' || (r ->> 'etkinlik') from t_k), '3000/true/Seçki', 'kart: tutar sunucuda, Seçki siparişi');
 select is((select etkinlik_id from urun_siparisleri where id = (select (r ->> 'id')::bigint from t_k)), null, 'siparişin etkinliği yok');
 select is((select (x ->> 'kalan')::numeric from jsonb_array_elements(secki_listesi()) x where x ->> 'ad' = 'Seçki Yelpaze'), 1::numeric, 'bekleyen sipariş kalan stoktan düşülür');
 select is(urun_kart_odendi((select (r ->> 'id')::bigint from t_k), 'SHP-SECKI-1', 3000) ->> 'durum', 'onaylandi', 'ödeme gelince sipariş kesinleşir');
