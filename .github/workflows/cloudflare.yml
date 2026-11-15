@@ -47,4 +47,8 @@ jobs:
           # İlk yayında proje yoksa açılır (canlı dal main)
           $W pages project list | grep -q "\b$PROJE\b" || $W pages project create "$PROJE" --production-branch main
           sha=$(git rev-parse HEAD)
+          # Betik adreslerindeki sürüm (?v=…) her yayında commit numarası olur: Cloudflare tarayıcıya betikleri 4 saat
+          # sakla diyor (alan adı ayarı _headers'ı eziyor); adres değişince yeni HTML hep yeni betikle çalışır (15.11.2026)
+          find deneme-site -name '*.html' -exec sed -i -E "s/\?v=[0-9a-f]{7,40}/?v=${sha::12}/g" {} +
+          grep -q "?v=${sha::12}" deneme-site/yonetim/index.html || { echo "sürüm numarası yazılamadı"; exit 1; }
           $W pages deploy deneme-site --project-name "$PROJE" --branch main --commit-hash "$sha" --commit-message "main@${sha::7}" --commit-dirty=true
