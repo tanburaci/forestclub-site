@@ -16,7 +16,7 @@ insert into urunler (ad, fiyat, secki, aciklama) values ('Seçki Yelpaze', 1500,
   ('Seçki Kapalı', 700, true, null);
 update urunler set aktif = false where ad = 'Seçki Kapalı';
 update envanter set adet = 3 where id = (select envanter_id from urunler where ad = 'Seçki Yelpaze');
-update envanter set adet = 10 where id = (select envanter_id from urunler where ad in ('Seçki Değil', 'Seçki Kapalı'));
+update envanter set adet = 10 where id in (select envanter_id from urunler where ad in ('Seçki Değil', 'Seçki Kapalı'));
 create temp table t_u as select (select id from urunler where ad = 'Seçki Yelpaze') as y, (select id from urunler where ad = 'Seçki Değil') as degil,
   (select id from urunler where ad = 'Seçki Kapalı') as kapali;
 -- Pencere dışındaki bir etkinlik (6 saat sonra): Seçki ürünü etkinliğe bağlı olsa da etkinlik siparişi kapalı kalır
