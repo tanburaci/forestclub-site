@@ -2,7 +2,7 @@
 // değiştirip `node araclar/dc_derle.mjs` çalıştırın.
 window.DC.sinif('/sayfalar/yonetim.dc.html', function (DCLogic) {
 // Ürün formunun boş hali (Ürünler sekmesi)
-const BOS_URUN = { ad: '', fiyat: '', foto: '', aciklama: '', secki: false };
+const BOS_URUN = { ad: '', fiyat: '', foto: '', aciklama: '', secki: false, secen: '' };
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -90,7 +90,7 @@ class Component extends DCLogic {
     this.KISILER = this.DEMO.kisiler.map((k) => k.ad);
     // Aidat tutarı ayarlardan (ayarlar.aidat); elden ödeme formu ve muhasebe özeti bunu kullanır
     this.AIDAT_YAZI = (Number(window.FC && window.FC.ayarlar && window.FC.ayarlar.aidat) || 3000).toLocaleString('tr-TR');
-    this.EBOS = { giris: 'satin', ad: '', kategori: 'Yoga / hareket', adet: '1', birim: 'adet', tarih: this.BUGUN, konum: '', tutar: '', kasa: 'banka', muhasebe: true, firma: '', karsilik: '', kaynak: '', not: '' };
+    this.EBOS = { giris: 'satin', ad: '', kategori: 'Yoga / hareket', adet: '1', birim: 'adet', tarih: this.BUGUN, konum: '', tutar: '', kasa: 'banka', muhasebe: true, firma: '', karsilik: '', kaynak: '', not: '', foto: '' };
     this.state = {
       adim: window.FC_SIFRE_YENILE ? 'yeniSifre' : 'giris', eposta: window.FC ? window.FC.eposta : '', sifre: '', hatirla: true, yeni1: '', yeni2: '', girisHata: '', geciciGitti: false,
       girildi: !!window.FC, sekme: ['#basvurular', '#uyeler', '#dugun', '#urunler'].includes(location.hash) ? location.hash.slice(1) : 'ana', bvrMesaj: '', filtre: 'tumu', formAcik: false, form: { ...BOS }, formHata: '', eklendiMesaj: '',
@@ -439,10 +439,25 @@ class Component extends DCLogic {
       if (f.giris === 'satin' && f.muhasebe && !(tutar > 0)) return this.setState({ eHata: 'Muhasebeye yazmak için ödenen tutarı girin.' });
       if (f.giris === 'firma' && !f.firma.trim()) return this.setState({ eHata: 'Firma adını yazın.' });
       if (f.giris === 'diger' && !f.kaynak.trim()) return this.setState({ eHata: 'Nereden ya da kimden geldiğini yazın.' });
+      // Düzenleme: kalem yerinde güncellenir (muhasebeye yeni gider yazılmaz); kayıt olağan senkronla, adet fark olarak
+      const duz = this.state.eDuz;
+      if (duz != null) {
+        const yeni = {
+          ad: f.ad.trim(), kategori: f.kategori, adet, birim: f.birim, giris: f.giris, tarih: f.tarih || this.BUGUN,
+          konum: f.konum.trim(), not: f.not.trim(), foto: f.foto && /^https:\/\//.test(f.foto) ? f.foto : '',
+          tutar: f.giris === 'satin' ? tutar : 0, kasa: f.kasa,
+          firma: f.giris === 'firma' ? f.firma.trim() : '', karsilik: f.giris === 'firma' ? f.karsilik.trim() : '',
+          kaynak: f.giris === 'diger' ? f.kaynak.trim() : '',
+        };
+        return this.setState((s) => ({
+          envanter: s.envanter.map((x) => (x.id === duz ? { ...x, ...yeni } : x)),
+          eFormAcik: false, eDuz: null, eForm: { ...this.EBOS }, eHata: '', eMesaj: `“${yeni.ad}” güncellendi.`,
+        }));
+      }
       const id = Date.now();
       const kalem = {
         id, ad: f.ad.trim(), kategori: f.kategori, adet, birim: f.birim, giris: f.giris, tarih: f.tarih || this.BUGUN,
-        konum: f.konum.trim(), not: f.not.trim(),
+        konum: f.konum.trim(), not: f.not.trim(), foto: f.foto && /^https:\/\//.test(f.foto) ? f.foto : '',
         tutar: f.giris === 'satin' ? tutar : 0, kasa: f.kasa,
         firma: f.giris === 'firma' ? f.firma.trim() : '', karsilik: f.giris === 'firma' ? f.karsilik.trim() : '',
         kaynak: f.giris === 'diger' ? f.kaynak.trim() : '',
@@ -545,7 +560,7 @@ class Component extends DCLogic {
     });
     const secili = st.etkUrun || [];
     return {
-      urunForm: f, urunMesaj: st.urunMesaj, urunAlan: { ad: alan('ad'), fiyat: alan('fiyat'), aciklama: alan('aciklama') },
+      urunForm: f, urunMesaj: st.urunMesaj, urunAlan: { ad: alan('ad'), fiyat: alan('fiyat'), aciklama: alan('aciklama'), secen: alan('secen') },
       urunFotoVar: !!f.foto, urunDuzenlemede: !!st.urunDuz,
       urunFormBaslik: st.urunDuz ? 'Ürünü düzenle' : 'Yeni ürün', urunDugme: st.urunDuz ? 'Ürünü kaydet' : 'Ürünü ekle',
       urunFotoSec: (ev) => {
@@ -566,7 +581,7 @@ class Component extends DCLogic {
         const fiyat = window.FCSayi(f.fiyat) ?? NaN;
         if (!ad) return this.setState({ urunMesaj: 'Ürün adını yazın.' });
         if (!(fiyat > 0)) return this.setState({ urunMesaj: 'Fiyatı yazın.' });
-        const satir = { ad, fiyat, foto: f.foto && /^https:\/\//.test(f.foto) ? f.foto : null, aciklama: (f.aciklama || '').trim().slice(0, 400) || null, secki: !!f.secki };
+        const satir = { ad, fiyat, foto: f.foto && /^https:\/\//.test(f.foto) ? f.foto : null, aciklama: (f.aciklama || '').trim().slice(0, 400) || null, secki: !!f.secki, secen: (f.secen || '').trim().slice(0, 80) || null };
         const bitir = (u) => { yaz(u); this.setState({ urunDuz: null, urunForm: { ...BOS_URUN }, urunMesaj: `${ad} ${st.urunDuz ? 'kaydedildi' : 'eklendi'} ✓` }); };
         if (!window.FCUrun) return bitir({ id: st.urunDuz || Date.now(), aktif: true, ...satir });
         this.setState({ urunMesaj: 'Kaydediliyor…' });
@@ -603,7 +618,7 @@ class Component extends DCLogic {
         ad: u.ad, fiyatYazi: tl(u.fiyat), foto: u.foto || '', fotoVar: !!u.foto,
         durum: u.aktif ? 'Satışta' : 'Kapalı', dugme: u.aktif ? 'Satışa kapat' : 'Satışa aç',
         secki: !!u.secki,
-        duzenle: () => this.setState({ urunDuz: u.id, urunForm: { ad: u.ad, fiyat: String(Number(u.fiyat)), foto: u.foto || '', aciklama: u.aciklama || '', secki: !!u.secki }, urunMesaj: '' }),
+        duzenle: () => this.setState({ urunDuz: u.id, urunForm: { ad: u.ad, fiyat: String(Number(u.fiyat)), foto: u.foto || '', aciklama: u.aciklama || '', secki: !!u.secki, secen: u.secen || '' }, urunMesaj: '' }),
         degis: () => {
           const yeni = { ...u, aktif: !u.aktif };
           yaz(yeni);
@@ -1382,6 +1397,16 @@ class Component extends DCLogic {
     const miktarDegis = (id, fark) => this.setState((s) => ({
       envanter: s.envanter.map((x) => (x.id === id ? { ...x, adet: Math.max(0, x.adet + fark) } : x)),
     }));
+    // Envanter fotoğrafı: afişlerle aynı depoya yüklenir (herkese açık adres); kalem satırı olağan senkronla güncellenir
+    const fotoAl = (ev, bitti) => {
+      const dosya = ev.target.files && ev.target.files[0];
+      if (!dosya) return;
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(dosya.type)) return this.setState({ eMesaj: 'Fotoğraf JPG, PNG ya da WEBP olmalı.', eHata: '' });
+      if (dosya.size > 5 * 1024 * 1024) return this.setState({ eMesaj: 'Fotoğraf 5 MB\'tan büyük.' });
+      if (!window.FCAfisYukle) return bitti(URL.createObjectURL(dosya));
+      this.setState({ eMesaj: 'Fotoğraf yükleniyor…' });
+      window.FCAfisYukle(dosya).then(bitti, (h) => this.setState({ eMesaj: `Yüklenemedi: ${h.message}` }));
+    };
     const eDusumKalem = this.state.eDusum ? envanter.find((x) => x.id === this.state.eDusum.id) : null;
     const eSatirlar = envanter.filter((x) => eFiltre === 'tumu' || x.giris === eFiltre)
       .sort((a, b) => b.tarih.localeCompare(a.tarih) || b.id - a.id)
@@ -1394,7 +1419,17 @@ class Component extends DCLogic {
         miktar: `${x.adet} ${x.birim}`, bitti: x.adet === 0,
         azalt: () => miktarDegis(x.id, -1), arttir: () => miktarDegis(x.id, 1),
         dus: () => this.setState({ eDusum: { id: x.id, adet: '1', neden: 'hasarli', not: '' }, eMesaj: '' }), dusEtiket: `${x.ad}: hasarlı / kullanılamaz düş`,
+        duzenleEtiket: `${x.ad}: düzenle`,
+        duzenle: () => {
+          this.setState({ eFormAcik: true, eDuz: x.id, eMesaj: '', eHata: '', eForm: { ...this.EBOS, giris: x.giris, ad: x.ad, kategori: x.kategori,
+            adet: String(x.adet), birim: x.birim, tarih: x.tarih, konum: x.konum || '', tutar: x.tutar ? String(x.tutar) : '', kasa: x.kasa || 'banka',
+            muhasebe: false, firma: x.firma || '', karsilik: x.karsilik || '', kaynak: x.kaynak || '', not: x.not || '', foto: x.foto || '' } });
+          requestAnimationFrame(() => { const f = document.querySelector('form h3'); if (f) f.scrollIntoView({ block: 'center', behavior: 'smooth' }); });
+        },
         azaltEtiket: `${x.ad} miktarını azalt`, arttirEtiket: `${x.ad} miktarını arttır`,
+        foto: x.foto || '', fotoVar: !!x.foto, fotoYok: !x.foto, fotoEtiket: `${x.ad}: fotoğraf ${x.foto ? 'değiştir' : 'ekle'}`,
+        fotoSec: (ev) => fotoAl(ev, (url) => this.setState((s) => ({ envanter: s.envanter.map((y) => (y.id === x.id ? { ...y, foto: url } : y)),
+          eMesaj: `“${x.ad}” fotoğrafı kaydedildi ✓` }))),
       }));
     const firmaKalem = envanter.filter((x) => x.giris === 'firma');
     const satinKalem = envanter.filter((x) => x.giris === 'satin');
@@ -1472,9 +1507,14 @@ class Component extends DCLogic {
       })),
       eSatin: eForm.giris === 'satin', eFirma: eForm.giris === 'firma', eDiger: eForm.giris === 'diger',
       eFormAcik: this.state.eFormAcik, eForm, eAlan: this.eAlan, eKaydet: this.eKaydet, eHata: this.state.eHata, eMesaj: this.state.eMesaj,
-      eFormAc: () => this.setState({ eFormAcik: true, eMesaj: '', eHata: '', eForm: { ...this.EBOS } }),
-      eFormKapat: () => this.setState({ eFormAcik: false, eForm: { ...this.EBOS }, eHata: '' }),
+      eFormAc: () => this.setState({ eFormAcik: true, eDuz: null, eMesaj: '', eHata: '', eForm: { ...this.EBOS } }),
+      eFormKapat: () => this.setState({ eFormAcik: false, eDuz: null, eForm: { ...this.EBOS }, eHata: '' }),
+      eYeniKalem: this.state.eDuz == null, eFormBaslik: this.state.eDuz == null ? 'Envanter girişi' : 'Kalemi düzenle',
+      eKaydetYazi: this.state.eDuz == null ? 'Kaydet' : 'Değişiklikleri kaydet',
       eMuhasebeDegis: () => this.setState((s) => ({ eForm: { ...s.eForm, muhasebe: !s.eForm.muhasebe } })),
+      eFotoVar: !!eForm.foto,
+      eFotoSec: (ev) => fotoAl(ev, (url) => this.setState((s) => ({ eForm: { ...s.eForm, foto: url }, eMesaj: '' }))),
+      eFotoKaldir: () => this.setState((s) => ({ eForm: { ...s.eForm, foto: '' } })),
       sonOdemeler,
       kartRozet: `Bu ay ${buAyKart.length} kart ödemesi`,
       anaMesaj: this.state.anaMesaj,
