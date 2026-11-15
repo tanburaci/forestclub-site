@@ -140,7 +140,7 @@
       envanter: envanter.map((e) => ({
         id: e.id, ad: e.ad, kategori: e.kategori, adet: Number(e.adet), birim: e.birim, giris: e.giris, tarih: e.tarih,
         tutar: Number(e.tutar || 0), kasa: e.kasa || 'banka', firma: e.firma || '', karsilik: e.karsilik || '',
-        kaynak: e.kaynak || '', konum: e.konum || '', not: e.notlar || '',
+        kaynak: e.kaynak || '', konum: e.konum || '', not: e.notlar || '', foto: e.foto || '',
       })),
       sablonlar: [...sablonlar].sort((a, b) => SABLON_SIRA.indexOf(a.id) - SABLON_SIRA.indexOf(b.id)).map((s) => ({
         id: s.id, ad: s.ad, ne: s.ne_zaman, acik: s.acik, konu: s.konu, metin: s.metin, alanlar: s.alanlar,
@@ -596,7 +596,7 @@
       ad: e.ad, kategori: e.kategori, adet: e.adet, birim: e.birim, giris: e.giris, tarih: e.tarih,
       tutar: e.giris === 'satin' ? e.tutar || null : null, kasa: e.giris === 'satin' ? e.kasa : null,
       firma: e.firma || null, karsilik: e.karsilik || null, kaynak: e.kaynak || null, konum: e.konum || null,
-      notlar: e.not || null,
+      notlar: e.not || null, foto: e.foto && /^https:\/\//.test(e.foto) ? e.foto : null,
     });
     const yeniId = (liste, eski, yeni) => liste.map((x) => (x.id === eski ? { ...x, id: yeni } : x));
     // Veritabanında olan (ya da yazılmakta olan) satırların numaraları: yeni numara verilen satır ikinci kez yazılmasın

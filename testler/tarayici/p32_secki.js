@@ -12,8 +12,8 @@ const dogru = (k, ad) => { console.log(`${k ? 'GEÇTİ' : 'KALDI'}  ${ad}`); if 
 const SB = 'https://gflabqnazkstsyafzdmn.supabase.co';
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
 const PDF = { name: 'dekont.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 dekont') };
-const URUNLER = [{ id: 1, ad: 'Yelpaze', aciklama: 'Urla\'da elde yapıldı.', fiyat: 1500, foto: null, kalan: 2 },
-  { id: 2, ad: 'Yelpaze 2', aciklama: null, fiyat: 2000, foto: null, kalan: 6 }, { id: 3, ad: 'Bitti', aciklama: null, fiyat: 900, foto: null, kalan: 0 }];
+const URUNLER = [{ id: 1, ad: 'Yelpaze', aciklama: 'Urla\'da elde yapıldı.', fiyat: 1500, foto: null, kalan: 2, etkinlik: 'Sunset Club', etkinlik_tarih: '2026-11-14' },
+  { id: 2, ad: 'Yelpaze 2', aciklama: null, fiyat: 2000, foto: null, kalan: 6, secen: 'Pelin' }, { id: 3, ad: 'Bitti', aciklama: null, fiyat: 900, foto: null, kalan: 0 }];
 
 async function seckiAc(tarayici, { urunler = URUNLER, kart = true, boy = { width: 1280, height: 860 } } = {}) {
   let sor = 0;
@@ -74,6 +74,10 @@ async function bilgileriDoldur(b, yolAdi) {
     const metin = await s.page.locator('main').innerText();
     dogru(metin.includes('1.500 ₺') && metin.includes('2.000 ₺') && !/TL|,\d\d\b/.test(metin.split('Siparişin')[0]), 'fiyat sade: "1.500 ₺" (TL, kuruş yok)');
     dogru(metin.includes('Urla\'da elde yapıldı.'), 'açıklama görünür');
+    const ust = await s.page.locator('.sk-ust-satir').allTextContents();
+    dogru(ust[0] === 'Sunset Club · 14 Kasım 2026' && ust[1] === 'Pelin seçti', `kart üst satırı: buluşma ya da kimin seçkisi (${JSON.stringify(ust)})`);
+    const kutular = await s.page.locator('.sk-urun').evaluateAll((l) => l.map((e) => Math.round(e.getBoundingClientRect().top)));
+    dogru(kutular[0] === kutular[1], 'masaüstü: kartlar yan yana (iki sütun)');
     dogru(metin.includes('Bu seriden 2 adet kaldı.') && metin.includes('Bu seri tamamlandı.') && !/Son \d|Tükendi/.test(metin), 'az stok ve tükenen sakin dille');
     dogru(!(await s.page.getByRole('button', { name: 'Bitti adedini arttır' }).count()), 'tükenen ürün seçilemez');
     dogru(!(await s.page.getByRole('radio', { name: /nakit/i }).count()), 'nakit seçeneği yok');
@@ -126,7 +130,8 @@ async function bilgileriDoldur(b, yolAdi) {
     // ---------- Yönetim: Seçki anahtarı, açıklama, Seçki siparişleri ayrı grupta ----------
     const v = yonetimVerisi();
     v.tablolar.uyeler = v.tablolar.uyeler.slice(0, 5);
-    v.tablolar.urunler = [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true, secki: true, aciklama: 'Eski açıklama', envanter_id: null }];
+    v.tablolar.urunler = [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true, secki: true, aciklama: 'Eski açıklama', secen: null, envanter_id: null }];
+    v.tablolar.envanter = [{ id: 701, ad: 'Yoga matı', kategori: 'Yoga / hareket', adet: 10, birim: 'adet', giris: 'satin', tarih: '2026-11-01', tutar: null, kasa: null, foto: null }];
     v.tablolar.urun_siparisleri = [{ id: 61, etkinlik_id: null, ad: 'Seçki Kişi', eposta: 's@posta.test', tel: '05320000000',
       kalemler: [{ urun_id: 1, ad: 'Yelpaze 1', adet: 1, birim: 1500, tutar: 1500 }], tutar: 1500, odeme_yolu: 'havale', dosya: 'yeni/x', yuklendi: true,
       durum: 'bekliyor', sonuc: null, created_at: new Date().toISOString() }];
@@ -143,13 +148,42 @@ async function bilgileriDoldur(b, yolAdi) {
     const kutu = ub.getByRole('checkbox', { name: /Seçki'de satışta/ });
     dogru(await kutu.isChecked(), 'düzenlemede Seçki işareti dolu gelir');
     await ub.getByLabel(/Kısa açıklama/).fill('Yeni açıklama');
+    await ub.getByLabel(/Kimin seçkisi/).fill('Pelin');
     await kutu.uncheck();
     await ub.getByRole('button', { name: 'Ürünü kaydet' }).click();
     await y.page.waitForTimeout(400);
     const kayit = y.istekler.find((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/urunler');
-    dogru(kayit && kayit.govde.secki === false && kayit.govde.aciklama === 'Yeni açıklama', `ürün Seçki ve açıklamayla kaydedildi (${JSON.stringify(kayit && kayit.govde)})`);
+    dogru(kayit && kayit.govde.secki === false && kayit.govde.aciklama === 'Yeni açıklama' && kayit.govde.secen === 'Pelin', `ürün Seçki ve açıklamayla kaydedildi (${JSON.stringify(kayit && kayit.govde)})`);
     const sip = y.page.locator('section.fc-urun-siparis');
     dogru((await sip.innerText()).includes('Seçki · teslim bir sonraki buluşmada') && (await sip.innerText()).includes('U-61'), 'Seçki siparişleri ayrı grupta');
+    // Envanter: kaleme fotoğraf (afişlerle aynı depo), satır güncellenir
+    await y.page.route(`${SB}/storage/v1/object/afisler/**`, (r) => {
+      if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 200, headers: CORS });
+      r.fulfill({ status: 200, contentType: 'application/json', headers: CORS, body: JSON.stringify({ Key: 'afisler/x.png' }) });
+    });
+    await y.page.locator('button').filter({ hasText: /^Envanter$/ }).first().click();
+    const PNG = { name: 'mat.png', mimeType: 'image/png', buffer: Buffer.from('89504e470d0a1a0a0000000d4948445200000001000000010806000000', 'hex') };
+    await y.page.getByLabel('Yoga matı: fotoğraf ekle').setInputFiles(PNG);
+    await y.page.getByText('“Yoga matı” fotoğrafı kaydedildi', { exact: false }).waitFor({ timeout: 8000 });
+    await y.page.waitForTimeout(900);
+    const envYaz = y.istekler.find((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/envanter');
+    dogru(envYaz && /^https:\/\/.+\/afisler\//.test(envYaz.govde.foto || '') && /id=eq\.701/.test(envYaz.ara), `envanter fotoğrafı kaydedildi (${JSON.stringify(envYaz && envYaz.govde)})`);
+    dogru(await y.page.locator('img[alt="Yoga matı"]').count() === 1, 'envanter satırında küçük fotoğraf');
+    // Envanter: kalemi düzenle (form dolu açılır, kayıt yerinde güncellenir, yeni gider yazılmaz)
+    await y.page.getByRole('button', { name: 'Yoga matı: düzenle' }).click();
+    await y.page.getByRole('heading', { name: 'Kalemi düzenle' }).waitFor({ timeout: 5000 });
+    const adKutu = y.page.getByLabel('Ne? *');
+    dogru(await adKutu.inputValue() === 'Yoga matı' && !(await y.page.getByText('Muhasebeye gider olarak da yaz').count()), 'düzenle: form kalemin bilgileriyle açılır, gider seçeneği yok');
+    await adKutu.fill('Yoga matı (mor)');
+    await y.page.getByLabel('Nerede duruyor?').fill('Depo');
+    const onceki = y.istekler.length;
+    await y.page.getByRole('button', { name: 'Değişiklikleri kaydet' }).click();
+    await y.page.getByText('“Yoga matı (mor)” güncellendi.').waitFor({ timeout: 5000 });
+    await y.page.waitForTimeout(900);
+    const yeni = y.istekler.slice(onceki);
+    const duz = yeni.find((x) => x.yontem === 'PATCH' && x.yol === '/rest/v1/envanter');
+    dogru(duz && duz.govde.ad === 'Yoga matı (mor)' && duz.govde.konum === 'Depo' && /id=eq\.701/.test(duz.ara)
+      && !yeni.some((x) => x.yontem === 'POST' && /envanter|muhasebe/.test(x.yol)), `düzenle: kalem güncellendi, yeni kayıt / gider yok (${JSON.stringify(duz && duz.govde)})`);
     dogru(!y.konsol.some((x) => /pageerror/.test(x)), 'yönetim: sayfa hatası yok');
     await y.ctx.close();
   } finally {

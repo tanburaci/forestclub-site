@@ -24,7 +24,12 @@ class Component extends DCLogic {
     }, 4000);
   }
   renderVals() {
-    const V = window.FCSecki || { urunler: [{ id: 1, ad: 'Yelpaze', aciklama: 'Örnek açıklama.', fiyat: 1500, foto: null, kalan: 6 }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, kalan: 2 }], kartAcik: true };
+    const V = window.FCSecki || { urunler: [{ id: 1, ad: 'Yelpaze', aciklama: 'Örnek açıklama.', fiyat: 1500, foto: null, kalan: 6, etkinlik: 'Sunset Club', etkinlik_tarih: '2026-11-14' },
+      { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, kalan: 2, secen: 'Pelin' }], kartAcik: true };
+    // Kartın üst satırı: ürün bir buluşmaya bağlıysa ilk buluşmanın adı + tarihi; değilse kimin seçkisi
+    const AY = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    const tarihYaz = (t) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t || ''); return m ? `${Number(m[3])} ${AY[Number(m[2]) - 1]} ${m[1]}` : ''; };
+    const kaynak = (u) => (u.etkinlik ? [u.etkinlik, tarihYaz(u.etkinlik_tarih)].filter(Boolean).join(' · ') : u.secen ? `${u.secen} seçti` : '');
     const liste = V.urunler || [];
     const kartAcik = !!V.kartAcik;
     const st = this.state;
@@ -59,6 +64,7 @@ class Component extends DCLogic {
         const n = sinir(u.id);
         const kalan = u.kalan != null ? Math.floor(Number(u.kalan)) : null;
         return {
+          kaynak: kaynak(u), kaynakVar: !!kaynak(u),
           ad: u.ad, foto: u.foto || '', fotoVar: !!u.foto, fotoYok: !u.foto, aciklama: u.aciklama || '', aciklamaVar: !!u.aciklama,
           fiyatYazi: TL(u.fiyat), adet: String(sec[u.id] || 0), satilir: n > 0,
           stokYazi: n <= 0 ? 'Bu seri tamamlandı.' : (kalan != null && kalan <= 5 ? `Bu seriden ${kalan} adet kaldı.` : ''),

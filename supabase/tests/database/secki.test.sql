@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, extensions;
-select plan(16);
+select plan(18);
 
 insert into auth.users (id, email) values ('00000000-0000-4000-8000-0000000000e1', 'secki-yon@test.invalid');
 insert into yoneticiler (user_id, ad) values ('00000000-0000-4000-8000-0000000000e1', 'Seçki Yönetici');
@@ -36,6 +36,11 @@ select is((select array_agg(x ->> 'ad') from jsonb_array_elements(secki_listesi(
 select is((select x ->> 'aciklama' || ' / ' || (x ->> 'kalan')::numeric::int from jsonb_array_elements(secki_listesi()) x where x ->> 'ad' = 'Seçki Yelpaze'),
   'Elde yapıldı. / 3', 'liste: açıklama ve kalan stok');
 reset role;
+-- Kart üst satırı: ilk bağlandığı etkinlik; etkinliksiz ürünlerde kimin seçkisi
+update urunler set secen = 'Pelin' where ad = 'Seçki Yelpaze';
+select is((select (x ->> 'etkinlik') || ' / ' || (x ->> 'secen') from jsonb_array_elements(secki_listesi()) x where x ->> 'ad' = 'Seçki Yelpaze'),
+  'Seçki Uzak / Pelin', 'liste: ürünün ilk etkinliği ve kimin seçkisi');
+select has_column('public', 'envanter', 'foto', 'envanter kalemine fotoğraf alanı');
 
 -- ---------- Sipariş kuralları ----------
 select throws_ok(format($$ select urun_siparisi_ac(null, 'Nakit Kişi', 'n@test.invalid', '05320000000', pg_temp.kalem(%s, 1), 'nakit', null) $$, (select y from t_u)),
