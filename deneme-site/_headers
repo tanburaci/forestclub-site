@@ -40,8 +40,9 @@
 /form/*
   X-Robots-Tag: noindex, nofollow
 
-# Sayfa betikleri (/sayfalar/*.dc.js, /js/*.js) her açılışta güncel mi diye sorulur (değişmediyse 304, indirilmez).
-# Önceden 4 saat saklanıyordu: yayından sonra yeni HTML eski betikle çalışıyor, yeni düğmeler tepki vermiyordu (15.11.2026).
+# Sayfa betikleri (/sayfalar/*.dc.js, /js/*.js) her açılışta güncel mi diye sorulsun (değişmediyse 304). Not: Cloudflare'in
+# alan adı ayarı (Browser Cache TTL, 4 saat) bunu eziyor; asıl çözüm yayında ?v= sürümünün commit numarası olması
+# (.github/workflows/cloudflare.yml). Ayar "Respect existing headers" yapılırsa bu satırlar da geçerli olur.
 /sayfalar/*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: public, max-age=0, must-revalidate
