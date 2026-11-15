@@ -234,8 +234,9 @@
   };
 
   // Etkinliğe özel ürün siparişi: {id, kod, tutar, yol} + kartta Shopier sayfası, havalede dekont yükleme adresi
-  window.FCSUrunSiparis = async ({ etkinlik, kalemler, ad, eposta, tel, yol, kvkk }) => formGonder('urun_siparis',
-    { etkinlik, kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, yol, kvkk: kvkk === true });
+  // secki: true → Seçki siparişi (etkinliksiz, teslim buluşmada elden)
+  window.FCSUrunSiparis = async ({ etkinlik, secki, kalemler, ad, eposta, tel, yol, kvkk }) => formGonder('urun_siparis',
+    { etkinlik, secki: secki === true, kalemler, ad, eposta: String(eposta || '').trim().toLowerCase(), tel, yol, kvkk: kvkk === true });
   window.FCSUrunDekont = async (s, eposta, dosya) => {
     const { tur } = dekontDosyasi(dosya);
     const { error: yHata } = await sb.storage.from('dekontlar').uploadToSignedUrl(s.dosya, s.jeton, dosya, { contentType: tur });

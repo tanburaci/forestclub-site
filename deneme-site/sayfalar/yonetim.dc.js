@@ -1,6 +1,8 @@
 // OTOMATİK ÜRETİLİR (araclar/dc_derle.mjs): sayfalar/yonetim.dc.html içindeki betik. Elle değiştirmeyin; .dc.html'i
 // değiştirip `node araclar/dc_derle.mjs` çalıştırın.
 window.DC.sinif('/sayfalar/yonetim.dc.html', function (DCLogic) {
+// Ürün formunun boş hali (Ürünler sekmesi)
+const BOS_URUN = { ad: '', fiyat: '', foto: '', aciklama: '', secki: false };
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -98,7 +100,7 @@ class Component extends DCLogic {
       kodForm: { kod: '', tur: 'yuzde', deger: '', son_tarih: '', sinir: '', aciklama: '' }, kodMesaj2: '',
       // Etkinliğe özel ürünler; önizlemede örnek ürünler
       urunler: window.FC ? window.FC.urunler || [] : [{ id: 1, ad: 'Yelpaze 1', fiyat: 1500, foto: null, aktif: true }, { id: 2, ad: 'Yelpaze 2', fiyat: 2000, foto: null, aktif: true }],
-      urunForm: { ad: '', fiyat: '', foto: '' }, urunDuz: null, urunMesaj: '', etkUrun: [], urunStok: {}, urunMaliyet: {}, urunKasa: {},
+      urunForm: { ...BOS_URUN }, urunDuz: null, urunMesaj: '', etkUrun: [], urunStok: {}, urunMaliyet: {}, urunKasa: {},
       // Etkinlik kayıtları: kişi sıra numaraları (this.KISILER), kod = FC-U-0001…
       kayitlar: this.DEMO.kayitlar,
       etkPanel: null, kod: '', kodMesaj: '', iptal: { tur: 'ertele', tarih: '', neden: 'Yağmur / hava durumu', mesaj: '' }, iptalMesaj: '', etkDurum: window.FC ? window.FC.etkDurum : {},
@@ -519,8 +521,10 @@ class Component extends DCLogic {
     const siparisler = (FC ? FC.urunSiparisleri || [] : []).filter((x) => x.yuklendi || x.durum !== 'bekliyor');
     const gruplar = new Map();
     siparisler.forEach((x) => { if (!gruplar.has(x.etkinlik_id)) gruplar.set(x.etkinlik_id, []); gruplar.get(x.etkinlik_id).push(x); });
-    const etkBilgi = (id) => (FC && FC.etkinlikAd.get(id)) || { ad: 'Etkinlik', tarih: '' };
-    const urunSipGruplar = [...gruplar.entries()].sort((a, b) => etkBilgi(b[0]).tarih.localeCompare(etkBilgi(a[0]).tarih)).map(([id, xs]) => {
+    // Seçki siparişlerinin etkinliği yok (etkinlik_id boş): ayrı grup, en üstte
+    const etkBilgi = (id) => (id == null ? { ad: 'Seçki · teslim bir sonraki buluşmada', tarih: '', secki: true }
+      : (FC && FC.etkinlikAd.get(id)) || { ad: 'Etkinlik', tarih: '' });
+    const urunSipGruplar = [...gruplar.entries()].sort((a, b) => (b[0] == null) - (a[0] == null) || etkBilgi(b[0]).tarih.localeCompare(etkBilgi(a[0]).tarih)).map(([id, xs]) => {
       const e = etkBilgi(id);
       const bekleyen = xs.filter((x) => x.durum === 'bekliyor').length;
       const odenen = xs.filter((x) => x.durum === 'onaylandi').reduce((t, x) => t + Number(x.tutar), 0);
@@ -541,7 +545,7 @@ class Component extends DCLogic {
     });
     const secili = st.etkUrun || [];
     return {
-      urunForm: f, urunMesaj: st.urunMesaj, urunAlan: { ad: alan('ad'), fiyat: alan('fiyat') },
+      urunForm: f, urunMesaj: st.urunMesaj, urunAlan: { ad: alan('ad'), fiyat: alan('fiyat'), aciklama: alan('aciklama') },
       urunFotoVar: !!f.foto, urunDuzenlemede: !!st.urunDuz,
       urunFormBaslik: st.urunDuz ? 'Ürünü düzenle' : 'Yeni ürün', urunDugme: st.urunDuz ? 'Ürünü kaydet' : 'Ürünü ekle',
       urunFotoSec: (ev) => {
@@ -555,14 +559,15 @@ class Component extends DCLogic {
           (h) => this.setState({ urunMesaj: `Yüklenemedi: ${h.message}` }));
       },
       urunFotoKaldir: () => this.setState((s) => ({ urunForm: { ...s.urunForm, foto: '' } })),
-      urunVazgec: () => this.setState({ urunDuz: null, urunForm: { ad: '', fiyat: '', foto: '' }, urunMesaj: '' }),
+      urunVazgec: () => this.setState({ urunDuz: null, urunForm: { ...BOS_URUN }, urunMesaj: '' }),
+      urunSeckiDegis: () => this.setState((s) => ({ urunForm: { ...s.urunForm, secki: !s.urunForm.secki }, urunMesaj: '' })),
       urunKaydet: () => {
         const ad = f.ad.trim();
         const fiyat = window.FCSayi(f.fiyat) ?? NaN;
         if (!ad) return this.setState({ urunMesaj: 'Ürün adını yazın.' });
         if (!(fiyat > 0)) return this.setState({ urunMesaj: 'Fiyatı yazın.' });
-        const satir = { ad, fiyat, foto: f.foto && /^https:\/\//.test(f.foto) ? f.foto : null };
-        const bitir = (u) => { yaz(u); this.setState({ urunDuz: null, urunForm: { ad: '', fiyat: '', foto: '' }, urunMesaj: `${ad} ${st.urunDuz ? 'kaydedildi' : 'eklendi'} ✓` }); };
+        const satir = { ad, fiyat, foto: f.foto && /^https:\/\//.test(f.foto) ? f.foto : null, aciklama: (f.aciklama || '').trim().slice(0, 400) || null, secki: !!f.secki };
+        const bitir = (u) => { yaz(u); this.setState({ urunDuz: null, urunForm: { ...BOS_URUN }, urunMesaj: `${ad} ${st.urunDuz ? 'kaydedildi' : 'eklendi'} ✓` }); };
         if (!window.FCUrun) return bitir({ id: st.urunDuz || Date.now(), aktif: true, ...satir });
         this.setState({ urunMesaj: 'Kaydediliyor…' });
         window.FCUrun.kaydet(st.urunDuz, st.urunDuz ? satir : { ...satir, aktif: true }).then(bitir, (h) => this.setState({ urunMesaj: h.message }));
@@ -597,7 +602,8 @@ class Component extends DCLogic {
         },
         ad: u.ad, fiyatYazi: tl(u.fiyat), foto: u.foto || '', fotoVar: !!u.foto,
         durum: u.aktif ? 'Satışta' : 'Kapalı', dugme: u.aktif ? 'Satışa kapat' : 'Satışa aç',
-        duzenle: () => this.setState({ urunDuz: u.id, urunForm: { ad: u.ad, fiyat: String(Number(u.fiyat)), foto: u.foto || '' }, urunMesaj: '' }),
+        secki: !!u.secki,
+        duzenle: () => this.setState({ urunDuz: u.id, urunForm: { ad: u.ad, fiyat: String(Number(u.fiyat)), foto: u.foto || '', aciklama: u.aciklama || '', secki: !!u.secki }, urunMesaj: '' }),
         degis: () => {
           const yeni = { ...u, aktif: !u.aktif };
           yaz(yeni);

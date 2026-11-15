@@ -21,6 +21,13 @@
 /yonetim/*
   X-Robots-Tag: noindex, nofollow
 
+# Seçki: gizli test sürümü (15.11.2026), açılışa kadar arama motorlarına kapalı
+/secki
+  X-Robots-Tag: noindex, nofollow
+
+/secki/*
+  X-Robots-Tag: noindex, nofollow
+
 /dekont
   X-Robots-Tag: noindex, nofollow
 
